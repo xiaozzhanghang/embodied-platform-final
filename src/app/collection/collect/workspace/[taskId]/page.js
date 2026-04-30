@@ -193,6 +193,26 @@ export default function WorkspacePage() {
 
         {/* Right Sidebar - 1 part */}
         <div style={{ flex: 1, minWidth: 300, maxWidth: 400, display: 'flex', flexDirection: 'column', background: '#fafafa', borderLeft: '1px solid #e8e8e8' }}>
+           
+           {/* 3D View and Upload Section (Fixed at top) */}
+           <div style={{ padding: '16px 16px 0 16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                 <div style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', fontSize: 14, color: '#333' }}>
+                    <div style={{ width: 4, height: 14, background: '#1677ff', marginRight: 8, borderRadius: 2 }}></div>
+                    三维视图
+                 </div>
+                 <Switch defaultChecked />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                 <Upload.Dragger name="files" action="/upload.do" multiple>
+                    <p className="ant-upload-drag-icon">
+                       <PlusOutlined style={{ fontSize: 24, color: '#1677ff' }} />
+                    </p>
+                    <p className="ant-upload-text" style={{ fontSize: 14 }}>点击或拖拽上传</p>
+                 </Upload.Dragger>
+              </div>
+           </div>
+
            <Tabs 
               defaultActiveKey="1" 
               centered 
@@ -202,27 +222,7 @@ export default function WorkspacePage() {
                    key: '1',
                    label: <span><InfoCircleOutlined /> 任务详情</span>,
                    children: (
-                      <div style={{ overflowY: 'auto', padding: '16px 12px', height: '100%' }}>
-                         {/* 3D View and Upload Section */}
-                         <div style={{ marginBottom: 24 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                               <div style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', fontSize: 14, color: '#333' }}>
-                                  <div style={{ width: 4, height: 14, background: '#1677ff', marginRight: 8, borderRadius: 2 }}></div>
-                                  三维视图
-                               </div>
-                               <Switch defaultChecked />
-                            </div>
-                            <Upload.Dragger name="files" action="/upload.do" multiple>
-                               <p className="ant-upload-drag-icon">
-                                  <PlusOutlined style={{ fontSize: 24, color: '#1677ff' }} />
-                               </p>
-                               <p className="ant-upload-text" style={{ fontSize: 14 }}>点击或拖拽文件到此区域上传图片/模型</p>
-                               <p className="ant-upload-hint" style={{ fontSize: 12, color: '#8c8c8c' }}>
-                                  支持 .jpg, .png, .obj, .gltf 格式
-                               </p>
-                            </Upload.Dragger>
-                         </div>
-
+                      <div style={{ overflowY: 'auto', padding: '0 16px 16px 16px', height: '100%' }}>
                          {/* Current Job Section */}
                          <div style={{ border: '1px solid #e8e8e8', borderRadius: 16, padding: 20, background: '#fff' }}>
                             <div style={{ fontSize: 10, color: '#8c8c8c', fontWeight: 'bold', marginBottom: 4 }}>CURRENT JOB</div>
