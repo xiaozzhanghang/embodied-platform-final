@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Button, Card, Typography, Space, Descriptions, Badge, Progress, Modal, Checkbox, Table, Tag, Steps, message } from 'antd';
+import { Button, Card, Typography, Space, Descriptions, Badge, Progress, Table, Tag, Steps, message } from 'antd';
 import { ArrowLeftOutlined, VideoCameraOutlined, ApiOutlined, DesktopOutlined, EyeOutlined, SolutionOutlined, FileSearchOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -12,26 +12,6 @@ export default function CollectTaskDetailPage() {
   const router = useRouter();
   const params = useParams();
   const taskId = params?.taskId || 'CT-20250301001';
-  const [isPreflightOpen, setIsPreflightOpen] = React.useState(false);
-  const [checkedItems, setCheckedItems] = React.useState([]);
-
-  const preflightChecks = [
-    { id: 'heartbeat', label: '机械臂心跳连接正常 (Arm Heartbeat)', icon: <ApiOutlined style={{ color: '#1677ff' }} /> },
-    { id: 'stream', label: '相机流推流正常 (Camera Stream)', icon: <VideoCameraOutlined style={{ color: '#1677ff' }} /> },
-    { id: 'teleop', label: '遥操设备已配对 (Teleop Paired)', icon: <DesktopOutlined style={{ color: '#1677ff' }} /> },
-  ];
-
-  const handleStart = () => {
-    if (checkedItems.length !== preflightChecks.length) {
-      message.error('请完成所有起飞前硬件通讯自检！');
-      return;
-    }
-    setIsPreflightOpen(false);
-    message.loading('正在初始化沉浸式工作台...', 1.5).then(() => {
-      message.success('已进入遥操模式，ROS Bag 录制就绪');
-      router.push(`/collection/collect/workspace/${taskId}`);
-    });
-  };
   
   // Mock data based on taskId
   const selectedTask = { 
@@ -91,8 +71,7 @@ export default function CollectTaskDetailPage() {
             <Title level={4} style={{ margin: 0 }}>工作台采集任务详情</Title>
         </div>
         <Space>
-            <Button onClick={() => router.back()}>返回</Button>
-            <Button type="primary" size="large" onClick={() => setIsPreflightOpen(true)}>进入沉浸式工作台</Button>
+            <Button type="primary" size="large" onClick={() => window.open(`/collection/collect/workspace/${taskId}`, '_blank')}>进入沉浸式工作台</Button>
         </Space>
       </div>
 
@@ -135,44 +114,6 @@ export default function CollectTaskDetailPage() {
             size="middle"
           />
       </Card>
-
-      <Modal
-        title={
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ fontSize: 24, marginRight: 8 }}>🚀</span>
-            Pre-flight Check (起飞前自检)
-          </div>
-        }
-        open={isPreflightOpen}
-        onCancel={() => setIsPreflightOpen(false)}
-        footer={[
-          <Button key="back" onClick={() => setIsPreflightOpen(false)}>
-            取消
-          </Button>,
-          <Button key="submit" type="primary" disabled={checkedItems.length !== preflightChecks.length} onClick={handleStart}>
-            确认无误，进入系统
-          </Button>,
-        ]}
-      >
-        <p style={{ color: '#595959', marginBottom: 24 }}>
-          即将接管真实物理设备，请仔细确认以下硬件通讯状态是否就绪：
-        </p>
-        <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 8 }}>
-          <Checkbox.Group 
-            style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}
-            value={checkedItems}
-            onChange={setCheckedItems}
-          >
-            {preflightChecks.map(check => (
-              <Checkbox key={check.id} value={check.id} style={{ marginLeft: 0 }}>
-                <span style={{ fontSize: 16, marginLeft: 8 }}>
-                  {check.icon} <span style={{ marginLeft: 8 }}>{check.label}</span>
-                </span>
-              </Checkbox>
-            ))}
-          </Checkbox.Group>
-        </div>
-      </Modal>
     </MainLayout>
   );
 }
