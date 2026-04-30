@@ -112,7 +112,6 @@ export default function WorkspacePage() {
       {/* Top Header */}
       <div style={{ height: 32, borderBottom: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 12, color: '#595959', background: '#fff' }}>
         <Space size="middle">
-          <span>111 <span style={{ color: '#ff4d4f' }}>(共 2 条)</span></span>
           <span>录制状态: {isRecording ? <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>🔴 录制中</span> : <span style={{ color: '#52c41a' }}>准备就绪</span>}</span>
           <span>网络延迟: <span style={{ color: '#52c41a' }}>12ms</span></span>
           <span>任务ID: <b>{taskId}</b></span>
@@ -120,11 +119,9 @@ export default function WorkspacePage() {
           <span style={{ color: '#8c8c8c', maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>文件目录: collect-data/12837_13563/8855cd...</span>
         </Space>
         <Space size="middle" style={{ color: '#8c8c8c' }}>
-          <span>Esc: 返回列表</span>
           <span>Space: 录制/暂停</span>
           <span>R: 作废当前</span>
           <span>Enter: 提交并下一段</span>
-          <CloseCircleOutlined style={{ fontSize: 16, cursor: 'pointer', marginLeft: 8 }} onClick={() => router.back()} />
         </Space>
       </div>
 
