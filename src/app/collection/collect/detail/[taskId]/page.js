@@ -1,0 +1,178 @@
+'use client';
+
+import React from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { Button, Card, Typography, Space, Descriptions, Badge, Progress, Modal, Checkbox, Table, Tag, Steps, message } from 'antd';
+import { ArrowLeftOutlined, VideoCameraOutlined, ApiOutlined, DesktopOutlined, EyeOutlined, SolutionOutlined, FileSearchOutlined } from '@ant-design/icons';
+import MainLayout from '@/components/MainLayout';
+
+const { Title } = Typography;
+
+export default function CollectTaskDetailPage() {
+  const router = useRouter();
+  const params = useParams();
+  const taskId = params?.taskId || 'CT-20250301001';
+  const [isPreflightOpen, setIsPreflightOpen] = React.useState(false);
+  const [checkedItems, setCheckedItems] = React.useState([]);
+
+  const preflightChecks = [
+    { id: 'heartbeat', label: '机械臂心跳连接正常 (Arm Heartbeat)', icon: <ApiOutlined style={{ color: '#1677ff' }} /> },
+    { id: 'stream', label: '相机流推流正常 (Camera Stream)', icon: <VideoCameraOutlined style={{ color: '#1677ff' }} /> },
+    { id: 'teleop', label: '遥操设备已配对 (Teleop Paired)', icon: <DesktopOutlined style={{ color: '#1677ff' }} /> },
+  ];
+
+  const handleStart = () => {
+    if (checkedItems.length !== preflightChecks.length) {
+      message.error('请完成所有起飞前硬件通讯自检！');
+      return;
+    }
+    setIsPreflightOpen(false);
+    message.loading('正在初始化沉浸式工作台...', 1.5).then(() => {
+      message.success('已进入遥操模式，ROS Bag 录制就绪');
+      router.push(`/collection/collect/workspace/${taskId}`);
+    });
+  };
+  
+  // Mock data based on taskId
+  const selectedTask = { 
+      taskId: taskId || 'CT-20250301001', 
+      name: 'FRANKA-FR3-抓取红色方块-001', 
+      desc: '使用FR3机器人抓取红色方块', 
+      robot: 'FRANKA-FR3-1号', 
+      scene: '桌面抓取', 
+      collector: '张三', 
+      progress: '35/50', 
+      deviceStatus: '正常' 
+  };
+
+  const historicalEpisodes = [
+    { key: '1', episodeId: 'EP-20250301-001', time: '2025-03-01 14:20:00', duration: '00:01:23', steps: 6, status: '已入库质检池', qaBatch: 'BATCH-766794-A' },
+    { key: '2', episodeId: 'EP-20250301-002', time: '2025-03-01 14:22:15', duration: '00:01:45', steps: 6, status: '已入库质检池', qaBatch: 'BATCH-766794-A' },
+    { key: '3', episodeId: 'EP-20250301-003', time: '2025-03-01 14:25:30', duration: '00:01:12', steps: 6, status: '等待解析', qaBatch: 'BATCH-766794-B' },
+    { key: '4', episodeId: 'EP-20250301-004', time: '2025-03-01 14:28:10', duration: '00:02:01', steps: 6, status: '废弃', qaBatch: '-' },
+    { key: '5', episodeId: 'EP-20250301-005', time: '2025-03-01 14:31:05', duration: '00:01:30', steps: 6, status: '等待解析', qaBatch: 'BATCH-766794-B' },
+  ];
+
+  const columns = [
+    { title: '包 ID (Episode)', dataIndex: 'episodeId', key: 'episodeId', render: text => <span style={{ fontFamily: 'monospace' }}>{text}</span> },
+    { title: '所属质检批次', dataIndex: 'qaBatch', key: 'qaBatch', render: (text) => text !== '-' ? <a onClick={() => router.push(`/collection/qa/${encodeURIComponent(text)}`)} style={{ color: '#1677ff', fontWeight: 500 }}>{text}</a> : <span style={{ color: '#aaa' }}>-</span> },
+    { title: '采集时间', dataIndex: 'time', key: 'time' },
+    { title: '视频时长', dataIndex: 'duration', key: 'duration' },
+    { title: '包含动作数', dataIndex: 'steps', key: 'steps' },
+    { 
+      title: '当前状态', 
+      dataIndex: 'status', 
+      key: 'status',
+      render: status => {
+        let color = 'default';
+        if (status === '已入库质检池') color = 'success';
+        if (status === '等待解析') color = 'processing';
+        if (status === '废弃') color = 'error';
+        return <Tag color={color}>{status}</Tag>;
+      }
+    },
+    { 
+      title: '操作', 
+      key: 'action',
+      render: (_, record) => (
+        <Space>
+          <Button type="link" size="small" icon={<EyeOutlined />} disabled={record.status === '废弃'}>查看视频</Button>
+          <Button type="primary" size="small" disabled={record.status === '废弃' || record.qaBatch === '-'} onClick={() => router.push(`/collection/qa/${encodeURIComponent(record.qaBatch)}`)}>追踪质检</Button>
+        </Space>
+      )
+    }
+  ];
+
+  return (
+    <MainLayout>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
+            <Title level={4} style={{ margin: 0 }}>工作台采集任务详情</Title>
+        </div>
+        <Space>
+            <Button onClick={() => router.back()}>返回</Button>
+            <Button type="primary" size="large" onClick={() => setIsPreflightOpen(true)}>进入沉浸式工作台</Button>
+        </Space>
+      </div>
+
+      <Card bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
+        <Steps 
+          current={1}
+          items={[
+            { title: '任务下发', description: '管理员派发', icon: <SolutionOutlined /> },
+            { title: '采集工作台', description: '当前环节：录像暂存', icon: <VideoCameraOutlined /> },
+            { title: '质检审核', description: '打包上传后流转', icon: <FileSearchOutlined /> },
+            { title: '模型入库', description: '合格数据沉淀' },
+          ]}
+        />
+      </Card>
+
+      <Card title="任务信息" bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
+          <Descriptions bordered column={2}>
+              <Descriptions.Item label="任务ID">{selectedTask.taskId}</Descriptions.Item>
+              <Descriptions.Item label="任务名称">{selectedTask.name}</Descriptions.Item>
+              <Descriptions.Item label="任务描述" span={2}>{selectedTask.desc}</Descriptions.Item>
+              <Descriptions.Item label="采集数量">{selectedTask.progress}</Descriptions.Item>
+              <Descriptions.Item label="平均时长">2分30秒</Descriptions.Item>
+          </Descriptions>
+      </Card>
+      
+      <Card title="采集情况" bordered={false} style={{ borderRadius: 8, marginBottom: 24 }}>
+          <Descriptions bordered column={2}>
+              <Descriptions.Item label="采集机器人">{selectedTask.robot}</Descriptions.Item>
+              <Descriptions.Item label="采集场景">{selectedTask.scene}</Descriptions.Item>
+              <Descriptions.Item label="设备状态"><Badge status={selectedTask.deviceStatus === '正常' ? 'success' : 'error'} text={selectedTask.deviceStatus} /></Descriptions.Item>
+              <Descriptions.Item label="采集进度"><Progress percent={parseInt(selectedTask.progress.split('/')[0]) / parseInt(selectedTask.progress.split('/')[1]) * 100} size="small" /></Descriptions.Item>
+          </Descriptions>
+      </Card>
+
+      <Card title="已采集序列包记录 (Historical Episodes)" bordered={false} style={{ borderRadius: 8 }}>
+          <Table 
+            dataSource={historicalEpisodes} 
+            columns={columns} 
+            pagination={{ pageSize: 5 }} 
+            size="middle"
+          />
+      </Card>
+
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: 24, marginRight: 8 }}>🚀</span>
+            Pre-flight Check (起飞前自检)
+          </div>
+        }
+        open={isPreflightOpen}
+        onCancel={() => setIsPreflightOpen(false)}
+        footer={[
+          <Button key="back" onClick={() => setIsPreflightOpen(false)}>
+            取消
+          </Button>,
+          <Button key="submit" type="primary" disabled={checkedItems.length !== preflightChecks.length} onClick={handleStart}>
+            确认无误，进入系统
+          </Button>,
+        ]}
+      >
+        <p style={{ color: '#595959', marginBottom: 24 }}>
+          即将接管真实物理设备，请仔细确认以下硬件通讯状态是否就绪：
+        </p>
+        <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 8 }}>
+          <Checkbox.Group 
+            style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}
+            value={checkedItems}
+            onChange={setCheckedItems}
+          >
+            {preflightChecks.map(check => (
+              <Checkbox key={check.id} value={check.id} style={{ marginLeft: 0 }}>
+                <span style={{ fontSize: 16, marginLeft: 8 }}>
+                  {check.icon} <span style={{ marginLeft: 8 }}>{check.label}</span>
+                </span>
+              </Checkbox>
+            ))}
+          </Checkbox.Group>
+        </div>
+      </Modal>
+    </MainLayout>
+  );
+}
