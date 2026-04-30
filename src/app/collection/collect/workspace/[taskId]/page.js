@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Button, Typography, Space, Badge, message, Tabs, Dropdown } from 'antd';
+import { Button, Typography, Space, Badge, message, Tabs, Dropdown, Switch, Upload } from 'antd';
 import { CaretDownOutlined, ExpandAltOutlined, PauseCircleOutlined, PlayCircleOutlined, CloseCircleOutlined, StepBackwardOutlined, StepForwardOutlined, FastBackwardOutlined, FastForwardOutlined, PlusOutlined, DeleteOutlined, SyncOutlined, VideoCameraOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 export default function WorkspacePage() {
@@ -203,6 +203,27 @@ export default function WorkspacePage() {
                    label: <span><InfoCircleOutlined /> 任务详情</span>,
                    children: (
                       <div style={{ overflowY: 'auto', padding: '16px 12px', height: '100%' }}>
+                         {/* 3D View and Upload Section */}
+                         <div style={{ marginBottom: 24 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                               <div style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', fontSize: 14, color: '#333' }}>
+                                  <div style={{ width: 4, height: 14, background: '#1677ff', marginRight: 8, borderRadius: 2 }}></div>
+                                  三维视图
+                               </div>
+                               <Switch defaultChecked />
+                            </div>
+                            <Upload.Dragger name="files" action="/upload.do" multiple>
+                               <p className="ant-upload-drag-icon">
+                                  <PlusOutlined style={{ fontSize: 24, color: '#1677ff' }} />
+                               </p>
+                               <p className="ant-upload-text" style={{ fontSize: 14 }}>点击或拖拽文件到此区域上传图片/模型</p>
+                               <p className="ant-upload-hint" style={{ fontSize: 12, color: '#8c8c8c' }}>
+                                  支持 .jpg, .png, .obj, .gltf 格式
+                               </p>
+                            </Upload.Dragger>
+                         </div>
+
+                         {/* Current Job Section */}
                          <div style={{ border: '1px solid #e8e8e8', borderRadius: 16, padding: 20, background: '#fff' }}>
                             <div style={{ fontSize: 10, color: '#8c8c8c', fontWeight: 'bold', marginBottom: 4 }}>CURRENT JOB</div>
                             <div style={{ fontSize: 20, fontWeight: 'bold', color: '#141414', marginBottom: 24 }}>餐具整理_job</div>
