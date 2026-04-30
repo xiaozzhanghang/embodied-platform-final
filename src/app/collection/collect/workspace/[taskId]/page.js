@@ -31,6 +31,10 @@ export default function WorkspacePage() {
   }, [elapsed]);
 
   useEffect(() => {
+    message.success({ content: '✅ 设备网关检查通过，所有设备均已就绪，可开始采集！', duration: 3, style: { marginTop: '10vh' } });
+  }, []);
+
+  useEffect(() => {
     let timer;
     if (isRecording) {
       timer = setInterval(() => setElapsed(e => e + 1), 100);
