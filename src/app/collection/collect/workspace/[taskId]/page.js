@@ -122,6 +122,7 @@ export default function WorkspacePage() {
           <span>Space: 录制/暂停</span>
           <span>R: 作废当前</span>
           <span>Enter: 提交并下一段</span>
+          <Button size="small" type="text" icon={<CloseCircleOutlined />} onClick={() => router.push('/collection/collect')} style={{ color: '#8c8c8c' }}>返回列表</Button>
         </Space>
       </div>
 
