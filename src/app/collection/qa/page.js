@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, Select, App, Row, Col, Progress, Form } from 'antd';
 import { SearchOutlined, ReloadOutlined, DownloadOutlined, UserAddOutlined, EyeOutlined } from '@ant-design/icons';
@@ -65,7 +65,7 @@ const mockQaData = [
     }
 ];
 
-export default function QaPage() {
+function QaContent() {
     const { message } = App.useApp();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -151,5 +151,13 @@ export default function QaPage() {
                 />
             </Card>
         </MainLayout>
+    );
+}
+
+export default function QaPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <QaContent />
+        </Suspense>
     );
 }
