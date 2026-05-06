@@ -36,15 +36,77 @@ function CreateTaskContent() {
   const [selectedPartKeys, setSelectedPartKeys] = useState([]);
 
   const [optionsMap, setOptionsMap] = useState({
-    p1: [{ value: 'proj_ai', label: '具身智能大模型项目' }],
-    p2: [],
-    sop: [],
-    usage: [],
-    mode: [],
-    sceneCat: [],
-    subScene: [],
-    deviceType: [{ value: 'galbot_2.2_RGB', label: 'galbot_2.2_RGB' }],
-    teleType: [{ value: 'Master-slaveArm', label: 'Master-slaveArm' }]
+    p1: [
+      { value: 'InternalCommercial', label: 'InternalCommercial(内部-商业)' },
+      { value: 'ExternalXupaosi', label: 'ExternalXupaosi(外部-芯片思)' },
+      { value: 'InternalIndustrial', label: 'InternalIndustrial(内部-工业需求)' },
+      { value: 'Backflow', label: 'Backflow(回传问题)' },
+      { value: 'SimulatedCollection', label: 'SimulatedCollection(模拟采集)' },
+    ],
+    p2: [
+      { value: 'GroceryVLA', label: 'GroceryVLA', parent: 'InternalCommercial' },
+      { value: 'FoundationModel', label: 'FoundationModel', parent: 'InternalCommercial' },
+      { value: 'TakeOver', label: 'TakeOver', parent: 'InternalCommercial' },
+      { value: 'Zhiyuan', label: 'Zhiyuan(智源)', parent: 'InternalCommercial' },
+      { value: 'Nvidia', label: 'Nvidia(英伟达)', parent: 'InternalCommercial' },
+      { value: 'SubTag_X1', label: 'SubTag_X1', parent: 'ExternalXupaosi' },
+      { value: 'SubTag_X2', label: 'SubTag_X2', parent: 'ExternalXupaosi' },
+      { value: 'Industrial_A1', label: 'Industrial_A1', parent: 'InternalIndustrial' },
+    ],
+    sop: [
+      { value: 'sop_desk', label: '桌面整理采集规范 V1.0' },
+      { value: 'sop_cable', label: '线缆管理采集规范 V2.0' },
+      { value: 'sop_kitchen', label: '厨房操作采集规范 V1.2' },
+    ],
+    usage: [
+      { value: 'Training', label: 'Training(模型训练)' },
+      { value: 'Valid', label: 'Valid(效果评测)' },
+      { value: 'Demo', label: 'Demo(展会演示)' },
+    ],
+    mode: [
+      { value: 'Real', label: 'Real(实机物理世界采集)' },
+      { value: 'Sim', label: 'Sim(虚拟仿真引擎采集)' },
+    ],
+    sceneCat: [
+      { value: 'Kitchen', label: 'Kitchen(厨房)' },
+      { value: 'Supermarket', label: 'Supermarket(商超)' },
+      { value: 'Industry', label: 'Industry(工业)' },
+      { value: 'pharmacy', label: 'pharmacy(药房)' },
+      { value: 'Scientific', label: 'Scientific(科研)' },
+      { value: 'Hotel', label: 'Hotel(酒店)' },
+      { value: 'Warehousing', label: 'Warehousing(仓储)' },
+    ],
+    subScene: [
+      { value: 'sub_cuisine', label: '餐具整理', parent: 'Kitchen' },
+      { value: 'sub_cook', label: '烹饪操作', parent: 'Kitchen' },
+      { value: 'sub_food', label: '食材处理', parent: 'Kitchen' },
+      { value: 'sub_clean', label: '清洁收纳', parent: 'Kitchen' },
+      { value: 'sub_plate', label: '取餐摆盘', parent: 'Kitchen' },
+      { value: 'sub_pot', label: '锅具操作', parent: 'Kitchen' },
+      { value: 'sub_shelf', label: '货架拣选', parent: 'Supermarket' },
+      { value: 'sub_scan', label: '商品扫码', parent: 'Supermarket' },
+      { value: 'sub_cart', label: '购物车装载', parent: 'Supermarket' },
+      { value: 'sub_price', label: '价签更换', parent: 'Supermarket' },
+      { value: 'sub_assembly', label: '电子组装', parent: 'Industry' },
+      { value: 'sub_auto', label: '汽车零部件', parent: 'Industry' },
+      { value: 'sub_metal', label: '金属加工', parent: 'Industry' },
+      { value: 'sub_weld', label: '焊接', parent: 'Industry' },
+      { value: 'sub_sort', label: '分拣', parent: 'Industry' },
+      { value: 'sub_pack', label: '包装', parent: 'Industry' },
+      { value: 'sub_carry', label: '搬运', parent: 'Industry' },
+      { value: 'sub_stack', label: '码垛', parent: 'Industry' },
+    ],
+    deviceType: [
+      { value: 'galbot_2.2_RGB', label: 'galbot_2.2_RGB' },
+      { value: 'galbot_2.2_RGBD', label: 'galbot_2.2_RGBD(深度)' },
+    ],
+    teleType: [
+      { value: 'VRController', label: 'VRController(VR手柄设备)' },
+      { value: 'MotionCapture', label: 'MotionCapture(六轴动捕手套)' },
+      { value: 'KeyboardMouse', label: 'KeyboardMouse(键盘鼠标)' },
+      { value: 'DualHandControl', label: 'DualHandControl(双手操控)' },
+      { value: 'Master-slaveArm', label: 'Master-slaveArm(主从臂)' },
+    ]
   });
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -168,10 +230,12 @@ function CreateTaskContent() {
       // Simulate fetching existing task data
       const mockExistingData = {
         name: `${prefix}桌面操作任务_INS_01`,
-        p1: 'proj_ai',
-        usage: 'research',
-        mode: 'teleop',
-        sceneCat: 'household',
+        p1: 'InternalCommercial',
+        p2: 'GroceryVLA',
+        usage: 'Training',
+        mode: 'Real',
+        sceneCat: 'Kitchen',
+        subScene: 'sub_cuisine',
         deviceType: 'galbot_2.2_RGB',
         teleType: 'Master-slaveArm',
         count: 500,
@@ -201,12 +265,12 @@ function CreateTaskContent() {
     
     form.setFieldsValue({
       name: `${tpl.name}_${Math.floor(1000 + Math.random() * 9000)}`,
-      p1: 'proj_ai',
-      usage: 'research',
-      mode: 'teleop',
-      sceneCat: 'household',
+      p1: 'InternalCommercial',
+      usage: 'Training',
+      mode: 'Real',
+      sceneCat: 'Kitchen',
       deviceType: tpl.device,
-      teleType: tpl.tele.includes('VR') ? 'VR' : 'Master-slaveArm'
+      teleType: tpl.tele.includes('VR') ? 'VRController' : 'Master-slaveArm'
     });
     handleDeviceTypeChange(tpl.device);
   };
@@ -309,15 +373,15 @@ function CreateTaskContent() {
 
             <Card title="基础信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
               <Row gutter={24}>
-                <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} dropdownRender={m => renderDropdown(m, 'p1')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请选择" options={optionsMap.p2} dropdownRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} dropdownRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} dropdownRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} dropdownRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="任务名称" name="name" required><Input /></Form.Item></Col>
                 <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} dropdownRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择" options={optionsMap.mode} dropdownRender={m => renderDropdown(m, 'mode')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} dropdownRender={m => renderDropdown(m, 'sceneCat')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请选择" options={optionsMap.subScene} dropdownRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} dropdownRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} dropdownRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
               </Row>
             </Card>
 
