@@ -42,9 +42,10 @@ const menuItems = [
   {
     key: 'config_labels',
     icon: <TagsOutlined />,
-    label: '标签管理',
+    label: '基础数据',
     roles: [ROLES.ADMIN],
     children: [
+      { key: '/collection/projects', label: '项目管理' },
       { key: '/collection/objects', label: '物体库' },
       { key: '/collection/config', label: '任务标签' },
       { key: '/collection/object-labels', label: '物体标签' },
@@ -88,9 +89,10 @@ const menuItems = [
 ];
 
 const breadcrumbMap = {
-  '/collection/config': ['标签管理', '任务标签'],
-  '/collection/objects': ['标签管理', '物体库'],
-  '/collection/object-labels': ['标签管理', '物体标签'],
+  '/collection/projects': ['基础数据', '项目管理'],
+  '/collection/config': ['基础数据', '任务标签'],
+  '/collection/objects': ['基础数据', '物体库'],
+  '/collection/object-labels': ['基础数据', '物体标签'],
   '/collection/devices': ['设备管理', '机器人设备'],
   '/collection/device-types': ['设备管理', '设备类型'],
   '/collection/tasks': ['数据采集', '任务派发'],

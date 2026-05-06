@@ -97,7 +97,7 @@ export default function CreateObjectPage() {
         okText="保存并使用"
         cancelText="取消"
       >
-        <p style={{ color: '#8c8c8c', marginBottom: 16 }}>如果在下拉框中找不到合适的物理属性标签，可在此直接新建，系统将自动同步至【标签管理】模块。</p>
+        <p style={{ color: '#8c8c8c', marginBottom: 16 }}>如果在下拉框中找不到合适的物理属性标签，可在此直接新建，系统将自动同步至【基础数据】模块。</p>
         <Form layout="vertical">
             <Form.Item label="新标签中英文名" required>
                 <Input placeholder="例如：光滑 (Smooth)" value={newTagName} onChange={e => setNewTagName(e.target.value)} />

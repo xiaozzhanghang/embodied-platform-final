@@ -179,7 +179,7 @@ export default function ObjectLibraryPage() {
 
   return (
     <MainLayout>
-      <Breadcrumb items={[{ title: '首页' }, { title: '标签管理' }, { title: '物体库' }]} style={{ marginBottom: 16 }} />
+      <Breadcrumb items={[{ title: '首页' }, { title: '基础数据' }, { title: '物体库' }]} style={{ marginBottom: 16 }} />
 
       <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 160px)' }}>
 

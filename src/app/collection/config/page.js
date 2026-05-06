@@ -2,50 +2,91 @@
 
 import React, { useState } from 'react';
 import { Typography, Breadcrumb, Button, Input, App, Modal, Tag, Space, Tooltip } from 'antd';
-import { PlusOutlined, CloseOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Text } = Typography;
 
 const taskCategories = [
-  { key: 'project',    label: '项目',        subLabel: 'TAG CATEGORY: 项目' },
-  { key: 'purpose',   label: '任务用途',     subLabel: 'TAG CATEGORY: 采集方式名称' },
-  { key: 'scene',     label: '场景分类',     subLabel: 'TAG CATEGORY: 场景名称' },
-  { key: 'mode',      label: '采集模式',     subLabel: 'TAG CATEGORY: 采集模式名称' },
-  { key: 'template',  label: '动作模板',     subLabel: 'TAG CATEGORY: 动作模版' },
-  { key: 'teleop',    label: '遥控类型',     subLabel: 'TAG CATEGORY: 采集类型名' },
-  { key: 'effector',  label: '执行末端类型', subLabel: 'TAG CATEGORY: 执行末端类型名' },
-  { key: 'camera',    label: '相机类型',     subLabel: 'TAG CATEGORY: 相机类型名称' },
-  { key: 'camera_pos',label: '相机位置类型', subLabel: 'TAG CATEGORY: 相机位置类型名称' },
-  { key: 'component', label: '组件类型',     subLabel: 'TAG CATEGORY: 组件类型名' },
+  { type: 'section', label: 'B. 采集场景' },
+  { key: 'scene',     label: '场景分类',     subLabel: 'TAG CATEGORY: 场景分类' },
+  { key: 'template',  label: '动作模板',     subLabel: 'TAG CATEGORY: 动作模板' },
+  { type: 'section', label: 'C. 硬件配置' },
+  { key: 'mode',      label: '采集模式',     subLabel: 'TAG CATEGORY: 采集模式' },
+  { key: 'teleop',    label: '遥控类型',     subLabel: 'TAG CATEGORY: 遥控类型' },
+  { key: 'effector',  label: '执行末端类型', subLabel: 'TAG CATEGORY: 执行末端类型' },
+  { key: 'camera',    label: '相机类型',     subLabel: 'TAG CATEGORY: 相机类型' },
+  { key: 'camera_pos',label: '相机位置类型', subLabel: 'TAG CATEGORY: 相机位置类型' },
+  { type: 'section', label: 'D. 数据标注' },
+  { key: 'component', label: '组件类型',     subLabel: 'TAG CATEGORY: 组件类型' },
+  { key: 'region_annotation', label: '区域帧标注类别', subLabel: 'TAG CATEGORY: 帧区标注类别' },
 ];
 
 const initialTagsMap = {
-  project: [
-    { id: 1, name: 'InternalCommercial', desc: '内部-商业', count: 5 },
-    { id: 2, name: 'ExternalXupaosi', desc: '外部-芯片思', count: 2 },
-    { id: 3, name: 'InternalIndustrial', desc: '内部-工业需求', count: 1 },
-    { id: 4, name: 'Backflow', desc: '回传问题', count: 0 },
-    { id: 5, name: 'SimulatedCollection', desc: '模拟采集', count: 0 },
+  scene: [
+    { id: 1, name: 'Kitchen', desc: '厨房', count: 6 },
+    { id: 2, name: 'Supermarket', desc: '商超', count: 4 },
+    { id: 3, name: 'Industry', desc: '工业', count: 18 },
+    { id: 4, name: 'pharmacy', desc: '药房', count: 2 },
+    { id: 5, name: 'Scientific', desc: '科研', count: 1 },
+    { id: 6, name: 'Hotel', desc: '酒店', count: 0 },
+    { id: 7, name: 'Warehousing', desc: '仓储', count: 3 },
   ],
-  purpose: [
-    { id: 10, name: 'Training', desc: '模型训练', count: 3 },
-    { id: 11, name: 'Valid', desc: '效果评测', count: 1 },
+  template: [
+    { id: 10, name: 'SingleHandGrasp', desc: '单手抓取', count: 5 },
+    { id: 11, name: 'DualHandCarry', desc: '双手协同搬运', count: 3 },
+    { id: 12, name: 'ScrewCap', desc: '拧瓶盖', count: 2 },
+    { id: 13, name: 'CableManagement', desc: '线缆管理', count: 1 },
+    { id: 14, name: 'TabletopSorting', desc: '桌面分拣', count: 4 },
   ],
-  // ... other categories can follow same pattern
+  mode: [
+    { id: 20, name: 'Real', desc: '实机物理世界采集', count: 8 },
+    { id: 21, name: 'Sim', desc: '虚拟仿真引擎采集', count: 3 },
+  ],
+  teleop: [
+    { id: 30, name: 'VRController', desc: 'VR手柄设备', count: 6 },
+    { id: 31, name: 'MotionCapture', desc: '六轴动捕手套', count: 2 },
+    { id: 32, name: 'KeyboardMouse', desc: '键盘鼠标', count: 1 },
+    { id: 33, name: 'DualHandControl', desc: '双手操控', count: 4 },
+  ],
+  effector: [
+    { id: 40, name: 'TwoFingerGripper', desc: '工业二指夹爪', count: 7 },
+    { id: 41, name: 'DexterousHand', desc: '多指灵巧手', count: 3 },
+    { id: 42, name: 'VacuumSuction', desc: '真空吸盘', count: 2 },
+  ],
+  camera: [
+    { id: 50, name: 'RGB', desc: '彩色相机', count: 5 },
+    { id: 51, name: 'RGBD', desc: '深度相机', count: 8 },
+    { id: 52, name: 'StereoFisheye', desc: '双目鱼眼', count: 1 },
+    { id: 53, name: 'NightVisionIR', desc: '夜视红外', count: 0 },
+  ],
+  camera_pos: [
+    { id: 60, name: 'head', desc: '头部', count: 6 },
+    { id: 61, name: 'hand_left', desc: '左手腕', count: 4 },
+    { id: 62, name: 'hand_right', desc: '右手腕', count: 4 },
+    { id: 63, name: 'chest', desc: '胸部', count: 1 },
+  ],
+  component: [
+    { id: 70, name: 'RobotArm', desc: '机械臂', count: 5 },
+    { id: 71, name: 'Chassis', desc: '底盘履带', count: 2 },
+    { id: 72, name: 'LiftTorso', desc: '升降躯干', count: 1 },
+  ],
+  region_annotation: [
+    { id: 80, name: 'Teleoperation', desc: '遥操控制', count: 3 },
+    { id: 81, name: 'Autonomous', desc: '自主执行', count: 1 },
+  ],
 };
 
 const initialSubTagsMap = {
-  1: ['GroceryVLA', 'TakeOver', 'ZhiYuan', 'GroceryVLA_testback', 'GroceryVLA_takeover'],
-  2: ['SubTag_X1', 'SubTag_X2'],
-  3: ['Industrial_A1'],
-  10: ['Vision', 'Audio', 'Sensor'],
-  11: ['Quality'],
+  1: ['餐具整理', '烹饪操作', '食材处理', '清洁收纳', '取餐摆盘', '锅具操作'],
+  2: ['货架拣选', '商品扫码', '购物车装载', '价签更换'],
+  3: ['电子组装', '汽车零部件', '金属加工', '食品加工', '物流仓储', '焊接', '喷涂', '打磨', '搬运', '码垛', '分拣', '检测', '装配', '包装', '贴标', '上下料', '拧紧', '点胶'],
+  80: ['success', 'fail', 'takeover'],
 };
 
 export default function TaskLabelsPage() {
   const { message } = App.useApp();
-  const [selected, setSelected] = useState('project');
+  const [selected, setSelected] = useState('scene');
   const [tagsMap, setTagsMap] = useState(initialTagsMap);
   const [subTagsMap, setSubTagsMap] = useState(initialSubTagsMap);
   const [adding, setAdding] = useState(false);
@@ -120,33 +161,42 @@ export default function TaskLabelsPage() {
 
   return (
     <MainLayout>
-      <Breadcrumb items={[{ title: '首页' }, { title: '标签管理' }, { title: '任务标签' }]} style={{ marginBottom: 16 }} />
+      <Breadcrumb items={[{ title: '首页' }, { title: '基础数据' }, { title: '任务标签' }]} style={{ marginBottom: 16 }} />
 
       <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 160px)' }}>
 
         {/* Left Category List */}
         <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: 16, overflowY: 'auto' }}>
-          <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 12 }}>标签分类</Text>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {taskCategories.map(cat => (
-              <div
-                key={cat.key}
-                onClick={() => setSelected(cat.key)}
-                style={{
-                  padding: '12px 14px', borderRadius: 8, cursor: 'pointer',
-                  border: `1px solid ${selected === cat.key ? '#1890ff' : 'transparent'}`,
-                  background: selected === cat.key ? '#e6f7ff' : '#fafafa',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <div style={{ fontWeight: selected === cat.key ? 600 : 400, color: selected === cat.key ? '#1890ff' : '#262626', fontSize: 13 }}>
-                  {cat.label}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <Text strong style={{ fontSize: 14 }}>标签分类</Text>
+            <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {taskCategories.map((cat, idx) => {
+              if (cat.type === 'section') {
+                return (
+                  <div key={idx} style={{ padding: '12px 14px 4px', fontSize: 12, color: '#1890ff', fontWeight: 500 }}>
+                    <span style={{ marginRight: 6 }}>●</span>{cat.label}
+                  </div>
+                );
+              }
+              const isSelected = selected === cat.key;
+              return (
+                <div
+                  key={cat.key}
+                  onClick={() => setSelected(cat.key)}
+                  style={{
+                    padding: '10px 14px', borderRadius: 8, cursor: 'pointer',
+                    background: isSelected ? '#1890ff' : 'transparent',
+                    color: isSelected ? '#fff' : '#262626',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <div style={{ fontWeight: isSelected ? 600 : 400, fontSize: 13 }}>{cat.label}</div>
+                  <div style={{ fontSize: 10, color: isSelected ? 'rgba(255,255,255,0.7)' : '#bfbfbf', marginTop: 2, fontFamily: 'monospace' }}>{cat.subLabel}</div>
                 </div>
-                <div style={{ fontSize: 10, color: '#bfbfbf', marginTop: 2, fontFamily: 'monospace' }}>
-                  {cat.subLabel}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
