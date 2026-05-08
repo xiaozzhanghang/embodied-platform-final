@@ -82,7 +82,7 @@ export default function CollectTaskPage() {
                 </div>
 
                 <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <h3 className="page-header-title" style={{ margin: 0 }}>今日派发采集任务</h3>
+                    <h3 className="page-header-title" style={{ margin: 0 }}>采集任务</h3>
                     <Button type="primary" onClick={() => window.open('/collection/collect/connection/CT-20250301001', '_blank')}>设备连接自检</Button>
                 </div>
                 <Card className="search-form" style={{ marginBottom: 16 }}>
