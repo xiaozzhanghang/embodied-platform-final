@@ -12,7 +12,7 @@ export default function LoginPage() {
   const onFinish = () => {
     message.success('登录成功');
     setTimeout(() => {
-      router.push('/collection/tasks');
+      router.push('/collection/collect'); // Default to Collection Tasks list (Edge Client Flow)
     }, 500);
   };
 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button, Typography, Space, Badge, message, Tabs, Dropdown, Switch, Upload } from 'antd';
-import { CaretDownOutlined, ExpandOutlined, CompressOutlined, PauseCircleOutlined, PlayCircleOutlined, CloseCircleOutlined, StepBackwardOutlined, StepForwardOutlined, FastBackwardOutlined, FastForwardOutlined, PlusOutlined, DeleteOutlined, SyncOutlined, VideoCameraOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { CaretDownOutlined, ExpandOutlined, CompressOutlined, PauseCircleOutlined, PlayCircleOutlined, CloseCircleOutlined, StepBackwardOutlined, StepForwardOutlined, FastBackwardOutlined, FastForwardOutlined, PlusOutlined, DeleteOutlined, SyncOutlined, VideoCameraOutlined, InfoCircleOutlined, ApiOutlined, DashboardOutlined, HddOutlined, CheckCircleFilled, WarningFilled } from '@ant-design/icons';
 
 export default function WorkspacePage() {
   const router = useRouter();
@@ -118,19 +118,36 @@ export default function WorkspacePage() {
     <div style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
       
       {/* Top Header */}
-      <div style={{ height: 32, borderBottom: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 12, color: '#595959', background: '#fff' }}>
-        <Space size="middle">
-          <span>录制状态: {isRecording ? <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>🔴 录制中</span> : <span style={{ color: '#52c41a' }}>准备就绪</span>}</span>
-          <span>网络延迟: <span style={{ color: '#52c41a' }}>12ms</span></span>
-          <span>任务ID: <b>{taskId}</b></span>
-          <span>实体ID: <b>13563</b></span>
-          <span style={{ color: '#8c8c8c', maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>文件目录: collect-data/12837_13563/8855cd...</span>
+      <div style={{ height: 32, borderBottom: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 12, color: '#595959', background: '#f5f5f5' }}>
+        <Space size="large" split={<span style={{ color: '#d9d9d9' }}>|</span>}>
+          <Space size="small">
+            <ApiOutlined style={{ color: '#52c41a' }} />
+            <span>机器人直连: <CheckCircleFilled style={{ color: '#52c41a', fontSize: 10 }} /> <span style={{ color: '#52c41a' }}>正常 (1ms)</span></span>
+          </Space>
+          
+          <Space size="small">
+            <HddOutlined style={{ color: '#faad14' }} />
+            <span>本地磁盘: <span style={{ color: '#faad14' }}>剩余 128GB (12%)</span> <WarningFilled style={{ color: '#faad14', fontSize: 10 }} /></span>
+          </Space>
+
+          <Space size="small">
+            <DashboardOutlined style={{ color: '#1677ff' }} />
+            <span>CPU: 24%</span>
+            <span style={{ marginLeft: 4 }}>GPU: 68% (硬件解码中)</span>
+          </Space>
+          
+          <Space size="small">
+            <span>录制状态: {isRecording ? <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>🔴 录制中</span> : <span style={{ color: '#52c41a' }}>准备就绪</span>}</span>
+          </Space>
+          
+          <span style={{ color: '#8c8c8c', maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>目录: local-data/12837/</span>
         </Space>
+        
         <Space size="middle" style={{ color: '#8c8c8c' }}>
-          <span>Space: 录制/暂停</span>
-          <span>R: 作废当前</span>
-          <span>Enter: 提交并下一段</span>
-          <Button size="small" type="text" icon={<CloseCircleOutlined />} onClick={() => router.push('/collection/collect')} style={{ color: '#8c8c8c' }}>返回列表</Button>
+          <span><kbd style={{ padding: '0 4px', border: '1px solid #d9d9d9', borderRadius: 2 }}>Space</kbd> 录制/暂停</span>
+          <span><kbd style={{ padding: '0 4px', border: '1px solid #d9d9d9', borderRadius: 2 }}>R</kbd> 作废当前</span>
+          <span><kbd style={{ padding: '0 4px', border: '1px solid #d9d9d9', borderRadius: 2 }}>Enter</kbd> 提交并下一段</span>
+          <Button size="small" type="primary" danger ghost icon={<CloseCircleOutlined />} onClick={() => router.push('/collection/collect')}>退出工作台</Button>
         </Space>
       </div>
 
