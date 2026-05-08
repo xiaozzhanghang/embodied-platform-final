@@ -17,6 +17,27 @@ import {
 
 const { Title, Text } = Typography;
 
+const hardwareSteps = [
+  { title: '本地网络', icon: <GlobalOutlined />, desc: '检查以太网适配器' },
+  { title: '机器人控制箱', icon: <RobotOutlined />, desc: '建立 ROS2 通信握手' },
+  { title: '多目感知系统', icon: <VideoCameraOutlined />, desc: '3路相机流初始化' },
+  { title: '存储系统', icon: <HddOutlined />, desc: '本地 SSD 预热与权限确认' },
+];
+
+const logMessages = [
+  { time: '16:20:01', msg: '初始化边缘客户端硬件驱动...', type: 'info' },
+  { time: '16:20:02', msg: '正在扫描以太网接口 (en0)...', type: 'info' },
+  { time: '16:20:03', msg: '检测到网口直连: 192.168.1.50', type: 'success' },
+  { time: '16:20:04', msg: '正在尝试 Ping 机器人控制器 (192.168.1.100)...', type: 'info' },
+  { time: '16:20:05', msg: '机器人控制器响应正常 (Latency: 0.8ms)', type: 'success' },
+  { time: '16:20:06', msg: '正在建立 ROS2 Node: /edge_collector_node', type: 'info' },
+  { time: '16:20:07', msg: 'ROS2 握手成功, 版本: Galactic', type: 'success' },
+  { time: '16:20:08', msg: '开启相机预览流: [Front, Wrist, Side]', type: 'info' },
+  { time: '16:20:09', msg: '相机帧率校准中: 预计 30fps', type: 'info' },
+  { time: '16:20:10', msg: '本地磁盘写权限校验成功', type: 'success' },
+  { time: '16:20:11', msg: '自检完成: 系统已就绪。', type: 'done' },
+];
+
 export default function DeviceConnectionPage() {
   const router = useRouter();
   const params = useParams();
@@ -25,27 +46,6 @@ export default function DeviceConnectionPage() {
   const [logs, setLogs] = useState([]);
   const [scanning, setScanning] = useState(true);
   const logEndRef = useRef(null);
-
-  const hardwareSteps = [
-    { title: '本地网络', icon: <GlobalOutlined />, desc: '检查以太网适配器' },
-    { title: '机器人控制箱', icon: <RobotOutlined />, desc: '建立 ROS2 通信握手' },
-    { title: '多目感知系统', icon: <VideoCameraOutlined />, desc: '3路相机流初始化' },
-    { title: '存储系统', icon: <HddOutlined />, desc: '本地 SSD 预热与权限确认' },
-  ];
-
-  const logMessages = [
-    { time: '16:20:01', msg: '初始化边缘客户端硬件驱动...', type: 'info' },
-    { time: '16:20:02', msg: '正在扫描以太网接口 (en0)...', type: 'info' },
-    { time: '16:20:03', msg: '检测到网口直连: 192.168.1.50', type: 'success' },
-    { time: '16:20:04', msg: '正在尝试 Ping 机器人控制器 (192.168.1.100)...', type: 'info' },
-    { time: '16:20:05', msg: '机器人控制器响应正常 (Latency: 0.8ms)', type: 'success' },
-    { time: '16:20:06', msg: '正在建立 ROS2 Node: /edge_collector_node', type: 'info' },
-    { time: '16:20:07', msg: 'ROS2 握手成功, 版本: Galactic', type: 'success' },
-    { time: '16:20:08', msg: '开启相机预览流: [Front, Wrist, Side]', type: 'info' },
-    { time: '16:20:09', msg: '相机帧率校准中: 预计 30fps', type: 'info' },
-    { time: '16:20:10', msg: '本地磁盘写权限校验成功', type: 'success' },
-    { time: '16:20:11', msg: '自检完成: 系统已就绪。', type: 'done' },
-  ];
 
   useEffect(() => {
     if (step < hardwareSteps.length) {
@@ -125,13 +125,13 @@ export default function DeviceConnectionPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <MonitorOutlined style={{ color: '#1677ff', fontSize: 20 }} />
               <Title level={4} style={{ color: '#fff', margin: 0 }}>设备自检与握手中心</Title>
-              <Tag color="processing" style={{ marginLeft: 8 }}>Task ID: {params.taskId}</Tag>
+              <Tag color="processing" style={{ marginLeft: 8 }}>Task ID: {params?.taskId}</Tag>
             </div>
             <Text style={{ color: 'rgba(255,255,255,0.45)' }}>正在检测边缘端硬件环境的稳定性...</Text>
           </div>
         </Space>
         { !scanning && (
-          <Button type="primary" size="large" onClick={() => router.push(`/collection/collect/workspace/${params.taskId}`)}>
+          <Button type="primary" size="large" onClick={() => router.push(`/collection/collect/workspace/${params?.taskId}`)}>
             进入采集工作台
           </Button>
         )}
@@ -280,14 +280,16 @@ export default function DeviceConnectionPage() {
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {logs.map((log, i) => (
-                <div key={i} className="log-item">
-                  <span style={{ color: 'rgba(255,255,255,0.3)', marginRight: 10 }}>[{log.time}]</span>
-                  <span style={{ 
-                    color: log.type === 'success' ? '#52c41a' : log.type === 'done' ? '#1677ff' : '#fff'
-                  }}>
-                    {log.msg}
-                  </span>
-                </div>
+                log && (
+                  <div key={i} className="log-item">
+                    <span style={{ color: 'rgba(255,255,255,0.3)', marginRight: 10 }}>[{log?.time}]</span>
+                    <span style={{ 
+                      color: log?.type === 'success' ? '#52c41a' : log?.type === 'done' ? '#1677ff' : '#fff'
+                    }}>
+                      {log?.msg}
+                    </span>
+                  </div>
+                )
               ))}
               <div ref={logEndRef} />
             </div>
@@ -297,3 +299,4 @@ export default function DeviceConnectionPage() {
     </div>
   );
 }
+
