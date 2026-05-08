@@ -115,7 +115,7 @@ export default function WorkspacePage() {
   );
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
+    <div style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
       
       {/* Top Header */}
       <div style={{ height: 32, borderBottom: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 12, color: '#595959', background: '#fff' }}>
@@ -138,6 +138,7 @@ export default function WorkspacePage() {
       <div style={{ 
         flex: 1, 
         display: 'flex',
+        minHeight: 0,
         boxShadow: isRecording ? 'inset 0 0 0 4px #ff4d4f' : 'none',
         transition: 'box-shadow 0.3s ease-in-out',
         position: 'relative'
@@ -145,7 +146,7 @@ export default function WorkspacePage() {
         {isRecording && <div style={{ position: 'absolute', top: 16, right: 310, zIndex: 10, background: '#ff4d4f', color: '#fff', padding: '4px 12px', borderRadius: 4, fontWeight: 'bold', fontSize: 12, animation: 'blink 1s infinite' }}>● REC</div>}
         
         {/* Video Grid Wrapper */}
-        <div style={{ flex: 1, display: 'flex', backgroundColor: '#fafafa', padding: '16px', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'flex', backgroundColor: '#fafafa', padding: '16px', overflow: 'hidden', minHeight: 0, minWidth: 0 }}>
           
           {/* Full height/width grid */}
           <div style={{ 
@@ -219,7 +220,7 @@ export default function WorkspacePage() {
         </div>
 
         {/* Right Sidebar - 1 part */}
-        <div style={{ flex: 1, minWidth: 300, maxWidth: 400, display: 'flex', flexDirection: 'column', background: '#fafafa', borderLeft: '1px solid #e8e8e8' }}>
+        <div style={{ flex: 1, minWidth: 300, maxWidth: 400, display: 'flex', flexDirection: 'column', background: '#fafafa', borderLeft: '1px solid #e8e8e8', minHeight: 0 }}>
            
            {/* 3D View and Upload Section (Fixed at top) */}
            <div style={{ padding: '16px 16px 0 16px' }}>
