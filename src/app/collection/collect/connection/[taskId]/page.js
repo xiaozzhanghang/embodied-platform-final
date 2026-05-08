@@ -133,11 +133,7 @@ export default function DeviceConnectionPage() {
             <Text style={{ color: 'rgba(255,255,255,0.45)' }}>正在检测边缘端硬件环境的稳定性...</Text>
           </div>
         </Space>
-        { !scanning && (
-          <Button type="primary" size="large" onClick={() => router.push(`/collection/collect/status/${params?.taskId}`)}>
-            查看设备详细状态
-          </Button>
-        )}
+
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 32 }}>
