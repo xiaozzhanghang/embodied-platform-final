@@ -247,7 +247,6 @@ export default function DeviceTypesPage() {
           style={{ marginBottom: 12 }}
         />
         <Title level={4} style={{ margin: 0 }}>设备类型管理</Title>
-        <Text type="secondary">统一管理机器人设备及其组成部件的类型定义与 URDF 配置</Text>
       </div>
 
       {/* Search Bar */}

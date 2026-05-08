@@ -88,7 +88,6 @@ export default function DeviceListPage() {
           { title: '设备列表' },
         ]} style={{ marginBottom: 16 }} />
         <Title level={3} style={{ margin: 0, marginBottom: 8 }}>设备列表</Title>
-        <Text type="secondary">查看和管理所有已注册的机器人设备实例及其运行状态</Text>
       </div>
 
       <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>

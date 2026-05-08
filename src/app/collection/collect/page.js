@@ -59,9 +59,8 @@ export default function CollectTaskPage() {
 
     return (
             <MainLayout>
-                <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <h3 className="page-header-title" style={{ margin: 0 }}>采集任务</h3>
-                    <Button type="primary" onClick={() => window.open('/collection/collect/connection/CT-20250301001', '_blank')}>设备连接</Button>
                 </div>
                 <Card className="search-form" style={{ marginBottom: 16 }}>
                     <Form layout="inline">
@@ -73,8 +72,13 @@ export default function CollectTaskPage() {
                     </Form>
                 </Card>
 
-                <Card>
-                    <div className="table-toolbar"><span className="table-toolbar-title">采集任务列表</span></div>
+                <Card styles={{ body: { padding: 0 } }}>
+                    <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0' }}>
+                        <span style={{ fontSize: 16, fontWeight: 500 }}>采集任务列表</span>
+                        <Space>
+                            <Button type="primary" onClick={() => window.open('/collection/collect/connection/CT-20250301001', '_blank')}>设备连接</Button>
+                        </Space>
+                    </div>
                     <Table columns={columns} dataSource={mockData} scroll={{ x: 1600 }} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>
 

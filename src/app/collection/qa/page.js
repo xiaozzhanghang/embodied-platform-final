@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, Select, App, Row, Col, Progress, Form } from 'antd';
+import { Table, Button, Tag, Space, Input, Card, Typography, Select, App, Row, Col, Progress, Form, Modal } from 'antd';
 import { SearchOutlined, ReloadOutlined, DownloadOutlined, UserAddOutlined, EyeOutlined, FormOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -71,6 +71,42 @@ function QaContent() {
     const searchParams = useSearchParams();
     const batchFromUrl = searchParams.get('batch') || '';
     const [filterBatch, setFilterBatch] = useState(batchFromUrl);
+    
+    // Batch Allocate Modal State
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+    const [isAllocateModalVisible, setIsAllocateModalVisible] = useState(false);
+    const [allocateType, setAllocateType] = useState('batch'); // 'batch' | 'single'
+    const [singleAllocateRecord, setSingleAllocateRecord] = useState(null);
+    const [allocateForm] = Form.useForm();
+
+    const handleBatchAllocate = () => {
+        if (selectedRowKeys.length === 0) {
+            message.warning('请先在列表中勾选需要分配的质检任务！');
+            return;
+        }
+        setAllocateType('batch');
+        setIsAllocateModalVisible(true);
+        allocateForm.resetFields();
+    };
+
+    const handleSingleAllocate = (record) => {
+        setAllocateType('single');
+        setSingleAllocateRecord(record);
+        setIsAllocateModalVisible(true);
+        allocateForm.setFieldsValue({ assignee: '质检员00792' });
+    };
+
+    const handleAllocateSubmit = () => {
+        allocateForm.validateFields().then(values => {
+            const count = allocateType === 'batch' ? selectedRowKeys.length : 1;
+            message.success(`已成功将 ${count} 个任务分配给 ${values.assignee}`);
+            setIsAllocateModalVisible(false);
+            if (allocateType === 'batch') {
+                setSelectedRowKeys([]);
+            }
+            allocateForm.resetFields();
+        });
+    };
 
     const filteredData = filterBatch 
         ? mockQaData.filter(d => d.qaBatchId.includes(filterBatch))
@@ -109,6 +145,7 @@ function QaContent() {
                         size="small" 
                         icon={<FormOutlined />} 
                         style={{ padding: 0 }}
+                        onClick={() => handleSingleAllocate(record)}
                     >
                         重新分配
                     </Button>
@@ -151,18 +188,46 @@ function QaContent() {
                 <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0' }}>
                     <span style={{ fontSize: 16, fontWeight: 500 }}>质检任务列表</span>
                     <Space>
-                        <Button icon={<UserAddOutlined />}>批量分配</Button>
+                        <Button icon={<UserAddOutlined />} onClick={handleBatchAllocate}>批量分配</Button>
                         <Button icon={<DownloadOutlined />}>下载</Button>
                     </Space>
                 </div>
                 <Table 
-                    rowSelection={{ type: 'checkbox' }}
+                    rowSelection={{ 
+                        type: 'checkbox',
+                        selectedRowKeys,
+                        onChange: (keys) => setSelectedRowKeys(keys)
+                    }}
                     columns={columns} 
                     dataSource={filteredData} 
                     scroll={{ x: 3000 }} 
                     pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} 
                 />
             </Card>
+
+            <Modal
+                title={allocateType === 'batch' ? `批量重新分配 共(${selectedRowKeys.length})条` : '重新分配'}
+                open={isAllocateModalVisible}
+                onOk={handleAllocateSubmit}
+                onCancel={() => setIsAllocateModalVisible(false)}
+                okText="确定"
+                cancelText="取消"
+                destroyOnClose
+            >
+                <Form form={allocateForm} layout="horizontal" labelCol={{ span: 4 }} wrapperCol={{ span: 20 }} preserve={false} style={{ marginTop: 24 }}>
+                    <Form.Item 
+                        label="质检员" 
+                        name="assignee" 
+                        rules={[{ required: true, message: '请选择质检员' }]}
+                    >
+                        <Select placeholder="请选择质检员">
+                            <Select.Option value="质检员00792">质检员00792</Select.Option>
+                            <Select.Option value="质检员00793">质检员00793</Select.Option>
+                            <Select.Option value="专家质检组">专家质检组</Select.Option>
+                        </Select>
+                    </Form.Item>
+                </Form>
+            </Modal>
         </MainLayout>
     );
 }
