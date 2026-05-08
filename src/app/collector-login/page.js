@@ -1,231 +1,326 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Form, Input, Button, Checkbox, App } from 'antd';
-import { UserOutlined, LockOutlined, ApiOutlined, HddOutlined, DashboardOutlined, CheckCircleFilled, WarningFilled, ArrowLeftOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Form, Input, Button, Checkbox, App, ConfigProvider, theme } from 'antd';
+import { UserOutlined, LockOutlined, ApiOutlined, HddOutlined, DashboardOutlined, CheckCircleFilled, WarningFilled, ArrowLeftOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
+import heroImg from '../../assets/collector_login_hero.png';
 
 export default function CollectorLoginPage() {
   const { message } = App.useApp();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const onFinish = (values) => {
     setLoading(true);
-    // Save role to localStorage so MainLayout picks it up
     localStorage.setItem('userRole', 'COLLECTOR');
     setTimeout(() => {
-      message.success('采集员登录成功，正在进入采集工作台...');
+      message.success('采集员身份确认，接入边缘工作站...');
       setTimeout(() => {
         router.push('/collection/collect');
-      }, 400);
-    }, 800);
+      }, 600);
+    }, 1200);
   };
 
+  if (!mounted) return null;
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      background: '#0a1628',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif',
-    }}>
-      {/* Left Panel — Branding & Hardware Status */}
-      <div style={{
-        width: '50%',
-        background: 'linear-gradient(160deg, #0d1f3c 0%, #0a2a5e 50%, #0d1f3c 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '48px 56px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* Grid lines decoration */}
+    <ConfigProvider
+      theme={{
+        algorithm: theme.darkAlgorithm,
+        token: {
+          colorPrimary: '#1677ff',
+          borderRadius: 12,
+        },
+      }}
+    >
+      <div className="collector-login-root">
+        <style jsx global>{`
+          @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+          }
+          @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(22, 119, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0); }
+          }
+          @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          .collector-login-root {
+            min-height: 100vh;
+            display: flex;
+            background: #020817;
+            color: #f8fafc;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, sans-serif;
+          }
+          .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          }
+          .status-item {
+            transition: all 0.3s ease;
+            animation: fadeIn 0.8s ease backwards;
+          }
+          .status-item:hover {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(22, 119, 255, 0.3) !important;
+            transform: scale(1.02);
+          }
+          .hero-gradient-overlay {
+            background: linear-gradient(to right, rgba(2, 8, 23, 0.9) 0%, rgba(2, 8, 23, 0.4) 50%, rgba(2, 8, 23, 0.8) 100%);
+          }
+        `}</style>
+
+        {/* Left Panel — Hero & Status */}
         <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'linear-gradient(rgba(22,119,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(22,119,255,0.07) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }} />
-        {/* Glow orb */}
-        <div style={{
-          position: 'absolute', top: '30%', left: '40%',
-          width: 400, height: 400, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(22,119,255,0.15) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
+          width: '55%',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '60px',
+        }}>
+          {/* Background Image with Overlay */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: `url(${heroImg.src || heroImg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            zIndex: 0,
+          }} />
+          <div className="hero-gradient-overlay" style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
+          
+          {/* Grid lines decoration */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: 'linear-gradient(rgba(22,119,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(22,119,255,0.05) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+            zIndex: 2,
+          }} />
 
-        {/* Logo */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 10,
-              background: 'linear-gradient(135deg, #1677ff, #0958d9)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 20px rgba(22,119,255,0.5)',
-            }}>
-              <ApiOutlined style={{ color: '#fff', fontSize: 22 }} />
-            </div>
-            <div>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: 18, letterSpacing: 1 }}>具身智能数据平台</div>
-              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, letterSpacing: 2 }}>EDGE CLIENT · 采集工作站</div>
-            </div>
-          </div>
-          <div style={{ width: 48, height: 2, background: 'linear-gradient(90deg, #1677ff, transparent)' }} />
-        </div>
-
-        {/* Center text */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ fontSize: 36, fontWeight: 800, color: '#fff', lineHeight: 1.3, marginBottom: 16 }}>
-            数据采集<br />
-            <span style={{ color: '#1677ff' }}>边缘工作站</span>
-          </div>
-          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 15, lineHeight: 1.8, maxWidth: 340 }}>
-            专为一线采集员设计的本地化作业端，登录后直接进入采集工作台，高效完成每日派发的机器人数据录制任务。
-          </p>
-        </div>
-
-        {/* Hardware Status Panel */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: 2, marginBottom: 12, textTransform: 'uppercase' }}>设备状态</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[
-              { icon: <ApiOutlined />, label: '机器人直连', value: '已连接 (1ms)', valueColor: '#52c41a', suffix: <CheckCircleFilled style={{ color: '#52c41a', fontSize: 10 }} /> },
-              { icon: <HddOutlined />, label: '本地磁盘', value: '剩余 128GB (12%)', valueColor: '#faad14', suffix: <WarningFilled style={{ color: '#faad14', fontSize: 10 }} /> },
-              { icon: <DashboardOutlined />, label: 'CPU / GPU', value: '24%  /  68%', valueColor: '#1677ff' },
-            ].map((item, i) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                background: 'rgba(255,255,255,0.05)', borderRadius: 8,
-                padding: '10px 16px', border: '1px solid rgba(255,255,255,0.08)',
+          {/* Header/Logo */}
+          <div style={{ position: 'relative', zIndex: 10, animation: 'slideIn 0.8s ease' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 14,
+                background: 'linear-gradient(135deg, #1677ff, #0958d9)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 8px 16px rgba(22,119,255,0.3)',
+                animation: 'pulse 2s infinite',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>
-                  <span style={{ color: item.valueColor }}>{item.icon}</span>
-                  {item.label}
+                <ThunderboltOutlined style={{ color: '#fff', fontSize: 26 }} />
+              </div>
+              <div>
+                <div style={{ color: '#fff', fontWeight: 800, fontSize: 22, letterSpacing: 0.5, marginBottom: 2 }}>具身智能终端</div>
+                <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase' }}>Edge Workstation V1.0</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Title */}
+          <div style={{ position: 'relative', zIndex: 10, maxWidth: 500, animation: 'slideIn 1s ease' }}>
+            <div style={{ 
+              display: 'inline-block', 
+              padding: '6px 12px', 
+              background: 'rgba(22, 119, 255, 0.1)', 
+              borderRadius: 6, 
+              border: '1px solid rgba(22, 119, 255, 0.2)',
+              color: '#3b82f6',
+              fontSize: 12,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: 2,
+              marginBottom: 20
+            }}>
+              Collector Mode
+            </div>
+            <h1 style={{ fontSize: '48px', fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 24 }}>
+              高效采集<br />
+              <span style={{ 
+                background: 'linear-gradient(90deg, #1677ff, #60a5fa)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>加速智能演进</span>
+            </h1>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 17, lineHeight: 1.7, fontWeight: 400 }}>
+              面向现场作业人员优化的专用采集系统。本地化存储、硬件加速解码、秒级低延迟反馈，确保每一条轨迹数据的精准无误。
+            </p>
+          </div>
+
+          {/* Bottom hardware status */}
+          <div style={{ position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, animation: 'fadeIn 1.2s ease' }}>
+            {[
+              { icon: <ApiOutlined />, label: '机器人通讯', value: '1ms', color: '#10b981', status: 'Online' },
+              { icon: <HddOutlined />, label: '本地缓存', value: '128GB', color: '#f59e0b', status: '88% Free' },
+              { icon: <DashboardOutlined />, label: '系统负载', value: 'Balanced', color: '#3b82f6', status: 'CPU 24%' }
+            ].map((item, idx) => (
+              <div key={idx} className="status-item glass-panel" style={{ 
+                padding: '16px', 
+                borderRadius: 12, 
+                background: 'rgba(15, 23, 42, 0.4)',
+                animationDelay: `${0.2 * idx}s`
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <span style={{ color: item.color, fontSize: 18 }}>{item.icon}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{item.label}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: item.valueColor, fontSize: 13, fontWeight: 600 }}>
-                  {item.value}
-                  {item.suffix}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{item.value}</span>
+                  <span style={{ fontSize: 11, color: item.color, fontWeight: 600 }}>{item.status}</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Right Panel — Login Form */}
-      <div style={{
-        width: '50%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '48px 64px',
-        background: '#111c30',
-      }}>
-        {/* Back button */}
-        <div style={{ alignSelf: 'flex-start', marginBottom: 40 }}>
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => router.back()}
-            style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}
-          >
-            返回系统
-          </Button>
-        </div>
-
-        <div style={{ width: '100%', maxWidth: 380 }}>
-          {/* Title */}
-          <div style={{ marginBottom: 40 }}>
-            <h1 style={{ color: '#fff', fontWeight: 700, fontSize: 28, margin: 0 }}>采集员登录</h1>
-            <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: 8, fontSize: 14 }}>
-              登录后将直接进入今日采集任务工作台
-            </p>
+        {/* Right Panel — Login Form */}
+        <div style={{
+          width: '45%',
+          background: '#020817',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px',
+          position: 'relative',
+        }}>
+          {/* Back link */}
+          <div style={{ position: 'absolute', top: 40, left: 40 }}>
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => router.back()}
+              style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}
+              className="hover:text-blue-400"
+            >
+              返回系统主页
+            </Button>
           </div>
 
-          <Form
-            name="collector_login"
-            onFinish={onFinish}
-            size="large"
-            layout="vertical"
-          >
-            <Form.Item
-              name="username"
-              label={<span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>采集员账号</span>}
-              rules={[{ required: true, message: '请输入账号' }]}
-            >
-              <Input
-                prefix={<UserOutlined style={{ color: 'rgba(255,255,255,0.3)' }} />}
-                placeholder="请输入采集员账号"
-                autoComplete="off"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 8,
-                  color: '#fff',
-                  height: 48,
-                }}
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="password"
-              label={<span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>密码</span>}
-              rules={[{ required: true, message: '请输入密码' }]}
-            >
-              <Input.Password
-                prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.3)' }} />}
-                placeholder="请输入密码"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 8,
-                  color: '#fff',
-                  height: 48,
-                }}
-              />
-            </Form.Item>
-
-            <Form.Item>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Checkbox style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>记住账号</Checkbox>
-                <a style={{ color: '#1677ff', fontSize: 13 }}>忘记密码？</a>
+          <div style={{ width: '100%', maxWidth: 400, animation: 'fadeIn 1s ease' }}>
+            <div style={{ marginBottom: 48, textAlign: 'center' }}>
+              <div style={{ 
+                width: 64, height: 64, borderRadius: 20, 
+                background: 'rgba(22, 119, 255, 0.1)', 
+                margin: '0 auto 24px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '1px solid rgba(22, 119, 255, 0.2)'
+              }}>
+                <UserOutlined style={{ fontSize: 28, color: '#1677ff' }} />
               </div>
-            </Form.Item>
+              <h2 style={{ fontSize: 32, fontWeight: 800, color: '#fff', marginBottom: 12 }}>采集员登录</h2>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 15 }}>请输入您的采集站账号以开始作业</p>
+            </div>
 
-            <Form.Item style={{ marginTop: 8 }}>
-              <Button
-                type="primary"
-                htmlType="submit"
-                block
-                loading={loading}
-                style={{
-                  height: 50,
-                  fontSize: 16,
-                  fontWeight: 600,
-                  background: 'linear-gradient(135deg, #1677ff, #0958d9)',
-                  border: 'none',
-                  borderRadius: 8,
-                  boxShadow: '0 4px 20px rgba(22,119,255,0.45)',
-                }}
+            <Form
+              name="collector_login_final"
+              onFinish={onFinish}
+              size="large"
+              layout="vertical"
+              requiredMark={false}
+            >
+              <Form.Item
+                name="username"
+                label={<span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>采集端账号</span>}
+                rules={[{ required: true, message: '请输入账号' }]}
               >
-                登录工作站
-              </Button>
-            </Form.Item>
-          </Form>
+                <Input
+                  prefix={<UserOutlined style={{ color: 'rgba(255,255,255,0.3)' }} />}
+                  placeholder="Collector ID / Username"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 12,
+                    height: 52,
+                    color: '#fff',
+                  }}
+                />
+              </Form.Item>
 
-          {/* Hint */}
-          <div style={{
-            marginTop: 24, padding: '12px 16px',
-            background: 'rgba(22,119,255,0.1)', border: '1px solid rgba(22,119,255,0.25)',
-            borderRadius: 8, fontSize: 12, color: 'rgba(255,255,255,0.5)',
-            lineHeight: 1.8,
-          }}>
-            <CheckCircleFilled style={{ color: '#52c41a', marginRight: 6 }} />
-            完整保留平台导航权限，登录后直达<strong style={{ color: 'rgba(255,255,255,0.8)' }}>「采集工作台」</strong>任务列表
+              <Form.Item
+                name="password"
+                label={<span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>访问密码</span>}
+                rules={[{ required: true, message: '请输入密码' }]}
+                style={{ marginBottom: 16 }}
+              >
+                <Input.Password
+                  prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.3)' }} />}
+                  placeholder="Enter Password"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 12,
+                    height: 52,
+                    color: '#fff',
+                  }}
+                />
+              </Form.Item>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                <Checkbox style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>保持登录状态</Checkbox>
+                <Button type="link" style={{ padding: 0, height: 'auto', fontSize: 13, color: '#1677ff' }}>忘记密码?</Button>
+              </div>
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  loading={loading}
+                  style={{
+                    height: 56,
+                    fontSize: 16,
+                    fontWeight: 700,
+                    background: 'linear-gradient(90deg, #1677ff, #2563eb)',
+                    border: 'none',
+                    borderRadius: 12,
+                    boxShadow: '0 10px 20px -5px rgba(22, 119, 255, 0.4)',
+                  }}
+                >
+                  确认接入工作站
+                </Button>
+              </Form.Item>
+            </Form>
+
+            <div style={{ 
+              marginTop: 40, 
+              padding: '16px', 
+              borderRadius: 12, 
+              background: 'linear-gradient(135deg, rgba(22, 119, 255, 0.05), rgba(22, 119, 255, 0.01))',
+              border: '1px solid rgba(22, 119, 255, 0.1)',
+              textAlign: 'center'
+            }}>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0 }}>
+                <CheckCircleFilled style={{ color: '#10b981', marginRight: 8 }} />
+                已通过设备安全校验，本次登录环境安全有效
+              </p>
+            </div>
+          </div>
+
+          {/* Footer Copyright */}
+          <div style={{ position: 'absolute', bottom: 40, color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
+            © 2025 天奇股份 · 具身智能事业部
           </div>
         </div>
       </div>
-    </div>
+    </ConfigProvider>
   );
 }
+
+
