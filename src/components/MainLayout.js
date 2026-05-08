@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Layout, Menu, Avatar, Dropdown, Breadcrumb, Badge, Space, Typography, Tag, App, Modal, Form, Input, Button } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Breadcrumb, Badge, Space, Typography, Tag, App } from 'antd';
 import logoImg from '../assets/tq_logo.svg';
 import {
   DashboardOutlined,
@@ -120,9 +120,6 @@ const breadcrumbMap = {
 export default function MainLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [userRole, setUserRole] = useState(ROLES.ADMIN);
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [pendingRole, setPendingRole] = useState(null);
-  const [loginForm] = Form.useForm();
   const router = useRouter();
   const pathname = usePathname();
   const { message } = App.useApp();
@@ -136,10 +133,8 @@ export default function MainLayout({ children }) {
 
   const handleRoleChange = (role) => {
     if (role === ROLES.COLLECTOR) {
-      // Collector role requires a dedicated login flow
-      setPendingRole(role);
-      loginForm.resetFields();
-      setLoginModalOpen(true);
+      // Navigate to dedicated full-page collector login
+      router.push('/collector-login');
       return;
     }
     // Admin / QA switch directly
@@ -147,16 +142,6 @@ export default function MainLayout({ children }) {
     localStorage.setItem('userRole', role);
     message.success(`角色已切换为: ${role === ROLES.QA ? '质检员' : '超级管理员'}`);
     router.push('/collection/tasks');
-  };
-
-  const handleCollectorLogin = (values) => {
-    setUserRole(pendingRole);
-    localStorage.setItem('userRole', pendingRole);
-    setLoginModalOpen(false);
-    message.success('采集员登录成功，正在进入采集工作台...');
-    setTimeout(() => {
-      router.push('/collection/collect');
-    }, 400);
   };
 
   const crumbs = breadcrumbMap[pathname] || ['数据采集'];
@@ -317,44 +302,6 @@ export default function MainLayout({ children }) {
           color: #fff !important;
         }
       `}</style>
-      {/* Collector Login Modal */}
-      <Modal
-        open={loginModalOpen}
-        onCancel={() => setLoginModalOpen(false)}
-        footer={null}
-        width={400}
-        centered
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #1677ff, #0958d9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <UserOutlined style={{ color: '#fff', fontSize: 18 }} />
-            </div>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 15 }}>采集员登录</div>
-              <div style={{ fontSize: 12, color: '#8c8c8c', fontWeight: 400 }}>Edge Client — 数据采集端</div>
-            </div>
-          </div>
-        }
-      >
-        <div style={{ padding: '16px 0 0' }}>
-          <Form form={loginForm} layout="vertical" onFinish={handleCollectorLogin} size="large">
-            <Form.Item name="username" label="账号" rules={[{ required: true, message: '请输入采集员账号' }]}>
-              <Input prefix={<UserOutlined style={{ color: '#bfbfbf' }} />} placeholder="请输入采集员账号" autoComplete="off" autoFocus />
-            </Form.Item>
-            <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
-              <Input.Password prefix={<LockOutlined style={{ color: '#bfbfbf' }} />} placeholder="请输入密码" />
-            </Form.Item>
-            <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6, padding: '8px 12px', marginBottom: 16, fontSize: 12, color: '#52c41a' }}>
-              ✅ 登录后将直接进入 <strong>采集工作台</strong>，保留完整平台导航权限
-            </div>
-            <Form.Item style={{ marginBottom: 0 }}>
-              <Button type="primary" htmlType="submit" block style={{ height: 42, fontWeight: 600, background: 'linear-gradient(135deg, #1677ff, #0958d9)', border: 'none', boxShadow: '0 4px 12px rgba(22,119,255,0.35)' }}>
-                登 录
-              </Button>
-            </Form.Item>
-          </Form>
-        </div>
-      </Modal>
     </Layout>
   );
 }
