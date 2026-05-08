@@ -13,9 +13,11 @@ import {
   DeploymentUnitOutlined,
   PlayCircleOutlined,
   HistoryOutlined,
-  MessageOutlined
+  MessageOutlined,
+  SyncOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { Alert } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -23,15 +25,16 @@ export default function DeviceStatusPage() {
   const router = useRouter();
   const params = useParams();
   const [activeKey, setActiveKey] = useState('1');
+  const [isErrorMode, setIsErrorMode] = useState(true); // Simulate an error state initially
 
   const taskId = params?.taskId || 'CT-20250301001';
 
   const statusLogs = [
-    { time: '2026-05-08 16:20:11', msg: '系统自检完成: 所有核心模块通信正常', type: 'success' },
-    { time: '2026-05-08 16:20:10', msg: '机器人本体: 已进入就绪态 (Ready State)', type: 'info' },
-    { time: '2026-05-08 16:20:09', msg: 'VR设备: 6DOF 空间定位追踪正常', type: 'info' },
-    { time: '2026-05-08 16:20:08', msg: '主从臂设备: 力反馈电机自准直成功', type: 'info' },
-    { time: '2026-05-08 16:20:05', msg: '网络环境: 检测到 1000Mbps 网口直连', type: 'info' },
+    { time: '16:20:11', msg: '系统自检完成: 发现 1 个硬件模块异常', type: 'error' },
+    { time: '16:20:10', msg: '机器人本体: 已进入就绪态 (Ready State)', type: 'info' },
+    { time: '16:20:09', msg: 'VR设备: 信号丢失, 请检查 Link 连接线 或 电池', type: 'error' },
+    { time: '16:20:08', msg: '主从臂设备: 力反馈电机自准直成功', type: 'info' },
+    { time: '16:20:05', msg: '网络环境: 检测到 1000Mbps 网口直连', type: 'info' },
   ];
 
   const renderMasterSlave = () => (
@@ -214,21 +217,42 @@ export default function DeviceStatusPage() {
     <Row gutter={24}>
       <Col span={14}>
         <div style={{ 
-          background: '#f8f9fa', 
+          background: isErrorMode ? '#fff1f0' : '#f8f9fa', 
           borderRadius: 8, 
           height: 600, 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
           position: 'relative',
-          border: '1px solid #f0f0f0'
+          border: isErrorMode ? '1px solid #ffa39e' : '1px solid #f0f0f0',
+          transition: 'all 0.3s'
         }}>
+          <style jsx>{`
+            @keyframes pulse-red {
+              0% { box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.4); }
+              70% { box-shadow: 0 0 0 20px rgba(255, 77, 79, 0); }
+              100% { box-shadow: 0 0 0 0 rgba(255, 77, 79, 0); }
+            }
+            .error-pulse {
+              animation: pulse-red 2s infinite;
+              border-radius: 50%;
+            }
+          `}</style>
           <div style={{ textAlign: 'center' }}>
-            <MonitorOutlined style={{ fontSize: 120, color: '#bfbfbf' }} />
-            <div style={{ marginTop: 24, fontSize: 16, color: '#8c8c8c' }}>VR设备佩戴示意图 (3D Model Loading...)</div>
+            <div className={isErrorMode ? 'error-pulse' : ''} style={{ padding: 20 }}>
+              <MonitorOutlined style={{ fontSize: 120, color: isErrorMode ? '#ff4d4f' : '#bfbfbf' }} />
+            </div>
+            <div style={{ marginTop: 24, fontSize: 16, color: isErrorMode ? '#ff4d4f' : '#8c8c8c', fontWeight: isErrorMode ? 600 : 400 }}>
+              {isErrorMode ? '⚠️ VR 设备连接中断' : 'VR设备佩戴示意图 (3D Model Loading...)'}
+            </div>
+            {isErrorMode && (
+              <div style={{ marginTop: 12, padding: '8px 16px', background: '#fff', borderRadius: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', fontSize: 12, color: '#666' }}>
+                可能原因: 连接线松动 或 头显未上电
+              </div>
+            )}
           </div>
           <div style={{ position: 'absolute', top: 24, left: 24 }}>
-            <Title level={5}>| VR 感知设备状态</Title>
+            <Title level={5} style={{ color: isErrorMode ? '#cf1322' : 'inherit' }}>| VR 感知设备状态 {isErrorMode && '(异常)'}</Title>
           </div>
         </div>
       </Col>
@@ -242,25 +266,31 @@ export default function DeviceStatusPage() {
                 <Text strong>Meta Quest 3 (Wired)</Text>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                <Text type="secondary">追踪频率</Text>
-                <Text>90 Hz</Text>
+                <Text type="secondary">连接状态</Text>
+                <Tag color={isErrorMode ? 'error' : 'success'}>{isErrorMode ? '信号丢失' : '已连接'}</Tag>
               </div>
             </div>
           </div>
+          
+          <Divider style={{ margin: '8px 0' }} />
+
           <div>
-            <Title level={5}>| 手柄状态 (L/R)</Title>
-            <div style={{ background: '#f5f5f5', padding: 20, borderRadius: 8, textAlign: 'center' }}>
-              <Row gutter={20}>
-                <Col span={12}>
-                  <div style={{ fontWeight: 'bold', marginBottom: 8 }}>左手柄</div>
-                  <Badge status="success" text="已配对" />
-                </Col>
-                <Col span={12}>
-                  <div style={{ fontWeight: 'bold', marginBottom: 8 }}>右手柄</div>
-                  <Badge status="success" text="已配对" />
-                </Col>
-              </Row>
-            </div>
+            <Title level={5}>| 故障排查</Title>
+            {isErrorMode ? (
+              <div style={{ padding: '0 12px' }}>
+                <Alert
+                  message="检测到硬件连接异常"
+                  description="USB 总线带宽不足或设备固件版本过低。请尝试重新插拔 Link 串行接口。"
+                  type="error"
+                  showIcon
+                />
+                <Button type="primary" danger block style={{ marginTop: 16 }} icon={<SyncOutlined />}>
+                  启动自动化修复程序
+                </Button>
+              </div>
+            ) : (
+              <Text type="secondary" style={{ padding: '0 12px' }}>当前设备运行状态良好，无需排查。</Text>
+            )}
           </div>
         </Space>
       </Col>
@@ -279,14 +309,18 @@ export default function DeviceStatusPage() {
             </div>
           </Space>
           <Space>
+            <Button size="small" onClick={() => setIsErrorMode(!isErrorMode)} style={{ fontSize: 11 }}>
+              {isErrorMode ? '模拟恢复正常' : '模拟硬件故障'}
+            </Button>
             <Button icon={<HistoryOutlined />} onClick={() => router.push(`/collection/collect/connection/${taskId}`)}>重连设备</Button>
             <Button 
               type="primary" 
               size="large" 
+              disabled={isErrorMode}
               icon={<PlayCircleOutlined />} 
               onClick={() => router.push(`/collection/collect/workspace/${taskId}`)}
             >
-              确认并进入工作台
+              {isErrorMode ? '请先排除异常' : '确认并进入工作台'}
             </Button>
           </Space>
         </div>
@@ -306,7 +340,11 @@ export default function DeviceStatusPage() {
               },
               {
                 key: '2',
-                label: <Space><MonitorOutlined />VR设备</Space>,
+                label: <Space>
+                  <MonitorOutlined style={{ color: isErrorMode ? '#ff4d4f' : 'inherit' }} />
+                  <span style={{ color: isErrorMode ? '#ff4d4f' : 'inherit' }}>VR设备</span>
+                  {isErrorMode && <Badge dot color="#ff4d4f" />}
+                </Space>,
                 children: <div style={{ padding: 24 }}>{renderVREquipment()}</div>,
               },
               {
@@ -330,14 +368,14 @@ export default function DeviceStatusPage() {
           <Card 
             title={<div style={{ fontSize: 13 }}><MessageOutlined /> 运行信息</div>}
             size="small"
-            style={{ borderRadius: 8, borderColor: '#d9d9d9' }}
+            style={{ borderRadius: 8, borderColor: isErrorMode ? '#ffa39e' : '#d9d9d9', transition: 'all 0.3s' }}
             extra={<Button type="link" size="small">清空</Button>}
           >
             <div style={{ height: 180, overflowY: 'auto', fontSize: 12 }}>
-              {statusLogs.map((log, i) => (
+              {(isErrorMode ? statusLogs : statusLogs.filter(l => l.type !== 'error')).map((log, i) => (
                 <div key={i} style={{ marginBottom: 6 }}>
-                  <Text type="secondary" style={{ fontSize: 11 }}>[{log.time.split(' ')[1]}]</Text>{' '}
-                  <Text type={log.type === 'success' ? 'success' : 'default'}>{log.msg}</Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>[{log.time}]</Text>{' '}
+                  <Text type={log.type === 'error' ? 'danger' : log.type === 'success' ? 'success' : 'default'}>{log.msg}</Text>
                 </div>
               ))}
             </div>
