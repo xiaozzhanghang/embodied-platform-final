@@ -279,7 +279,7 @@ export default function DeviceStatusPage() {
             </div>
           </Space>
           <Space>
-            <Button icon={<HistoryOutlined />}>重连设备</Button>
+            <Button icon={<HistoryOutlined />} onClick={() => router.push(`/collection/collect/connection/${taskId}`)}>重连设备</Button>
             <Button 
               type="primary" 
               size="large" 

@@ -55,9 +55,12 @@ export default function DeviceConnectionPage() {
       return () => clearTimeout(timer);
     } else {
       setScanning(false);
-      message.success('所有硬件已就绪，可以开始采集任务');
+      message.success('所有硬件已就绪，正在跳转至状态看板...');
+      setTimeout(() => {
+        router.push(`/collection/collect/status/${params?.taskId}`);
+      }, 1500);
     }
-  }, [step]);
+  }, [step, params?.taskId, router]);
 
   useEffect(() => {
     let logIdx = 0;
