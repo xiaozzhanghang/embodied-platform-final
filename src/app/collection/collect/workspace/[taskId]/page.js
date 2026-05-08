@@ -20,7 +20,8 @@ import {
   MonitorOutlined,
   SaveOutlined,
   StepForwardOutlined,
-  SafetyCertificateOutlined
+  SafetyCertificateOutlined,
+  SyncOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
