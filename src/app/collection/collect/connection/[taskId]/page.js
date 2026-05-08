@@ -1,187 +1,299 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Button, Typography, Space, Card, Row, Col, Badge, Divider } from 'antd';
-import { CheckCircleFilled, WarningFilled } from '@ant-design/icons';
-
-import MainLayout from '@/components/MainLayout';
+import { Button, Card, Badge, Space, Typography, Tag, Progress, App } from 'antd';
+import { 
+  ApiOutlined, 
+  CheckCircleFilled, 
+  LoadingOutlined, 
+  RobotOutlined, 
+  VideoCameraOutlined, 
+  HddOutlined, 
+  ArrowLeftOutlined,
+  MonitorOutlined,
+  GlobalOutlined
+} from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
 export default function DeviceConnectionPage() {
   const router = useRouter();
   const params = useParams();
-  const taskId = params?.taskId || 'CT-20250301001';
-  
-  const [activeTab, setActiveTab] = useState('master_slave');
+  const { message } = App.useApp();
+  const [step, setStep] = useState(0);
+  const [logs, setLogs] = useState([]);
+  const [scanning, setScanning] = useState(true);
+  const logEndRef = useRef(null);
 
-  const tabs = [
-    { key: 'master_slave', title: '主从臂设备', status: '已连接', statusColor: '#52c41a' },
-    { key: 'robot', title: '机器人本体', status: '设备正常', statusColor: '#52c41a' },
-    { key: 'vr', title: 'VR 设备', status: '已连接', statusColor: '#52c41a' },
+  const hardwareSteps = [
+    { title: '本地网络', icon: <GlobalOutlined />, desc: '检查以太网适配器' },
+    { title: '机器人控制箱', icon: <RobotOutlined />, desc: '建立 ROS2 通信握手' },
+    { title: '多目感知系统', icon: <VideoCameraOutlined />, desc: '3路相机流初始化' },
+    { title: '存储系统', icon: <HddOutlined />, desc: '本地 SSD 预热与权限确认' },
   ];
 
-  const deviceData = {
-    master_slave: {
-      title: '主从臂设备信息',
-      desc: '主从臂用于控制机器人做同步运动，通过人手臂带动主臂的 7DOF 可移动机器人从臂完成动作采集。',
-      image: '/assets/images/master_slave.png',
-      imageTitle: '主从臂设备示意图',
-      props1: [
-        { label: '链路连接状态', value: <span style={{ color: '#52c41a', fontWeight: 'bold' }}>已连接</span> },
-        { label: '手柄输入', value: <span style={{ color: '#1677ff', fontWeight: 'bold' }}>L / R 正常</span> },
-        { label: '控制频率', value: <span style={{ fontWeight: 'bold' }}>500 Hz</span> },
-      ],
-      props2: [
-        { label: '右臂夹爪', value: <><Badge color="green" /> 已连接</> },
-        { label: '左臂夹爪', value: <><Badge color="green" /> 已连接</> },
-        { label: 'J1-J7 关节', value: <><Badge color="green" /> 在线</> },
-        { label: '手柄按钮', value: <><Badge color="green" /> 正常</> },
-      ]
-    },
-    robot: {
-      title: '机器人本体信息',
-      desc: '机器人本体聚合头部、双臂、相机、末端执行器、升降装置和底盘状态，是采集任务进入工作台前的设备门禁。',
-      image: '/assets/images/robot_body.png',
-      imageTitle: '机器人本体示意图',
-      props1: [
-        { label: '本机 IP', value: <span style={{ fontWeight: 'bold' }}>192.168.12.12</span> },
-        { label: 'SN', value: <span style={{ fontWeight: 'bold' }}>R001GB00AAEE812</span> },
-        { label: '设备电量', value: <span style={{ color: '#52c41a', fontWeight: 'bold' }}>74%</span> },
-      ],
-      props2: [
-        { label: '头部状态', value: <><Badge color="green" /> 设备正常</> },
-        { label: '头部相机状态', value: <><Badge color="green" /> 相机通信正常</> },
-        { label: '左/右臂状态', value: <><Badge color="green" /> 关节正常</> },
-        { label: '左/右末端执行器', value: <><Badge color="green" /> 夹爪正常</> },
-        { label: '升降装置', value: <><Badge color="green" /> 关节正常</> },
-        { label: '底盘状态', value: <><Badge color="orange" /> 待标定</> },
-      ]
-    },
-    vr: {
-      title: 'VR 设备信息',
-      desc: 'VR 设备提供第一视角监看、手柄按键与空间位姿输入，用于采集过程中的远程观察和动作确认。',
-      image: '/assets/images/vr_headset.png',
-      imageTitle: 'VR 设备示意图',
-      props1: [
-        { label: '头显链路', value: <span style={{ color: '#52c41a', fontWeight: 'bold' }}>已连接</span> },
-        { label: '左手柄', value: <span style={{ color: '#1677ff', fontWeight: 'bold' }}>已配对</span> },
-        { label: '右手柄', value: <span style={{ color: '#1677ff', fontWeight: 'bold' }}>已配对</span> },
-      ],
-      props2: [
-        { label: '头显画面', value: <><Badge color="green" /> 在线</> },
-        { label: '左右手柄', value: <><Badge color="green" /> 在线</> },
-        { label: '空间定位', value: <><Badge color="green" /> 正常</> },
-        { label: '按键映射', value: <><Badge color="green" /> 正常</> },
-      ]
-    }
-  };
+  const logMessages = [
+    { time: '16:20:01', msg: '初始化边缘客户端硬件驱动...', type: 'info' },
+    { time: '16:20:02', msg: '正在扫描以太网接口 (en0)...', type: 'info' },
+    { time: '16:20:03', msg: '检测到网口直连: 192.168.1.50', type: 'success' },
+    { time: '16:20:04', msg: '正在尝试 Ping 机器人控制器 (192.168.1.100)...', type: 'info' },
+    { time: '16:20:05', msg: '机器人控制器响应正常 (Latency: 0.8ms)', type: 'success' },
+    { time: '16:20:06', msg: '正在建立 ROS2 Node: /edge_collector_node', type: 'info' },
+    { time: '16:20:07', msg: 'ROS2 握手成功, 版本: Galactic', type: 'success' },
+    { time: '16:20:08', msg: '开启相机预览流: [Front, Wrist, Side]', type: 'info' },
+    { time: '16:20:09', msg: '相机帧率校准中: 预计 30fps', type: 'info' },
+    { time: '16:20:10', msg: '本地磁盘写权限校验成功', type: 'success' },
+    { time: '16:20:11', msg: '自检完成: 系统已就绪。', type: 'done' },
+  ];
 
-  const currentData = deviceData[activeTab];
+  useEffect(() => {
+    if (step < hardwareSteps.length) {
+      const timer = setTimeout(() => {
+        setStep(s => s + 1);
+      }, 2000);
+      return () => clearTimeout(timer);
+    } else {
+      setScanning(false);
+      message.success('所有硬件已就绪，可以开始采集任务');
+    }
+  }, [step]);
+
+  useEffect(() => {
+    let logIdx = 0;
+    const logInterval = setInterval(() => {
+      if (logIdx < logMessages.length) {
+        setLogs(prev => [...prev, logMessages[logIdx]]);
+        logIdx++;
+      } else {
+        clearInterval(logInterval);
+      }
+    }, 1000);
+    return () => clearInterval(logInterval);
+  }, []);
+
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logs]);
 
   return (
-    <MainLayout>
-      <div style={{ height: '100%', background: '#f0f2f5', display: 'flex', flexDirection: 'column', margin: '-24px' }}>
-      
+    <div style={{ 
+      minHeight: '100vh', 
+      background: '#020817', 
+      padding: '40px',
+      color: '#fff',
+      fontFamily: 'Inter, -apple-system, sans-serif'
+    }}>
+      <style jsx global>{`
+        @keyframes radar-pulse {
+          0% { transform: scale(0.5); opacity: 0; }
+          50% { opacity: 0.5; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+        @keyframes scan-line {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .radar-circle {
+          position: absolute;
+          border: 1px solid #1677ff;
+          border-radius: 50%;
+          animation: radar-pulse 3s infinite linear;
+        }
+        .log-item {
+          font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+          font-size: 13px;
+          margin-bottom: 4px;
+          animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       {/* Header */}
-      <div style={{ height: 64, background: '#f0f2f5', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-           <div style={{ fontSize: 10, color: '#8c8c8c', fontWeight: 'bold', letterSpacing: 1 }}>DEVICE CONNECTION</div>
-           <div style={{ fontSize: 20, fontWeight: 'bold', color: '#1f1f1f' }}>设备连接状态</div>
-        </div>
-        <Space size="middle">
-          <Button size="large" onClick={() => router.push('/collection/collect')}>返回采集任务</Button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
+        <Space size="large">
+          <Button 
+            type="text" 
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => router.back()} 
+            style={{ color: 'rgba(255,255,255,0.45)' }}
+          />
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <MonitorOutlined style={{ color: '#1677ff', fontSize: 20 }} />
+              <Title level={4} style={{ color: '#fff', margin: 0 }}>设备自检与握手中心</Title>
+              <Tag color="processing" style={{ marginLeft: 8 }}>Task ID: {params.taskId}</Tag>
+            </div>
+            <Text style={{ color: 'rgba(255,255,255,0.45)' }}>正在检测边缘端硬件环境的稳定性...</Text>
+          </div>
         </Space>
+        { !scanning && (
+          <Button type="primary" size="large" onClick={() => router.push(`/collection/collect/workspace/${params.taskId}`)}>
+            进入采集工作台
+          </Button>
+        )}
       </div>
 
-      {/* Main Content */}
-      <div style={{ flex: 1, padding: '0 24px 24px 24px', display: 'flex', flexDirection: 'column' }}>
-        
-        {/* Top Tabs Card */}
-        <div style={{ background: '#fff', borderRadius: 8, padding: '16px 24px', marginBottom: 24, display: 'flex', gap: 16 }}>
-          {tabs.map(tab => (
-            <div 
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{ 
-                padding: '8px 24px', 
-                borderRadius: 4, 
-                border: activeTab === tab.key ? '1px solid #1677ff' : '1px solid #e8e8e8',
-                background: activeTab === tab.key ? '#e6f4ff' : '#fff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 32 }}>
+        {/* Left: Visualization */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Main Scanner Card */}
+          <Card styles={{ body: { padding: 0 } }} style={{ 
+            background: 'rgba(255,255,255,0.02)', 
+            border: '1px solid rgba(255,255,255,0.1)', 
+            borderRadius: 20,
+            height: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Background Grid */}
+            <div style={{ 
+              position: 'absolute', inset: 0, 
+              backgroundImage: 'radial-gradient(circle at center, rgba(22,119,255,0.05) 0, transparent 70%), linear-gradient(rgba(22,119,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(22,119,255,0.03) 1px, transparent 1px)',
+              backgroundSize: '100% 100%, 40px 40px, 40px 40px',
+              zIndex: 0
+            }} />
+
+            {/* Radar Animation */}
+            <div style={{ position: 'relative', width: 400, height: 400, zIndex: 1 }}>
+              <div className="radar-circle" style={{ inset: 0, animationDelay: '0s' }} />
+              <div className="radar-circle" style={{ inset: 0, animationDelay: '1s' }} />
+              <div className="radar-circle" style={{ inset: 0, animationDelay: '2s' }} />
+              
+              {/* Spinning Scan Line */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'conic-gradient(from 0deg, transparent 270deg, rgba(22, 119, 255, 0.2) 360deg)',
+                borderRadius: '50%',
+                animation: 'scan-line 4s infinite linear',
+                border: '1px solid rgba(255,255,255,0.1)'
+              }} />
+
+              {/* Hardware Points */}
+              <div style={{ position: 'absolute', top: '20%', left: '30%' }}>
+                <Badge status={step > 1 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>ROBOT ARM</span>} />
+              </div>
+              <div style={{ position: 'absolute', top: '40%', right: '25%' }}>
+                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>CAM_01 (FRONT)</span>} />
+              </div>
+              <div style={{ position: 'absolute', bottom: '30%', left: '45%' }}>
+                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>CAM_02 (WRIST)</span>} />
+              </div>
+
+              {/* Center Icon */}
+              <div style={{ 
+                position: 'absolute', top: '50%', left: '50%', 
+                transform: 'translate(-50%, -50%)',
+                width: 64, height: 64, borderRadius: '50%',
+                background: 'rgba(22, 119, 255, 0.2)',
+                border: '2px solid #1677ff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 30px rgba(22, 119, 255, 0.4)'
+              }}>
+                {scanning ? <LoadingOutlined style={{ fontSize: 32, color: '#1677ff' }} /> : <CheckCircleFilled style={{ fontSize: 32, color: '#52c41a' }} />}
+              </div>
+            </div>
+
+            {/* Scanning Text */}
+            <div style={{ position: 'absolute', bottom: 40, textAlign: 'center', width: '100%' }}>
+              <div style={{ color: '#1677ff', fontSize: 18, fontWeight: 700, letterSpacing: 2 }}>
+                {scanning ? 'SCANNING HARDWARE...' : 'SYSTEM READY'}
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, marginTop: 4 }}>
+                {scanning ? `正在建立第 ${step + 1} 项关键连接...` : '所有底层模块通讯已通过验证'}
+              </div>
+            </div>
+          </Card>
+
+          {/* Steps Progress */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+            {hardwareSteps.map((item, idx) => (
+              <Card key={idx} style={{ 
+                background: idx === step ? 'rgba(22, 119, 255, 0.1)' : idx < step ? 'rgba(82, 196, 26, 0.05)' : 'rgba(255,255,255,0.02)',
+                border: idx === step ? '1px solid #1677ff' : idx < step ? '1px solid #52c41a' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 12,
                 transition: 'all 0.3s'
-              }}
-            >
-              <span style={{ fontWeight: 500, color: activeTab === tab.key ? '#1677ff' : '#333' }}>{tab.title}</span>
-              <span style={{ fontSize: 12, color: tab.statusColor, display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Badge color={tab.statusColor} /> {tab.status}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Split Layout */}
-        <div style={{ display: 'flex', gap: 24, flex: 1 }}>
-          
-          {/* Left Image Panel */}
-          <div style={{ width: 400, background: '#fff', borderRadius: 8, padding: 24, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <span style={{ fontSize: 16, fontWeight: 'bold', color: '#333' }}>{currentData.imageTitle}</span>
-              <span style={{ color: '#52c41a', fontWeight: 'bold' }}>已连接</span>
-            </div>
-            <div style={{ flex: 1, background: '#f5f5f5', borderRadius: 8, overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <img src={currentData.image} alt={currentData.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-          </div>
-
-          {/* Right Info Panel */}
-          <div style={{ flex: 1, background: '#fff', borderRadius: 8, padding: 32, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-            
-            <div style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>{currentData.title}</div>
-            <div style={{ color: '#595959', fontSize: 14, marginBottom: 40, lineHeight: 1.6, maxWidth: 800 }}>
-              {currentData.desc}
-            </div>
-
-            {/* Properties Group 1 */}
-            <div style={{ maxWidth: 600, marginBottom: 40 }}>
-              {currentData.props1.map((prop, idx) => (
-                <div key={idx} style={{ display: 'flex', padding: '12px 0', borderBottom: '1px dashed #f0f0f0' }}>
-                  <div style={{ width: 200, color: '#595959' }}>{prop.label}</div>
-                  <div style={{ flex: 1 }}>{prop.value}</div>
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ 
+                    width: 32, height: 32, borderRadius: 8, 
+                    background: idx <= step ? '#1677ff' : 'rgba(255,255,255,0.1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    {idx < step ? <CheckCircleFilled style={{ color: '#fff' }} /> : React.cloneElement(item.icon, { style: { color: '#fff' } })}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{item.title}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{item.desc}</div>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 24 }}>状态信息</div>
-            
-            {/* Properties Group 2 (Grid) */}
-            <div style={{ maxWidth: 800, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px 48px', marginBottom: 48 }}>
-              {currentData.props2.map((prop, idx) => (
-                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
-                  <span style={{ color: '#595959' }}>{prop.label}</span>
-                  <span style={{ fontWeight: 500 }}>{prop.value}</span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 16 }}>参数设置</div>
-            <Space size="middle">
-              <Button size="large">高度调整</Button>
-              <Button size="large">头部视角调整</Button>
-              <Button size="large">夹爪调整</Button>
-            </Space>
-
-
-
+              </Card>
+            ))}
           </div>
         </div>
 
+        {/* Right: Console Logs */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Quick Metrics */}
+          <Card style={{ background: '#111c30', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16 }}>
+            <Title level={5} style={{ color: '#fff', marginBottom: 20 }}>实时连接指标</Title>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>ROS2 Heartbeat</span>
+                  <span style={{ color: '#52c41a' }}>STABLE</span>
+                </div>
+                <Progress percent={98} size="small" strokeColor="#1677ff" showInfo={false} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>Camera Sync Lag</span>
+                  <span style={{ color: '#faad14' }}>2ms</span>
+                </div>
+                <Progress percent={15} size="small" strokeColor="#faad14" showInfo={false} />
+              </div>
+            </div>
+          </Card>
+
+          {/* Terminal Console */}
+          <div style={{ 
+            flex: 1, 
+            background: '#000', 
+            borderRadius: 16, 
+            border: '1px solid rgba(255,255,255,0.1)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f56' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#27c93f' }} />
+              <span style={{ marginLeft: 8, fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Terminal - collector_v1.log</span>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {logs.map((log, i) => (
+                <div key={i} className="log-item">
+                  <span style={{ color: 'rgba(255,255,255,0.3)', marginRight: 10 }}>[{log.time}]</span>
+                  <span style={{ 
+                    color: log.type === 'success' ? '#52c41a' : log.type === 'done' ? '#1677ff' : '#fff'
+                  }}>
+                    {log.msg}
+                  </span>
+                </div>
+              ))}
+              <div ref={logEndRef} />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    </MainLayout>
   );
 }
