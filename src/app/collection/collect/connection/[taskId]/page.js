@@ -131,8 +131,8 @@ export default function DeviceConnectionPage() {
           </div>
         </Space>
         { !scanning && (
-          <Button type="primary" size="large" onClick={() => router.push(`/collection/collect/workspace/${params?.taskId}`)}>
-            进入采集工作台
+          <Button type="primary" size="large" onClick={() => router.push(`/collection/collect/status/${params?.taskId}`)}>
+            查看设备详细状态
           </Button>
         )}
       </div>
