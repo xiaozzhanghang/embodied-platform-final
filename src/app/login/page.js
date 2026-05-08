@@ -71,9 +71,7 @@ export default function LoginPage() {
             </Button>
           </Form.Item>
         </Form>
-        <div style={{ textAlign: 'center', color: 'rgba(0,0,0,0.25)', fontSize: 12, marginTop: 16 }}>
-          百度智能云 © 2025 具身智能数据平台
-        </div>
+
       </div>
     </div>
   );

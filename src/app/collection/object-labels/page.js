@@ -8,18 +8,18 @@ import MainLayout from '@/components/MainLayout';
 const { Text } = Typography;
 
 const objectCategories = [
-  { type: 'section', label: 'A. 物体信息' },
+  { type: 'section', label: '物体信息' },
   { key: 'obj_type', label: '物体类型', subLabel: 'TAG CATEGORY: 物体类型' },
   { key: 'scene', label: '适用场景', subLabel: 'TAG CATEGORY: 场景分组' },
   { key: 'asset', label: '资产标签', subLabel: 'TAG CATEGORY: 资产归属' },
-  { type: 'section', label: 'B. 视觉感知特性' },
+  { type: 'section', label: '视觉感知特性' },
   { key: 'color', label: '颜色特性', subLabel: 'TAG CATEGORY: 颜色特性' },
   { key: 'optical', label: '光学特性', subLabel: 'TAG CATEGORY: 光学特性' },
   { key: 'material', label: '材质特性', subLabel: 'TAG CATEGORY: 材质特性' },
-  { type: 'section', label: 'C. 物理几何特性' },
+  { type: 'section', label: '物理几何特性' },
   { key: 'shape', label: '形状特性', subLabel: 'TAG CATEGORY: 形状特性' },
   { key: 'morphology', label: '形态特性', subLabel: 'TAG CATEGORY: 形态特性' },
-  { type: 'section', label: 'D. 动态行为特性' },
+  { type: 'section', label: '动态行为特性' },
   { key: 'motion', label: '运动特性', subLabel: 'TAG CATEGORY: 运动特性' },
 ];
 
@@ -128,7 +128,22 @@ export default function ObjectLabelsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {objectCategories.map((item, idx) => {
               if (item.type === 'section') {
-                return (<div key={idx} style={{ padding: '12px 14px 4px', fontSize: 12, color: '#1890ff', fontWeight: 500 }}><span style={{ marginRight: 6 }}>●</span>{item.label}</div>);
+                return (
+                  <div key={idx} style={{
+                    padding: '10px 12px',
+                    marginTop: idx === 0 ? 0 : 12,
+                    marginBottom: 4,
+                    borderLeft: '3px solid #1890ff',
+                    background: 'linear-gradient(90deg, #e6f4ff, transparent)',
+                    borderRadius: '0 6px 6px 0',
+                    fontSize: 12,
+                    color: '#1890ff',
+                    fontWeight: 600,
+                    letterSpacing: '0.5px',
+                  }}>
+                    {item.label}
+                  </div>
+                );
               }
               const isSelected = selected === item.key;
               return (

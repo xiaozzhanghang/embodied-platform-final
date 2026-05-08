@@ -8,16 +8,16 @@ import MainLayout from '@/components/MainLayout';
 const { Text } = Typography;
 
 const taskCategories = [
-  { type: 'section', label: 'B. 采集场景' },
+  { type: 'section', label: '采集场景' },
   { key: 'scene',     label: '场景分类',     subLabel: 'TAG CATEGORY: 场景分类' },
   { key: 'template',  label: '动作模板',     subLabel: 'TAG CATEGORY: 动作模板' },
-  { type: 'section', label: 'C. 硬件配置' },
+  { type: 'section', label: '硬件配置' },
   { key: 'mode',      label: '采集模式',     subLabel: 'TAG CATEGORY: 采集模式' },
   { key: 'teleop',    label: '遥控类型',     subLabel: 'TAG CATEGORY: 遥控类型' },
   { key: 'effector',  label: '执行末端类型', subLabel: 'TAG CATEGORY: 执行末端类型' },
   { key: 'camera',    label: '相机类型',     subLabel: 'TAG CATEGORY: 相机类型' },
   { key: 'camera_pos',label: '相机位置类型', subLabel: 'TAG CATEGORY: 相机位置类型' },
-  { type: 'section', label: 'D. 数据标注' },
+  { type: 'section', label: '数据标注' },
   { key: 'component', label: '组件类型',     subLabel: 'TAG CATEGORY: 组件类型' },
   { key: 'region_annotation', label: '区域帧标注类别', subLabel: 'TAG CATEGORY: 帧区标注类别' },
 ];
@@ -175,8 +175,19 @@ export default function TaskLabelsPage() {
             {taskCategories.map((cat, idx) => {
               if (cat.type === 'section') {
                 return (
-                  <div key={idx} style={{ padding: '12px 14px 4px', fontSize: 12, color: '#1890ff', fontWeight: 500 }}>
-                    <span style={{ marginRight: 6 }}>●</span>{cat.label}
+                  <div key={idx} style={{
+                    padding: '10px 12px',
+                    marginTop: idx === 0 ? 0 : 12,
+                    marginBottom: 4,
+                    borderLeft: '3px solid #1890ff',
+                    background: 'linear-gradient(90deg, #e6f4ff, transparent)',
+                    borderRadius: '0 6px 6px 0',
+                    fontSize: 12,
+                    color: '#1890ff',
+                    fontWeight: 600,
+                    letterSpacing: '0.5px',
+                  }}>
+                    {cat.label}
                   </div>
                 );
               }

@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, Select, App, Row, Col, Progress, Form } from 'antd';
-import { SearchOutlined, ReloadOutlined, DownloadOutlined, UserAddOutlined, EyeOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, DownloadOutlined, UserAddOutlined, EyeOutlined, FormOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title } = Typography;
@@ -101,16 +101,25 @@ function QaContent() {
         { title: '已质检', dataIndex: 'isQaed', key: 'isQaed', width: 80 },
         { title: '通过质检(数量)', dataIndex: 'passedCount', key: 'passedCount', width: 120 },
         {
-            title: '操作', key: 'action', width: 100, fixed: 'right',
+            title: '操作', key: 'action', width: 200, fixed: 'right',
             render: (_, record) => (
-                <Space>
+                <Space size="middle">
                     <Button 
                         type="link" 
                         size="small" 
-                        icon={<EyeOutlined />} 
+                        icon={<FormOutlined />} 
+                        style={{ padding: 0 }}
+                    >
+                        重新分配
+                    </Button>
+                    <Button 
+                        type="link" 
+                        size="small" 
+                        icon={<SearchOutlined />} 
+                        style={{ padding: 0 }}
                         onClick={() => router.push(`/collection/qa/${record.instanceId}`)}
                     >
-                        查看
+                        质检
                     </Button>
                 </Space>
             )
@@ -119,12 +128,8 @@ function QaContent() {
 
     return (
         <MainLayout>
-            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <Title level={4} style={{ margin: 0 }}>数据质检</Title>
-                <Space>
-                    <Button icon={<UserAddOutlined />}>批量分配</Button>
-                    <Button icon={<DownloadOutlined />}>下载</Button>
-                </Space>
             </div>
 
             <Card className="search-form" style={{ marginBottom: 16 }}>
@@ -143,7 +148,15 @@ function QaContent() {
             </Card>
 
             <Card styles={{ body: { padding: 0 } }}>
+                <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0' }}>
+                    <span style={{ fontSize: 16, fontWeight: 500 }}>质检任务列表</span>
+                    <Space>
+                        <Button icon={<UserAddOutlined />}>批量分配</Button>
+                        <Button icon={<DownloadOutlined />}>下载</Button>
+                    </Space>
+                </div>
                 <Table 
+                    rowSelection={{ type: 'checkbox' }}
                     columns={columns} 
                     dataSource={filteredData} 
                     scroll={{ x: 3000 }} 

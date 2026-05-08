@@ -1,95 +1,117 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Card, Typography, Breadcrumb, Badge, App, Modal, Descriptions } from 'antd';
-import { ArrowLeftOutlined, EyeOutlined, PlayCircleOutlined, CheckCircleOutlined, StopOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Select, App } from 'antd';
+import { SearchOutlined, ReloadOutlined, CloseOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-
-const { Title, Text } = Typography;
-
-const mockSequences = [
-  { 
-    key: '1', 
-    seqId: 'SEQ-10029-01', 
-    filePath: '/mnt/data/sim_coll/CT-001/INST-001/seq_01.h5', 
-    sizeInfo: '1.2GB / 153帧', 
-    isTakeover: '否', 
-    parseStatus: '解析完成', 
-    uploadTime: '2025-03-01 09:05', 
-    reviewStatus: '待覆检' 
-  },
-  { 
-    key: '2', 
-    seqId: 'SEQ-10029-02', 
-    filePath: '/mnt/data/sim_coll/CT-001/INST-001/seq_02.h5', 
-    sizeInfo: '0.8GB / 92帧', 
-    isTakeover: '是', 
-    parseStatus: '解析完成', 
-    uploadTime: '2025-03-01 09:15', 
-    reviewStatus: '覆检通过' 
-  },
-];
 
 export default function QaSequencePage() {
   const { instanceId: id } = useParams();
   const router = useRouter();
-  const { message } = App.useApp();
 
   const columns = [
-    { title: '序列包编号', dataIndex: 'seqId', key: 'seqId', width: 150 },
-    { title: '文件路径', dataIndex: 'filePath', key: 'filePath', ellipsis: true },
-    { title: '大小/帧数', dataIndex: 'sizeInfo', key: 'sizeInfo', width: 150 },
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
+    { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 100 },
+    { title: '设备SN', dataIndex: 'deviceSN', key: 'deviceSN', width: 120 },
+    { title: '实例', dataIndex: 'instance', key: 'instance', width: 100 },
+    { title: '文件路径', dataIndex: 'filePath', key: 'filePath', ellipsis: true, width: 200 },
+    { title: '文件大小', dataIndex: 'fileSize', key: 'fileSize', width: 100 },
+    { title: '内容时长', dataIndex: 'duration', key: 'duration', width: 100 },
     { title: '是否接管', dataIndex: 'isTakeover', key: 'isTakeover', width: 100 },
-    { title: '解析状态', dataIndex: 'parseStatus', key: 'parseStatus', width: 120, render: (s) => <Tag color="blue">{s}</Tag> },
-    { title: '上传时间', dataIndex: 'uploadTime', key: 'uploadTime', width: 170 },
-    { title: '覆检状态', dataIndex: 'reviewStatus', key: 'reviewStatus', width: 120, render: (s) => <Tag color={s === '覆检通过' ? 'success' : 'orange'}>{s}</Tag> },
-    {
-      title: '操作', key: 'action', width: 220, fixed: 'right',
-      render: (_, record) => (
+    { 
+      title: '解析状态', 
+      dataIndex: 'parseStatus', 
+      key: 'parseStatus', 
+      width: 180,
+      render: () => (
         <Space size="small">
-          <Button type="primary" size="small" icon={<PlayCircleOutlined />} onClick={() => router.push(`/collection/qa/${id}/${record.seqId}`)}>预览/质检</Button>
-          <Button type="link" size="small" icon={<CheckCircleOutlined />}>通过</Button>
-          <Button type="link" size="small" danger icon={<StopOutlined />}>不合格</Button>
+          <Tag color="success">解析完成</Tag>
+          <Button type="primary" size="small" style={{ backgroundColor: '#4096ff', fontSize: 12 }}>重新解析</Button>
         </Space>
-      ),
+      )
     },
+    { title: '上传时间', dataIndex: 'uploadTime', key: 'uploadTime', width: 160 },
+    { 
+      title: '质检状态', 
+      dataIndex: 'qaStatus', 
+      key: 'qaStatus',
+      width: 100,
+      render: () => <Tag color="success">优秀</Tag>
+    },
+    {
+      title: '操作', key: 'action', width: 120, fixed: 'right',
+      render: (_, record) => (
+        <Space size="middle">
+          <Button type="link" size="small" style={{ padding: 0 }} onClick={() => router.push(`/collection/qa/${id}/${record.id}`)}>
+            质检
+          </Button>
+          <Button type="link" size="small" danger style={{ padding: 0 }}>删除</Button>
+        </Space>
+      )
+    }
+  ];
+
+  const data = [
+    { key: '1', id: '766794', taskName: 'test', deviceSN: 'R001GB...', instance: 'test_job', filePath: 'collect-d...', fileSize: '84.71MB', duration: '4', isTakeover: '--', uploadTime: '2026-02-25 15:...' },
+    { key: '2', id: '766804', taskName: 'test', deviceSN: 'R001GB...', instance: 'test_job', filePath: 'collect-d...', fileSize: '222.87MB', duration: '9.6', isTakeover: '--', uploadTime: '2026-02-25 15:...' }
   ];
 
   return (
     <MainLayout>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'center' }}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-        <div>
-          <Title level={4} style={{ margin: 0 }}>序列包列表</Title>
-          <Text type="secondary">实例任务 ID: {id}</Text>
+      <div style={{ 
+        backgroundColor: '#fff', 
+        borderRadius: 8, 
+        minHeight: 'calc(100vh - 48px)', // assuming standard 24px padding top/bottom in MainLayout
+        display: 'flex', 
+        flexDirection: 'column',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+      }}>
+        {/* Header */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: '16px 24px',
+          borderBottom: '1px solid #f0f0f0'
+        }}>
+          <span style={{ fontSize: 16, fontWeight: 500, color: '#262626' }}>质检</span>
+          <Button 
+            type="text" 
+            icon={<CloseOutlined style={{ color: '#8c8c8c' }} />} 
+            onClick={() => router.back()} 
+          />
         </div>
-      </div>
 
-      <Card style={{ marginBottom: 16 }}>
-        <Descriptions column={3} size="small">
-          <Descriptions.Item label="所属项目">SimulatedCollection</Descriptions.Item>
-          <Descriptions.Item label="任务书">TB-2025001-桌面抓取SOP</Descriptions.Item>
-          <Descriptions.Item label="采集员">张三</Descriptions.Item>
-          <Descriptions.Item label="总帧数">245帧</Descriptions.Item>
-          <Descriptions.Item label="质检员">质检员A</Descriptions.Item>
-          <Descriptions.Item label="状态"><Tag color="processing">质检进行中</Tag></Descriptions.Item>
-        </Descriptions>
-      </Card>
+        {/* Content */}
+        <div style={{ padding: '24px', flexGrow: 1 }}>
+          {/* Toolbar */}
+          <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+            <Select defaultValue="解析完成" style={{ width: 160 }} allowClear mode="multiple" maxTagCount={1}>
+              <Select.Option value="解析完成">解析完成</Select.Option>
+            </Select>
+            <Select placeholder="系统状态" style={{ width: 160 }} allowClear />
+            <Select placeholder="是否接管" style={{ width: 160 }} allowClear />
+            <Button type="primary" icon={<SearchOutlined />}>搜索</Button>
+            <Button icon={<ReloadOutlined />}>重置</Button>
+            <Button type="primary" style={{ backgroundColor: '#4096ff' }}>重新解析</Button>
+          </div>
 
-      <Card styles={{ body: { padding: 0 } }}>
-        <div className="table-toolbar" style={{ padding: '16px 24px' }}>
-          <span className="table-toolbar-title">序列分片明细</span>
-          <Space>
-            <Button icon={<CheckCircleOutlined />}>批量通过</Button>
-            <Button danger icon={<StopOutlined />}>批量打回</Button>
-          </Space>
+          {/* Table */}
+          <Table 
+            columns={columns} 
+            dataSource={data} 
+            scroll={{ x: 1500 }}
+            pagination={{ 
+              pageSize: 20, 
+              showTotal: (t) => `共 ${t} 条`, 
+              showSizeChanger: true,
+              showQuickJumper: true,
+              style: { marginTop: 24 }
+            }} 
+            size="middle"
+          />
         </div>
-        <Table columns={columns} dataSource={mockSequences} scroll={{ x: 1500 }} pagination={false} />
-      </Card>
-      
-      <div style={{ marginTop: 24, textAlign: 'center' }}>
-        <Button type="primary" size="large" onClick={() => message.success('该实例任务已完成整体质检，并同步至标库')}>完成本例质检</Button>
       </div>
     </MainLayout>
   );

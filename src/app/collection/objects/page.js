@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, Button, Input, Select, Space, Tag, Typography, Breadcrumb, App, DatePicker, Image, Empty } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, FolderOutlined, FolderOpenOutlined } from '@ant-design/icons';
+import { Table, Button, Input, Select, Space, Tag, Typography, Breadcrumb, App, DatePicker, Image, Empty, Modal, Form, Upload, Tooltip, Row, Col } from 'antd';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -113,6 +113,27 @@ export default function ObjectLibraryPage() {
   const [nameFilter, setNameFilter] = useState('');
   const [materialFilter, setMaterialFilter] = useState('');
 
+  const [typeModalVisible, setTypeModalVisible] = useState(false);
+  const [typeForm] = Form.useForm();
+  const [objectModalVisible, setObjectModalVisible] = useState(false);
+  const [objectForm] = Form.useForm();
+
+  const handleAddType = () => {
+    typeForm.validateFields().then(values => {
+      message.success(`成功添加物体类型：${values.name}`);
+      setTypeModalVisible(false);
+      typeForm.resetFields();
+    });
+  };
+
+  const handleAddObject = () => {
+    objectForm.validateFields().then(values => {
+      message.success(`成功添加物体：${values.nameCn}`);
+      setObjectModalVisible(false);
+      objectForm.resetFields();
+    });
+  };
+
   // ← KEY INTERACTION: filter by selected category
   const selectedScene = sceneByKey[selectedCat];
   const filtered = mockObjects.filter(o => {
@@ -190,7 +211,7 @@ export default function ObjectLibraryPage() {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text strong style={{ fontSize: 13 }}>物体类型</Text>
-            <Button type="link" size="small" style={{ padding: 0, fontSize: 12 }}>+ 添加</Button>
+            <Button type="link" size="small" style={{ padding: 0, fontSize: 12 }} onClick={() => setTypeModalVisible(true)}>+ 添加</Button>
           </div>
           {categoryTree.map(item => (
             <CategoryNode
@@ -245,7 +266,7 @@ export default function ObjectLibraryPage() {
             <RangePicker style={{ width: 220 }} placeholder={['开始日期', '结束日期']} />
             <Button type="primary" icon={<SearchOutlined />}>查询</Button>
             <Button icon={<ReloadOutlined />} onClick={() => { setNameFilter(''); setMaterialFilter(''); }}>重置</Button>
-            <Button type="primary" icon={<PlusOutlined />} style={{ marginLeft: 'auto' }}>+ 添加</Button>
+            <Button type="primary" icon={<PlusOutlined />} style={{ marginLeft: 'auto' }} onClick={() => setObjectModalVisible(true)}>添加</Button>
           </div>
 
           {/* Table */}
@@ -269,6 +290,86 @@ export default function ObjectLibraryPage() {
           </div>
         </div>
       </div>
+
+      <Modal title="添加物体类型" open={typeModalVisible} onOk={handleAddType} onCancel={() => setTypeModalVisible(false)}>
+        <Form form={typeForm} layout="vertical">
+          <Form.Item label="名称" name="name" rules={[{ required: true, message: '请输入名称' }]}>
+            <Input placeholder="请输入名称" maxLength={50} showCount />
+          </Form.Item>
+          <Form.Item label={<span>英文名称&nbsp;<Tooltip title="英文标识"><QuestionCircleOutlined style={{ color: '#8c8c8c' }} /></Tooltip></span>} name="enName">
+            <Input placeholder="请输入英文名称" maxLength={50} showCount />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal title="添加物体" open={objectModalVisible} onOk={handleAddObject} onCancel={() => setObjectModalVisible(false)} width={560}>
+        <Form form={objectForm} layout="vertical">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="名称" name="nameCn" rules={[{ required: true, message: '请输入名称' }]}>
+                <Input placeholder="请输入名称" maxLength={50} showCount />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label={<span>英文名称&nbsp;<Tooltip title="英文名称说明"><QuestionCircleOutlined style={{ color: '#8c8c8c' }} /></Tooltip></span>} name="nameEn">
+                <Input placeholder="请输入英文名称" maxLength={50} showCount />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="物体类型" name="objType" rules={[{ required: true, message: '请选择物体类型' }]}>
+                <Select placeholder="请选择物体类型" options={[
+                  { value: 'RigidBody', label: 'RigidBody(刚体)' },
+                  { value: 'Articulated', label: 'Articulated(铰接可动)' },
+                  { value: 'Deformable', label: 'Deformable(可变形)' },
+                ]} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="场景" name="scene" rules={[{ required: true, message: '请选择场景' }]}>
+                <Select placeholder="请选择场景" options={[
+                  { value: 'Supermarket', label: 'Supermarket(商超)' },
+                  { value: 'Industry', label: 'Industry(工业)' },
+                  { value: 'Kitchen', label: 'Kitchen(厨房)' },
+                  { value: 'Hotel', label: 'Hotel(酒店)' },
+                  { value: 'Scientific', label: 'Scientific(科研)' },
+                  { value: 'Shelf', label: 'Shelf(货架)' },
+                  { value: 'Container', label: 'Container(容器)' },
+                  { value: 'pharmacy', label: 'pharmacy(药房)' },
+                  { value: 'Warehousing', label: 'Warehousing(仓储)' },
+                  { value: 'Region', label: 'Region(区域)' },
+                ]} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="材质特性" name="material">
+                <Select placeholder="请选择材质特性" options={[
+                  { value: 'Metal', label: '金属 (Metal)' },
+                  { value: 'Ceramic', label: '陶瓷 (Ceramic)' },
+                  { value: 'Plastic', label: '塑料 (Plastic)' },
+                  { value: 'Wood', label: '木质 (Wood)' },
+                  { value: 'Smooth', label: '光滑 (Smooth)' },
+                ]} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="物体图片" name="image">
+            <Upload listType="picture-card" maxCount={1} showUploadList={false}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
+                <PlusOutlined style={{ fontSize: 24, color: '#8c8c8c' }} />
+              </div>
+            </Upload>
+            <div style={{ fontSize: 13, color: '#bfbfbf', marginTop: 8 }}>
+              支持jpg、jpeg、png、gif格式，文件大小不超过2MB
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+
     </MainLayout>
   );
 }

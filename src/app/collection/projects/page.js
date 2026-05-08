@@ -8,9 +8,9 @@ import MainLayout from '@/components/MainLayout';
 const { Text } = Typography;
 
 const categories = [
-  { type: 'section', label: 'A. 项目身份' },
+  { type: 'section', label: '项目身份' },
   { key: 'project_name', label: '项目名称', subLabel: 'TAG CATEGORY: 项目名称' },
-  { type: 'section', label: 'B. 项目属性' },
+  { type: 'section', label: '项目属性' },
   { key: 'task_purpose', label: '任务用途', subLabel: 'TAG CATEGORY: 任务用途' },
   { key: 'taskbook_type', label: '任务书类别', subLabel: 'TAG CATEGORY: 任务书类别' },
 ];
@@ -116,7 +116,22 @@ export default function ProjectManagementPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {categories.map((item, idx) => {
               if (item.type === 'section') {
-                return (<div key={idx} style={{ padding: '12px 14px 4px', fontSize: 12, color: '#1890ff', fontWeight: 500 }}><span style={{ marginRight: 6 }}>●</span>{item.label}</div>);
+                return (
+                  <div key={idx} style={{
+                    padding: '10px 12px',
+                    marginTop: idx === 0 ? 0 : 12,
+                    marginBottom: 4,
+                    borderLeft: '3px solid #1890ff',
+                    background: 'linear-gradient(90deg, #e6f4ff, transparent)',
+                    borderRadius: '0 6px 6px 0',
+                    fontSize: 12,
+                    color: '#1890ff',
+                    fontWeight: 600,
+                    letterSpacing: '0.5px',
+                  }}>
+                    {item.label}
+                  </div>
+                );
               }
               const isSelected = selected === item.key;
               return (

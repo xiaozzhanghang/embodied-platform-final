@@ -154,7 +154,7 @@ export default function TaskCenterPage() {
           style={{ padding: '0 24px' }}
           tabBarExtraContent={
             <Space style={{ paddingBottom: 12 }}>
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/tasks/create')}>+ 模板创建</Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/tasks/create')}>模板创建</Button>
               <Button 
                 icon={<NodeIndexOutlined />} 
                 disabled={selectedRowKeys.length === 0}

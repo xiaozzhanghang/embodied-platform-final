@@ -85,6 +85,15 @@ const menuItems = [
       { key: '/data/datasets', label: '数据集管理' },
     ],
   },
+  {
+    key: 'permissions',
+    icon: <SafetyCertificateOutlined />,
+    label: '权限设置',
+    roles: [ROLES.ADMIN],
+    children: [
+      { key: '/accounts/list', label: '用户管理' },
+    ],
+  },
 
 ];
 
@@ -104,8 +113,7 @@ const breadcrumbMap = {
   '/data/raw': ['数据应用', '原始数据'],
   '/data/datasets': ['数据应用', '数据集管理'],
   '/data/download': ['下载中心'],
-  '/accounts/list': ['权限设置', '账号管理'],
-  '/accounts/teams': ['权限设置', '团队管理'],
+  '/accounts/list': ['权限设置', '用户管理'],
 };
 
 export default function MainLayout({ children }) {

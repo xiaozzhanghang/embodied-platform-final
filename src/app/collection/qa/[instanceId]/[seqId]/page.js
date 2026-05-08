@@ -1,70 +1,64 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   Button, 
   Typography, 
   Space, 
-  Card, 
-  Row, 
-  Col, 
   Slider, 
   Tag, 
   Divider, 
   App, 
-  Input, 
-  Tooltip,
-  ConfigProvider,
-  theme,
-  Badge,
-  Dropdown
+  Dropdown,
+  InputNumber,
+  Badge
 } from 'antd';
 import { 
-  ArrowLeftOutlined, 
+  ArrowLeftOutlined,
+  CloseOutlined,
   CaretRightOutlined, 
   PauseOutlined, 
   StepBackwardOutlined, 
   StepForwardOutlined, 
-  CheckCircleOutlined, 
-  CloseCircleOutlined, 
   ReloadOutlined,
-  StarOutlined,
-  ExclamationCircleOutlined,
   ExpandOutlined,
-  ControlOutlined,
-  AimOutlined,
-  BorderOutlined,
-  LineChartOutlined,
-  FullscreenOutlined,
   DownOutlined,
-  InfoCircleOutlined
+  PlusOutlined,
+  ExclamationCircleFilled,
+  StampOutlined,
+  FastBackwardOutlined,
+  FastForwardOutlined,
+  SyncOutlined
 } from '@ant-design/icons';
-import MainLayout from '@/components/MainLayout';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 export default function QaReviewPage({ params }) {
   const router = useRouter();
+  // Using React.use() to unwrap params per Next.js 15+ patterns, though here we can assume it works
   const { instanceId, seqId } = React.use(params);
   const { message } = App.useApp();
   
   // State management
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentFrame, setCurrentFrame] = useState(112);
-  const [totalFrames] = useState(300);
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [totalFrames] = useState(1206);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [activeStepId, setActiveStepId] = useState(2);
+  const [activeStepId, setActiveStepId] = useState(5);
   const [conclusion, setConclusion] = useState(null);
-  const [hoveredVideo, setHoveredVideo] = useState(null);
 
-  // SOP Steps Data
-  const sopSteps = [
-    { id: 1, title: '移动到货架旁', start: 0, end: 50, status: 'done' },
-    { id: 2, title: '执行物体抓取', start: 51, end: 108, total: 58, status: 'active' },
-    { id: 3, title: '提升并平稳转移', start: 109, end: 200, status: 'pending' },
-    { id: 4, title: '精准放置到容器', start: 201, end: 300, status: 'pending' },
-  ];
+  // SOP Steps Data to match the screenshot
+  const [sopSteps, setSopSteps] = useState([
+    { id: 1, title: '双手从桌子拿起托盘到台面上方', start: 0, end: 181, total: 182, color: '#3b82f6' }, // blue
+    { id: 2, title: '双手从台面上方放置托盘到桌子', start: 181, end: 298, total: 118, color: '#8b5cf6' }, // purple
+    { id: 3, title: '右手从桌子拿起盘子到台面上方', start: 298, end: 488, total: 191, color: '#d97706' }, // orange
+    { id: 4, title: '右手从台面上方放置盘子到托盘正中', start: 488, end: 667, total: 180, color: '#ec4899' }, // pink
+    { id: 5, title: '右手从桌子拿起叉子到台面上方', start: 667, end: 818, total: 152, color: '#06b6d4', hasQaError: true }, // cyan, has QA error stamp
+    { id: 6, title: '右手从台面上方放置叉子到盘子右侧', start: 818, end: 1022, total: 205, color: '#10b981', hasAlert: true }, // green, has alert icon
+    { id: 7, title: '左手从桌子拿起餐刀到台面上方', start: 1022, end: 1206, total: 245, color: '#3b82f6' }, // blue
+    { id: 8, title: '左手从台面上方放置餐刀到盘子左侧', start: 1206, end: 1400, total: 195, color: '#8b5cf6' }, // purple
+  ]);
 
   // Auto-play logic
   useEffect(() => {
@@ -85,25 +79,21 @@ export default function QaReviewPage({ params }) {
 
   // Sync active step with current frame during playback
   useEffect(() => {
-    const step = sopSteps.find(s => currentFrame >= s.start && currentFrame <= s.end);
+    const step = sopSteps.find(s => currentFrame >= s.start && currentFrame < s.end);
     if (step && step.id !== activeStepId) {
       setActiveStepId(step.id);
     }
-  }, [currentFrame]);
+  }, [currentFrame, sopSteps]);
 
-  // Seeks to a specific frame and pauses
   const seekTo = (frame) => {
-    setCurrentFrame(frame);
+    setCurrentFrame(Math.max(0, Math.min(totalFrames, frame)));
     setIsPlaying(false);
   };
 
-  const handleFinish = () => {
-    if (!conclusion) {
-      message.warning('请先选择质检最终结论');
-      return;
-    }
-    message.success('已完成抽检审核');
-    router.back();
+  const handleFinish = (result) => {
+    setConclusion(result);
+    message.success(`质检结果已提交: ${result}`);
+    setTimeout(() => router.back(), 1000);
   };
 
   const speedMenu = {
@@ -115,332 +105,288 @@ export default function QaReviewPage({ params }) {
     ],
   };
 
-  const renderVideoViewport = (id, title, label, imgUrl) => (
-    <div 
-      style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
-      onMouseEnter={() => setHoveredVideo(id)}
-      onMouseLeave={() => setHoveredVideo(null)}
-    >
+  // Helper to format time as seconds
+  const formatTime = (frame, fps = 30) => {
+    return (frame / fps).toFixed(3);
+  };
+
+  const renderVideoViewport = (id, title, imgUrl, hasBottomBar = true) => (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, border: '1px solid #e8e8e8', backgroundColor: '#fff', boxSizing: 'border-box' }}>
       <div style={{ 
-        padding: '8px 12px', 
+        padding: '4px 8px', 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        background: '#fff',
         borderBottom: '1px solid #f0f0f0',
-        borderTopLeftRadius: 8,
-        borderTopRightRadius: 8,
         fontSize: 12,
-        height: 36,
-        visibility: hoveredVideo === id ? 'visible' : 'visible' // In ref design, status is always there, toolbar might appear on hover
+        backgroundColor: '#fafafa',
+        height: 28,
+        minHeight: 28,
+        boxSizing: 'border-box'
       }}>
-        <Space>
-          <Text strong style={{ fontSize: 13 }}>{title}</Text>
-          <Text type="secondary" style={{ fontSize: 11 }}>● 录制中 帧率: 30 时间: 00:03:45:12</Text>
+        <Space size={4}>
+          <div style={{ width: 3, height: 12, backgroundColor: '#1890ff' }}></div>
+          <Text strong style={{ fontSize: 12 }}>{title}</Text>
+          <DownOutlined style={{ fontSize: 10, color: '#8c8c8c' }} />
         </Space>
-        <Space size="small">
-          <Dropdown menu={{ items: [{ key: '1', label: '帧数' }, { key: '2', label: '时间戳' }] }}>
-            <Space style={{ cursor: 'pointer', fontSize: 11, color: '#8c8c8c' }}>
-              时间数 <DownOutlined style={{ fontSize: 8 }} />
-            </Space>
-          </Dropdown>
-          <FullscreenOutlined style={{ fontSize: 12, cursor: 'pointer', color: '#8c8c8c' }} />
-        </Space>
+        <ExpandOutlined style={{ fontSize: 12, cursor: 'pointer', color: '#8c8c8c' }} />
       </div>
-      <div style={{ flexGrow: 1, backgroundColor: '#000', position: 'relative', overflow: 'hidden', borderBottomLeftRadius: 8, borderBottomRightRadius: 8 }}>
-        <img src={imgUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} alt={label} />
-        <div style={{ position: 'absolute', top: 12, left: 12, backgroundColor: 'rgba(0,0,0,0.6)', padding: '2px 8px', borderRadius: 4, color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{label}</div>
+      <div style={{ flex: '1 1 auto', minHeight: 0, backgroundColor: id === 'joints' ? '#141414' : '#e6e6e6', position: 'relative', overflow: 'hidden' }}>
+        <img src={imgUrl} style={{ width: '100%', height: '100%', objectFit: id === 'joints' ? 'contain' : 'cover' }} alt={title} />
+        {id !== 'joints' && (
+          <div style={{ position: 'absolute', bottom: 12, right: 12, textAlign: 'right', color: 'rgba(255,255,255,0.8)', fontSize: 10, textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>
+            Fps: 30<br/>
+            Resolution: 640 * 360<br/>
+            Duration: 48.789857<br/>
+            Download
+          </div>
+        )}
+        {hasBottomBar && (
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, backgroundColor: '#f0f0f0' }}>
+            <div style={{ width: `${(currentFrame / totalFrames) * 100}%`, height: '100%', backgroundColor: '#52c41a' }} />
+          </div>
+        )}
       </div>
     </div>
   );
 
   return (
-    <MainLayout>
-      {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <Space size="middle">
-          <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ border: 'none', background: '#f5f5f5' }} />
-          <div>
-            <Space align="center">
-              <Title level={4} style={{ margin: 0, fontSize: 18 }}>质检审核: {seqId || 'REC-001'}</Title>
-              <Tag color="blue" style={{ borderRadius: 4, backgroundColor: '#e6f7ff', color: '#1890ff', border: '1px solid #91d5ff', padding: '0 8px' }}>
-                数据包: PKG-20240301-001
-              </Tag>
-            </Space>
-            <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2 }}>
-              最后更新时间: 2026-03-23 10:23:45
-            </div>
-          </div>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fff', overflow: 'hidden' }}>
+      
+      {/* Top Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 16px', borderBottom: '1px solid #f0f0f0', fontSize: 12 }}>
+        <Space size="middle" style={{ color: '#595959' }}>
+          <Text style={{ color: '#8c8c8c' }}>餐具摆放 <span style={{ color: '#ff4d4f' }}>[共 8 步]</span></Text>
+          <Text>解析状态: <span style={{ color: '#52c41a' }}>[解析完成]</span></Text>
+          <Text>覆检状态: <Text type="secondary">[未质检]</Text></Text>
+          <Text>任务ID: 10383</Text>
+          <Text>实例ID: 12745</Text>
+          <Text type="secondary" style={{ maxWidth: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block', verticalAlign: 'bottom' }}>
+            文件目录: collect-data/10383_12745/41b2903201e64273b021baa360c833eb3
+          </Text>
         </Space>
-        <Space size="middle">
-          <Button icon={<ReloadOutlined />} style={{ borderRadius: 6 }}>重置视图</Button>
-          <Button 
-            type="primary" 
-            icon={<CheckCircleOutlined />} 
-            onClick={handleFinish}
-            style={{ height: 40, padding: '0 24px', borderRadius: 6, fontWeight: 500 }}
-          >
-            完成抽检审核
-          </Button>
+        <CloseOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#595959' }} onClick={() => router.back()} />
+      </div>
+
+      {/* Shortcut Hint Bar */}
+      <div style={{ padding: '4px 16px', backgroundColor: '#fafafa', borderBottom: '1px solid #f0f0f0', fontSize: 11, color: '#8c8c8c' }}>
+        <Space size="large">
+          <span><strong style={{ color: '#595959' }}>Esc:</strong> 返回列表</span>
+          <span><strong style={{ color: '#595959' }}>Space:</strong> 播放/暂停</span>
+          <span><strong style={{ color: '#595959' }}>Z:</strong> 上一帧</span>
+          <span><strong style={{ color: '#595959' }}>X:</strong> 下一帧</span>
+          <span><strong style={{ color: '#595959' }}>A:</strong> 上一段落</span>
+          <span><strong style={{ color: '#595959' }}>D:</strong> 下一段落</span>
         </Space>
       </div>
 
-      <Row gutter={16} style={{ height: 'calc(100vh - 260px)' }}>
-        {/* Left: Viewport Grid */}
-        <Col span={17}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 16, height: '100%' }}>
-            {renderVideoViewport('v1', '左侧手部相机 (左)', 'HAND_L', 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800')}
-            {renderVideoViewport('v2', '头部主视角 (主)', 'HEAD_MAIN', 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800')}
-            {renderVideoViewport('v3', '右侧手部相机 (右)', 'HAND_R', 'https://images.unsplash.com/photo-1531746790731-6c087fecd05a?w=800')}
+      {/* Main Workspace Area */}
+      <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
+        
+        {/* Left: Video Grid */}
+        <div style={{ flex: '1 1 auto', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', padding: '16px' }}>
+          <div style={{ 
+            width: '100%', 
+            maxWidth: 'calc((100vh - 180px) * 16 / 9)', 
+            aspectRatio: '16 / 9', 
+            display: 'grid', 
+            gridTemplateColumns: '1fr 1fr', 
+            gridTemplateRows: '1fr 1fr', 
+            gap: '8px' 
+          }}>
+            {renderVideoViewport('camera_hand_left_color', 'camera_hand_left_color', 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&q=80')}
+          {renderVideoViewport('camera_head_left_color', 'camera_head_left_color', 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800&q=80')}
+          {renderVideoViewport('camera_hand_right_color', 'camera_hand_right_color', 'https://images.unsplash.com/photo-1531746790731-6c087fecd05a?w=800&q=80')}
+          {renderVideoViewport('joints', 'joints.json', 'https://images.unsplash.com/photo-1535378917042-10a22c95961a?w=800&q=80', false)}
+          </div>
+        </div>
 
-            {/* 3D Viewport */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ 
-                padding: '8px 12px', 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                background: '#fff',
-                borderBottom: '1px solid #f0f0f0',
-                borderTopLeftRadius: 8,
-                borderTopRightRadius: 8,
-                fontSize: 12,
-                height: 36
-              }}>
-                <Space>
-                  <Text strong style={{ fontSize: 13 }}>机器人3D模型 (运动学)</Text>
-                  <Text type="secondary" style={{ fontSize: 11 }}>● 已连接 关节: 1-7 激活</Text>
-                </Space>
-                <Space size="small">
-                  <Text type="secondary">设置</Text>
-                  <ExpandOutlined style={{ fontSize: 12, cursor: 'pointer', color: '#8c8c8c' }} />
-                </Space>
-              </div>
-              <div style={{ flexGrow: 1, backgroundColor: '#0a0a0a', position: 'relative', borderBottomLeftRadius: 8, borderBottomRightRadius: 8, overflow: 'hidden' }}>
-                <div style={{ width: '100%', height: '100%', background: 'radial-gradient(circle, #1a2a3a 0%, #050505 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img src="https://images.unsplash.com/photo-1535378917042-10a22c95961a?w=800" style={{ width: '100%', height: '100%', objectFit: 'contain', opacity: 0.4 }} alt="3d_model" />
-                  <div style={{ position: 'absolute', top: 12, left: 12, backgroundColor: 'rgba(0,0,0,0.6)', padding: '2px 8px', borderRadius: 4, color: '#fff', fontSize: 10, fontWeight: 'bold' }}>3D_MODEL</div>
-                  
-                  {/* Overlay Controls */}
-                  <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ padding: 6, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 4, cursor: 'pointer' }}><FullscreenOutlined style={{ color: '#fff' }} /></div>
-                    <div style={{ padding: 6, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 4, cursor: 'pointer' }}><ExpandOutlined style={{ color: '#fff' }} /></div>
-                    <div style={{ padding: 6, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 4, cursor: 'pointer' }}><ControlOutlined style={{ color: '#fff' }} /></div>
-                    <div style={{ padding: 6, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 4, cursor: 'pointer' }}><LineChartOutlined style={{ color: '#fff' }} /></div>
+        {/* Right: SOP Steps Panel */}
+        <div style={{ width: 280, borderLeft: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', backgroundColor: '#fff', overflowY: 'auto' }}>
+          <div style={{ padding: '8px', flexGrow: 1 }}>
+            {sopSteps.map((step) => {
+              const isActive = activeStepId === step.id;
+              return (
+                <div key={step.id} style={{ 
+                  marginBottom: 12, 
+                  backgroundColor: isActive ? '#f5f5f5' : '#fff',
+                  borderRadius: 4,
+                  padding: '4px'
+                }}>
+                  {/* Step Title Row */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 8 }}>
+                    <div style={{ 
+                      width: 8, height: 8, borderRadius: '50%', 
+                      backgroundColor: step.color, 
+                      marginTop: 6, marginRight: 8, flexShrink: 0
+                    }} />
+                    <div style={{ flex: 1, fontSize: 12, fontWeight: isActive ? 600 : 400, color: '#333', lineHeight: 1.5, position: 'relative' }}>
+                      {step.id} {step.title}
+                      
+                      {/* Floating Icons for QA Status */}
+                      {step.hasQaError && (
+                        <div style={{ position: 'absolute', right: 0, top: -4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <div style={{ border: '1px solid #ff4d4f', color: '#ff4d4f', borderRadius: 2, padding: '0 2px', fontSize: 10, display: 'flex', alignItems: 'center' }}>
+                            QA
+                          </div>
+                        </div>
+                      )}
+                      {step.hasAlert && (
+                        <div style={{ position: 'absolute', right: -6, top: -4 }}>
+                          <ExclamationCircleFilled style={{ color: '#ff4d4f', fontSize: 14 }} />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div style={{ position: 'absolute', bottom: 12, left: 12, right: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div style={{ backgroundColor: 'rgba(24,144,255,0.15)', border: '1px solid #1890ff', padding: '4px 10px', borderRadius: 4, color: '#1890ff', fontSize: 11 }}>
-                      进行环境: RT-Kinematics v2.4 (激活)
+                  {/* Frame Inputs Row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 16 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 10, color: '#8c8c8c', marginBottom: 2 }}>开始帧</Text>
+                      <InputNumber 
+                        size="small" 
+                        value={step.start} 
+                        controls 
+                        style={{ width: 60, fontSize: 11 }} 
+                      />
                     </div>
-                    <div style={{ textAlign: 'right', color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
-                      末端误差: <span style={{ color: '#fff' }}>0.12mm</span> | 负载: <span style={{ color: '#fff' }}>45%</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 10, color: '#8c8c8c', marginBottom: 2 }}>结束帧</Text>
+                      <InputNumber 
+                        size="small" 
+                        value={step.end} 
+                        controls 
+                        style={{ width: 60, fontSize: 11 }} 
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 10, color: '#8c8c8c', marginBottom: 2 }}>总共</Text>
+                      <InputNumber 
+                        size="small" 
+                        value={step.total} 
+                        controls 
+                        style={{ width: 60, fontSize: 11 }} 
+                      />
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
-        </Col>
 
-        {/* Right: SOP Panel */}
-        <Col span={7} style={{ display: 'flex', flexDirection: 'column' }}>
-          <Card 
-            title={<span style={{ fontSize: 15, fontWeight: 600 }}>标注任务关键步骤</span>} 
-            styles={{ body: { padding: '16px 12px' } }} 
-            style={{ borderRadius: 12, flexGrow: 1, overflowY: 'auto', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {sopSteps.map((step) => {
-                const isActive = activeStepId === step.id;
-                return (
-                  <div 
-                    key={step.id} 
-                    style={{ 
-                      borderRadius: 10, 
-                      border: `1px solid ${isActive ? '#1890ff' : '#f0f0f0'}`, 
-                      overflow: 'hidden',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      backgroundColor: isActive ? '#f0f7ff' : '#fff'
-                    }}
-                    onClick={() => {
-                      setActiveStepId(step.id);
-                      seekTo(step.start);
-                    }}
-                  >
-                    {/* Header */}
-                    <div style={{ 
-                      padding: '12px 16px', 
-                      background: isActive ? '#1890ff' : '#fff',
-                      color: isActive ? '#fff' : '#434343',
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      cursor: 'pointer'
-                    }}>
-                      <Space size="middle">
-                        <div style={{ 
-                          width: 24, height: 24, borderRadius: '50%', 
-                          border: `1px solid ${isActive ? '#fff' : '#d9d9d9'}`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12,
-                          color: isActive ? '#fff' : '#8c8c8c',
-                          fontWeight: 500
-                        }}>
-                          {step.id}
-                        </div>
-                        <Text strong style={{ color: isActive ? '#fff' : 'inherit', fontSize: 13 }}>{step.title}</Text>
-                      </Space>
-                      {step.status === 'done' && <CheckCircleOutlined style={{ color: isActive ? '#fff' : '#52c41a', fontSize: 16 }} />}
-                      {isActive && <Text style={{ color: '#fff', fontSize: 12, fontWeight: 500 }}>{step.end - step.start}帧</Text>}
-                    </div>
-
-                    {/* Details Accordion */}
-                    {isActive && (
-                      <div style={{ padding: '16px', background: '#fff', borderTop: '1px solid #e6f7ff' }}>
-                        <Row gutter={8} style={{ marginBottom: 12 }}>
-                          {['起始帧', '结束帧', '持续帧数'].map((label, idx) => (
-                            <Col span={8} key={label}>
-                              <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: 11, color: '#8c8c8c', marginBottom: 4 }}>{label}</div>
-                                <div style={{ fontSize: 16, fontWeight: 'bold', background: '#f5f5f5', borderRadius: 4, padding: '4px 0', color: '#1890ff' }}>
-                                  {idx === 0 ? step.start : idx === 1 ? step.end : (step.total || step.end - step.start)}
-                                </div>
-                              </div>
-                            </Col>
-                          ))}
-                        </Row>
-                        <Space direction="vertical" style={{ width: '100%' }}>
-                          <Button block icon={<ReloadOutlined />} size="small">重取异常时段</Button>
-                          <Row gutter={8}>
-                            <Col span={12}><Button block icon={<BorderOutlined />} size="small">异常区域框</Button></Col>
-                            <Col span={12}><Button block icon={<AimOutlined />} size="small">异常定位点</Button></Col>
-                          </Row>
-                        </Space>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-
-          {/* Conclusion Selection */}
-          <div style={{ marginTop: 20 }}>
-            <Text type="secondary" style={{ fontSize: 13, marginBottom: 12, display: 'block', color: '#8c8c8c' }}>质检最终结论</Text>
-            <Row gutter={12}>
-              {[
-                { key: 'pass', label: '合格', icon: <CheckCircleOutlined /> },
-                { key: 'undecided', label: '待定', icon: <InfoCircleOutlined /> },
-                { key: 'fail', label: '不合格', icon: <CloseCircleOutlined /> }
-              ].map(item => {
-                const isSelected = conclusion === item.key;
-                return (
-                  <Col span={8} key={item.key}>
-                    <div 
-                      style={{ 
-                        height: 70, 
-                        borderRadius: 10, 
-                        border: `2px solid ${isSelected ? '#1890ff' : '#f0f0f0'}`,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', backgroundColor: isSelected ? '#f0f7ff' : '#fff',
-                        transition: 'all 0.25s',
-                      }}
-                      onClick={() => setConclusion(item.key)}
-                    >
-                      <div style={{ fontSize: 22, color: isSelected ? '#1890ff' : '#bfbfbf' }}>{item.icon}</div>
-                      <Text style={{ fontSize: 12, marginTop: 4, color: isSelected ? '#1890ff' : '#8c8c8c', fontWeight: isSelected ? 600 : 400 }}>{item.label}</Text>
-                    </div>
-                  </Col>
-                );
-              })}
-            </Row>
+          <Divider style={{ margin: 0 }} />
+          
+          {/* Bottom Accordion: 区域帧管理 */}
+          <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', backgroundColor: '#fafafa' }}>
+            <Text style={{ fontSize: 12, color: '#595959' }}>区域帧管理 (0)</Text>
+            <PlusOutlined style={{ fontSize: 12, color: '#8c8c8c' }} />
           </div>
-        </Col>
-      </Row>
+        </div>
+      </div>
 
-      {/* Bottom Control Bar */}
-      <div style={{ position: 'fixed', bottom: 0, left: 240, right: 0, height: 110, backgroundColor: '#fff', borderTop: '1px solid #f0f0f0', padding: '12px 32px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', zIndex: 100, boxShadow: '0 -4px 12px rgba(0,0,0,0.03)' }}>
-        <Row align="middle" gutter={32}>
-          <Col style={{ width: 140 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#141414' }}>00:03:45 /</div>
-            <div style={{ fontSize: 13, color: '#bfbfbf', marginTop: 2 }}>00:05:30</div>
-          </Col>
-          <Col flex="auto" style={{ position: 'relative', paddingTop: 10 }}>
-            {/* Colored segments in rail */}
-            <div style={{ position: 'absolute', left: 0, right: 0, top: 18, height: 8, zIndex: 0, pointerEvents: 'none' }}>
-              {sopSteps.map((step, idx) => (
-                <div 
-                  key={step.id} 
-                  style={{ 
-                    position: 'absolute', 
-                    left: `${(step.start/totalFrames)*100}%`, 
-                    width: `${((step.end - step.start)/totalFrames)*100}%`, 
-                    height: '100%', 
-                    backgroundColor: idx % 2 === 0 ? 'rgba(255, 122, 69, 0.4)' : 'rgba(24, 144, 255, 0.4)',
-                    borderRadius: 4
-                  }} 
-                />
-              ))}
-            </div>
-            <Slider 
-              min={0} max={totalFrames} value={currentFrame} 
-              onChange={setCurrentFrame} 
-              tooltip={{ open: false }}
-              styles={{ track: { backgroundColor: 'transparent', height: 4 }, rail: { backgroundColor: '#f0f0f0', height: 8 }, handle: { width: 16, height: 16, border: '3px solid #1890ff', zIndex: 10 } }}
-            />
-            {/* Pass/Step Markers */}
-            {sopSteps.map(step => (
+      {/* Bottom Timeline & Controls */}
+      <div style={{ height: 80, borderTop: '1px solid #d9d9d9', display: 'flex', flexDirection: 'column', backgroundColor: '#f5f5f5' }}>
+        
+        {/* Timeline Bar Area */}
+        <div style={{ position: 'relative', height: 24, paddingTop: 4 }}>
+          {/* Segmented Timeline */}
+          <div style={{ position: 'absolute', top: 4, left: 0, right: 0, height: 12, display: 'flex', padding: '0 16px' }}>
+            {sopSteps.map((step) => (
               <div 
                 key={step.id} 
-                style={{ position: 'absolute', left: `${(step.start/totalFrames)*100}%`, top: -14, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', zIndex: 5 }}
-                onClick={() => seekTo(step.start)}
-              >
-                <div style={{ width: 14, height: 14, borderRadius: '50%', backgroundColor: '#52c41a', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
-                  <CheckCircleOutlined style={{ color: '#fff', fontSize: 8 }} />
-                </div>
-                <Text style={{ fontSize: 9, color: '#bfbfbf', marginTop: 32 }}>pass</Text>
-              </div>
+                style={{ 
+                  width: `${(step.total / totalFrames) * 100}%`, 
+                  height: '100%', 
+                  backgroundColor: step.color
+                }} 
+              />
             ))}
-          </Col>
-          <Col style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Text style={{ fontSize: 12, color: '#8c8c8c' }}>播放</Text>
-              <Space size="large">
-                <StepBackwardOutlined style={{ fontSize: 22, cursor: 'pointer', color: '#595959' }} />
-                <div onClick={() => setIsPlaying(!isPlaying)} style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#f0f7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}>
-                  {isPlaying ? 
-                    <PauseOutlined style={{ fontSize: 24, color: '#1890ff' }} /> : 
-                    <CaretRightOutlined style={{ fontSize: 24, color: '#1890ff', marginLeft: 3 }} />
-                  }
-                </div>
-                <StepForwardOutlined style={{ fontSize: 22, cursor: 'pointer', color: '#595959' }} />
-              </Space>
-            </div>
-            
-            <Divider type="vertical" style={{ height: 32, borderColor: '#f0f0f0' }} />
-            
-            <Space size="middle">
-              <Text style={{ fontSize: 12, color: '#8c8c8c', cursor: 'pointer' }} onClick={() => seekTo(Math.max(0, currentFrame - 1))}>前一帧</Text>
-              <Text style={{ fontSize: 12, color: '#8c8c8c', cursor: 'pointer' }} onClick={() => seekTo(Math.min(totalFrames, currentFrame + 1))}>后一帧</Text>
-            </Space>
+          </div>
 
-            <Divider type="vertical" style={{ height: 32, borderColor: '#f0f0f0' }} />
+          {/* Keyframe Dots */}
+          <div style={{ position: 'absolute', top: 18, left: 0, right: 0, padding: '0 16px' }}>
+            {sopSteps.map((step) => (
+              <div 
+                key={step.id} 
+                style={{ 
+                  position: 'absolute', 
+                  left: `calc(16px + ${(step.start / totalFrames) * 100}% - 4px)`, 
+                  width: 8, height: 8, 
+                  borderRadius: '50%', 
+                  backgroundColor: '#52c41a' 
+                }} 
+              />
+            ))}
+          </div>
+          
+          {/* Invisible Slider for interaction */}
+          <Slider 
+            min={0} max={totalFrames} value={currentFrame} 
+            onChange={setCurrentFrame} 
+            tooltip={{ open: false }}
+            style={{ position: 'absolute', top: -14, left: 16, right: 16, zIndex: 10, margin: 0, padding: '20px 0' }}
+            styles={{ track: { backgroundColor: 'transparent' }, rail: { backgroundColor: 'transparent' }, handle: { backgroundColor: '#fff', border: '2px solid #595959', width: 4, height: 20, borderRadius: 2, transform: 'translateY(-2px)' } }}
+          />
+        </div>
+
+        {/* Controls Row */}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '4px 16px', flexGrow: 1 }}>
+          <div style={{ width: 200, display: 'flex', gap: 12, alignItems: 'center' }}>
+            <Text style={{ fontSize: 12, fontFamily: 'monospace' }}>Time: {formatTime(currentFrame)}</Text>
+            <Text style={{ fontSize: 12, fontFamily: 'monospace' }}>Frame: {currentFrame}</Text>
+          </div>
+          
+          <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
+            <ArrowLeftOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => seekTo(0)} />
+            <FastBackwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => seekTo(currentFrame - 10)} />
+            <StepBackwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#595959' }} onClick={() => seekTo(currentFrame - 1)} />
+            <div 
+              onClick={() => setIsPlaying(!isPlaying)} 
+              style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid #d9d9d9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: '#fff' }}
+            >
+              {isPlaying ? <PauseOutlined style={{ fontSize: 16, color: '#595959' }} /> : <CaretRightOutlined style={{ fontSize: 16, color: '#595959', marginLeft: 2 }} />}
+            </div>
+            <StepForwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#595959' }} onClick={() => seekTo(currentFrame + 1)} />
+            <FastForwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => seekTo(currentFrame + 10)} />
+            <ArrowLeftOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c', transform: 'rotate(180deg)' }} onClick={() => seekTo(totalFrames)} />
+          </div>
+
+          <div style={{ width: 400, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+            <Button 
+              type="primary" 
+              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', borderRadius: 20, padding: '0 24px', height: 32 }}
+              onClick={() => handleFinish('优秀')}
+            >
+              优秀
+            </Button>
+            <Button 
+              type="primary" 
+              style={{ backgroundColor: '#b48846', borderColor: '#b48846', borderRadius: 20, padding: '0 24px', height: 32 }}
+              onClick={() => handleFinish('良好')}
+            >
+              良好
+            </Button>
+            <Button 
+              type="primary" 
+              style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f', borderRadius: 20, padding: '0 24px', height: 32 }}
+              onClick={() => handleFinish('不合格')}
+            >
+              不合格
+            </Button>
             
-            <Dropdown menu={speedMenu} trigger={['click']} placement="topRight">
-              <Space style={{ cursor: 'pointer', fontSize: 12, color: '#595959', padding: '4px 12px', background: '#f5f5f5', borderRadius: 4 }}>
-                倍速播放 <span style={{ color: '#1890ff', fontWeight: 600 }}>{playbackSpeed}x</span> <DownOutlined style={{ fontSize: 10 }} />
+            <Divider type="vertical" />
+            
+            <SyncOutlined style={{ cursor: 'pointer', color: '#8c8c8c' }} />
+            
+            <Dropdown menu={speedMenu} trigger={['click']}>
+              <Space style={{ cursor: 'pointer', fontSize: 12, color: '#595959' }}>
+                {playbackSpeed}x <DownOutlined style={{ fontSize: 10 }} />
               </Space>
             </Dropdown>
-          </Col>
-        </Row>
+          </div>
+        </div>
       </div>
-
-      <style jsx global>{`
-        .ant-layout-content { padding-bottom: 140px !important; }
-        .ant-slider-handle:focus::after { box-shadow: none !important; }
-        .ant-slider:hover .ant-slider-track { background-color: #1890ff !important; }
-        .ant-slider-handle:hover { transform: scale(1.2) !important; transition: transform 0.2s; }
-      `}</style>
-    </MainLayout>
+      
+    </div>
   );
 }
