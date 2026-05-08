@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button, Typography, Space, Badge, message, Tabs, Dropdown, Switch, Upload } from 'antd';
-import { CaretDownOutlined, ExpandAltOutlined, PauseCircleOutlined, PlayCircleOutlined, CloseCircleOutlined, StepBackwardOutlined, StepForwardOutlined, FastBackwardOutlined, FastForwardOutlined, PlusOutlined, DeleteOutlined, SyncOutlined, VideoCameraOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { CaretDownOutlined, ExpandOutlined, CompressOutlined, PauseCircleOutlined, PlayCircleOutlined, CloseCircleOutlined, StepBackwardOutlined, StepForwardOutlined, FastBackwardOutlined, FastForwardOutlined, PlusOutlined, DeleteOutlined, SyncOutlined, VideoCameraOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 export default function WorkspacePage() {
   const router = useRouter();
@@ -94,7 +94,12 @@ export default function WorkspacePage() {
     { key: 'hand_right', label: '右手-腕部视角' },
   ];
 
-  const PanelHeader = ({ title }) => (
+  const [fullscreenId, setFullscreenId] = useState(null);
+  const toggleFullscreen = (id) => {
+    setFullscreenId(prev => prev === id ? null : id);
+  };
+
+  const PanelHeader = ({ id, title }) => (
     <div style={{ height: 28, background: '#f5f5f5', borderBottom: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', padding: '0 8px', justifyContent: 'space-between' }}>
       <Dropdown menu={{ items: viewOptions }} trigger={['click']}>
         <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: '#333', fontSize: 12, fontWeight: 500 }}>
@@ -102,7 +107,10 @@ export default function WorkspacePage() {
           {title} <CaretDownOutlined style={{ marginLeft: 4, fontSize: 10, color: '#8c8c8c' }} />
         </div>
       </Dropdown>
-      <ExpandAltOutlined style={{ color: '#8c8c8c', cursor: 'pointer' }} />
+      {fullscreenId === id ? 
+        <CompressOutlined onClick={() => toggleFullscreen(id)} style={{ color: '#8c8c8c', cursor: 'pointer' }} /> :
+        <ExpandOutlined onClick={() => toggleFullscreen(id)} style={{ color: '#8c8c8c', cursor: 'pointer' }} />
+      }
     </div>
   );
 
@@ -136,58 +144,77 @@ export default function WorkspacePage() {
       }}>
         {isRecording && <div style={{ position: 'absolute', top: 16, right: 310, zIndex: 10, background: '#ff4d4f', color: '#fff', padding: '4px 12px', borderRadius: 4, fontWeight: 'bold', fontSize: 12, animation: 'blink 1s infinite' }}>● REC</div>}
         
-        {/* Left Column (Videos) - Equal width */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid #e8e8e8' }}>
-          {/* Top Video */}
-          <div style={{ height: 400, borderBottom: '1px solid #e8e8e8', display: 'flex', flexDirection: 'column' }}>
-            <PanelHeader title="左手-腕部视角" />
-            <div style={{ flex: 1, background: '#e6e8eb', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-              <img src="/assets/images/left_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="left hand cam" />
-              <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
-                <div>Fps: 30</div>
-                <div>Resolution: 640*360</div>
-                <div>Live Stream</div>
-              </div>
-            </div>
-          </div>
-          {/* Bottom Video */}
-          <div style={{ height: 400, display: 'flex', flexDirection: 'column' }}>
-            <PanelHeader title="右手-腕部视角" />
-            <div style={{ flex: 1, background: '#e6e8eb', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-              <img src="/assets/images/right_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="right hand cam" />
-              <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
-                <div>Fps: 30</div>
-                <div>Resolution: 640*360</div>
-                <div>Live Stream</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Video Grid Wrapper */}
+        <div style={{ flex: 1, display: 'flex', backgroundColor: '#fafafa', padding: '16px', overflow: 'hidden' }}>
+          
+          {/* Full height/width grid */}
+          <div style={{ 
+            width: '100%', 
+            height: '100%',
+            display: fullscreenId ? 'block' : 'grid', 
+            gridTemplateColumns: '1fr 1fr', 
+            gridTemplateRows: '1fr 1fr', 
+            gap: '8px' 
+          }}>
 
-        {/* Center Column (Video + 3D) - Equal width */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid #e8e8e8' }}>
-          {/* Top Video */}
-          <div style={{ height: 400, borderBottom: '1px solid #e8e8e8', display: 'flex', flexDirection: 'column' }}>
-            <PanelHeader title="头部左目视角" />
-            <div style={{ flex: 1, background: '#e6e8eb', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-              <img src="/assets/images/main_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="main head cam" />
-              <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
-                <div>Fps: 30</div>
-                <div>Resolution: 640*480</div>
-                <div>Live Stream</div>
+            {/* Top Left Video */}
+            {(!fullscreenId || fullscreenId === 'cam1') && (
+              <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
+                <PanelHeader id="cam1" title="左手-腕部视角" />
+                <div style={{ flex: 1, background: '#141414', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                  <img src="/assets/images/left_cam.png" style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="left hand cam" />
+                  <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
+                    <div>Fps: 30</div>
+                    <div>Resolution: 640*360</div>
+                    <div>Live Stream</div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          {/* Bottom 3D Area */}
-          <div style={{ height: 400, display: 'flex', flexDirection: 'column' }}>
-            <PanelHeader title="joints_digital_twin.json" />
-            <div style={{ flex: 1, background: '#1f1f1f', position: 'relative', overflow: 'hidden' }}>
-               {/* 3D Mockup Background Grid */}
-               <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px', transform: 'perspective(500px) rotateX(60deg) scale(2)', transformOrigin: 'center 100%' }}></div>
-               <div style={{ position: 'absolute', bottom: '20%', left: '50%', transform: 'translateX(-50%)', width: 40, height: 120, background: '#fff', borderRadius: 4, boxShadow: '0 0 20px rgba(255,255,255,0.5)' }}></div>
-               <div style={{ position: 'absolute', top: 8, left: 8, color: '#fff', fontSize: 12 }}>120 FPS (Real-time Twin)</div>
-               <div style={{ position: 'absolute', top: 8, left: 160, width: 80, height: 12, background: '#1677ff' }}></div>
-            </div>
+            )}
+
+            {/* Top Right Video */}
+            {(!fullscreenId || fullscreenId === 'cam3') && (
+              <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
+                <PanelHeader id="cam3" title="头部左目视角" />
+                <div style={{ flex: 1, background: '#141414', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                  <img src="/assets/images/main_cam.png" style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="main head cam" />
+                  <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
+                    <div>Fps: 30</div>
+                    <div>Resolution: 640*480</div>
+                    <div>Live Stream</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Left Video */}
+            {(!fullscreenId || fullscreenId === 'cam2') && (
+              <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
+                <PanelHeader id="cam2" title="右手-腕部视角" />
+                <div style={{ flex: 1, background: '#141414', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                  <img src="/assets/images/right_cam.png" style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="right hand cam" />
+                  <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
+                    <div>Fps: 30</div>
+                    <div>Resolution: 640*360</div>
+                    <div>Live Stream</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Right 3D Area */}
+            {(!fullscreenId || fullscreenId === 'cam4') && (
+              <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
+                <PanelHeader id="cam4" title="joints_digital_twin.json" />
+                <div style={{ flex: 1, background: '#1f1f1f', position: 'relative', overflow: 'hidden' }}>
+                  {/* 3D Mockup Background Grid */}
+                  <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px', transform: 'perspective(500px) rotateX(60deg) scale(2)', transformOrigin: 'center 100%' }}></div>
+                  <div style={{ position: 'absolute', bottom: '20%', left: '50%', transform: 'translateX(-50%)', width: 40, height: 120, background: '#fff', borderRadius: 4, boxShadow: '0 0 20px rgba(255,255,255,0.5)' }}></div>
+                  <div style={{ position: 'absolute', top: 8, left: 8, color: '#fff', fontSize: 12 }}>120 FPS (Real-time Twin)</div>
+                  <div style={{ position: 'absolute', top: 8, left: 160, width: 80, height: 12, background: '#1677ff' }}></div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

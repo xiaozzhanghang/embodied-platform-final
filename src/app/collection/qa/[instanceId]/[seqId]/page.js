@@ -23,6 +23,7 @@ import {
   StepForwardOutlined, 
   ReloadOutlined,
   ExpandOutlined,
+  CompressOutlined,
   DownOutlined,
   PlusOutlined,
   ExclamationCircleFilled,
@@ -47,6 +48,25 @@ export default function QaReviewPage({ params }) {
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [activeStepId, setActiveStepId] = useState(5);
   const [conclusion, setConclusion] = useState(null);
+
+  const [viewportViews, setViewportViews] = useState({
+    cam1: '左手-腕部视角',
+    cam2: '头部左目视角',
+    cam3: '右手-腕部视角',
+    joints: '头部右目视角'
+  });
+
+  const [fullscreenId, setFullscreenId] = useState(null);
+  const toggleFullscreen = (id) => {
+    setFullscreenId(prev => prev === id ? null : id);
+  };
+
+  const viewOptions = [
+    { key: '头部左目视角', label: '头部左目视角' },
+    { key: '头部右目视角', label: '头部右目视角' },
+    { key: '左手-腕部视角', label: '左手-腕部视角' },
+    { key: '右手-腕部视角', label: '右手-腕部视角' },
+  ];
 
   // SOP Steps Data to match the screenshot
   const [sopSteps, setSopSteps] = useState([
@@ -110,7 +130,7 @@ export default function QaReviewPage({ params }) {
     return (frame / fps).toFixed(3);
   };
 
-  const renderVideoViewport = (id, title, imgUrl, hasBottomBar = true) => (
+  const renderVideoViewport = (id, imgUrl, hasBottomBar = true) => (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, border: '1px solid #e8e8e8', backgroundColor: '#fff', boxSizing: 'border-box' }}>
       <div style={{ 
         padding: '4px 8px', 
@@ -126,13 +146,26 @@ export default function QaReviewPage({ params }) {
       }}>
         <Space size={4}>
           <div style={{ width: 3, height: 12, backgroundColor: '#1890ff' }}></div>
-          <Text strong style={{ fontSize: 12 }}>{title}</Text>
-          <DownOutlined style={{ fontSize: 10, color: '#8c8c8c' }} />
+          <Dropdown
+            menu={{
+              items: viewOptions,
+              onClick: ({ key }) => setViewportViews(prev => ({ ...prev, [id]: key }))
+            }}
+            trigger={['click']}
+          >
+            <Space style={{ cursor: 'pointer' }}>
+              <Text strong style={{ fontSize: 12 }}>{viewportViews[id]}</Text>
+              <DownOutlined style={{ fontSize: 10, color: '#8c8c8c' }} />
+            </Space>
+          </Dropdown>
         </Space>
-        <ExpandOutlined style={{ fontSize: 12, cursor: 'pointer', color: '#8c8c8c' }} />
+        {fullscreenId === id ? 
+          <CompressOutlined style={{ fontSize: 12, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => toggleFullscreen(id)} /> :
+          <ExpandOutlined style={{ fontSize: 12, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => toggleFullscreen(id)} />
+        }
       </div>
-      <div style={{ flex: '1 1 auto', minHeight: 0, backgroundColor: id === 'joints' ? '#141414' : '#e6e6e6', position: 'relative', overflow: 'hidden' }}>
-        <img src={imgUrl} style={{ width: '100%', height: '100%', objectFit: id === 'joints' ? 'contain' : 'cover' }} alt={title} />
+      <div style={{ flex: '1 1 auto', minHeight: 0, backgroundColor: '#141414', position: 'relative', overflow: 'hidden' }}>
+        <img src={imgUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt={viewportViews[id]} />
         {id !== 'joints' && (
           <div style={{ position: 'absolute', bottom: 12, right: 12, textAlign: 'right', color: 'rgba(255,255,255,0.8)', fontSize: 10, textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>
             Fps: 30<br/>
@@ -184,20 +217,19 @@ export default function QaReviewPage({ params }) {
       <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
         
         {/* Left: Video Grid */}
-        <div style={{ flex: '1 1 auto', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', padding: '16px' }}>
+        <div style={{ flex: '1 1 auto', backgroundColor: '#fafafa', display: 'flex', padding: '16px', overflow: 'hidden' }}>
           <div style={{ 
             width: '100%', 
-            maxWidth: 'calc((100vh - 180px) * 16 / 9)', 
-            aspectRatio: '16 / 9', 
-            display: 'grid', 
+            height: '100%',
+            display: fullscreenId ? 'block' : 'grid', 
             gridTemplateColumns: '1fr 1fr', 
             gridTemplateRows: '1fr 1fr', 
             gap: '8px' 
           }}>
-            {renderVideoViewport('camera_hand_left_color', 'camera_hand_left_color', 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&q=80')}
-          {renderVideoViewport('camera_head_left_color', 'camera_head_left_color', 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800&q=80')}
-          {renderVideoViewport('camera_hand_right_color', 'camera_hand_right_color', 'https://images.unsplash.com/photo-1531746790731-6c087fecd05a?w=800&q=80')}
-          {renderVideoViewport('joints', 'joints.json', 'https://images.unsplash.com/photo-1535378917042-10a22c95961a?w=800&q=80', false)}
+            {(!fullscreenId || fullscreenId === 'cam1') && renderVideoViewport('cam1', 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&q=80')}
+            {(!fullscreenId || fullscreenId === 'cam2') && renderVideoViewport('cam2', 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=800&q=80')}
+            {(!fullscreenId || fullscreenId === 'cam3') && renderVideoViewport('cam3', 'https://images.unsplash.com/photo-1531746790731-6c087fecd05a?w=800&q=80')}
+            {(!fullscreenId || fullscreenId === 'joints') && renderVideoViewport('joints', 'https://images.unsplash.com/photo-1535378917042-10a22c95961a?w=800&q=80', false)}
           </div>
         </div>
 
