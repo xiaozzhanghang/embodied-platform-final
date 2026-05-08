@@ -220,8 +220,7 @@ export default function QaReviewPage({ params }) {
         <div style={{ flex: '1 1 auto', backgroundColor: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '16px', overflow: 'hidden' }}>
           <div style={{ 
             width: '100%', 
-            maxWidth: 'calc((100vh - 180px) * 16 / 9)',
-            aspectRatio: '16 / 9',
+            height: '100%',
             display: fullscreenId ? 'block' : 'grid', 
             gridTemplateColumns: '1fr 1fr', 
             gridTemplateRows: '1fr 1fr', 

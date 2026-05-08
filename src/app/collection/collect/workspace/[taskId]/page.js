@@ -151,8 +151,7 @@ export default function WorkspacePage() {
           {/* Full height/width grid */}
           <div style={{ 
             width: '100%', 
-            maxWidth: 'calc((100vh - 180px) * 16 / 9)',
-            aspectRatio: '16 / 9',
+            height: '100%',
             display: fullscreenId ? 'block' : 'grid', 
             gridTemplateColumns: '1fr 1fr', 
             gridTemplateRows: '1fr 1fr', 
