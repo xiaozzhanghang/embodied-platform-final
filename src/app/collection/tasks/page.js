@@ -125,8 +125,6 @@ export default function TaskCenterPage() {
         <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '任务管理' }]} style={{ marginBottom: 16 }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <Title level={3} style={{ margin: 0, marginBottom: 8 }}>任务中心</Title>
-            <Text type="secondary">管理所有采集实例，并进行批量的标注任务指派与审核管理。</Text>
           </div>
         </div>
       </div>
