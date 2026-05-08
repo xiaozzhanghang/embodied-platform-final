@@ -164,8 +164,8 @@ export default function QaReviewPage({ params }) {
           <ExpandOutlined style={{ fontSize: 12, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => toggleFullscreen(id)} />
         }
       </div>
-      <div style={{ flex: '1 1 auto', minHeight: 0, backgroundColor: '#141414', position: 'relative', overflow: 'hidden' }}>
-        <img src={imgUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt={viewportViews[id]} />
+      <div style={{ flex: '1 1 auto', minHeight: 0, backgroundColor: id === 'joints' ? '#141414' : '#e6e6e6', position: 'relative', overflow: 'hidden' }}>
+        <img src={imgUrl} style={{ width: '100%', height: '100%', objectFit: id === 'joints' ? 'contain' : 'cover' }} alt={viewportViews[id]} />
         {id !== 'joints' && (
           <div style={{ position: 'absolute', bottom: 12, right: 12, textAlign: 'right', color: 'rgba(255,255,255,0.8)', fontSize: 10, textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>
             Fps: 30<br/>
@@ -217,10 +217,11 @@ export default function QaReviewPage({ params }) {
       <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
         
         {/* Left: Video Grid */}
-        <div style={{ flex: '1 1 auto', backgroundColor: '#fafafa', display: 'flex', padding: '16px', overflow: 'hidden' }}>
+        <div style={{ flex: '1 1 auto', backgroundColor: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '16px', overflow: 'hidden' }}>
           <div style={{ 
             width: '100%', 
-            height: '100%',
+            maxWidth: 'calc((100vh - 180px) * 16 / 9)',
+            aspectRatio: '16 / 9',
             display: fullscreenId ? 'block' : 'grid', 
             gridTemplateColumns: '1fr 1fr', 
             gridTemplateRows: '1fr 1fr', 

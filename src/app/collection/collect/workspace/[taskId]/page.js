@@ -146,12 +146,13 @@ export default function WorkspacePage() {
         {isRecording && <div style={{ position: 'absolute', top: 16, right: 310, zIndex: 10, background: '#ff4d4f', color: '#fff', padding: '4px 12px', borderRadius: 4, fontWeight: 'bold', fontSize: 12, animation: 'blink 1s infinite' }}>● REC</div>}
         
         {/* Video Grid Wrapper */}
-        <div style={{ flex: 1, display: 'flex', backgroundColor: '#fafafa', padding: '16px', overflow: 'hidden', minHeight: 0, minWidth: 0 }}>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', backgroundColor: '#fff', padding: '16px', overflow: 'hidden', minHeight: 0, minWidth: 0 }}>
           
           {/* Full height/width grid */}
           <div style={{ 
             width: '100%', 
-            height: '100%',
+            maxWidth: 'calc((100vh - 180px) * 16 / 9)',
+            aspectRatio: '16 / 9',
             display: fullscreenId ? 'block' : 'grid', 
             gridTemplateColumns: '1fr 1fr', 
             gridTemplateRows: '1fr 1fr', 
@@ -162,8 +163,8 @@ export default function WorkspacePage() {
             {(!fullscreenId || fullscreenId === 'cam1') && (
               <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
                 <PanelHeader id="cam1" title="左手-腕部视角" />
-                <div style={{ flex: 1, background: '#141414', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                  <img src="/assets/images/left_cam.png" style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="left hand cam" />
+                <div style={{ flex: 1, background: '#e6e8eb', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                  <img src="/assets/images/left_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="left hand cam" />
                   <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
                     <div>Resolution: 640*360</div>
@@ -177,8 +178,8 @@ export default function WorkspacePage() {
             {(!fullscreenId || fullscreenId === 'cam3') && (
               <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
                 <PanelHeader id="cam3" title="头部左目视角" />
-                <div style={{ flex: 1, background: '#141414', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                  <img src="/assets/images/main_cam.png" style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="main head cam" />
+                <div style={{ flex: 1, background: '#e6e8eb', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                  <img src="/assets/images/main_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="main head cam" />
                   <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
                     <div>Resolution: 640*480</div>
@@ -192,8 +193,8 @@ export default function WorkspacePage() {
             {(!fullscreenId || fullscreenId === 'cam2') && (
               <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
                 <PanelHeader id="cam2" title="右手-腕部视角" />
-                <div style={{ flex: 1, background: '#141414', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                  <img src="/assets/images/right_cam.png" style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="right hand cam" />
+                <div style={{ flex: 1, background: '#e6e8eb', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                  <img src="/assets/images/right_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="right hand cam" />
                   <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
                     <div>Resolution: 640*360</div>
