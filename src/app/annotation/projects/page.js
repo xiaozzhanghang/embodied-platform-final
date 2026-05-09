@@ -2,218 +2,360 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Select, Form, Row, Col, Card, Modal, Tabs, Popconfirm, Steps, Badge, App, Dropdown, Menu, Typography } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, CopyOutlined, TeamOutlined, ScissorOutlined, SettingOutlined, StopOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Input, Select, Form, Card, Modal, Tabs, Statistic, Row, Col, Progress, Drawer, Descriptions, App, Badge, Typography, Tooltip } from 'antd';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, TeamOutlined, EditOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, UserOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
 
-const annotationMockData = [
-    {
-        key: '1',
-        project: 'SimulatedCollection',
-        taskbook: 'TB-2025001-桌面抓取SOP',
-        annoId: 'ANNO-778891',
-        taskId: 'CT-20250301001',
-        instanceId: 'INST-766794',
-        name: 'FRANKA-FR3-抓取红色方块-001',
-        annoTaskName: '抓取轨迹逐帧标注',
-        dataAmount: '153帧',
-        dataDuration: '1.2min',
-        status: '进行中',
-        isShelf: '否',
-        shelfPos: '-',
-        deviceSN: 'FR3-001-ALPHA',
-        qaer: '质检员A',
-        annoer: '标注员X',
-        reannoer: '审核员Y',
-        collector: '张三',
-        qaProgress: '100%',
-        annoProgress: '60%',
-        reannoProgress: '0%',
-        annoType: '范围&框标注',
-        desc: '标注机器人抓取轨迹的起始帧及手部边界框',
-        creator: '管理员',
-        createTime: '2025-03-02 09:00',
-        annoCount: 92,
-        reannoCount: 0
-    },
-    {
-        key: '2',
-        project: 'VLA-Data-Lab',
-        taskbook: 'TB-2025005-通用操作SOP',
-        annoId: 'ANNO-992210',
-        taskId: 'CT-20250305022',
-        instanceId: 'INST-882231',
-        name: 'UR5-放置杯子-022',
-        annoTaskName: '杯子放置关键点标注',
-        dataAmount: '2000帧',
-        dataDuration: '15min',
-        status: '已完成',
-        isShelf: '是',
-        shelfPos: 'B-2-04',
-        deviceSN: 'UR5-998-BETA',
-        qaer: '质检员B',
-        annoer: '标注员M',
-        reannoer: '审核员N',
-        collector: '李四',
-        qaProgress: '100%',
-        annoProgress: '100%',
-        reannoProgress: '100%',
-        annoType: '点标注',
-        desc: '标记水杯触底瞬间的关键点位置',
-        creator: '张经理',
-        createTime: '2025-03-03 14:30',
-        annoCount: 2000,
-        reannoCount: 2000
-    }
+const ANNO_TYPE_COLORS = {
+  '点标注': 'purple',
+  '范围标注': 'blue',
+  '框标注': 'orange',
+  '范围&框标注': 'geekblue',
+  '无需标注': 'default',
+};
+
+const mockData = [
+  {
+    key: '1',
+    annoId: 'ANNO-778891',
+    name: 'FRANKA-FR3-抓取红色方块-001',
+    annoType: '框标注',
+    taskId: 'CT-20250301001',
+    project: 'SimulatedCollection',
+    annoer: '标注员X',
+    reviewer: '审核员Y',
+    status: '标注中',
+    qaProgress: 100,
+    annoProgress: 60,
+    reviewProgress: 0,
+    dataAmount: 153,
+    createTime: '2025-03-02 09:00',
+  },
+  {
+    key: '2',
+    annoId: 'ANNO-992210',
+    name: 'UR5-放置杯子-022',
+    annoType: '点标注',
+    taskId: 'CT-20250305022',
+    project: 'VLA-Data-Lab',
+    annoer: '标注员M',
+    reviewer: '审核员N',
+    status: '已完成',
+    qaProgress: 100,
+    annoProgress: 100,
+    reviewProgress: 100,
+    dataAmount: 2000,
+    createTime: '2025-03-03 14:30',
+  },
+  {
+    key: '3',
+    annoId: 'ANNO-881122',
+    name: 'G1-整理厨具-007',
+    annoType: '范围&框标注',
+    taskId: 'CT-20250308007',
+    project: 'Kitchen-Action-Set',
+    annoer: null,
+    reviewer: null,
+    status: '待分配',
+    qaProgress: 100,
+    annoProgress: 0,
+    reviewProgress: 0,
+    dataAmount: 480,
+    createTime: '2025-03-08 11:00',
+  },
+  {
+    key: '4',
+    annoId: 'ANNO-663344',
+    name: 'G1-搬运纸箱-015',
+    annoType: '无需标注',
+    taskId: 'CT-20250310015',
+    project: 'Logistics-Dataset',
+    annoer: '标注员A',
+    reviewer: null,
+    status: '审核中',
+    qaProgress: 100,
+    annoProgress: 100,
+    reviewProgress: 45,
+    dataAmount: 720,
+    createTime: '2025-03-10 09:30',
+  },
 ];
 
-const splitData = [
-    { key: '1', batchId: 'B-001', fileName: 'grasp_batch_001.zip', questionCount: 50, totalData: 200, progress: '80%', annotationId: 'AD-001', status: '完成', createTime: '2025-03-01' }
-];
+const annotators = ['标注员A', '标注员B', '标注员M', '标注员X', '标注员Z'];
+const reviewers = ['审核员Y', '审核员N', '审核员P'];
+
+const statusConfig = {
+  '待分配': { color: 'default', icon: <ClockCircleOutlined /> },
+  '标注中': { color: 'processing', icon: <SyncOutlined spin /> },
+  '审核中': { color: 'warning', icon: <EyeOutlined /> },
+  '已完成': { color: 'success', icon: <CheckCircleOutlined /> },
+};
 
 export default function AnnotationProjectsPage() {
-    const { message } = App.useApp();
+  const { message } = App.useApp();
   const router = useRouter();
-    const [splitOpen, setSplitOpen] = useState(false);
-    const [assignOpen, setAssignOpen] = useState(false);
-    const [packOpen, setPackOpen] = useState(false);
-    const [createStep, setCreateStep] = useState(0);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [assignAnnotator, setAssignAnnotator] = useState(null);
+  const [assignReviewer, setAssignReviewer] = useState(null);
 
-    const columns = [
-        { title: '项目', dataIndex: 'project', key: 'project', width: 150, ellipsis: true },
-        { title: '任务书', dataIndex: 'taskbook', key: 'taskbook', width: 180, ellipsis: true },
-        { title: '标注ID', dataIndex: 'annoId', key: 'annoId', width: 130 },
-        { title: '任务ID', dataIndex: 'taskId', key: 'taskId', width: 130 },
-        { title: '实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 130 },
-        { title: '任务名称', dataIndex: 'name', key: 'name', width: 220, ellipsis: true },
-        { title: '标注任务名称', dataIndex: 'annoTaskName', key: 'annoTaskName', width: 200, ellipsis: true },
-        { title: '数据量', dataIndex: 'dataAmount', key: 'dataAmount', width: 100 },
-        { title: '数据量(分钟)', dataIndex: 'dataDuration', key: 'dataDuration', width: 120 },
-        { title: '任务状态', dataIndex: 'status', key: 'status', width: 100, render: (s) => <Tag color={s === '已完成' ? 'success' : 'processing'}>{s}</Tag> },
-        { title: '是否货架任务', dataIndex: 'isShelf', key: 'isShelf', width: 110 },
-        { title: '行列号', dataIndex: 'shelfPos', key: 'shelfPos', width: 100 },
-        { title: '设备SN', dataIndex: 'deviceSN', key: 'deviceSN', width: 150 },
-        { title: '质检员', dataIndex: 'qaer', key: 'qaer', width: 100 },
-        { title: '标注员', dataIndex: 'annoer', key: 'annoer', width: 100 },
-        { title: '审核员', dataIndex: 'reannoer', key: 'reannoer', width: 100 },
-        { title: '采集员', dataIndex: 'collector', key: 'collector', width: 100 },
-        { title: '质检进度', dataIndex: 'qaProgress', key: 'qaProgress', width: 100 },
-        { title: '标注进度', dataIndex: 'annoProgress', key: 'annoProgress', width: 100 },
-        { title: '审核进度', dataIndex: 'reannoProgress', key: 'reannoProgress', width: 100 },
-        { title: '标注类型', dataIndex: 'annoType', key: 'annoType', width: 120 },
-        { title: '任务描述', dataIndex: 'desc', key: 'desc', width: 180, ellipsis: true },
-        { title: '创建人', dataIndex: 'creator', key: 'creator', width: 100 },
-        { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
-        { title: '标注进度(数量)', dataIndex: 'annoCount', key: 'annoCount', width: 130 },
-        { title: '审核进度(数量)', dataIndex: 'reannoCount', key: 'reannoCount', width: 130 },
-        {
-            title: '操作', key: 'action', width: 220, fixed: 'right',
-            render: () => (
-                <Space size="small">
-                    <Button type="link" size="small">标注</Button>
-                    <Button type="link" size="small">审核</Button>
-                    <Button type="link" size="small" icon={<EyeOutlined />}>查看</Button>
-                    <Button type="link" size="small" danger>重置</Button>
-                </Space>
-            ),
-        },
-    ];
+  const openAssign = (record) => {
+    setSelectedRecord(record);
+    setAssignAnnotator(record.annoer);
+    setAssignReviewer(record.reviewer);
+    setAssignOpen(true);
+  };
 
-    const splitColumns = [
-        { title: '数据批次ID', dataIndex: 'batchId', width: 100 },
-        { title: '文件名称', dataIndex: 'fileName', width: 200 },
-        { title: '题目数', dataIndex: 'questionCount', width: 80 },
-        { title: '数据总量', dataIndex: 'totalData', width: 100 },
-        { title: '验收进度', dataIndex: 'progress', width: 100 },
-        { title: '标注数据集ID', dataIndex: 'annotationId', width: 120 },
-        { title: '状态', dataIndex: 'status', width: 80, render: (s) => <Tag color={s === '完成' ? 'success' : s === '进行中' ? 'processing' : 'error'}>{s}</Tag> },
-        { title: '创建时间', dataIndex: 'createTime', width: 120 },
-        {
-            title: '操作', key: 'action', width: 180,
-            render: (_, record) => (
-                <Space>
-                    {record.status === '完成' && <Button type="link" size="small">投放</Button>}
-                    <Popconfirm title="确定删除？"><Button type="link" size="small" danger>删除</Button></Popconfirm>
-                    <Button type="link" size="small" danger>作废</Button>
-                </Space>
-            ),
-        },
-    ];
+  const handleAssign = () => {
+    if (!assignAnnotator) { message.warning('请选择标注员'); return; }
+    message.success(`已成功分配标注员「${assignAnnotator}」`);
+    setAssignOpen(false);
+  };
 
-    return (
-        <MainLayout>
-            <div className="page-header"><h3 className="page-header-title">标注管理</h3></div>
-            <Card className="search-form" style={{ marginBottom: 16 }}>
-                <Form layout="inline">
-                    <Form.Item label="项目"><Input placeholder="请输入项目" allowClear style={{ width: 150 }} /></Form.Item>
-                    <Form.Item label="标注ID"><Input placeholder="请输入标注ID" allowClear style={{ width: 150 }} /></Form.Item>
-                    <Form.Item label="标注员"><Input placeholder="姓名" allowClear style={{ width: 120 }} /></Form.Item>
-                    <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
-                </Form>
+  const columns = [
+    {
+      title: '标注ID',
+      dataIndex: 'annoId',
+      key: 'annoId',
+      width: 130,
+      render: (v) => <Text code style={{ fontSize: 12 }}>{v}</Text>,
+    },
+    {
+      title: '任务名称',
+      dataIndex: 'name',
+      key: 'name',
+      width: 230,
+      ellipsis: true,
+      render: (v, r) => (
+        <Button type="link" style={{ padding: 0, textAlign: 'left', height: 'auto' }} onClick={() => { setSelectedRecord(r); setDetailOpen(true); }}>
+          {v}
+        </Button>
+      ),
+    },
+    {
+      title: '标注类型',
+      dataIndex: 'annoType',
+      key: 'annoType',
+      width: 120,
+      render: (t) => <Tag color={ANNO_TYPE_COLORS[t]}>{t}</Tag>,
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (s) => {
+        const cfg = statusConfig[s] || {};
+        return <Badge status={cfg.color || 'default'} text={s} />;
+      },
+    },
+    {
+      title: '标注员',
+      dataIndex: 'annoer',
+      key: 'annoer',
+      width: 110,
+      render: (v, r) => v
+        ? <Space size={4}><UserOutlined style={{ color: '#1677ff' }} /><span>{v}</span></Space>
+        : <Button size="small" type="dashed" icon={<UserOutlined />} onClick={() => openAssign(r)}>待分配</Button>,
+    },
+    {
+      title: '审核员',
+      dataIndex: 'reviewer',
+      key: 'reviewer',
+      width: 110,
+      render: (v, r) => v
+        ? <Space size={4}><UserOutlined style={{ color: '#52c41a' }} /><span>{v}</span></Space>
+        : <Button size="small" type="dashed" icon={<UserOutlined />} onClick={() => openAssign(r)}>待分配</Button>,
+    },
+    {
+      title: '标注进度',
+      key: 'progress',
+      width: 180,
+      render: (_, r) => (
+        <Tooltip title={`标注 ${r.annoProgress}% | 审核 ${r.reviewProgress}%`}>
+          <div>
+            <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>标注</div>
+            <Progress percent={r.annoProgress} size="small" strokeColor="#1677ff" showInfo={false} />
+            <div style={{ fontSize: 11, color: '#999', marginTop: 4, marginBottom: 2 }}>审核</div>
+            <Progress percent={r.reviewProgress} size="small" strokeColor="#52c41a" showInfo={false} />
+          </div>
+        </Tooltip>
+      ),
+    },
+    {
+      title: '数据量',
+      dataIndex: 'dataAmount',
+      key: 'dataAmount',
+      width: 80,
+      render: (v) => `${v} 帧`,
+    },
+    {
+      title: '所属项目',
+      dataIndex: 'project',
+      key: 'project',
+      width: 160,
+      ellipsis: true,
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'createTime',
+      key: 'createTime',
+      width: 160,
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 180,
+      fixed: 'right',
+      render: (_, r) => (
+        <Space size="small">
+          <Button type="link" size="small" onClick={() => router.push('/annotation/answer')}>标注</Button>
+          <Button type="link" size="small" onClick={() => router.push('/annotation/review')}>审核</Button>
+          <Button type="link" size="small" icon={<TeamOutlined />} onClick={() => openAssign(r)}>分配</Button>
+        </Space>
+      ),
+    },
+  ];
+
+  const stats = {
+    total: mockData.length,
+    pending: mockData.filter(d => d.status === '待分配').length,
+    ongoing: mockData.filter(d => d.status === '标注中' || d.status === '审核中').length,
+    done: mockData.filter(d => d.status === '已完成').length,
+  };
+
+  return (
+    <MainLayout>
+      <div className="page-header">
+        <h3 className="page-header-title">标注管理</h3>
+      </div>
+
+      {/* Stats Banner */}
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        {[
+          { label: '任务总数', value: stats.total, color: '#1677ff' },
+          { label: '待分配', value: stats.pending, color: '#faad14' },
+          { label: '进行中', value: stats.ongoing, color: '#1677ff' },
+          { label: '已完成', value: stats.done, color: '#52c41a' },
+        ].map(s => (
+          <Col span={6} key={s.label}>
+            <Card size="small" style={{ borderLeft: `4px solid ${s.color}`, borderRadius: 6 }}>
+              <Statistic title={s.label} value={s.value} valueStyle={{ color: s.color, fontSize: 28 }} />
             </Card>
+          </Col>
+        ))}
+      </Row>
 
-            <Card>
-                <div className="table-toolbar">
-                    <span className="table-toolbar-title">标注任务列表</span>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/annotation/projects/create')}>新建项目</Button>
-                </div>
-                <Table columns={columns} dataSource={annotationMockData} scroll={{ x: 4000 }} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
-            </Card>
+      {/* Search Bar */}
+      <Card className="search-form" style={{ marginBottom: 16 }}>
+        <Form layout="inline">
+          <Form.Item label="任务名称"><Input placeholder="请输入任务名称" allowClear style={{ width: 180 }} /></Form.Item>
+          <Form.Item label="标注类型">
+            <Select placeholder="全部" allowClear style={{ width: 140 }} options={Object.keys(ANNO_TYPE_COLORS).map(v => ({ value: v }))} />
+          </Form.Item>
+          <Form.Item label="状态">
+            <Select placeholder="全部" allowClear style={{ width: 120 }} options={Object.keys(statusConfig).map(v => ({ value: v }))} />
+          </Form.Item>
+          <Form.Item label="标注员"><Input placeholder="姓名" allowClear style={{ width: 120 }} /></Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+              <Button icon={<ReloadOutlined />}>重置</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
 
+      <Card>
+        <div className="table-toolbar">
+          <span className="table-toolbar-title">标注任务列表</span>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/annotation/projects/create')}>新建标注项目</Button>
+        </div>
+        <Table
+          columns={columns}
+          dataSource={mockData}
+          scroll={{ x: 1600 }}
+          pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }}
+          rowClassName={(r) => r.status === '待分配' ? 'row-pending' : ''}
+        />
+      </Card>
 
-            <Modal title="分配权限" open={assignOpen} onCancel={() => setAssignOpen(false)} footer={null} width={600}>
-                <Tabs
-                    defaultActiveKey="annotator"
-                    items={[
-                        { key: 'annotator', label: '标注权限', children: <><Form layout="inline" style={{ marginBottom: 16 }}><Form.Item label="选择标注员"><Select mode="multiple" placeholder="请选择" style={{ width: 300 }} options={[{ value: '标注员A' }, { value: '标注员B' }, { value: '标注员C' }]} /></Form.Item><Form.Item><Button type="primary" onClick={() => message.success('分配成功')}>确认分配</Button></Form.Item></Form></> },
-                        { key: 'reviewer', label: '一审权限', children: <><Form layout="inline" style={{ marginBottom: 16 }}><Form.Item label="选择审核员"><Select mode="multiple" placeholder="请选择" style={{ width: 300 }} options={[{ value: '审核员A' }, { value: '审核员B' }]} /></Form.Item><Form.Item><Button type="primary" onClick={() => message.success('分配成功')}>确认分配</Button></Form.Item></Form></> },
-                        { key: 'acceptor', label: '验收权限', children: <><Form layout="inline" style={{ marginBottom: 16 }}><Form.Item label="选择验收员"><Select mode="multiple" placeholder="请选择" style={{ width: 300 }} options={[{ value: '验收员A' }, { value: '验收组长B' }]} /></Form.Item><Form.Item><Button type="primary" onClick={() => message.success('分配成功')}>确认分配</Button></Form.Item></Form></> },
-                    ]}
-                />
-            </Modal>
+      {/* Assign Modal */}
+      <Modal
+        title={`分配人员 — ${selectedRecord?.name || ''}`}
+        open={assignOpen}
+        onCancel={() => setAssignOpen(false)}
+        onOk={handleAssign}
+        okText="确认分配"
+        cancelText="取消"
+        width={500}
+      >
+        <Form layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item label="标注员" required>
+            <Select
+              placeholder="请选择标注员"
+              value={assignAnnotator}
+              onChange={setAssignAnnotator}
+              options={annotators.map(v => ({ value: v, label: v }))}
+              size="large"
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+          <Form.Item label="审核员">
+            <Select
+              placeholder="请选择审核员（可选）"
+              value={assignReviewer}
+              onChange={setAssignReviewer}
+              options={reviewers.map(v => ({ value: v, label: v }))}
+              size="large"
+              style={{ width: '100%' }}
+              allowClear
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
 
-            <Modal title="拆分 - 导入待标注数据" open={splitOpen} onCancel={() => setSplitOpen(false)} footer={null} width={900}>
-                <Card className="search-form" size="small" style={{ marginBottom: 16 }}>
-                    <Form layout="inline" size="small">
-                        <Form.Item label="状态"><Select placeholder="全部" allowClear style={{ width: 100 }} options={[{ value: '完成' }, { value: '进行中' }, { value: '异常' }]} /></Form.Item>
-                        <Form.Item label="文件名称"><Input placeholder="请输入" allowClear style={{ width: 140 }} /></Form.Item>
-                        <Form.Item label="数据批次ID"><Input placeholder="请输入" allowClear style={{ width: 120 }} /></Form.Item>
-                        <Form.Item><Space><Button type="primary" size="small" icon={<SearchOutlined />}>查询</Button><Button size="small" icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
-                    </Form>
-                </Card>
-                <Table columns={splitColumns} dataSource={splitData} size="small" pagination={{ pageSize: 5 }} />
-            </Modal>
-
-            <Modal title="题包管理" open={packOpen} onCancel={() => setPackOpen(false)} footer={null} width={800}>
-                <Table
-                    size="small"
-                    dataSource={[
-                        { key: '1', packId: 'PK-001', name: '题包001', status: '已投放', annotator: '标注员A', progress: '80%', createTime: '2025-03-01' },
-                        { key: '2', packId: 'PK-002', name: '题包002', status: '待投放', annotator: '-', progress: '0%', createTime: '2025-03-02' },
-                        { key: '3', packId: 'PK-003', name: '题包003', status: '已完成', annotator: '标注员B', progress: '100%', createTime: '2025-03-01' },
-                    ]}
-                    columns={[
-                        { title: '题包ID', dataIndex: 'packId', width: 100 },
-                        { title: '题包名称', dataIndex: 'name', width: 120 },
-                        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '已完成' ? 'success' : s === '已投放' ? 'processing' : 'default'}>{s}</Tag> },
-                        { title: '标注员', dataIndex: 'annotator', width: 100 },
-                        { title: '进度', dataIndex: 'progress', width: 80 },
-                        { title: '创建时间', dataIndex: 'createTime', width: 120 },
-                        {
-                            title: '操作', key: 'action', width: 200,
-                            render: (_, r) => (
-                                <Space>
-                                    <Button type="link" size="small">下载题包</Button>
-                                    {r.status === '已投放' && <Button type="link" size="small" danger>回收题包</Button>}
-                                    <Button type="link" size="small">题包追溯</Button>
-                                </Space>
-                            ),
-                        },
-                    ]}
-                />
-            </Modal>
-        </MainLayout>
-    );
+      {/* Detail Drawer */}
+      <Drawer
+        title={`任务详情 — ${selectedRecord?.annoId || ''}`}
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        styles={{ wrapper: { width: 480 } }}
+      >
+        {selectedRecord && (
+          <Descriptions column={1} bordered size="small">
+            <Descriptions.Item label="标注ID">{selectedRecord.annoId}</Descriptions.Item>
+            <Descriptions.Item label="任务名称">{selectedRecord.name}</Descriptions.Item>
+            <Descriptions.Item label="所属项目">{selectedRecord.project}</Descriptions.Item>
+            <Descriptions.Item label="关联采集任务">{selectedRecord.taskId}</Descriptions.Item>
+            <Descriptions.Item label="标注类型">
+              <Tag color={ANNO_TYPE_COLORS[selectedRecord.annoType]}>{selectedRecord.annoType}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="状态">
+              <Badge status={statusConfig[selectedRecord.status]?.color} text={selectedRecord.status} />
+            </Descriptions.Item>
+            <Descriptions.Item label="标注员">{selectedRecord.annoer || '未分配'}</Descriptions.Item>
+            <Descriptions.Item label="审核员">{selectedRecord.reviewer || '未分配'}</Descriptions.Item>
+            <Descriptions.Item label="数据量">{selectedRecord.dataAmount} 帧</Descriptions.Item>
+            <Descriptions.Item label="标注进度">
+              <Progress percent={selectedRecord.annoProgress} size="small" />
+            </Descriptions.Item>
+            <Descriptions.Item label="审核进度">
+              <Progress percent={selectedRecord.reviewProgress} size="small" strokeColor="#52c41a" />
+            </Descriptions.Item>
+            <Descriptions.Item label="创建时间">{selectedRecord.createTime}</Descriptions.Item>
+          </Descriptions>
+        )}
+        <div style={{ marginTop: 24 }}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Button block type="primary" onClick={() => { setDetailOpen(false); router.push('/annotation/answer'); }}>进入标注工作台</Button>
+            <Button block onClick={() => { setDetailOpen(false); openAssign(selectedRecord); }}>分配/修改人员</Button>
+          </Space>
+        </div>
+      </Drawer>
+    </MainLayout>
+  );
 }

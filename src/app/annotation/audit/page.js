@@ -2,101 +2,44 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Tabs, Progress, App, Row, Col, Form, Select } from 'antd';
-import { SearchOutlined, ReloadOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined, AuditOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Tabs, Progress, App, Row, Col, Form, Select, Badge, Divider } from 'antd';
+import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
 
 export default function AnnotationAuditPage() {
   const router = useRouter();
-  const { message } = App.useApp();
   const [activeTab, setActiveTab] = useState('all');
 
-  const mockData = [
-    {
-      key: '1',
-      annoId: 'ANNO-9921-X',
-      instanceId: 'INS-766794-A',
-      taskName: '货架物品采集',
-      annoTaskName: '手部动作边界标注',
-      dataAmount: '120 帧',
-      dataDuration: '4.0 分钟',
-      status: '审核中',
-      isShelf: '是',
-      shelfPos: 'A-1-2',
-      deviceSN: 'FR3-001-ALPHA',
-      qaer: '质检员A',
-      annoer: '标注员B',
-      auditor: '审核员C',
-      collector: '张三',
-      qaProgress: '100%',
-      annoProgress: '100%',
-      auditProgress: '45%',
-      annoType: '范围&框标注',
-      createTime: '2026-03-24 09:15'
-    },
-    {
-      key: '2',
-      annoId: 'ANNO-9922-Y',
-      instanceId: 'INS-766794-B',
-      taskName: '桌面操作任务',
-      annoTaskName: '关键点精准定位',
-      dataAmount: '45 帧',
-      dataDuration: '1.5 分钟',
-      status: '待审核',
-      isShelf: '是',
-      shelfPos: '-',
-      deviceSN: 'UR5-998-BETA',
-      qaer: '质检员B',
-      annoer: '标注员D',
-      auditor: '审核员C',
-      collector: '李四',
-      qaProgress: '100%',
-      annoProgress: '80%',
-      auditProgress: '0%',
-      annoType: '点标注',
-      createTime: '2026-03-24 11:30'
-    }
-  ];
+  const instanceMockData = Array.from({ length: 12 }).map((_, i) => ({
+    key: i,
+    project: 'SimulatedCollection(模拟采集) sin',
+    taskbook: 'TB-抓取红色方块',
+    annoId: 16822 - i,
+    taskId: 21795,
+    instanceId: 19884 - i,
+    taskType: '垃圾清理',
+    annoProgress: '186/186',
+    auditProgress: '0/186',
+  }));
 
   const columns = [
-    { title: '标注ID', dataIndex: 'annoId', key: 'annoId', width: 130, fixed: 'left' },
-    { title: '实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 130 },
-    { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 180, ellipsis: true },
-    { title: '标注任务名称', dataIndex: 'annoTaskName', key: 'annoTaskName', width: 180, ellipsis: true },
-    { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (s) => <Tag color={s === '审核中' ? 'processing' : 'default'}>{s}</Tag> },
-    { 
-      title: '进度监控', 
-      key: 'progress', 
-      width: 300,
-      render: (_, record) => (
-        <Space direction="vertical" size={0} style={{ width: '100%' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-            <span>质检: {record.qaProgress}</span>
-            <span>标注: {record.annoProgress}</span>
-            <span>审核: {record.auditProgress}</span>
-          </div>
-          <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-            <div style={{ height: 4, flex: 1, backgroundColor: '#52c41a', borderRadius: 2 }} />
-            <div style={{ height: 4, flex: 1, backgroundColor: '#1890ff', borderRadius: 2 }} />
-            <div style={{ height: 4, flex: 1, backgroundColor: record.auditProgress === '0%' ? '#f0f0f0' : '#faad14', borderRadius: 2 }} />
-          </div>
-        </Space>
-      )
-    },
-    { title: '标注人员', dataIndex: 'annoer', key: 'annoer', width: 100 },
-    { title: '审核人员', dataIndex: 'auditor', key: 'auditor', width: 100 },
-    { title: '数据量', dataIndex: 'dataAmount', key: 'dataAmount', width: 100 },
-    { title: '时长', dataIndex: 'dataDuration', key: 'dataDuration', width: 100 },
-    { title: '标注类型', dataIndex: 'annoType', key: 'annoType', width: 120 },
-    { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 160 },
+    { title: '', dataIndex: 'checkbox', width: 40, render: () => <Input type="checkbox" /> },
+    { title: '项目', dataIndex: 'project', key: 'project', width: 200 },
+    { title: '任务书', dataIndex: 'taskbook', key: 'taskbook', width: 180 },
+    { title: '标注ID', dataIndex: 'annoId', key: 'annoId', width: 100 },
+    { title: '任务ID', dataIndex: 'taskId', key: 'taskId', width: 100, render: (t) => <Text style={{ color: '#1677ff' }}>{t}</Text> },
+    { title: '实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 100, render: (t) => <Text style={{ color: '#1677ff' }}>{t}</Text> },
+    { title: '任务类型', dataIndex: 'taskType', width: 100 },
+    { title: '标注进度(数量)', dataIndex: 'annoProgress', width: 120 },
+    { title: '审核进度(数量)', dataIndex: 'auditProgress', width: 120 },
     {
       title: '操作', key: 'action', width: 150, fixed: 'right',
-      render: () => (
-        <Space>
-          <Button type="link" size="small" icon={<AuditOutlined />}>审核</Button>
-          <Button type="link" size="small" icon={<EyeOutlined />}>详情</Button>
+      render: (_, r) => (
+        <Space size="middle">
+          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }}>重新分配</Button>
+          <Button type="link" size="small" icon={<LoginOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/annotation/audit/${r.instanceId}`)}>进入</Button>
         </Space>
       )
     }
@@ -104,47 +47,61 @@ export default function AnnotationAuditPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '标注审核' }]} style={{ marginBottom: 16 }} />
-        <Title level={3} style={{ margin: 0, marginBottom: 8 }}>标注审核中心</Title>
-        <Text type="secondary">对已完成标注的数据进行多阶段审核，支持点、框、范围等多种标注类型的质量验收。</Text>
+      <div style={{ marginBottom: 16 }}>
+        <Breadcrumb items={[{ title: '数据采集' }, { title: '标注审核' }]} style={{ marginBottom: 16 }} />
       </div>
 
-      <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
+      {/* Filter Section */}
+      <Card style={{ marginBottom: 16, borderRadius: 4 }} styles={{ body: { padding: '16px 24px' } }}>
         <Form layout="inline">
-          <Row gutter={[16, 16]} style={{ width: '100%' }}>
-            <Col span={6}><Form.Item label="标注ID" style={{ margin: 0, width: '100%' }}><Input placeholder="请输入标注ID" /></Form.Item></Col>
-            <Col span={6}><Form.Item label="标注员" style={{ margin: 0, width: '100%' }}><Input placeholder="请输入标注员姓名" /></Form.Item></Col>
-            <Col span={6}><Form.Item label="标注状态" style={{ margin: 0, width: '100%' }}><Select placeholder="请选择状态" /></Form.Item></Col>
-            <Col span={6}>
+          <Row gutter={[8, 12]} style={{ width: '100%' }}>
+            <Col span={4}><Select placeholder="请选择一级项目" style={{ width: '100%' }} /></Col>
+            <Col span={4}><Select placeholder="请选择二级项目" style={{ width: '100%' }} /></Col>
+            <Col span={4}><Select placeholder="请选择任务书" style={{ width: '100%' }} /></Col>
+            <Col span={4}><Input placeholder="请输入任务名称" /></Col>
+            <Col span={4}><Input placeholder="请输入任务ID" /></Col>
+            <Col span={4}><Select placeholder="请选择标注类型" style={{ width: '100%' }} /></Col>
+            <Col span={4}><Select placeholder="标注任务状态" style={{ width: '100%' }} /></Col>
+            <Col span={4}><Select placeholder="标注员" style={{ width: '100%' }} /></Col>
+            <Col span={4}><Select placeholder="审核员" style={{ width: '100%' }} /></Col>
+            <Col span={4}><Select placeholder="标注状态" style={{ width: '100%' }} /></Col>
+            <Col span={4}><Select placeholder="审核进度" style={{ width: '100%' }} /></Col>
+            <Col span={4}><Input placeholder="标注任务名称" /></Col>
+            <Col span={4}><Input placeholder="请输入标注任务ID" /></Col>
+            <Col span={4}><Input placeholder="请输入实例ID" /></Col>
+            <Col span={4}><Input placeholder="开始时间 - 结束时间" /></Col>
+            <Col span={4}>
               <Space>
-                <Button type="primary" icon={<SearchOutlined />}>查询结果</Button>
-                <Button>重置</Button>
+                <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                <Button icon={<ReloadOutlined />}>重置</Button>
               </Space>
             </Col>
           </Row>
         </Form>
       </Card>
 
-      <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={setActiveTab} 
-          style={{ padding: '0 24px' }}
-          items={[
-            { key: 'all', label: '全部任务' },
-            { key: 'pending', label: '待审核' },
-            { key: 'doing', label: '审核中' },
-            { key: 'passed', label: '已通过' },
-            { key: 'failed', label: '驳回' },
-          ]} 
-        />
+      {/* Table Section - Matching Screenshot Style */}
+      <Card 
+        title="审核任务列表" 
+        extra={
+          <Space>
+            <Button icon={<UserOutlined />}>批量分配</Button>
+            <Button icon={<DownloadOutlined />}>下载</Button>
+          </Space>
+        }
+        styles={{ body: { padding: 0 } }} 
+        style={{ borderRadius: 4 }}
+      >
         <Table 
           columns={columns} 
-          dataSource={mockData} 
-          scroll={{ x: 2000 }}
-          style={{ padding: '0 24px 24px' }}
-          pagination={{ pageSize: 10 }}
+          dataSource={instanceMockData} 
+          scroll={{ x: 1500 }}
+          pagination={{ 
+            pageSize: 20, 
+            showTotal: (t) => `共 ${t} 条`,
+            showSizeChanger: true,
+            pageSizeOptions: ['10', '20', '50']
+          }}
         />
       </Card>
     </MainLayout>
