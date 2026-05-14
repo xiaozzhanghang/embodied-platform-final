@@ -165,15 +165,7 @@ export default function ProjectManagementPage() {
     <MainLayout>
       <Breadcrumb items={[{ title: '首页' }, { title: '基础数据' }, { title: '项目管理' }]} style={{ marginBottom: 16 }} />
 
-      <div style={{ background: '#fff', borderRadius: 8, padding: '16px 24px', border: '1px solid #f0f0f0', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 4, height: 18, background: '#1890ff', borderRadius: 2 }} />
-          <Title level={4} style={{ margin: 0, fontSize: 18 }}>项目/任务标签管理</Title>
-          <Text type="secondary" style={{ fontSize: 13, marginLeft: 8 }}>管理项目归属、任务用途等元数据标签</Text>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 240px)' }}>
+      <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 160px)' }}>
         {/* Left Category List */}
         <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: 16, overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
