@@ -172,8 +172,6 @@ export default function ProjectManagementPage() {
           <Text type="secondary" style={{ fontSize: 13, marginLeft: 8 }}>管理项目归属、任务用途等元数据标签</Text>
         </div>
         <Space size={12}>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingCatKey(null); createCatForm.resetFields(); setCreateCatOpen(true); }}>创建分类</Button>
-          <Button danger icon={<DeleteOutlined />} disabled>批量删除</Button>
           <Button type="text" icon={<ReloadOutlined />} style={{ color: '#8c8c8c' }} />
         </Space>
       </div>

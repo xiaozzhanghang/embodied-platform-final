@@ -183,8 +183,6 @@ export default function ObjectLabelsPage() {
           <Text type="secondary" style={{ fontSize: 13, marginLeft: 8 }}>管理全平台物体库的分类标签与属性定义</Text>
         </div>
         <Space size={12}>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingCatKey(null); createCatForm.resetFields(); setCreateCatOpen(true); }}>创建分类</Button>
-          <Button danger icon={<DeleteOutlined />} disabled>批量删除</Button>
           <Button type="text" icon={<ReloadOutlined />} style={{ color: '#8c8c8c' }} />
         </Space>
       </div>
