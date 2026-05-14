@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Typography, Breadcrumb, Button, Input, App, Tooltip, Modal, Form, Select, InputNumber, Radio, Row, Col } from 'antd';
-import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Typography, Breadcrumb, Button, Input, App, Tooltip, Modal, Form, Select, InputNumber, Radio, Row, Col, Space } from 'antd';
+import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 const initialCategories = [
   { type: 'section', label: '物体信息' },
@@ -176,7 +176,20 @@ export default function ObjectLabelsPage() {
     <MainLayout>
       <Breadcrumb items={[{ title: '首页' }, { title: '基础数据' }, { title: '物体标签' }]} style={{ marginBottom: 16 }} />
 
-      <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 160px)' }}>
+      <div style={{ background: '#fff', borderRadius: 8, padding: '16px 24px', border: '1px solid #f0f0f0', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 4, height: 18, background: '#1890ff', borderRadius: 2 }} />
+          <Title level={4} style={{ margin: 0, fontSize: 18 }}>物体标签管理</Title>
+          <Text type="secondary" style={{ fontSize: 13, marginLeft: 8 }}>管理全平台物体库的分类标签与属性定义</Text>
+        </div>
+        <Space size={12}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingCatKey(null); createCatForm.resetFields(); setCreateCatOpen(true); }}>创建分类</Button>
+          <Button danger icon={<DeleteOutlined />} disabled>批量删除</Button>
+          <Button type="text" icon={<ReloadOutlined />} style={{ color: '#8c8c8c' }} />
+        </Space>
+      </div>
+
+      <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 240px)' }}>
 
         {/* Left Category List */}
         <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: 16, overflowY: 'auto' }}>
