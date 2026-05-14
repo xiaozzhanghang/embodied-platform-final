@@ -171,9 +171,6 @@ export default function ProjectManagementPage() {
           <Title level={4} style={{ margin: 0, fontSize: 18 }}>项目/任务标签管理</Title>
           <Text type="secondary" style={{ fontSize: 13, marginLeft: 8 }}>管理项目归属、任务用途等元数据标签</Text>
         </div>
-        <Space size={12}>
-          <Button type="text" icon={<ReloadOutlined />} style={{ color: '#8c8c8c' }} />
-        </Space>
       </div>
 
       <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 240px)' }}>
