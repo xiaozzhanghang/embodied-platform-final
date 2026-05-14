@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Modal, Progress, App } from 'antd';
+import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Modal, Progress, App, Row, Col } from 'antd';
 import { SearchOutlined, ReloadOutlined, PlayCircleOutlined, CheckOutlined, CloseOutlined, EyeOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 

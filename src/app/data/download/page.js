@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Progress, Tabs, Tooltip, App, Popconfirm } from 'antd';
-import { DownloadOutlined, SearchOutlined, ReloadOutlined, DeleteOutlined, FileZipOutlined, CopyOutlined, CloudDownloadOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Progress, Tabs, Tooltip, App, Popconfirm, Row, Col } from 'antd';
+import { DownloadOutlined, SearchOutlined, ReloadOutlined, DeleteOutlined, FileZipOutlined, CopyOutlined, CloudDownloadOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -111,7 +111,7 @@ export default function DownloadCenterPage() {
           <div>
             <Text strong>高速下载说明</Text><br/>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              1. 数据集通常较大（>10GB），建议在内网环境下使用“高速下载”功能。<br/>
+              1. 数据集通常较大（{">"}10GB），建议在内网环境下使用“高速下载”功能。<br/>
               2. 系统支持多格式并行打包，您可以同时提交 HDF5 和 RLDS 格式的发布申请。<br/>
               3. 下载记录将保留 30 天，超期后系统将自动清理文件以节省空间。
             </Text>

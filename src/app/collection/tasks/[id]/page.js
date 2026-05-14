@@ -233,25 +233,26 @@ export default function TaskInstancePage() {
             <Form.Item label="采集人员" style={{ marginBottom: 0 }}><Select placeholder="采集人员" style={{ width: 140 }} /></Form.Item>
             <Form.Item style={{ marginBottom: 0 }}><Button type="primary" icon={<SearchOutlined />}>搜索</Button></Form.Item>
           </Space>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddPackVisible(true)}>添加分包</Button>
-            <Button 
-              icon={<PauseOutlined />} 
-              disabled={selectedRowKeys.length === 0} 
-              onClick={() => setIsPauseTaskVisible(true)}
-              style={{ borderRadius: 6, background: selectedRowKeys.length > 0 ? '#e6f7ff' : '#f5f5f5', color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf', border: 'none' }}
-            >
-              暂停任务
-            </Button>
-            <Button 
-              icon={<PlusOutlined />} 
-              disabled={selectedRowKeys.length === 0}
-              onClick={() => setIsAddAnnoVisible(true)}
-              style={{ borderRadius: 6, background: selectedRowKeys.length > 0 ? '#e6f7ff' : '#f5f5f5', color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf', border: 'none' }}
-            >
-              添加标注任务
-            </Button>
-          </Space>
-        </div>
+            <Space size={12}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddPackVisible(true)}>添加分包</Button>
+              <Button 
+                icon={<PauseOutlined />} 
+                disabled={selectedRowKeys.length === 0} 
+                onClick={() => setIsPauseTaskVisible(true)}
+                style={{ borderRadius: 6, background: selectedRowKeys.length > 0 ? '#e6f7ff' : '#f5f5f5', color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf', border: 'none' }}
+              >
+                暂停任务
+              </Button>
+              <Button 
+                icon={<PlusOutlined />} 
+                disabled={selectedRowKeys.length === 0}
+                onClick={() => setIsAddAnnoVisible(true)}
+                style={{ borderRadius: 6, background: selectedRowKeys.length > 0 ? '#e6f7ff' : '#f5f5f5', color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf', border: 'none' }}
+              >
+                添加标注任务
+              </Button>
+            </Space>
+          </div>
 
         <Tabs
           activeKey={activeTab}

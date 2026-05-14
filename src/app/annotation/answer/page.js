@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, Modal, Progress, App, Badge, Row, Col, Tabs, Tooltip, Divider, Radio, Select } from 'antd';
+import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Progress, App, Badge, Row, Col, Tabs, Tooltip, Divider, Radio, Select } from 'antd';
 import { SearchOutlined, ReloadOutlined, PlayCircleOutlined, EyeOutlined, CheckCircleOutlined, LeftOutlined, RightOutlined, SaveOutlined, SendOutlined, ToolOutlined, ScissorOutlined, BorderOutlined, AimOutlined, HistoryOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -104,7 +104,7 @@ function AnnotationWorkspace({ project, onClose }) {
                 <Space size={20}>
                     <Button type="text" icon={<LeftOutlined />} onClick={onClose} style={{ color: '#fff' }} />
                     <Title level={5} style={{ color: '#fff', margin: 0 }}>{project.name} - Episode_001</Title>
-                    <Divider vertical style={{ borderColor: '#434343' }} />
+                    <MyDivider vertical style={{ borderColor: '#434343' }} />
                     <Space>
                         <Tooltip title="框选标注 (B)"><Button type={activeTool === 'box' ? 'primary' : 'text'} icon={<BorderOutlined />} onClick={() => setActiveTool('box')} style={{ color: activeTool === 'box' ? '#fff' : '#aaa' }} /></Tooltip>
                         <Tooltip title="点标注 (P)"><Button type={activeTool === 'point' ? 'primary' : 'text'} icon={<AimOutlined />} onClick={() => setActiveTool('point')} style={{ color: activeTool === 'point' ? '#fff' : '#aaa' }} /></Tooltip>
@@ -113,7 +113,7 @@ function AnnotationWorkspace({ project, onClose }) {
                 </Space>
                 <Space>
                     <Text style={{ color: '#aaa' }}>题目 36/50</Text>
-                    <Divider vertical style={{ borderColor: '#434343' }} />
+                    <MyDivider vertical style={{ borderColor: '#434343' }} />
                     <Button ghost icon={<SaveOutlined />} onClick={handleSave}>保存草稿</Button>
                     <Button type="primary" icon={<SendOutlined />} onClick={handleSubmit}>提交并下一题</Button>
                 </Space>
@@ -158,7 +158,7 @@ function AnnotationWorkspace({ project, onClose }) {
                             <Space>
                                 <Tooltip title="上一关键帧"><Button size="small" icon={<LeftOutlined />} /></Tooltip>
                                 <Tooltip title="下一关键帧"><Button size="small" icon={<RightOutlined />} /></Tooltip>
-                                <Divider vertical />
+                                <MyDivider vertical />
                                 <Select defaultValue="1.0x" size="small" style={{ width: 70 }} options={[{ value: '0.5x' }, { value: '1.0x' }, { value: '2.0x' }]} />
                             </Space>
                         </div>
@@ -246,6 +246,6 @@ function AnnotationWorkspace({ project, onClose }) {
     );
 }
 
-function Divider({ vertical, style }) {
+function MyDivider({ vertical, style }) {
     return <div style={{ width: vertical ? 1 : '100%', height: vertical ? '60%' : 1, backgroundColor: '#434343', ...style }} />;
 }

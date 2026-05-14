@@ -1,0 +1,29 @@
+        <Card 
+          style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+          styles={{ body: { padding: '24px 24px 0' } }}
+        >
+          <Form layout="horizontal" labelCol={{ flex: '100px' }}>
+            <Row gutter={24}>
+              <Col span={8}>
+                <Form.Item label={activeTab === 'robot' ? "名称" : "名称"}>
+                  <Input 
+                    placeholder={activeTab === 'robot' ? "请输入设备类型" : "请输入部件类型"} 
+                    prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item label="状态">
+                  <Select placeholder="请选择状态" allowClear options={[{label:'正常', value:'active'}, {label:'禁用', value:'inactive'}]} />
+                </Form.Item>
+              </Col>
+              <Col span={8} style={{ textAlign: 'right' }}>
+                <Space>
+                  <Button icon={<ReloadOutlined />}>重置</Button>
+                  <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                  <Button type="link" size="small" icon={<DownOutlined />}>展开</Button>
+                </Space>
+              </Col>
+            </Row>
+          </Form>
+        </Card>
