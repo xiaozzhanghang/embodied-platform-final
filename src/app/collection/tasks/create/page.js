@@ -416,9 +416,9 @@ function CreateTaskContent() {
                  columns={[
                    { title: '排序', width: 60, align: 'center', render: () => <DragOutlined style={{ color: '#bfbfbf', cursor: 'grab' }} /> },
                    { title: '执行末端类型', width: 200, render: (_, r) => <Select value={r.effector} onChange={v => updateStep(r.id, 'effector', v)} style={{ width: '100%' }} options={[{value: '右手 (Right Arm)', label: '右手 (Right Arm)'}, {value: '左手 (Left Arm)', label: '左手 (Left Arm)'}, {value: '底盘 (Base)', label: '底盘 (Base)'}]} /> },
-                   { title: '原子技能', render: (_, r) => <Input value={r.skill} onChange={e => updateStep(r.id, 'skill', e.target.value)} /> },
-                   { title: '操作对象', render: (_, r) => <Input value={r.object} onChange={e => updateStep(r.id, 'object', e.target.value)} /> },
-                   { title: '操作目标', render: (_, r) => <Input value={r.target} onChange={e => updateStep(r.id, 'target', e.target.value)} /> },
+                   { title: '原子技能', render: (_, r) => <Select value={r.skill} onChange={v => updateStep(r.id, 'skill', v)} style={{ width: '100%' }} options={[{value:'识别', label:'识别'}, {value:'抓取', label:'抓取'}, {value:'移动', label:'移动'}, {value:'放置', label:'放置'}]} /> },
+                   { title: '操作对象', render: (_, r) => <Select value={r.object} onChange={v => updateStep(r.id, 'object', v)} style={{ width: '100%' }} options={[{value:'目标物品', label:'目标物品'}, {value:'抽屉', label:'抽屉'}, {value:'门把手', label:'门把手'}]} /> },
+                   { title: '操作目标', render: (_, r) => <Select value={r.target} onChange={v => updateStep(r.id, 'target', v)} style={{ width: '100%' }} options={[{value:'确认位置', label:'确认位置'}, {value:'上方', label:'上方'}, {value:'目标点', label:'目标点'}]} /> },
                    { title: '操作', width: 80, align: 'center', render: (_, r) => <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeStep(r.id)} /> }
                  ]} 
                />

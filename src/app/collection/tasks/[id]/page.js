@@ -86,7 +86,7 @@ export default function TaskInstancePage() {
   const getStatusActions = (record) => {
     if (record.status === '已完成') {
       return (
-        <Space split={<Divider type="vertical" />} size={0}>
+        <Space separator={<Divider type="vertical" />} size={0}>
           <Button type="link" size="small" icon={<DownloadOutlined />} style={{ padding: '0 4px' }}>下载</Button>
           <Button type="link" size="small" icon={<FileSearchOutlined />} style={{ padding: '0 4px', color: '#52c41a' }}>质检详情</Button>
           <Button type="link" size="small" icon={<CloudUploadOutlined />} style={{ padding: '0 4px', color: '#722ed1' }}>手动上传</Button>
@@ -95,14 +95,14 @@ export default function TaskInstancePage() {
     }
     if (record.status === '待分配') {
       return (
-        <Space split={<Divider type="vertical" />} size={0}>
+        <Space separator={<Divider type="vertical" />} size={0}>
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: '0 4px' }}>删除</Button>
         </Space>
       );
     }
     return (
-      <Space split={<Divider type="vertical" />} size={0}>
+      <Space separator={<Divider type="vertical" />} size={0}>
         <Button type="link" size="small" icon={<PauseCircleOutlined />} style={{ padding: '0 4px', color: '#faad14' }} onClick={() => handlePausePack(record)}>暂停</Button>
         <Button type="link" size="small" icon={<CheckCircleOutlined />} style={{ padding: '0 4px', color: '#52c41a' }} onClick={() => handleCompletePack(record)}>完成</Button>
       </Space>
@@ -227,13 +227,12 @@ export default function TaskInstancePage() {
         </div>
 
         <div style={{ background: '#fff', borderRadius: 8, padding: '16px 20px', border: '1px solid #f0f0f0', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Space size={16}>
-            <Input placeholder="实例任务id" style={{ width: 140 }} />
-            <Select placeholder="操作物体" style={{ width: 140 }} />
-            <Select placeholder="采集人员" style={{ width: 140 }} />
+          <Space size={16} align="bottom">
+            <Form.Item label="实例任务id" style={{ marginBottom: 0 }}><Input placeholder="实例任务id" style={{ width: 140 }} /></Form.Item>
+            <Form.Item label="操作物体" style={{ marginBottom: 0 }}><Select placeholder="操作物体" style={{ width: 140 }} /></Form.Item>
+            <Form.Item label="采集人员" style={{ marginBottom: 0 }}><Select placeholder="采集人员" style={{ width: 140 }} /></Form.Item>
+            <Form.Item style={{ marginBottom: 0 }}><Button type="primary" icon={<SearchOutlined />}>搜索</Button></Form.Item>
           </Space>
-          <Space size={12}>
-            <Button type="primary" icon={<SearchOutlined />}>搜索</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddPackVisible(true)}>添加分包</Button>
             <Button 
               icon={<PauseOutlined />} 
@@ -292,16 +291,16 @@ export default function TaskInstancePage() {
         }}
       >
         <Form form={addPackForm} layout="vertical" style={{ paddingTop: 24 }}>
-          <Form.Item label={<span style={{ fontWeight: 600 }}>选择采集员</span>} name="collector" required>
+          <Form.Item label="选择采集员" name="collector" required>
             <Select placeholder="请选择采集员" options={[{ value: 'u1', label: '采集员 - 张三' }, { value: 'u2', label: '采集员 - 李四' }]} />
           </Form.Item>
-          <Form.Item label={<span style={{ fontWeight: 600 }}>计划采集量 (单包)</span>} name="planCount" required initialValue={100}>
+          <Form.Item label="计划采集量 (单包)" name="planCount" required initialValue={100}>
             <InputNumber min={1} style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item label={<span style={{ fontWeight: 600 }}>是否自动生成数据集</span>} name="autoDataset" initialValue={false}>
+          <Form.Item label="是否自动生成数据集" name="autoDataset" initialValue={false}>
             <Switch checkedChildren="是" unCheckedChildren="否" />
           </Form.Item>
-          <Form.Item label={<span style={{ fontWeight: 600 }}>备注说明</span>} name="remarks">
+          <Form.Item label="备注说明" name="remarks">
             <TextArea rows={3} placeholder="请输入分包备注信息..." />
           </Form.Item>
         </Form>
@@ -350,8 +349,8 @@ export default function TaskInstancePage() {
           message={`当前已选中 ${selectedRowKeys.length} 个包实例，将统一配置标注流程。`} 
           type="info" showIcon style={{ marginBottom: 24 }} 
         />
-        <Form form={annoForm} layout="horizontal" labelCol={{ span: 5 }} wrapperCol={{ span: 19 }} colon={false}>
-          <Form.Item label={<span style={{ color: '#434343' }}><span style={{ color: '#ff4d4f' }}>*</span> 标注类型</span>} name="types">
+        <Form form={annoForm} layout="vertical">
+          <Form.Item label="标注类型" name="types" rules={[{ required: true }]}>
             <Space direction="vertical" size={12}>
               <Checkbox.Group 
                 value={selectedTypes} 
@@ -368,7 +367,7 @@ export default function TaskInstancePage() {
             </Space>
           </Form.Item>
 
-          <Form.Item label={<span style={{ color: '#434343' }}>质检员</span>} name="qa">
+          <Form.Item label="质检员" name="qa">
             <Select placeholder="请选择质检员" defaultValue="00810" options={[{label:'质检员00810', value:'00810'}]} style={{ width: '100%' }} />
           </Form.Item>
 
@@ -376,10 +375,16 @@ export default function TaskInstancePage() {
           {selectedTypes.includes('point') && (
             <>
               <Divider orientation="left" plain style={{ margin: '32px 0 24px' }}><Text type="secondary" style={{ fontSize: 12 }}>点标注</Text></Divider>
-              <Form.Item label="自动生成数据集" labelCol={{ span: 5 }}><Switch /></Form.Item>
               <Row gutter={24}>
-                <Col span={12}><Form.Item label="标注员" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}><Select placeholder="请选择" /></Form.Item></Col>
-                <Col span={12}><Form.Item label="审核员" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}><Select placeholder="请选择" /></Form.Item></Col>
+                <Col span={8}>
+                  <Form.Item label="自动生成数据集"><Switch /></Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="标注员"><Select placeholder="请选择" /></Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="审核员"><Select placeholder="请选择" /></Form.Item>
+                </Col>
               </Row>
             </>
           )}
@@ -388,10 +393,16 @@ export default function TaskInstancePage() {
           {selectedTypes.includes('range') && (
             <>
               <Divider orientation="left" plain style={{ margin: '32px 0 24px' }}><Text type="secondary" style={{ fontSize: 12 }}>范围标注</Text></Divider>
-              <Form.Item label="自动生成数据集" labelCol={{ span: 5 }}><Switch /></Form.Item>
               <Row gutter={24}>
-                <Col span={12}><Form.Item label="标注员" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}><Select placeholder="请选择" /></Form.Item></Col>
-                <Col span={12}><Form.Item label="审核员" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}><Select placeholder="请选择" /></Form.Item></Col>
+                <Col span={8}>
+                  <Form.Item label="自动生成数据集"><Switch /></Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="标注员"><Select placeholder="请选择" /></Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="审核员"><Select placeholder="请选择" /></Form.Item>
+                </Col>
               </Row>
             </>
           )}
@@ -400,10 +411,16 @@ export default function TaskInstancePage() {
           {selectedTypes.includes('box') && (
             <>
               <Divider orientation="left" plain style={{ margin: '32px 0 24px' }}><Text type="secondary" style={{ fontSize: 12 }}>框标注</Text></Divider>
-              <Form.Item label="自动生成数据集" labelCol={{ span: 5 }}><Switch /></Form.Item>
               <Row gutter={24}>
-                <Col span={12}><Form.Item label="标注员" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}><Select placeholder="请选择" /></Form.Item></Col>
-                <Col span={12}><Form.Item label="审核员" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}><Select placeholder="请选择" /></Form.Item></Col>
+                <Col span={8}>
+                  <Form.Item label="自动生成数据集"><Switch /></Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="标注员"><Select placeholder="请选择" /></Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="审核员"><Select placeholder="请选择" /></Form.Item>
+                </Col>
               </Row>
             </>
           )}
@@ -413,12 +430,18 @@ export default function TaskInstancePage() {
             <>
               <Divider orientation="left" plain style={{ margin: '32px 0 24px' }}><Text type="secondary" style={{ fontSize: 12 }}>范围&框标注</Text></Divider>
               <Row gutter={24}>
-                <Col span={12}><Form.Item label="自动生成数据集" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}><Switch /></Form.Item></Col>
-                <Col span={12}><Form.Item label="跨步骤标注" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}><Switch defaultChecked /></Form.Item></Col>
-              </Row>
-              <Row gutter={24}>
-                <Col span={12}><Form.Item label="标注员" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}><Select placeholder="请选择" /></Form.Item></Col>
-                <Col span={12}><Form.Item label="审核员" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}><Select placeholder="请选择" /></Form.Item></Col>
+                <Col span={6}>
+                  <Form.Item label="自动生成数据集"><Switch /></Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="跨步骤标注"><Switch defaultChecked /></Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="标注员"><Select placeholder="请选择" /></Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="审核员"><Select placeholder="请选择" /></Form.Item>
+                </Col>
               </Row>
             </>
           )}

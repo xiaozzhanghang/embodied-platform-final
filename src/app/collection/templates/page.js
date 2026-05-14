@@ -1,16 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Button, Space, Card, Typography, Breadcrumb, Tag, 
-  App, Row, Col, Avatar, Tooltip, Input, Divider
+  App, Row, Col, Avatar, Tooltip, Input, Divider, Form, Select
 } from 'antd';
 import { 
   PlusOutlined, SearchOutlined, LayoutOutlined,
   ShoppingOutlined, ToolOutlined, RestOutlined,
   SkinOutlined, ExperimentOutlined, DeleteOutlined,
-  EditOutlined, PlayCircleOutlined
+  EditOutlined, PlayCircleOutlined, ReloadOutlined, DownOutlined, UpOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -19,6 +19,7 @@ const { Title, Text } = Typography;
 export default function TaskTemplatesPage() {
   const router = useRouter();
   const { message } = App.useApp();
+  const [expand, setExpand] = useState(false);
 
   const mockTemplates = [
     {
@@ -98,15 +99,63 @@ export default function TaskTemplatesPage() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 24, display: 'flex', gap: 16 }}>
-        <Input 
-          placeholder="搜索模版名称..." 
-          prefix={<SearchOutlined />} 
-          style={{ width: 300 }} 
-          allowClear
-        />
-        <Button>重置</Button>
-      </div>
+      <Card 
+        style={{ marginBottom: 24, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+        styles={{ body: { padding: '24px 24px 0' } }}
+      >
+        <Form layout="horizontal" labelCol={{ flex: '80px' }}>
+          <Row gutter={24}>
+            <Col span={8}>
+              <Form.Item label="模板名称">
+                <Input placeholder="搜索模板名称..." prefix={<SearchOutlined />} allowClear />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="模板类型">
+                <Select placeholder="全部类型" allowClear options={[{label:'服务数据', value:'service'}, {label:'工业数据', value:'industry'}]} />
+              </Form.Item>
+            </Col>
+            {!expand && (
+              <Col span={8} style={{ textAlign: 'right' }}>
+                <Space>
+                  <Button icon={<ReloadOutlined />}>重置</Button>
+                  <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                  <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                    展开 <DownOutlined />
+                  </a>
+                </Space>
+              </Col>
+            )}
+          </Row>
+          {expand && (
+            <>
+              <Row gutter={24}>
+                <Col span={8}>
+                  <Form.Item label="创建人">
+                    <Input placeholder="请输入创建人" allowClear />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="更新时间">
+                    <Input placeholder="请选择时间范围" allowClear />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={24}>
+                <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
+                  <Space>
+                    <Button icon={<ReloadOutlined />}>重置</Button>
+                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                    <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                      收起 <UpOutlined />
+                    </a>
+                  </Space>
+                </Col>
+              </Row>
+            </>
+          )}
+        </Form>
+      </Card>
 
       <Row gutter={[24, 24]}>
         {mockTemplates.map((tpl) => (

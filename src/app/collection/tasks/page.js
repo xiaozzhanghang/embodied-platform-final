@@ -12,6 +12,7 @@ import {
   SearchOutlined, 
   ReloadOutlined, 
   DownOutlined, 
+  UpOutlined,
   SettingOutlined, 
   ColumnHeightOutlined, 
   CopyOutlined, 
@@ -31,6 +32,8 @@ const { Title, Text } = Typography;
 export default function TaskCenterPage() {
   const router = useRouter();
   const { message } = App.useApp();
+  const [expand, setExpand] = useState(false);
+
   const [activeTab, setActiveTab] = useState('all');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [isAssignModalVisible, setIsAssignModalVisible] = useState(false);
@@ -109,7 +112,7 @@ export default function TaskCenterPage() {
     {
       title: '操作', key: 'action', width: 280, fixed: 'right',
       render: (_, record) => (
-        <Space split={<Divider type="vertical" />} size={0}>
+        <Space separator={<Divider type="vertical" />} size={0}>
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/tasks/${record.taskId}`)} style={{ padding: '0 4px' }}>查看</Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
@@ -129,19 +132,59 @@ export default function TaskCenterPage() {
         </div>
       </div>
 
-      <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
-        <Form layout="inline">
-          <Row gutter={[16, 16]} style={{ width: '100%' }}>
-            <Col span={6}><Form.Item label="所属项目" style={{ margin: 0, width: '100%' }}><Select placeholder="请选择项目" /></Form.Item></Col>
-            <Col span={6}><Form.Item label="任务书" style={{ margin: 0, width: '100%' }}><Select placeholder="请选择任务书" /></Form.Item></Col>
-            <Col span={6}><Form.Item label="实例ID" style={{ margin: 0, width: '100%' }}><Input placeholder="请输入实例ID" /></Form.Item></Col>
+      <Card 
+        style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+        styles={{ body: { padding: '24px 24px 0' } }}
+      >
+        <Form layout="horizontal" labelCol={{ flex: '80px' }}>
+          <Row gutter={24}>
             <Col span={6}>
-              <Space>
-                <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                <Button>重置</Button>
-              </Space>
+              <Form.Item label="所属项目"><Select placeholder="请选择项目" allowClear /></Form.Item>
             </Col>
+            <Col span={6}>
+              <Form.Item label="任务书"><Select placeholder="请选择任务书" allowClear /></Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="实例ID"><Input placeholder="请输入实例ID" allowClear /></Form.Item>
+            </Col>
+            {!expand && (
+              <Col span={6} style={{ textAlign: 'right' }}>
+                <Space>
+                  <Button icon={<ReloadOutlined />}>重置</Button>
+                  <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                  <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                    展开 <DownOutlined />
+                  </a>
+                </Space>
+              </Col>
+            )}
           </Row>
+          {expand && (
+            <>
+              <Row gutter={24}>
+                <Col span={6}>
+                  <Form.Item label="任务名称"><Input placeholder="请输入任务名称" allowClear /></Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="采集员"><Input placeholder="请输入采集员" allowClear /></Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="状态"><Select placeholder="请选择状态" allowClear options={[{label:'进行中', value:'active'}, {label:'已完成', value:'completed'}]} /></Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={24}>
+                <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
+                  <Space>
+                    <Button icon={<ReloadOutlined />}>重置</Button>
+                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                    <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                      收起 <UpOutlined />
+                    </a>
+                  </Space>
+                </Col>
+              </Row>
+            </>
+          )}
         </Form>
       </Card>
 
@@ -239,9 +282,9 @@ export default function TaskCenterPage() {
           }}>确定</Button>
         ]}
       >
-        <Form form={assignForm} layout="horizontal" labelCol={{ span: 5 }} wrapperCol={{ span: 19 }} colon={false}>
+        <Form form={assignForm} layout="vertical">
           {/* Main Controls */}
-          <Form.Item label={<span style={{ color: '#434343' }}><span style={{ color: '#ff4d4f' }}>*</span> 标注类型</span>} name="types">
+          <Form.Item label="标注类型" name="types" rules={[{ required: true }]}>
             <Space direction="vertical" size={12}>
               <Checkbox.Group 
                 value={selectedTypes} 
@@ -258,7 +301,7 @@ export default function TaskCenterPage() {
             </Space>
           </Form.Item>
 
-          <Form.Item label={<span style={{ color: '#434343' }}>质检员</span>} name="qa">
+          <Form.Item label="质检员" name="qa">
             <Select placeholder="请选择质检员" defaultValue="00810" options={[{label:'质检员00810', value:'00810'}]} style={{ width: '100%' }} />
           </Form.Item>
 
@@ -266,17 +309,19 @@ export default function TaskCenterPage() {
           {selectedTypes.includes('point') && (
             <>
               <Divider orientation="left" plain style={{ margin: '32px 0 24px' }}><Text type="secondary" style={{ fontSize: 12 }}>点标注</Text></Divider>
-              <Form.Item label="自动生成数据集" labelCol={{ span: 5 }}>
-                <Switch checkedChildren="是" unCheckedChildren="否" />
-              </Form.Item>
               <Row gutter={24}>
-                <Col span={12}>
-                  <Form.Item label="标注员" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}>
+                <Col span={8}>
+                  <Form.Item label="自动生成数据集">
+                    <Switch checkedChildren="是" unCheckedChildren="否" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="标注员">
                     <Select placeholder="请选择标注员" defaultValue="00482" options={[{label:'质检员00482', value:'00482'}]} />
                   </Form.Item>
                 </Col>
-                <Col span={12}>
-                  <Form.Item label="审核员" labelCol={{ span: 10 }} wrapperCol={{ span: 14 }}>
+                <Col span={8}>
+                  <Form.Item label="审核员">
                     <Select placeholder="请选择审核员" defaultValue="admin" options={[{label:'天奇管理员', value:'admin'}]} />
                   </Form.Item>
                 </Col>

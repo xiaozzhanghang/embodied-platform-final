@@ -119,7 +119,7 @@ export default function WorkspacePage() {
       
       {/* Top Header */}
       <div style={{ height: 36, borderBottom: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 12, color: '#595959', background: '#fafafa' }}>
-        <Space size="large" split={<span style={{ color: '#d9d9d9' }}>|</span>}>
+        <Space size="large" separator={<span style={{ color: '#d9d9d9' }}>|</span>}>
           <Space size="small">
             <ApiOutlined style={{ color: '#1677ff' }} />
             <span style={{ fontWeight: 500 }}>主从臂设备:</span>

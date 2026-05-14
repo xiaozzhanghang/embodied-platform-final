@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Select, Form, Card, Modal, Tabs, Statistic, Row, Col, Progress, Drawer, Descriptions, App, Badge, Typography, Tooltip } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, TeamOutlined, EditOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, UserOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, TeamOutlined, EditOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, UserOutlined, DownOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -250,22 +250,29 @@ export default function AnnotationProjectsPage() {
       </Row>
 
       {/* Search Bar */}
-      <Card className="search-form" style={{ marginBottom: 16 }}>
-        <Form layout="inline">
-          <Form.Item label="任务名称"><Input placeholder="请输入任务名称" allowClear style={{ width: 180 }} /></Form.Item>
-          <Form.Item label="标注类型">
-            <Select placeholder="全部" allowClear style={{ width: 140 }} options={Object.keys(ANNO_TYPE_COLORS).map(v => ({ value: v }))} />
-          </Form.Item>
-          <Form.Item label="状态">
-            <Select placeholder="全部" allowClear style={{ width: 120 }} options={Object.keys(statusConfig).map(v => ({ value: v }))} />
-          </Form.Item>
-          <Form.Item label="标注员"><Input placeholder="姓名" allowClear style={{ width: 120 }} /></Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-              <Button icon={<ReloadOutlined />}>重置</Button>
-            </Space>
-          </Form.Item>
+      <Card 
+        style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+        styles={{ body: { padding: '24px 24px 0' } }}
+      >
+        <Form layout="horizontal" labelCol={{ flex: '80px' }}>
+          <Row gutter={24}>
+            <Col span={6}>
+              <Form.Item label="任务名称"><Input placeholder="请输入" allowClear /></Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="标注类型"><Select placeholder="全部" allowClear options={Object.keys(ANNO_TYPE_COLORS).map(v => ({ value: v }))} /></Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="标注状态"><Select placeholder="全部" allowClear options={Object.keys(statusConfig).map(v => ({ value: v }))} /></Form.Item>
+            </Col>
+            <Col span={6} style={{ textAlign: 'right' }}>
+              <Space>
+                <Button icon={<ReloadOutlined />}>重置</Button>
+                <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                <Button type="link" size="small" icon={<DownOutlined />}>展开</Button>
+              </Space>
+            </Col>
+          </Row>
         </Form>
       </Card>
 

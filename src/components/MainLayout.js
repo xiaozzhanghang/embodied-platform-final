@@ -133,15 +133,19 @@ export default function MainLayout({ children }) {
 
   const handleRoleChange = (role) => {
     if (role === ROLES.COLLECTOR) {
-      // Navigate to dedicated full-page collector login
       router.push('/collector-login');
       return;
     }
-    // Admin / QA switch directly
-    setUserRole(role);
-    localStorage.setItem('userRole', role);
-    message.success(`角色已切换为: ${role === ROLES.QA ? '质检员' : '超级管理员'}`);
-    router.push('/collection/tasks');
+    
+    // Redirect based on role
+    message.loading(`正在切换至 ${role === ROLES.QA ? '质检端' : '管理端'}...`, 1);
+    setTimeout(() => {
+      if (role === ROLES.QA) {
+        router.push('/qa-login');
+      } else {
+        router.push('/login');
+      }
+    }, 800);
   };
 
   const crumbs = breadcrumbMap[pathname] || ['数据采集'];

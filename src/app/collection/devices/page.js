@@ -1,13 +1,77 @@
 'use client';
 
-import React from 'react';
-import { Table, Button, Tag, Space, Input, Card, Typography, Form, Popconfirm, Tooltip, Breadcrumb, Badge, Select } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, ColumnHeightOutlined, SettingOutlined, EyeOutlined, EditOutlined, StopOutlined, DownOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  Table, Button, Tag, Space, Input, Card, Typography, 
+  Form, Popconfirm, Tooltip, Breadcrumb, Badge, Select, 
+  Modal, Collapse, Row, Col, Divider, App, Radio, Upload 
+} from 'antd';
+import { 
+  PlusOutlined, SearchOutlined, ReloadOutlined, 
+  ColumnHeightOutlined, SettingOutlined, EyeOutlined, 
+  EditOutlined, StopOutlined, DownOutlined, UpOutlined, RobotOutlined, 
+  ApiOutlined, InfoCircleOutlined, DeleteOutlined, InboxOutlined 
+} from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
+const { Panel } = Collapse;
+const { TextArea } = Input;
+
+// ─── Mock Data ──────────────────────────────────────────────────────────────
+
+const deviceTypes = [
+  { value: 'galbot_rgb', label: 'galbot_2.2_RGB' },
+  { value: 'galbot_depth', label: 'galbot_2.2_深度' },
+  { value: 'galbot_ir', label: 'galbot_2.2_红外' },
+];
+
+const componentCategories = [
+    { value: 'RobotArm', label: '机械臂' },
+    { value: 'Chassis', label: '底盘履带' },
+    { value: 'LiftTorso', label: '升降躯干' },
+    { value: 'Gripper', label: '二指夹爪' },
+    { value: 'DexterousHand', label: '多指灵巧手' },
+    { value: 'Camera', label: '相机' },
+    { value: 'Body-HeadLeftCamera', label: 'Body-HeadLeftCamera(本体-头部左相机)' },
+    { value: 'Body-HandLeftCamera', label: 'Body-HandLeftCamera(本体-手部左相机)' },
+    { value: 'Body-HandRightCamera', label: 'Body-HandRightCamera(本体-手部右相机)' },
+    { value: 'Body-HeadRightCamera', label: 'Body-HeadRightCamera(本体-头部右相机)' },
+];
+
+const partData = [
+    { key: '1', name: 'GoPro相机', category: 'Body-HeadLeftCamera' },
+    { key: '2', name: '短臂G1_手部左上相机', category: 'Body-HandLeftCamera' },
+    { key: '3', name: '短臂G1_手部右下相机', category: 'Body-HandRightCamera' },
+    { key: '4', name: '短臂G1_头部右相机', category: 'Body-HeadRightCamera' },
+    { key: '5', name: '二指夹爪_左', category: 'Gripper' },
+];
+
+// Default parts mapping for each device type
+const typeDefaultParts = {
+    'galbot_std': ['2', '3', '4', '5'], // Standard Galbot components
+    'franka_std': ['5'],           // Franka usually has a gripper
+    'ego_dev': ['1'],              // Ego usually has a GoPro
+};
+
+const initialDeviceData = Array.from({ length: 5 }).map((_, i) => ({
+  key: String(i),
+  name: `R001GB-Node-${100 + i}`,
+  deviceType: i % 2 === 0 ? 'galbot_std' : 'franka_std',
+  deviceNum: `DEV-B-10${i}`,
+  status: i % 3 === 0 ? '在线' : '离线',
+  regTime: '2026-02-25 16:13:55',
+  activeTime: '2026-02-25 17:00:01'
+}));
 
 export default function DeviceListPage() {
+  const router = useRouter();
+  const [expand, setExpand] = useState(false);
+  const { message } = App.useApp();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deviceData, setDeviceData] = useState(initialDeviceData);
+  const [form] = Form.useForm();
 
   const deviceColumns = [
     { title: '设备名称', dataIndex: 'name', key: 'name', width: 200, ellipsis: true },
@@ -25,40 +89,25 @@ export default function DeviceListPage() {
         const cfg = map[s] || map['离线'];
         return <Badge status={cfg.status} text={<span style={{ color: cfg.color, fontWeight: 500 }}>{s}</span>} />;
       },
-      filters: [{ text: '在线', value: '在线' }, { text: '离线', value: '离线' }, { text: '维护中', value: '维护中' }],
-      onFilter: (value, record) => record.status === value,
-    },
-    { title: '英文名称', dataIndex: 'enName', key: 'enName', width: 200, ellipsis: true },
-    { 
-      title: '设备编号', 
-      dataIndex: 'deviceNum', 
-      key: 'deviceNum', 
-      width: 130,
-      render: (text) => <Tag style={{ backgroundColor: '#f5f5f5', color: '#595959', border: '1px solid #d9d9d9' }}>{text}</Tag>
     },
     { 
-      title: 'URDF', 
-      dataIndex: 'urdf', 
-      key: 'urdf',
-      width: 150,
-      render: (text) => text !== '-' ? <a href="#">{text}</a> : '-'
+        title: '设备类型', 
+        dataIndex: 'deviceType', 
+        width: 150, 
+        render: (t) => {
+            const type = deviceTypes.find(dt => dt.value === t);
+            return <Tag color="blue" icon={<RobotOutlined />}>{type?.label || t}</Tag>
+        }
     },
-    { 
-      title: '设备图片', 
-      dataIndex: 'image', 
-      key: 'image', 
-      width: 100,
-      render: () => <span style={{ color: '#bfbfbf' }}>无图片</span>
-    },
+    { title: '设备编号', dataIndex: 'deviceNum', key: 'deviceNum', width: 130 },
     { title: '注册时间', dataIndex: 'regTime', key: 'regTime', width: 170 },
-    { title: '活跃时间', dataIndex: 'activeTime', key: 'activeTime', width: 170 },
     {
-      title: '操作', key: 'action', width: 220, fixed: 'right',
-      render: () => (
+      title: '操作', key: 'action', width: 180, fixed: 'right',
+      render: (_, record) => (
         <Space size="middle">
-          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }}>查看</Button>
-          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }}>编辑</Button>
-          <Popconfirm title="确定禁用此设备吗？" okText="是" cancelText="否">
+          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/devices/detail/${record.key}`)}>详情</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/devices/detail/${record.key}?edit=true`)}>编辑</Button>
+          <Popconfirm title="确定禁用此设备吗？">
             <Button type="link" danger size="small" icon={<StopOutlined />} style={{ padding: 0 }}>禁用</Button>
           </Popconfirm>
         </Space>
@@ -66,18 +115,27 @@ export default function DeviceListPage() {
     },
   ];
 
-  // Generate mock data mimicking the screenshot
-  const statusList = ['在线', '在线', '离线', '在线', '维护中', '在线', '在线', '离线', '在线', '在线'];
-  const deviceData = Array.from({ length: 10 }).map((_, i) => ({
-    key: String(i),
-    name: `R001GBDDAAAE081${i}`,
-    enName: `R001GBDDAAA...`,
-    deviceNum: `DEV-B-10${i}`,
-    status: statusList[i],
-    urdf: i % 3 === 0 ? 'galbot_v2.urdf' : '-',
-    regTime: '2026-02-25 16:13:55',
-    activeTime: '2026-02-25 16:13:55'
-  }));
+    const handleCreate = (values) => {
+    const newDevice = {
+      key: String(Date.now()),
+      ...values,
+      deviceNum: values.version || 'DEV-NEW', // Mapping version to deviceNum for mock
+      status: '在线',
+      regTime: '2026-05-11 10:50:00',
+      activeTime: '2026-05-11 10:50:00'
+    };
+    setDeviceData([newDevice, ...deviceData]);
+    setIsModalOpen(false);
+    message.success('设备接入成功');
+  };
+
+  const handleDeviceTypeChange = (value) => {
+    const defaults = typeDefaultParts[value] || [];
+    form.setFieldsValue({ linkedParts: defaults });
+    if (defaults.length > 0) {
+      message.info(`已根据设备类型自动关联了 ${defaults.length} 个标准部件`);
+    }
+  };
 
   return (
     <MainLayout>
@@ -87,32 +145,72 @@ export default function DeviceListPage() {
           { title: '设备管理' },
           { title: '设备列表' },
         ]} style={{ marginBottom: 16 }} />
-        <Title level={3} style={{ margin: 0, marginBottom: 8 }}>设备列表</Title>
+        <Title level={3} style={{ margin: 0 }}>设备实例管理</Title>
       </div>
 
-      <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
-        <Form layout="inline" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-          <div style={{ display: 'flex', gap: 24 }}>
-            <Form.Item label="设备名称" style={{ margin: 0 }}><Input placeholder="请输入" allowClear style={{ width: 180 }} /></Form.Item>
-            <Form.Item label="设备编号" style={{ margin: 0 }}><Input placeholder="请输入" allowClear style={{ width: 180 }} /></Form.Item>
-            <Form.Item label="运行状态" style={{ margin: 0 }}><Select placeholder="全部" allowClear style={{ width: 120 }} options={[{ value: '在线', label: '🟢 在线' }, { value: '离线', label: '🔴 离线' }, { value: '维护中', label: '🟡 维护中' }]} /></Form.Item>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Button>重置</Button>
-            <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-            <Button type="link" style={{ padding: 0, marginLeft: 8 }}>展开 <DownOutlined /></Button>
-          </div>
+      <Card 
+        style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+        styles={{ body: { padding: '24px 24px 0' } }}
+      >
+        <Form layout="horizontal" labelCol={{ flex: '80px' }}>
+          <Row gutter={24}>
+            <Col span={6}>
+              <Form.Item label="设备名称"><Input placeholder="请输入设备名称" allowClear /></Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="设备类型"><Select placeholder="请选择类型" allowClear options={deviceTypes} /></Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="设备状态"><Select placeholder="全部" allowClear options={[{label:'在线', value:'online'}, {label:'离线', value:'offline'}]} /></Form.Item>
+            </Col>
+            {!expand && (
+              <Col span={6} style={{ textAlign: 'right' }}>
+                <Space>
+                  <Button icon={<ReloadOutlined />}>重置</Button>
+                  <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                  <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                    展开 <DownOutlined />
+                  </a>
+                </Space>
+              </Col>
+            )}
+          </Row>
+          {expand && (
+            <>
+              <Row gutter={24}>
+                <Col span={6}>
+                  <Form.Item label="SN序列号"><Input placeholder="请输入SN" allowClear /></Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="区域位置"><Input placeholder="请输入区域" allowClear /></Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={24}>
+                <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
+                  <Space>
+                    <Button icon={<ReloadOutlined />}>重置</Button>
+                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                    <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                      收起 <UpOutlined />
+                    </a>
+                  </Space>
+                </Col>
+              </Row>
+            </>
+          )}
         </Form>
       </Card>
 
       <Card styles={{ body: { padding: '24px' } }} style={{ borderRadius: 8 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ fontWeight: 'bold', fontSize: 16 }}>设备实例列表</div>
-          <Space>
-            <Button type="primary" icon={<PlusOutlined />}>新建</Button>
+          <Space size={8}>
+            <div style={{ width: 4, height: 16, background: '#1890ff', borderRadius: 2 }} />
+            <Text strong style={{ fontSize: 16 }}>设备实例列表</Text>
+          </Space>
+          <Space size={12}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setIsModalOpen(true); }}>新建设备</Button>
+            <Button danger icon={<DeleteOutlined />}>批量删除</Button>
             <Tooltip title="刷新"><Button type="text" icon={<ReloadOutlined />} /></Tooltip>
-            <Tooltip title="密度"><Button type="text" icon={<ColumnHeightOutlined />} /></Tooltip>
-            <Tooltip title="列设置"><Button type="text" icon={<SettingOutlined />} /></Tooltip>
           </Space>
         </div>
 
@@ -120,10 +218,130 @@ export default function DeviceListPage() {
           rowSelection={{ type: 'checkbox' }} 
           columns={deviceColumns} 
           dataSource={deviceData} 
-          scroll={{ x: 1300 }}
-          pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} 
+          scroll={{ x: 1000 }}
+          pagination={{ pageSize: 10 }} 
         />
       </Card>
+
+      {/* --- New Device Modal (As per Image) --- */}
+      <Modal
+        title="添加采集设备"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={() => form.submit()}
+        width={900}
+        okText="确定"
+        cancelText="取消"
+        centered
+      >
+        <Form form={form} layout="vertical" onFinish={handleCreate} style={{ marginTop: 24 }}>
+          <Form.Item name="name" label="设备名称" rules={[{ required: true }]}>
+            <Input placeholder="请输入设备名称" showCount maxLength={50} />
+          </Form.Item>
+
+          <Form.Item name="enName" label={<Space><span>英文名称</span><Tooltip title="仅支持英文、数字、下划线"><InfoCircleOutlined style={{ color: '#bfbfbf' }} /></Tooltip></Space>}>
+            <Input placeholder="请输入英文名称" showCount maxLength={50} />
+          </Form.Item>
+
+          <Form.Item name="deviceNum" label="设备编号" rules={[{ required: true }]}>
+            <Input placeholder="请输入设备编号" showCount maxLength={50} />
+          </Form.Item>
+
+          <Form.Item name="deviceType" label="设备类型" rules={[{ required: true }]}>
+            <Select placeholder="请选择设备类型" options={deviceTypes} onChange={handleDeviceTypeChange} />
+          </Form.Item>
+
+          <Form.Item name="linkedParts" label="部件">
+            <Select 
+                mode="multiple" 
+                placeholder="请选择部件" 
+                maxTagCount="responsive"
+                options={partData.map(p => ({ label: p.name, value: p.key }))}
+            />
+          </Form.Item>
+
+          <Form.Item label="已选部件">
+            <Form.Item shouldUpdate={(prevValues, curValues) => prevValues.linkedParts !== curValues.linkedParts} noStyle>
+                {({ getFieldValue, setFieldsValue }) => {
+                    const selectedIds = getFieldValue('linkedParts') || [];
+                    const dataSource = selectedIds.map(id => partData.find(p => p.key === id)).filter(Boolean);
+                    
+                    return (
+                        <Table 
+                            size="small"
+                            pagination={false}
+                            dataSource={dataSource}
+                            rowKey="key"
+                            bordered
+                            columns={[
+                                { 
+                                    title: '对齐点', 
+                                    key: 'alignment', 
+                                    width: 80, 
+                                    align: 'center',
+                                    render: (_, record) => (
+                                        <Form.Item name="alignmentPoint" noStyle>
+                                            <Radio.Group onChange={(e) => setFieldsValue({ alignmentPoint: record.key })}>
+                                                <Radio value={record.key} />
+                                            </Radio.Group>
+                                        </Form.Item>
+                                    )
+                                },
+                                { title: '部件名称', dataIndex: 'name', key: 'name' },
+                                { 
+                                    title: '部件类型', 
+                                    dataIndex: 'category', 
+                                    key: 'category',
+                                    render: (cat) => {
+                                        const found = componentCategories.find(c => c.value === cat);
+                                        return found ? found.label : cat;
+                                    }
+                                },
+                                {
+                                    title: '操作',
+                                    key: 'action',
+                                    width: 60,
+                                    align: 'center',
+                                    render: (_, record) => (
+                                        <Button 
+                                            type="text" 
+                                            danger 
+                                            icon={<DeleteOutlined />} 
+                                            onClick={() => {
+                                                const current = getFieldValue('linkedParts') || [];
+                                                setFieldsValue({ linkedParts: current.filter(id => id !== record.key) });
+                                            }}
+                                        />
+                                    )
+                                }
+                            ]}
+                        />
+                    );
+                }}
+            </Form.Item>
+          </Form.Item>
+
+          <Form.Item name="sensorDesc" label="传感器描述" rules={[{ required: true }]}>
+            <TextArea placeholder="请输入传感器描述" rows={3} showCount maxLength={500} />
+          </Form.Item>
+
+          <Form.Item label="URDF">
+            <Upload>
+                <Button icon={<PlusOutlined />} ghost type="primary">上传URDF文件</Button>
+            </Upload>
+            <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>可上传最多1份urdf格式的文件</Text>
+          </Form.Item>
+
+          <Form.Item label="设备图片">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ width: 100, height: 100, border: '1px dashed #d9d9d9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#fafafa' }}>
+                <PlusOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />
+              </div>
+              <Text type="secondary" style={{ fontSize: 12 }}>可上传最多5张单个不超过2MB且格式为jpg/jpeg/png/gif的图片</Text>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
     </MainLayout>
   );
 }

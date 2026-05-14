@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, Button, Input, Select, Space, Tag, Typography, Breadcrumb, App, DatePicker, Image, Empty, Modal, Form, Upload, Tooltip, Row, Col } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { Table, Button, Input, Select, Space, Tag, Typography, Breadcrumb, App, DatePicker, Image, Empty, Modal, Form, Upload, Tooltip, Row, Col, Card } from 'antd';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -109,6 +109,7 @@ function CategoryNode({ item, selected, onSelect, depth = 0 }) {
 // ─── Main Page ──────────────────────────────────────────────────────
 export default function ObjectLibraryPage() {
   const { message } = App.useApp();
+  const [expand, setExpand] = useState(false);
   const [selectedCat, setSelectedCat] = useState('all');
   const [nameFilter, setNameFilter] = useState('');
   const [materialFilter, setMaterialFilter] = useState('');
@@ -211,7 +212,17 @@ export default function ObjectLibraryPage() {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text strong style={{ fontSize: 13 }}>物体类型</Text>
-            <Button type="link" size="small" style={{ padding: 0, fontSize: 12 }} onClick={() => setTypeModalVisible(true)}>+ 添加</Button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Button
+                type="text"
+                icon={<PlusOutlined />}
+                size="small"
+                onClick={() => setTypeModalVisible(true)}
+                style={{ color: '#1890ff', padding: '0 4px' }}
+                title="添加物体类型"
+              />
+              <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
+            </div>
           </div>
           {categoryTree.map(item => (
             <CategoryNode
@@ -242,51 +253,115 @@ export default function ObjectLibraryPage() {
             </div>
           )}
 
-          {/* Filter Bar */}
-          <div style={{
-            background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0',
-            padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap'
-          }}>
-            <Select
-              placeholder="场景/下拉选择" allowClear style={{ width: 160 }}
-              options={[
-                { label: 'Industry(工业)', value: 'Industry(工业)' },
-                { label: 'Kitchen(厨房)', value: 'Kitchen(厨房)' },
-                { label: 'Supermarket(超市)', value: 'Supermarket(超市)' },
-              ]}
-            />
-            <Input
-              placeholder="名称/英文名称" allowClear style={{ width: 160 }}
-              value={nameFilter} onChange={e => setNameFilter(e.target.value)}
-            />
-            <Input
-              placeholder="特性 / 材质" allowClear style={{ width: 130 }}
-              value={materialFilter} onChange={e => setMaterialFilter(e.target.value)}
-            />
-            <RangePicker style={{ width: 220 }} placeholder={['开始日期', '结束日期']} />
-            <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-            <Button icon={<ReloadOutlined />} onClick={() => { setNameFilter(''); setMaterialFilter(''); }}>重置</Button>
-            <Button type="primary" icon={<PlusOutlined />} style={{ marginLeft: 'auto' }} onClick={() => setObjectModalVisible(true)}>添加</Button>
-          </div>
+          <Card 
+            style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+            styles={{ body: { padding: '24px 24px 0' } }}
+          >
+            <Form layout="horizontal" labelCol={{ flex: '80px' }}>
+              <Row gutter={24}>
+                <Col span={6}>
+                  <Form.Item label="场景选择">
+                    <Select
+                      placeholder="请选择场景" allowClear
+                      options={[
+                        { label: 'Industry(工业)', value: 'Industry(工业)' },
+                        { label: 'Kitchen(厨房)', value: 'Kitchen(厨房)' },
+                        { label: 'Supermarket(超市)', value: 'Supermarket(超市)' },
+                      ]}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="名称搜索">
+                    <Input
+                      placeholder="名称/英文名称" allowClear
+                      value={nameFilter} onChange={e => setNameFilter(e.target.value)}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="特性/材质">
+                    <Input
+                      placeholder="请输入特性" allowClear
+                      value={materialFilter} onChange={e => setMaterialFilter(e.target.value)}
+                    />
+                  </Form.Item>
+                </Col>
+                {!expand && (
+                  <Col span={6} style={{ textAlign: 'right' }}>
+                    <Space>
+                      <Button icon={<ReloadOutlined />} onClick={() => { setNameFilter(''); setMaterialFilter(''); }}>重置</Button>
+                      <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                      <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                        展开 <DownOutlined />
+                      </a>
+                    </Space>
+                  </Col>
+                )}
+              </Row>
+              {expand && (
+                <>
+                  <Row gutter={24}>
+                    <Col span={6}>
+                      <Form.Item label="录入时间">
+                        <RangePicker style={{ width: '100%' }} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                      <Form.Item label="物体ID">
+                        <Input placeholder="请输入ID" allowClear />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={24}>
+                    <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
+                      <Space>
+                        <Button icon={<ReloadOutlined />} onClick={() => { setNameFilter(''); setMaterialFilter(''); }}>重置</Button>
+                        <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                        <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                          收起 <UpOutlined />
+                        </a>
+                      </Space>
+                    </Col>
+                  </Row>
+                </>
+              )}
+            </Form>
+          </Card>
 
-          {/* Table */}
-          <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', flex: 1, overflow: 'hidden' }}>
-            {filtered.length === 0
-              ? <Empty description="该分类下暂无物体数据" style={{ paddingTop: 80 }} />
-              : <Table
-                columns={columns}
-                dataSource={filtered}
-                scroll={{ x: 1000, y: 'calc(100vh - 400px)' }}
-                size="middle"
-                pagination={{
-                  total: filtered.length,
-                  pageSize: 20,
-                  showSizeChanger: true,
-                  showTotal: t => `共 ${t} 条`,
-                  pageSizeOptions: ['20', '50'],
-                }}
-              />
-            }
+          {/* Toolbar & Table */}
+          <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff' }}>
+              <Space size={8}>
+                <div style={{ width: 4, height: 16, background: '#1890ff', borderRadius: 2 }} />
+                <Text strong style={{ fontSize: 15 }}>物体列表</Text>
+              </Space>
+              <Space size={12}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => setObjectModalVisible(true)}>新增物体</Button>
+                <Button danger icon={<DeleteOutlined />}>批量删除</Button>
+                <Button icon={<ReloadOutlined />}>刷新</Button>
+              </Space>
+            </div>
+            
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              {filtered.length === 0
+                ? <Empty description="该分类下暂无物体数据" style={{ paddingTop: 80 }} />
+                : <Table
+                  rowSelection={{ type: 'checkbox' }}
+                  columns={columns}
+                  dataSource={filtered}
+                  scroll={{ x: 1000, y: 'calc(100vh - 460px)' }}
+                  size="middle"
+                  pagination={{
+                    total: filtered.length,
+                    pageSize: 20,
+                    showSizeChanger: true,
+                    showTotal: t => `共 ${t} 条`,
+                    pageSizeOptions: ['20', '50'],
+                  }}
+                />
+              }
+            </div>
           </div>
         </div>
       </div>

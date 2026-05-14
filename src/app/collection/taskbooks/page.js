@@ -1,15 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Breadcrumb, Select, Form, Tooltip } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined, ColumnHeightOutlined, SettingOutlined, RobotOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Breadcrumb, Select, Form, Tooltip, Row, Col } from 'antd';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined, ColumnHeightOutlined, SettingOutlined, RobotOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
 
 export default function TaskbooksPage() {
   const router = useRouter();
+  const [expand, setExpand] = useState(false);
 
   const mockData = [
     { key: '1', id: 'TB-2025001', name: '桌面抓取SOP规范', scene: '桌面场景', version: 'V1.0', status: '已发布', createTime: '2025-01-10 10:00:00', updateTime: '2025-01-12 14:30:00' },
@@ -56,16 +57,60 @@ export default function TaskbooksPage() {
         <Text type="secondary">指导数据采集的标准作业程序(SOP)文档，支持上传 PDF/Word 或由 AI 智能生成。</Text>
       </div>
 
-      <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
-        <Form layout="inline" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-          <div style={{ display: 'flex', gap: 24 }}>
-            <Form.Item label="任务书名称" style={{ margin: 0 }}><Input placeholder="请输入" allowClear style={{ width: 220 }} /></Form.Item>
-            <Form.Item label="适用场景" style={{ margin: 0 }}><Select placeholder="请选择" style={{ width: 220 }} /></Form.Item>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Button>重置</Button>
-            <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-          </div>
+      <Card 
+        style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+        styles={{ body: { padding: '24px 24px 0' } }}
+      >
+        <Form layout="horizontal" labelCol={{ flex: '80px' }}>
+          <Row gutter={24}>
+            <Col span={6}>
+              <Form.Item label="任务书名称"><Input placeholder="请输入" allowClear /></Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="适用场景"><Select placeholder="请选择" /></Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="状态"><Select placeholder="全部" /></Form.Item>
+            </Col>
+            {!expand && (
+              <Col span={6} style={{ textAlign: 'right' }}>
+                <Space>
+                  <Button icon={<ReloadOutlined />}>重置</Button>
+                  <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                  <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                    展开 <DownOutlined />
+                  </a>
+                </Space>
+              </Col>
+            )}
+          </Row>
+          {expand && (
+            <>
+              <Row gutter={24}>
+                <Col span={6}>
+                  <Form.Item label="创建时间">
+                    <Input placeholder="请选择范围" allowClear />
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="版本号">
+                    <Input placeholder="请输入版本" allowClear />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={24}>
+                <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
+                  <Space>
+                    <Button icon={<ReloadOutlined />}>重置</Button>
+                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                    <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                      收起 <UpOutlined />
+                    </a>
+                  </Space>
+                </Col>
+              </Row>
+            </>
+          )}
         </Form>
       </Card>
 

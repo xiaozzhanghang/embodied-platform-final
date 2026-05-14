@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Checkbox, App, ConfigProvider, theme } from 'antd';
-import { UserOutlined, LockOutlined, RobotOutlined, ArrowLeftOutlined, ThunderboltOutlined, CheckCircleFilled, AppstoreOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, SafetyCertificateOutlined, ArrowLeftOutlined, CheckCircleFilled, LineChartOutlined, ScanOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 
-export default function LoginPage() {
+export default function QALoginPage() {
   const { message } = App.useApp();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -17,11 +17,11 @@ export default function LoginPage() {
 
   const onFinish = (values) => {
     setLoading(true);
-    localStorage.setItem('userRole', 'ADMIN');
+    localStorage.setItem('userRole', 'QA');
     setTimeout(() => {
-      message.success('管理员身份确认，进入控制中心...');
+      message.success('质检员身份确认，进入审计空间...');
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push('/annotation/review-list'); 
       }, 600);
     }, 1200);
   };
@@ -33,17 +33,17 @@ export default function LoginPage() {
       theme={{
         algorithm: theme.darkAlgorithm,
         token: {
-          colorPrimary: '#1677ff',
+          colorPrimary: '#722ed1',
           borderRadius: 12,
         },
       }}
     >
       <div className="collector-login-root">
         <style jsx global>{`
-          @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0.4); }
-            70% { box-shadow: 0 0 0 15px rgba(22, 119, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0); }
+          @keyframes pulse-purple {
+            0% { box-shadow: 0 0 0 0 rgba(114, 46, 209, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(114, 46, 209, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(114, 46, 209, 0); }
           }
           @keyframes slideIn {
             from { opacity: 0; transform: translateX(-30px); }
@@ -83,7 +83,7 @@ export default function LoginPage() {
         }}>
           <div style={{
             position: 'absolute', inset: 0,
-            backgroundImage: "url('/assets/login_bg_admin.png')",
+            backgroundImage: "url('/assets/login_bg_qa.png')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             zIndex: 0,
@@ -94,35 +94,35 @@ export default function LoginPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 14,
-                background: 'linear-gradient(135deg, #1677ff, #0958d9)',
+                background: 'linear-gradient(135deg, #722ed1, #531dab)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 8px 16px rgba(22,119,255,0.3)',
-                animation: 'pulse 2s infinite',
+                boxShadow: '0 8px 16px rgba(114, 46, 209, 0.3)',
+                animation: 'pulse-purple 2s infinite',
               }}>
-                <RobotOutlined style={{ color: '#fff', fontSize: 26 }} />
+                <SafetyCertificateOutlined style={{ color: '#fff', fontSize: 26 }} />
               </div>
               <div>
-                <div style={{ color: '#fff', fontWeight: 800, fontSize: 22 }}>具身智能管理端</div>
-                <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase' }}>Management Console V2.0</div>
+                <div style={{ color: '#fff', fontWeight: 800, fontSize: 22 }}>具身智能质检端</div>
+                <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase' }}>Quality Assurance V1.2</div>
               </div>
             </div>
           </div>
 
           <div style={{ position: 'relative', zIndex: 10, maxWidth: 500, animation: 'slideIn 1s ease' }}>
             <h1 style={{ fontSize: '48px', fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 24 }}>
-              全局管控<br />
-              <span style={{ color: '#1677ff' }}>洞察数据全生命周期</span>
+              精准审计<br />
+              <span style={{ color: '#722ed1' }}>定义高质量数据标准</span>
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 17, lineHeight: 1.7 }}>
-              面向平台管理者设计的综合治理系统。从项目初始化、任务分发到数据集发布，通过多维度监控与权限体系，构建稳健的数据生产闭环。
+              面向质检专家设计的专业审计空间。通过多维复核、关键帧校验与自动异常识别，确保输出的每一条数据都符合具身大模型训练要求。
             </p>
           </div>
 
           <div style={{ position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, animation: 'fadeIn 1.2s ease' }}>
             {[
-              { label: '活跃项目', value: '12', color: '#10b981' },
-              { label: '节点状态', value: 'Healthy', color: '#3b82f6' },
-              { label: '系统负载', value: 'Normal', color: '#f59e0b' }
+              { label: '待审核项', value: '1,429', color: '#722ed1' },
+              { label: '平均精细度', value: '99.2%', color: '#10b981' },
+              { label: '审计效率', value: 'High', color: '#3b82f6' }
             ].map((item, idx) => (
               <div key={idx} className="glass-panel" style={{ padding: '16px', borderRadius: 12, background: 'rgba(15, 23, 42, 0.4)' }}>
                 <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, marginBottom: 8 }}>{item.label}</div>
@@ -143,25 +143,37 @@ export default function LoginPage() {
           padding: '40px',
           position: 'relative',
         }}>
+          <div style={{ position: 'absolute', top: 40, left: 40 }}>
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => router.push('/')}
+              style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}
+            >
+              返回系统主页
+            </Button>
+          </div>
+
           <div style={{ width: '100%', maxWidth: 400, animation: 'fadeIn 1s ease' }}>
             <div style={{ marginBottom: 48, textAlign: 'center' }}>
               <div style={{ 
                 width: 64, height: 64, borderRadius: 20, 
-                background: 'rgba(22, 119, 255, 0.1)', 
+                background: 'rgba(114, 46, 209, 0.1)', 
                 margin: '0 auto 24px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '1px solid rgba(22, 119, 255, 0.2)'
+                border: '1px solid rgba(114, 46, 209, 0.2)'
               }}>
-                <AppstoreOutlined style={{ fontSize: 28, color: '#1677ff' }} />
+                <ScanOutlined style={{ fontSize: 28, color: '#722ed1' }} />
               </div>
-              <h2 style={{ fontSize: 32, fontWeight: 800, color: '#fff', marginBottom: 12 }}>管理端登录</h2>
+              <h2 style={{ fontSize: 32, fontWeight: 800, color: '#fff', marginBottom: 12 }}>质检端登录</h2>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 15 }}>请使用您的质检员 ID 登录工作区</p>
             </div>
 
             <Form onFinish={onFinish} size="large" layout="vertical">
-              <Form.Item name="username" rules={[{ required: true, message: '请输入账号' }]}>
+              <Form.Item name="username" rules={[{ required: true, message: '请输入质检员 ID' }]}>
                 <Input
                   prefix={<UserOutlined style={{ color: 'rgba(255,255,255,0.3)' }} />}
-                  placeholder="管理员账号 / 用户名"
+                  placeholder="质检员 ID / 用户名"
                   style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, height: 52 }}
                 />
               </Form.Item>
@@ -174,14 +186,21 @@ export default function LoginPage() {
               </Form.Item>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
                 <Checkbox style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>保持登录状态</Checkbox>
-                <Button type="link" style={{ padding: 0, fontSize: 13, color: '#1677ff' }}>忘记密码?</Button>
+                <Button type="link" style={{ padding: 0, fontSize: 13, color: '#722ed1' }}>遇到问题?</Button>
               </div>
               <Form.Item>
-                <Button type="primary" htmlType="submit" block loading={loading} style={{ height: 56, fontSize: 16, fontWeight: 700, borderRadius: 12, border: 'none', boxShadow: '0 10px 20px -5px rgba(22,119,255,0.4)' }}>
-                  确认并进入控制台
+                <Button type="primary" htmlType="submit" block loading={loading} style={{ height: 56, fontSize: 16, fontWeight: 700, borderRadius: 12, border: 'none', background: 'linear-gradient(90deg, #722ed1, #531dab)', boxShadow: '0 10px 20px -5px rgba(114,46,209,0.4)' }}>
+                  进入质检审计空间
                 </Button>
               </Form.Item>
             </Form>
+
+            <div style={{ marginTop: 40, padding: '16px', borderRadius: 12, background: 'rgba(114, 46, 209, 0.05)', border: '1px solid rgba(114, 46, 209, 0.1)', textAlign: 'center' }}>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0 }}>
+                <CheckCircleFilled style={{ color: '#10b981', marginRight: 8 }} />
+                审计会话已安全加密接入
+              </p>
+            </div>
           </div>
 
           <div style={{ position: 'absolute', bottom: 40, color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>

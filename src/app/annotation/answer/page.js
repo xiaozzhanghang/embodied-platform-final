@@ -75,7 +75,7 @@ export default function AnswerPage() {
                 footer={null}
                 styles={{ body: { padding: 0, backgroundColor: '#141414', height: '100vh' } }}
                 closable={false}
-                destroyOnClose
+                destroyOnHidden
             >
                 {selectedProject && <AnnotationWorkspace project={selectedProject} onClose={() => setWorkspaceVisible(false)} />}
             </Modal>

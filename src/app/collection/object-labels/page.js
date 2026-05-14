@@ -1,26 +1,26 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Typography, Breadcrumb, Button, Input, App, Tooltip } from 'antd';
-import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined } from '@ant-design/icons';
+import { Typography, Breadcrumb, Button, Input, App, Tooltip, Modal, Form, Select, InputNumber, Radio, Row, Col } from 'antd';
+import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Text } = Typography;
 
-const objectCategories = [
+const initialCategories = [
   { type: 'section', label: '物体信息' },
-  { key: 'obj_type', label: '物体类型', subLabel: 'TAG CATEGORY: 物体类型' },
-  { key: 'scene', label: '适用场景', subLabel: 'TAG CATEGORY: 场景分组' },
-  { key: 'asset', label: '资产标签', subLabel: 'TAG CATEGORY: 资产归属' },
+  { key: 'obj_type', label: '物体类型', subLabel: 'TAG CATEGORY: 物体类型', group: 'obj_info' },
+  { key: 'scene', label: '适用场景', subLabel: 'TAG CATEGORY: 场景分组', group: 'obj_info' },
+  { key: 'asset', label: '资产标签', subLabel: 'TAG CATEGORY: 资产归属', group: 'obj_info' },
   { type: 'section', label: '视觉感知特性' },
-  { key: 'color', label: '颜色特性', subLabel: 'TAG CATEGORY: 颜色特性' },
-  { key: 'optical', label: '光学特性', subLabel: 'TAG CATEGORY: 光学特性' },
-  { key: 'material', label: '材质特性', subLabel: 'TAG CATEGORY: 材质特性' },
+  { key: 'color', label: '颜色特性', subLabel: 'TAG CATEGORY: 颜色特性', group: 'visual_attr' },
+  { key: 'optical', label: '光学特性', subLabel: 'TAG CATEGORY: 光学特性', group: 'visual_attr' },
+  { key: 'material', label: '材质特性', subLabel: 'TAG CATEGORY: 材质特性', group: 'visual_attr' },
   { type: 'section', label: '物理几何特性' },
-  { key: 'shape', label: '形状特性', subLabel: 'TAG CATEGORY: 形状特性' },
-  { key: 'morphology', label: '形态特性', subLabel: 'TAG CATEGORY: 形态特性' },
+  { key: 'shape', label: '形状特性', subLabel: 'TAG CATEGORY: 形状特性', group: 'physical_attr' },
+  { key: 'morphology', label: '形态特性', subLabel: 'TAG CATEGORY: 形态特性', group: 'physical_attr' },
   { type: 'section', label: '动态行为特性' },
-  { key: 'motion', label: '运动特性', subLabel: 'TAG CATEGORY: 运动特性' },
+  { key: 'motion', label: '运动特性', subLabel: 'TAG CATEGORY: 运动特性', group: 'motion_attr' },
 ];
 
 const initialTagsMap = {
@@ -90,12 +90,71 @@ const initialTagsMap = {
 export default function ObjectLabelsPage() {
   const { message } = App.useApp();
   const [selected, setSelected] = useState('obj_type');
+  const [categories, setCategories] = useState(initialCategories);
   const [tagsMap, setTagsMap] = useState(initialTagsMap);
   const [adding, setAdding] = useState(false);
   const [newTagInput, setNewTagInput] = useState('');
 
+  // Category Modal state
+  const [createCatOpen, setCreateCatOpen] = useState(false);
+  const [createCatForm] = Form.useForm();
+  const [editingCatKey, setEditingCatKey] = useState(null);
+  const [hoveredCat, setHoveredCat] = useState(null);
+
   const currentTags = tagsMap[selected] || [];
   const total = Object.values(tagsMap).reduce((s, arr) => s + arr.length, 0);
+
+  const handleCreateCategory = () => {
+    createCatForm.validateFields().then(values => {
+      const newKey = values.identifier || `custom_${Date.now()}`;
+      const newCat = {
+        key: newKey,
+        label: values.name,
+        enName: values.enName,
+        subLabel: `TAG CATEGORY: ${values.name}`,
+        group: values.group,
+        multiLevel: values.multiLevel === 'yes',
+        sortOrder: values.sortOrder,
+        desc: values.desc,
+      };
+
+      if (editingCatKey) {
+        setCategories(prev => prev.map(c => c.key === editingCatKey ? { ...c, ...newCat, key: editingCatKey } : c));
+        message.success('分类修改成功');
+      } else {
+        setCategories(prev => [...prev, newCat]);
+        setTagsMap(prev => ({ ...prev, [newKey]: [] }));
+        setSelected(newKey);
+        message.success('分类创建成功');
+      }
+      
+      createCatForm.resetFields();
+      setCreateCatOpen(false);
+      setEditingCatKey(null);
+    });
+  };
+
+  const handleEditCategory = (cat, e) => {
+    e.stopPropagation();
+    setEditingCatKey(cat.key);
+    createCatForm.setFieldsValue({
+      name: cat.label,
+      enName: cat.enName || '',
+      identifier: cat.key,
+      multiLevel: cat.multiLevel ? 'yes' : 'no',
+      sortOrder: cat.sortOrder || 0,
+      group: cat.group || '',
+      desc: cat.desc || '',
+    });
+    setCreateCatOpen(true);
+  };
+
+  const handleDeleteCategory = (catKey, e) => {
+    e.stopPropagation();
+    setCategories(prev => prev.filter(c => c.key !== catKey));
+    if (selected === catKey) setSelected('obj_type');
+    message.success('分类已删除');
+  };
 
   const removeTag = (id) => {
     setTagsMap(prev => ({
@@ -123,10 +182,20 @@ export default function ObjectLabelsPage() {
         <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: 16, overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text strong style={{ fontSize: 14 }}>标签分类</Text>
-            <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Button
+                type="text"
+                icon={<PlusOutlined />}
+                size="small"
+                onClick={() => { setEditingCatKey(null); createCatForm.resetFields(); setCreateCatOpen(true); }}
+                style={{ color: '#1890ff', padding: '0 4px' }}
+                title="创建分类"
+              />
+              <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
+            </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {objectCategories.map((item, idx) => {
+            {categories.map((item, idx) => {
               if (item.type === 'section') {
                 return (
                   <div key={idx} style={{
@@ -147,9 +216,42 @@ export default function ObjectLabelsPage() {
               }
               const isSelected = selected === item.key;
               return (
-                <div key={item.key} onClick={() => setSelected(item.key)} style={{ padding: '10px 14px', borderRadius: 8, cursor: 'pointer', background: isSelected ? '#1890ff' : 'transparent', color: isSelected ? '#fff' : '#262626', transition: 'all 0.2s' }}>
-                  <div style={{ fontWeight: isSelected ? 600 : 400, fontSize: 13 }}>{item.label}</div>
-                  <div style={{ fontSize: 10, color: isSelected ? 'rgba(255,255,255,0.7)' : '#bfbfbf', marginTop: 2, fontFamily: 'monospace' }}>{item.subLabel}</div>
+                <div 
+                  key={item.key} 
+                  onClick={() => setSelected(item.key)}
+                  onMouseEnter={() => setHoveredCat(item.key)}
+                  onMouseLeave={() => setHoveredCat(null)}
+                  style={{ 
+                    padding: '8px 10px', 
+                    borderRadius: 8, 
+                    cursor: 'pointer', 
+                    background: isSelected ? '#1890ff' : 'transparent', 
+                    color: isSelected ? '#fff' : '#262626', 
+                    transition: 'all 0.2s' 
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: isSelected ? 600 : 400, fontSize: 13, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.label}
+                    </span>
+                    {hoveredCat === item.key && (
+                      <div style={{ display: 'flex', gap: 0, flexShrink: 0, marginLeft: 4 }} onClick={e => e.stopPropagation()}>
+                        <Button
+                          type="text" size="small"
+                          icon={<EditOutlined style={{ fontSize: 11 }} />}
+                          onClick={(e) => handleEditCategory(item, e)}
+                          style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : '#595959', padding: '0 3px', height: 20, minWidth: 0 }}
+                        />
+                        <Button
+                          type="text" size="small"
+                          icon={<DeleteOutlined style={{ fontSize: 11 }} />}
+                          onClick={(e) => handleDeleteCategory(item.key, e)}
+                          style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : '#ff4d4f', padding: '0 3px', height: 20, minWidth: 0 }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 10, color: isSelected ? 'rgba(255,255,255,0.6)' : '#bfbfbf', marginTop: 2, fontFamily: 'monospace' }}>{item.subLabel}</div>
                 </div>
               );
             })}
@@ -187,6 +289,67 @@ export default function ObjectLabelsPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Category Modal */}
+      <Modal
+        title={editingCatKey ? "编辑分类" : "创建分类"}
+        open={createCatOpen}
+        onOk={handleCreateCategory}
+        onCancel={() => { setCreateCatOpen(false); createCatForm.resetFields(); setEditingCatKey(null); }}
+        okText="确定"
+        cancelText="取消"
+        width={520}
+        centered
+      >
+        <Form
+          form={createCatForm}
+          layout="vertical"
+          style={{ marginTop: 16 }}
+          initialValues={{ multiLevel: 'no', sortOrder: 0 }}
+        >
+          <Form.Item label="所属分组" name="group" required rules={[{ required: true, message: '请选择分组' }]}>
+            <Select placeholder="请选择所属分组" options={[
+              { value: 'obj_info', label: '物体信息' },
+              { value: 'visual_attr', label: '视觉感知特性' },
+              { value: 'physical_attr', label: '物理几何特性' },
+              { value: 'motion_attr', label: '动态行为特性' },
+            ]} />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="分类名称" name="name" required rules={[{ required: true, message: '请输入分类名称' }]}>
+                <Input placeholder="请输入分类名称" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="英文名称" name="enName" required rules={[{ required: true, message: '请输入英文名称' }]}>
+                <Input placeholder="请输入英文名称" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="唯一标识" name="identifier" required rules={[{ required: true, message: '请输入唯一标识' }]}>
+            <Input placeholder="请输入唯一标识，如 object_tag" disabled={!!editingCatKey} />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="可添加多级" name="multiLevel" required>
+                <Radio.Group>
+                  <Radio.Button value="no">否</Radio.Button>
+                  <Radio.Button value="yes">是</Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="排序值" name="sortOrder" required>
+                <InputNumber style={{ width: '100%' }} min={0} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="分类描述" name="desc">
+            <Input.TextArea placeholder="请输入描述" rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </MainLayout>
   );
 }

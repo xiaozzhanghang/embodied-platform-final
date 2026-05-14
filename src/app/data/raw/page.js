@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Modal, Row, Col, Descriptions, DatePicker, App } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, UploadOutlined, ThunderboltOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, UploadOutlined, ThunderboltOutlined, EyeOutlined, DownOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title } = Typography;
@@ -42,13 +42,29 @@ export default function RawDataPage() {
     return (
             <MainLayout>
                 <div className="page-header"><h3 className="page-header-title">原始数据</h3></div>
-                <Card className="search-form" style={{ marginBottom: 16 }}>
-                    <Form layout="inline">
-                        <Form.Item label="项目"><Select placeholder="全部" allowClear style={{ width: 180 }} options={[{ value: '具身抓取项目A' }, { value: '具身搬运项目B' }, { value: '具身分拣项目C' }]} /></Form.Item>
-                        <Form.Item label="数据名称"><Input placeholder="请输入" allowClear style={{ width: 180 }} /></Form.Item>
-                        <Form.Item label="原始数据ID"><Input placeholder="请输入" allowClear style={{ width: 120 }} /></Form.Item>
-                        <Form.Item label="创建时间"><DatePicker.RangePicker /></Form.Item>
-                        <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
+                <Card 
+                    style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+                    styles={{ body: { padding: '24px 24px 0' } }}
+                >
+                    <Form layout="horizontal" labelCol={{ flex: '80px' }}>
+                        <Row gutter={24}>
+                            <Col span={6}>
+                                <Form.Item label="所属项目"><Select placeholder="全部" allowClear options={[{ value: '具身抓取项目A' }, { value: '具身搬运项目B' }, { value: '具身分拣项目C' }]} /></Form.Item>
+                            </Col>
+                            <Col span={6}>
+                                <Form.Item label="数据名称"><Input placeholder="请输入" allowClear /></Form.Item>
+                            </Col>
+                            <Col span={6}>
+                                <Form.Item label="创建时间"><DatePicker.RangePicker style={{ width: '100%' }} /></Form.Item>
+                            </Col>
+                            <Col span={6} style={{ textAlign: 'right' }}>
+                                <Space>
+                                    <Button icon={<ReloadOutlined />}>重置</Button>
+                                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                                    <Button type="link" size="small" icon={<DownOutlined />}>展开</Button>
+                                </Space>
+                            </Col>
+                        </Row>
                     </Form>
                 </Card>
 

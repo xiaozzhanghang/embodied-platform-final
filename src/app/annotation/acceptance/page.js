@@ -90,15 +90,25 @@ export default function AcceptancePage() {
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col span={6}><Card size="small" style={{ borderRadius: 8 }}><Statistic title="待验收项目" value={2} prefix={<AuditOutlined />} valueStyle={{ color: '#faad14' }} /></Card></Col>
                 <Col span={6}><Card size="small" style={{ borderRadius: 8 }}><Statistic title="今日已验收" value={45} suffix="题包" valueStyle={{ color: '#52c41a' }} /></Card></Col>
-                <Col span={6}><Card size="small" style={{ borderRadius: 8 }}><Statistic title="平均打回率" value={3.5} precision={1} suffix="%" valueStyle={{ color: '#ff4d4f' }} /></Col>
+                <Col span={6}><Card size="small" style={{ borderRadius: 8 }}><Statistic title="平均打回率" value={3.5} precision={1} suffix="%" valueStyle={{ color: '#ff4d4f' }} /></Card></Col>
                 <Col span={6}><Card size="small" style={{ borderRadius: 8 }}><Statistic title="就绪 Episode" value={1250} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#1677ff' }} /></Card></Col>
             </Row>
 
             <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
-                <Form layout="inline">
-                    <Form.Item label="项目名称"><Input placeholder="请输入项目名称" allowClear style={{ width: 180 }} /></Form.Item>
-                    <Form.Item label="标注场景"><Select placeholder="全部" allowClear style={{ width: 140 }} options={[{ value: '二维框选' }, { value: 'VLA动作' }, { value: '关键点' }]} /></Form.Item>
-                    <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
+                <Form layout="vertical">
+                    <Row gutter={24} align="bottom">
+                        <Col><Form.Item label="项目名称" style={{ marginBottom: 0 }}><Input placeholder="请输入" allowClear style={{ width: 200 }} /></Form.Item></Col>
+                        <Col><Form.Item label="标注场景" style={{ marginBottom: 0 }}><Select placeholder="全部" allowClear style={{ width: 200 }} options={[{ value: '二维框选' }, { value: 'VLA动作' }, { value: '关键点' }]} /></Form.Item></Col>
+                        <Col><Form.Item label="状态" style={{ marginBottom: 0 }}><Select placeholder="全部" allowClear style={{ width: 140 }} options={[{ value: '进行中' }, { value: '已完成' }]} /></Form.Item></Col>
+                        <Col>
+                            <Form.Item style={{ marginBottom: 0 }}>
+                                <Space>
+                                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                                    <Button icon={<ReloadOutlined />}>重置</Button>
+                                </Space>
+                            </Form.Item>
+                        </Col>
+                    </Row>
                 </Form>
             </Card>
 

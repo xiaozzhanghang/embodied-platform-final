@@ -182,7 +182,7 @@ export default function DatasetPage() {
                     <Form layout="vertical">
                         <Row gutter={16}>
                             <Col span={12}><Form.Item label="当前版本"><Input value="v1.2.0" disabled /></Form.Item></Col>
-                            <Col span={12}><Form.Item label="新版本号" required><Input placeholder="例如 v1.3.0" /></Col>
+                            <Col span={12}><Form.Item label="新版本号" required><Input placeholder="例如 v1.3.0" /></Form.Item></Col>
                         </Row>
                         <Form.Item label="选择子集" required>
                             <Checkbox.Group style={{ width: '100%' }}>

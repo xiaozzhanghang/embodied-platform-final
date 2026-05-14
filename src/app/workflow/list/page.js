@@ -45,12 +45,37 @@ export default function WorkflowListPage() {
             <MainLayout>
                 <div className="page-header"><h3 className="page-header-title">工作流列表</h3></div>
                 <Card className="search-form" style={{ marginBottom: 16 }}>
-                    <Form layout="inline">
-                        <Form.Item label="工作流名称"><Input placeholder="请输入" allowClear style={{ width: 180 }} /></Form.Item>
-                        <Form.Item label="应用场景"><Select placeholder="全部" allowClear style={{ width: 140 }} options={[{ value: 'rosbag解析' }, { value: 'HDF5转换' }, { value: '视频处理' }, { value: '点云处理' }]} /></Form.Item>
-                        <Form.Item label="工作流ID"><Input placeholder="请输入" allowClear style={{ width: 120 }} /></Form.Item>
-                        <Form.Item label="创建人"><Input placeholder="请输入" allowClear style={{ width: 120 }} /></Form.Item>
-                        <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
+                    <Form layout="vertical">
+                        <Row gutter={16} align="bottom">
+                            <Col>
+                                <Form.Item label="工作流名称" style={{ marginBottom: 0 }}>
+                                    <Input placeholder="请输入名称" allowClear style={{ width: 180 }} />
+                                </Form.Item>
+                            </Col>
+                            <Col>
+                                <Form.Item label="应用场景" style={{ marginBottom: 0 }}>
+                                    <Select placeholder="全部" allowClear style={{ width: 140 }} options={[{ value: 'rosbag解析' }, { value: 'HDF5转换' }, { value: '视频处理' }, { value: '点云处理' }]} />
+                                </Form.Item>
+                            </Col>
+                            <Col>
+                                <Form.Item label="工作流ID" style={{ marginBottom: 0 }}>
+                                    <Input placeholder="请输入ID" allowClear style={{ width: 120 }} />
+                                </Form.Item>
+                            </Col>
+                            <Col>
+                                <Form.Item label="创建人" style={{ marginBottom: 0 }}>
+                                    <Input placeholder="请输入创建人" allowClear style={{ width: 120 }} />
+                                </Form.Item>
+                            </Col>
+                            <Col>
+                                <Form.Item style={{ marginBottom: 0 }}>
+                                    <Space>
+                                        <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                                        <Button icon={<ReloadOutlined />}>重置</Button>
+                                    </Space>
+                                </Form.Item>
+                            </Col>
+                        </Row>
                     </Form>
                 </Card>
 

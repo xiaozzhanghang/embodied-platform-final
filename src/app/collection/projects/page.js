@@ -1,18 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Typography, Breadcrumb, Button, Input, App, Tooltip, Modal } from 'antd';
-import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined } from '@ant-design/icons';
+import { Typography, Breadcrumb, Button, Input, App, Tooltip, Modal, Form, Select, InputNumber, Radio, Row, Col } from 'antd';
+import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Text } = Typography;
 
-const categories = [
+const initialCategories = [
   { type: 'section', label: '项目身份' },
-  { key: 'project_name', label: '项目名称', subLabel: 'TAG CATEGORY: 项目名称' },
+  { key: 'project_name', label: '项目名称', subLabel: 'TAG CATEGORY: 项目名称', group: 'project_identity' },
   { type: 'section', label: '项目属性' },
-  { key: 'task_purpose', label: '任务用途', subLabel: 'TAG CATEGORY: 任务用途' },
-  { key: 'taskbook_type', label: '任务书类别', subLabel: 'TAG CATEGORY: 任务书类别' },
+  { key: 'task_purpose', label: '任务用途', subLabel: 'TAG CATEGORY: 任务用途', group: 'project_attr' },
+  { key: 'taskbook_type', label: '任务书类别', subLabel: 'TAG CATEGORY: 任务书类别', group: 'project_attr' },
 ];
 
 const initialTagsMap = {
@@ -46,6 +46,7 @@ const initialSubTagsMap = {
 export default function ProjectManagementPage() {
   const { message } = App.useApp();
   const [selected, setSelected] = useState('project_name');
+  const [categories, setCategories] = useState(initialCategories);
   const [tagsMap, setTagsMap] = useState(initialTagsMap);
   const [subTagsMap, setSubTagsMap] = useState(initialSubTagsMap);
   const [adding, setAdding] = useState(false);
@@ -54,9 +55,67 @@ export default function ProjectManagementPage() {
   const [addingSub, setAddingSub] = useState(false);
   const [newSubInput, setNewSubInput] = useState('');
 
+  // Category Modal state
+  const [createCatOpen, setCreateCatOpen] = useState(false);
+  const [createCatForm] = Form.useForm();
+  const [editingCatKey, setEditingCatKey] = useState(null);
+  const [hoveredCat, setHoveredCat] = useState(null);
+
   const currentTags = tagsMap[selected] || [];
   const total = Object.values(tagsMap).reduce((s, arr) => s + arr.length, 0);
   const currentSubTags = subModal.parentTag ? (subTagsMap[subModal.parentTag.id] || []) : [];
+
+  const handleCreateCategory = () => {
+    createCatForm.validateFields().then(values => {
+      const newKey = values.identifier || `custom_${Date.now()}`;
+      const newCat = {
+        key: newKey,
+        label: values.name,
+        enName: values.enName,
+        subLabel: `TAG CATEGORY: ${values.name}`,
+        group: values.group,
+        multiLevel: values.multiLevel === 'yes',
+        sortOrder: values.sortOrder,
+        desc: values.desc,
+      };
+
+      if (editingCatKey) {
+        setCategories(prev => prev.map(c => c.key === editingCatKey ? { ...c, ...newCat, key: editingCatKey } : c));
+        message.success('分类修改成功');
+      } else {
+        setCategories(prev => [...prev, newCat]);
+        setTagsMap(prev => ({ ...prev, [newKey]: [] }));
+        setSelected(newKey);
+        message.success('分类创建成功');
+      }
+      
+      createCatForm.resetFields();
+      setCreateCatOpen(false);
+      setEditingCatKey(null);
+    });
+  };
+
+  const handleEditCategory = (cat, e) => {
+    e.stopPropagation();
+    setEditingCatKey(cat.key);
+    createCatForm.setFieldsValue({
+      name: cat.label,
+      enName: cat.enName || '',
+      identifier: cat.key,
+      multiLevel: cat.multiLevel ? 'yes' : 'no',
+      sortOrder: cat.sortOrder || 0,
+      group: cat.group || '',
+      desc: cat.desc || '',
+    });
+    setCreateCatOpen(true);
+  };
+
+  const handleDeleteCategory = (catKey, e) => {
+    e.stopPropagation();
+    setCategories(prev => prev.filter(c => c.key !== catKey));
+    if (selected === catKey) setSelected('project_name');
+    message.success('分类已删除');
+  };
 
   const removeTag = (id) => {
     setTagsMap(prev => ({
@@ -111,7 +170,17 @@ export default function ProjectManagementPage() {
         <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: 16, overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text strong style={{ fontSize: 14 }}>标签分类</Text>
-            <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Button
+                type="text"
+                icon={<PlusOutlined />}
+                size="small"
+                onClick={() => { setEditingCatKey(null); createCatForm.resetFields(); setCreateCatOpen(true); }}
+                style={{ color: '#1890ff', padding: '0 4px' }}
+                title="创建分类"
+              />
+              <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
+            </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {categories.map((item, idx) => {
@@ -135,9 +204,42 @@ export default function ProjectManagementPage() {
               }
               const isSelected = selected === item.key;
               return (
-                <div key={item.key} onClick={() => setSelected(item.key)} style={{ padding: '10px 14px', borderRadius: 8, cursor: 'pointer', background: isSelected ? '#1890ff' : 'transparent', color: isSelected ? '#fff' : '#262626', transition: 'all 0.2s' }}>
-                  <div style={{ fontWeight: isSelected ? 600 : 400, fontSize: 13 }}>{item.label}</div>
-                  <div style={{ fontSize: 10, color: isSelected ? 'rgba(255,255,255,0.7)' : '#bfbfbf', marginTop: 2, fontFamily: 'monospace' }}>{item.subLabel}</div>
+                <div 
+                  key={item.key} 
+                  onClick={() => setSelected(item.key)}
+                  onMouseEnter={() => setHoveredCat(item.key)}
+                  onMouseLeave={() => setHoveredCat(null)}
+                  style={{ 
+                    padding: '8px 10px', 
+                    borderRadius: 8, 
+                    cursor: 'pointer', 
+                    background: isSelected ? '#1890ff' : 'transparent', 
+                    color: isSelected ? '#fff' : '#262626', 
+                    transition: 'all 0.2s' 
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: isSelected ? 600 : 400, fontSize: 13, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.label}
+                    </span>
+                    {hoveredCat === item.key && (
+                      <div style={{ display: 'flex', gap: 0, flexShrink: 0, marginLeft: 4 }} onClick={e => e.stopPropagation()}>
+                        <Button
+                          type="text" size="small"
+                          icon={<EditOutlined style={{ fontSize: 11 }} />}
+                          onClick={(e) => handleEditCategory(item, e)}
+                          style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : '#595959', padding: '0 3px', height: 20, minWidth: 0 }}
+                        />
+                        <Button
+                          type="text" size="small"
+                          icon={<DeleteOutlined style={{ fontSize: 11 }} />}
+                          onClick={(e) => handleDeleteCategory(item.key, e)}
+                          style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : '#ff4d4f', padding: '0 3px', height: 20, minWidth: 0 }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 10, color: isSelected ? 'rgba(255,255,255,0.6)' : '#bfbfbf', marginTop: 2, fontFamily: 'monospace' }}>{item.subLabel}</div>
                 </div>
               );
             })}
@@ -173,6 +275,65 @@ export default function ProjectManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Category Modal */}
+      <Modal
+        title={editingCatKey ? "编辑分类" : "创建分类"}
+        open={createCatOpen}
+        onOk={handleCreateCategory}
+        onCancel={() => { setCreateCatOpen(false); createCatForm.resetFields(); setEditingCatKey(null); }}
+        okText="确定"
+        cancelText="取消"
+        width={520}
+        centered
+      >
+        <Form
+          form={createCatForm}
+          layout="vertical"
+          style={{ marginTop: 16 }}
+          initialValues={{ multiLevel: 'no', sortOrder: 0 }}
+        >
+          <Form.Item label="所属分组" name="group" required rules={[{ required: true, message: '请选择分组' }]}>
+            <Select placeholder="请选择所属分组" options={[
+              { value: 'project_identity', label: '项目身份' },
+              { value: 'project_attr', label: '项目属性' },
+            ]} />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="分类名称" name="name" required rules={[{ required: true, message: '请输入分类名称' }]}>
+                <Input placeholder="请输入分类名称" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="英文名称" name="enName" required rules={[{ required: true, message: '请输入英文名称' }]}>
+                <Input placeholder="请输入英文名称" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="唯一标识" name="identifier" required rules={[{ required: true, message: '请输入唯一标识' }]}>
+            <Input placeholder="请输入唯一标识，如 project_tag" disabled={!!editingCatKey} />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="可添加多级" name="multiLevel" required>
+                <Radio.Group>
+                  <Radio.Button value="no">否</Radio.Button>
+                  <Radio.Button value="yes">是</Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="排序值" name="sortOrder" required>
+                <InputNumber style={{ width: '100%' }} min={0} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="分类描述" name="desc">
+            <Input.TextArea placeholder="请输入描述" rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       {/* Sub-tag Modal */}
       <Modal title="二级标签管理" open={subModal.open} onCancel={() => setSubModal({ open: false, parentTag: null })} footer={null} width={600} centered styles={{ body: { padding: '24px 32px' } }}>

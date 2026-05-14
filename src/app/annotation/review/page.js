@@ -39,12 +39,21 @@ export default function ReviewPage() {
     return (
             <MainLayout>
                 <div className="page-header"><h3 className="page-header-title">审核管理</h3></div>
-                <Card className="search-form" style={{ marginBottom: 16 }}>
-                    <Form layout="inline">
-                        <Form.Item label="项目ID"><Input placeholder="请输入" allowClear style={{ width: 120 }} /></Form.Item>
-                        <Form.Item label="项目名称"><Input placeholder="请输入" allowClear style={{ width: 180 }} /></Form.Item>
-                        <Form.Item label="标注场景"><Select placeholder="全部" allowClear style={{ width: 140 }} options={[{ value: '二维框选标注' }, { value: 'VLA标注' }, { value: '视频质检' }]} /></Form.Item>
-                        <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
+                <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
+                    <Form layout="vertical">
+                        <Row gutter={24} align="bottom">
+                            <Col><Form.Item label="项目ID" style={{ marginBottom: 0 }}><Input placeholder="请输入" allowClear style={{ width: 140 }} /></Form.Item></Col>
+                            <Col><Form.Item label="项目名称" style={{ marginBottom: 0 }}><Input placeholder="请输入" allowClear style={{ width: 200 }} /></Form.Item></Col>
+                            <Col><Form.Item label="标注场景" style={{ marginBottom: 0 }}><Select placeholder="全部" allowClear style={{ width: 200 }} options={[{ value: '二维框选标注' }, { value: 'VLA标注' }, { value: '视频质检' }]} /></Form.Item></Col>
+                            <Col>
+                                <Form.Item style={{ marginBottom: 0 }}>
+                                    <Space>
+                                        <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                                        <Button icon={<ReloadOutlined />}>重置</Button>
+                                    </Space>
+                                </Form.Item>
+                            </Col>
+                        </Row>
                     </Form>
                 </Card>
 

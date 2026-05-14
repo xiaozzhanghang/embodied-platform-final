@@ -70,11 +70,28 @@ function NodeTable({ data, isCustom }) {
 
     return (
         <>
-            <div style={{ padding: '16px 0', display: 'flex', justifyContent: 'space-between' }}>
-                <Form layout="inline">
-                    <Form.Item label="节点名称"><Input placeholder="请输入" allowClear style={{ width: 180 }} /></Form.Item>
-                    <Form.Item label="创建人"><Input placeholder="请输入" allowClear style={{ width: 120 }} /></Form.Item>
-                    <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
+            <div style={{ padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <Form layout="vertical">
+                    <Row gutter={16} align="bottom">
+                        <Col>
+                            <Form.Item label="节点名称" style={{ marginBottom: 0 }}>
+                                <Input placeholder="请输入节点名称" allowClear style={{ width: 180 }} />
+                            </Form.Item>
+                        </Col>
+                        <Col>
+                            <Form.Item label="创建人" style={{ marginBottom: 0 }}>
+                                <Input placeholder="请输入创建人" allowClear style={{ width: 120 }} />
+                            </Form.Item>
+                        </Col>
+                        <Col>
+                            <Form.Item style={{ marginBottom: 0 }}>
+                                <Space>
+                                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                                    <Button icon={<ReloadOutlined />}>重置</Button>
+                                </Space>
+                            </Form.Item>
+                        </Col>
+                    </Row>
                 </Form>
                 {isCustom && <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增工具</Button>}
             </div>

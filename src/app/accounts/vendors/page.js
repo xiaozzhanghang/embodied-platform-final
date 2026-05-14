@@ -40,9 +40,22 @@ export default function VendorPage() {
             <MainLayout>
                 <div className="page-header"><h3 className="page-header-title">服务商</h3></div>
                 <Card className="search-form" style={{ marginBottom: 16 }}>
-                    <Form layout="inline">
-                        <Form.Item label="服务商名称"><Input placeholder="请输入" allowClear style={{ width: 200 }} /></Form.Item>
-                        <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
+                    <Form layout="vertical">
+                        <Row gutter={24} align="bottom">
+                            <Col>
+                                <Form.Item label="服务商名称" style={{ marginBottom: 0 }}>
+                                    <Input placeholder="请输入服务商名称" allowClear style={{ width: 220 }} />
+                                </Form.Item>
+                            </Col>
+                            <Col>
+                                <Form.Item style={{ marginBottom: 0 }}>
+                                    <Space>
+                                        <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                                        <Button icon={<ReloadOutlined />}>重置</Button>
+                                    </Space>
+                                </Form.Item>
+                            </Col>
+                        </Row>
                     </Form>
                 </Card>
 

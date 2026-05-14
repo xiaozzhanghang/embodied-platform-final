@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Tabs, Progress, App, Row, Col, Form, Select, Badge, Divider } from 'antd';
-import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -11,6 +11,7 @@ const { Title, Text } = Typography;
 export default function AnnotationAuditPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('all');
+  const [expand, setExpand] = useState(false);
 
   const instanceMockData = Array.from({ length: 12 }).map((_, i) => ({
     key: i,
@@ -51,32 +52,70 @@ export default function AnnotationAuditPage() {
         <Breadcrumb items={[{ title: '数据采集' }, { title: '标注审核' }]} style={{ marginBottom: 16 }} />
       </div>
 
-      {/* Filter Section */}
-      <Card style={{ marginBottom: 16, borderRadius: 4 }} styles={{ body: { padding: '16px 24px' } }}>
-        <Form layout="inline">
-          <Row gutter={[8, 12]} style={{ width: '100%' }}>
-            <Col span={4}><Select placeholder="请选择一级项目" style={{ width: '100%' }} /></Col>
-            <Col span={4}><Select placeholder="请选择二级项目" style={{ width: '100%' }} /></Col>
-            <Col span={4}><Select placeholder="请选择任务书" style={{ width: '100%' }} /></Col>
-            <Col span={4}><Input placeholder="请输入任务名称" /></Col>
-            <Col span={4}><Input placeholder="请输入任务ID" /></Col>
-            <Col span={4}><Select placeholder="请选择标注类型" style={{ width: '100%' }} /></Col>
-            <Col span={4}><Select placeholder="标注任务状态" style={{ width: '100%' }} /></Col>
-            <Col span={4}><Select placeholder="标注员" style={{ width: '100%' }} /></Col>
-            <Col span={4}><Select placeholder="审核员" style={{ width: '100%' }} /></Col>
-            <Col span={4}><Select placeholder="标注状态" style={{ width: '100%' }} /></Col>
-            <Col span={4}><Select placeholder="审核进度" style={{ width: '100%' }} /></Col>
-            <Col span={4}><Input placeholder="标注任务名称" /></Col>
-            <Col span={4}><Input placeholder="请输入标注任务ID" /></Col>
-            <Col span={4}><Input placeholder="请输入实例ID" /></Col>
-            <Col span={4}><Input placeholder="开始时间 - 结束时间" /></Col>
-            <Col span={4}>
-              <Space>
-                <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                <Button icon={<ReloadOutlined />}>重置</Button>
-              </Space>
+      <Card 
+        style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+        styles={{ body: { padding: '24px 24px 0' } }}
+      >
+        <Form layout="horizontal" labelCol={{ flex: '80px' }}>
+          <Row gutter={24}>
+            <Col span={6}>
+              <Form.Item label="一级项目"><Select placeholder="请选择" allowClear /></Form.Item>
             </Col>
+            <Col span={6}>
+              <Form.Item label="二级项目"><Select placeholder="请选择" allowClear /></Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item label="任务书"><Select placeholder="请选择" allowClear /></Form.Item>
+            </Col>
+            {!expand && (
+              <Col span={6} style={{ textAlign: 'right' }}>
+                <Space>
+                  <Button icon={<ReloadOutlined />}>重置</Button>
+                  <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                  <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                    展开 <DownOutlined />
+                  </a>
+                </Space>
+              </Col>
+            )}
           </Row>
+          {expand && (
+            <>
+              <Row gutter={24}>
+                <Col span={6}>
+                  <Form.Item label="任务名称"><Input placeholder="请输入" allowClear /></Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="任务ID"><Input placeholder="请输入" allowClear /></Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="标注类型"><Select placeholder="请选择" allowClear /></Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={24}>
+                <Col span={6}>
+                  <Form.Item label="任务状态"><Select placeholder="请选择" allowClear /></Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="标注员"><Select placeholder="请选择" allowClear /></Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="审核员"><Select placeholder="请选择" allowClear /></Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={24}>
+                <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
+                  <Space>
+                    <Button icon={<ReloadOutlined />}>重置</Button>
+                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                    <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                      收起 <UpOutlined />
+                    </a>
+                  </Space>
+                </Col>
+              </Row>
+            </>
+          )}
         </Form>
       </Card>
 

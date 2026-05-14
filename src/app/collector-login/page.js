@@ -43,7 +43,7 @@ export default function CollectorLoginPage() {
         <style jsx global>{`
           @keyframes float {
             0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+            50% { transform: translateY(-9px); }
             100% { transform: translateY(0px); }
           }
           @keyframes pulse {
@@ -242,7 +242,7 @@ export default function CollectorLoginPage() {
               >
                 <Input
                   prefix={<UserOutlined style={{ color: 'rgba(255,255,255,0.3)' }} />}
-                  placeholder="Collector ID / Username"
+                  placeholder="采集员 ID / 用户名"
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.1)',
@@ -261,7 +261,7 @@ export default function CollectorLoginPage() {
               >
                 <Input.Password
                   prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.3)' }} />}
-                  placeholder="Enter Password"
+                  placeholder="请输入访问密码"
                   style={{
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.1)',

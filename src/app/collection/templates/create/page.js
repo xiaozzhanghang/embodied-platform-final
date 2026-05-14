@@ -54,17 +54,38 @@ export default function CreateTemplatePage() {
     { 
       title: '原子技能', 
       dataIndex: 'skill', 
-      render: (val) => <Input defaultValue={val} placeholder="如：识别/抓取/放置" /> 
+      render: (val) => (
+        <Select defaultValue={val} style={{ width: '100%' }} options={[
+          { value: '识别', label: '识别' },
+          { value: '抓取', label: '抓取' },
+          { value: '移动', label: '移动' },
+          { value: '放置', label: '放置' },
+          { value: '打开', label: '打开' }
+        ]} />
+      )
     },
     { 
       title: '操作对象', 
       dataIndex: 'object', 
-      render: (val) => <Input defaultValue={val} placeholder="如：目标物品/容器" /> 
+      render: (val) => (
+        <Select defaultValue={val} style={{ width: '100%' }} options={[
+          { value: '目标物品', label: '目标物品' },
+          { value: '抽屉', label: '抽屉' },
+          { value: '门把手', label: '门把手' },
+          { value: '容器', label: '容器' }
+        ]} />
+      )
     },
     { 
       title: '操作目标', 
       dataIndex: 'target', 
-      render: (val) => <Input defaultValue={val} placeholder="如：确认位置/稳定握持" /> 
+      render: (val) => (
+        <Select defaultValue={val} style={{ width: '100%' }} options={[
+          { value: '确认位置', label: '确认位置' },
+          { value: '稳定握持', label: '稳定握持' },
+          { value: '内部', label: '内部' }
+        ]} />
+      )
     },
     {
       title: '操作',

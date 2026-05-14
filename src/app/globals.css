@@ -62,79 +62,89 @@ body {
 /* ========================================
    LOGIN PAGE
    ======================================== */
-.login-container {
+/* ========================================
+   PREMIUM SPLIT LOGIN PAGE
+   ======================================== */
+.login-wrapper {
   min-height: 100vh;
+  display: flex;
+  background: #fff;
+}
+
+.login-hero {
+  flex: 1.2;
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Specific backgrounds for different portals */
+.hero-admin {
+  background-image: url('/assets/login_bg_admin.png');
+}
+
+.hero-qa {
+  background-image: url('/assets/login_bg_qa.png');
+}
+
+.login-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(0, 21, 41, 0.4), transparent),
+              radial-gradient(circle at 30% 30%, rgba(22, 119, 255, 0.2), transparent);
+}
+
+.login-form-side {
+  flex: 0.8;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0c1e3c 0%, #1a3a6b 30%, #0d47a1 60%, #1565c0 100%);
-  position: relative;
-  overflow: hidden;
+  padding: 40px;
+  background: #fff;
 }
 
-.login-container::before {
-  content: '';
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(22, 119, 255, 0.15) 0%, transparent 70%);
-  top: -100px;
-  right: -100px;
-  border-radius: 50%;
+.login-form-inner {
+  width: 100%;
+  max-width: 400px;
+  animation: loginFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.login-container::after {
-  content: '';
-  position: absolute;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(22, 119, 255, 0.1) 0%, transparent 70%);
-  bottom: -50px;
-  left: -50px;
-  border-radius: 50%;
-}
-
-.login-card {
-  width: 420px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 16px;
-  padding: 48px 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 40px rgba(22, 119, 255, 0.1);
-  z-index: 1;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+@keyframes loginFadeIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .login-logo {
-  text-align: center;
   margin-bottom: 40px;
+}
+
+.login-logo .logo-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #1677ff, #722ed1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
 }
 
 .login-logo h1 {
   font-size: 24px;
   color: #001529;
-  font-weight: 700;
-  margin-bottom: 8px;
-  letter-spacing: 2px;
+  font-weight: 800;
+  margin-bottom: 4px;
 }
 
 .login-logo p {
-  font-size: 14px;
-  color: var(--text-tertiary);
-}
-
-.login-logo .logo-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 16px;
-  background: linear-gradient(135deg, #1677ff, #0958d9);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  color: #fff;
-  box-shadow: 0 8px 24px rgba(22, 119, 255, 0.3);
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.45);
+  letter-spacing: 1px;
 }
 
 /* ========================================

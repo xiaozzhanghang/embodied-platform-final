@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Drawer, Descriptions, Badge, Progress, Statistic, Row, Col, Steps, Modal, App } from 'antd';
-import { SearchOutlined, ReloadOutlined, EyeOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ApiOutlined, DashboardOutlined, HddOutlined, CheckCircleFilled, WarningFilled } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, EyeOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ApiOutlined, DashboardOutlined, HddOutlined, CheckCircleFilled, WarningFilled, DownOutlined, UpOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -21,6 +21,7 @@ export default function CollectTaskPage() {
   const router = useRouter();
   const { message } = App.useApp();
     const [detailOpen, setDetailOpen] = useState(false);
+    const [expand, setExpand] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
     const [collectModalOpen, setCollectModalOpen] = useState(false);
     const [isCollecting, setIsCollecting] = useState(false);
@@ -65,7 +66,7 @@ export default function CollectTaskPage() {
                         <Tag color="blue" style={{ margin: 0, fontWeight: 'bold' }}>EDGE CLIENT</Tag>
                         <span style={{ fontSize: 14, fontWeight: 500, color: '#0958d9' }}>边缘侧采集工作站 - 就绪</span>
                     </div>
-                    <Space size="large" split={<span style={{ color: '#91caff' }}>|</span>}>
+                    <Space size="large" separator={<span style={{ color: '#91caff' }}>|</span>}>
                         <Space size="small">
                             <ApiOutlined style={{ color: '#52c41a' }} />
                             <span style={{ fontSize: 13 }}>机器人直连: <CheckCircleFilled style={{ color: '#52c41a', fontSize: 10 }} /> <span style={{ color: '#52c41a' }}>已连接 (1ms)</span></span>
@@ -85,13 +86,56 @@ export default function CollectTaskPage() {
                     <h3 className="page-header-title" style={{ margin: 0 }}>采集任务</h3>
                     <Button type="primary" onClick={() => window.open('/collection/collect/connection/CT-20250301001', '_blank')}>设备连接自检</Button>
                 </div>
-                <Card className="search-form" style={{ marginBottom: 16 }}>
-                    <Form layout="inline">
-                        <Form.Item label="任务名称"><Input placeholder="请输入" allowClear style={{ width: 180 }} /></Form.Item>
-                        <Form.Item label="采集机器人"><Select placeholder="全部" allowClear style={{ width: 160 }} options={[{ value: 'FRANKA-FR3-1号' }, { value: 'UR5e-1号' }]} /></Form.Item>
-                        <Form.Item label="采集状态"><Select placeholder="全部" allowClear style={{ width: 120 }} options={[{ value: '采集中' }, { value: '采集完成' }, { value: '待采集' }]} /></Form.Item>
-                        <Form.Item label="数据状态"><Select placeholder="全部" allowClear style={{ width: 120 }} options={[{ value: '上传中' }, { value: '处理完成' }, { value: '未上传' }]} /></Form.Item>
-                        <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
+                <Card 
+                    style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+                    styles={{ body: { padding: '24px 24px 0' } }}
+                >
+                    <Form layout="horizontal" labelCol={{ flex: '80px' }}>
+                        <Row gutter={24}>
+                            <Col span={6}>
+                                <Form.Item label="任务名称"><Input placeholder="请输入" allowClear /></Form.Item>
+                            </Col>
+                            <Col span={6}>
+                                <Form.Item label="采集机器人"><Select placeholder="全部" allowClear options={[{ value: 'FRANKA-FR3-1号' }, { value: 'UR5e-1号' }]} /></Form.Item>
+                            </Col>
+                            <Col span={6}>
+                                <Form.Item label="采集状态"><Select placeholder="全部" allowClear options={[{ value: '采集中' }, { value: '采集完成' }, { value: '待采集' }]} /></Form.Item>
+                            </Col>
+                            {!expand && (
+                                <Col span={6} style={{ textAlign: 'right' }}>
+                                    <Space>
+                                        <Button icon={<ReloadOutlined />}>重置</Button>
+                                        <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                                        <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                                            展开 <DownOutlined />
+                                        </a>
+                                    </Space>
+                                </Col>
+                            )}
+                        </Row>
+                        {expand && (
+                            <>
+                                <Row gutter={24}>
+                                    <Col span={6}>
+                                        <Form.Item label="指派时间"><Input placeholder="请选择时间" allowClear /></Form.Item>
+                                    </Col>
+                                    <Col span={6}>
+                                        <Form.Item label="采集员"><Input placeholder="请输入" allowClear /></Form.Item>
+                                    </Col>
+                                </Row>
+                                <Row gutter={24}>
+                                    <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
+                                        <Space>
+                                            <Button icon={<ReloadOutlined />}>重置</Button>
+                                            <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                                            <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                                                收起 <UpOutlined />
+                                            </a>
+                                        </Space>
+                                    </Col>
+                                </Row>
+                            </>
+                        )}
                     </Form>
                 </Card>
 

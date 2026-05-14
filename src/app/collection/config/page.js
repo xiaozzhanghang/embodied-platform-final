@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Typography, Breadcrumb, Button, Input, App, Modal, Tag, Space, Tooltip } from 'antd';
-import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined } from '@ant-design/icons';
+import { Typography, Breadcrumb, Button, Input, App, Modal, Tag, Space, Tooltip, Form, Select, InputNumber, Radio, Row, Col } from 'antd';
+import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Text } = Typography;
@@ -87,12 +87,62 @@ const initialSubTagsMap = {
 export default function TaskLabelsPage() {
   const { message } = App.useApp();
   const [selected, setSelected] = useState('scene');
+  const [categories, setCategories] = useState(taskCategories);
   const [tagsMap, setTagsMap] = useState(initialTagsMap);
   const [subTagsMap, setSubTagsMap] = useState(initialSubTagsMap);
   const [adding, setAdding] = useState(false);
   const [newTagInput, setNewTagInput] = useState('');
 
-  // Sub-label Modal state
+  // Create Category Modal
+  const [createCatOpen, setCreateCatOpen] = useState(false);
+  const [createCatForm] = Form.useForm();
+
+  const handleCreateCategory = () => {
+    createCatForm.validateFields().then(values => {
+      const newKey = values.identifier || `custom_${Date.now()}`;
+      const newCat = {
+        key: newKey,
+        label: values.name,
+        subLabel: `TAG CATEGORY: ${values.name}`,
+        group: values.group,
+        multiLevel: values.multiLevel === 'yes',
+      };
+      setCategories(prev => [...prev, newCat]);
+      setTagsMap(prev => ({ ...prev, [newKey]: [] }));
+      setSelected(newKey);
+      createCatForm.resetFields();
+      setCreateCatOpen(false);
+      message.success('分类创建成功');
+    });
+  };
+
+  // Hover state for category items
+  const [hoveredCat, setHoveredCat] = useState(null);
+
+  // Edit category
+  const [editingCatKey, setEditingCatKey] = useState(null);
+  const handleEditCategory = (cat, e) => {
+    e.stopPropagation();
+    setEditingCatKey(cat.key);
+    createCatForm.setFieldsValue({
+      name: cat.label,
+      enName: cat.enName || '',
+      identifier: cat.key,
+      multiLevel: cat.multiLevel ? 'yes' : 'no',
+      sortOrder: cat.sortOrder || 0,
+      group: cat.group || '',
+      desc: cat.desc || '',
+    });
+    setCreateCatOpen(true);
+  };
+
+  const handleDeleteCategory = (catKey, e) => {
+    e.stopPropagation();
+    setCategories(prev => prev.filter(c => c.key !== catKey));
+    if (selected === catKey) setSelected('scene');
+    message.success('分类已删除');
+  };
+
   const [subModal, setSubModal] = useState({ open: false, parentTag: null });
   const [addingSub, setAddingSub] = useState(false);
   const [newSubInput, setNewSubInput] = useState('');
@@ -169,10 +219,20 @@ export default function TaskLabelsPage() {
         <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: 16, overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text strong style={{ fontSize: 14 }}>标签分类</Text>
-            <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Button
+                type="text"
+                icon={<PlusOutlined />}
+                size="small"
+                onClick={() => setCreateCatOpen(true)}
+                style={{ color: '#1890ff', padding: '0 4px' }}
+                title="创建分类"
+              />
+              <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
+            </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {taskCategories.map((cat, idx) => {
+            {categories.map((cat, idx) => {
               if (cat.type === 'section') {
                 return (
                   <div key={idx} style={{
@@ -196,15 +256,42 @@ export default function TaskLabelsPage() {
                 <div
                   key={cat.key}
                   onClick={() => setSelected(cat.key)}
+                  onMouseEnter={() => setHoveredCat(cat.key)}
+                  onMouseLeave={() => setHoveredCat(null)}
                   style={{
-                    padding: '10px 14px', borderRadius: 8, cursor: 'pointer',
+                    padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
                     background: isSelected ? '#1890ff' : 'transparent',
                     color: isSelected ? '#fff' : '#262626',
                     transition: 'all 0.2s',
                   }}
                 >
-                  <div style={{ fontWeight: isSelected ? 600 : 400, fontSize: 13 }}>{cat.label}</div>
-                  <div style={{ fontSize: 10, color: isSelected ? 'rgba(255,255,255,0.7)' : '#bfbfbf', marginTop: 2, fontFamily: 'monospace' }}>{cat.subLabel}</div>
+                  {/* Title row: label + action buttons on same line */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: isSelected ? 600 : 400, fontSize: 13, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {cat.label}
+                    </span>
+                    {hoveredCat === cat.key && (
+                      <div
+                        style={{ display: 'flex', gap: 0, flexShrink: 0, marginLeft: 4 }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <Button
+                          type="text" size="small"
+                          icon={<EditOutlined style={{ fontSize: 11 }} />}
+                          onClick={(e) => handleEditCategory(cat, e)}
+                          style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : '#595959', padding: '0 3px', height: 20, minWidth: 0 }}
+                        />
+                        <Button
+                          type="text" size="small"
+                          icon={<DeleteOutlined style={{ fontSize: 11 }} />}
+                          onClick={(e) => handleDeleteCategory(cat.key, e)}
+                          style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : '#ff4d4f', padding: '0 3px', height: 20, minWidth: 0 }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {/* SubLabel below */}
+                  <div style={{ fontSize: 10, color: isSelected ? 'rgba(255,255,255,0.6)' : '#bfbfbf', marginTop: 2, fontFamily: 'monospace' }}>{cat.subLabel}</div>
                 </div>
               );
             })}
@@ -367,6 +454,65 @@ export default function TaskLabelsPage() {
             </div>
           </div>
         )}
+      </Modal>
+      {/* Create Category Modal */}
+      <Modal
+        title="创建分类"
+        open={createCatOpen}
+        onOk={handleCreateCategory}
+        onCancel={() => { setCreateCatOpen(false); createCatForm.resetFields(); }}
+        okText="确定"
+        cancelText="取消"
+        width={520}
+        centered
+      >
+        <Form
+          form={createCatForm}
+          layout="vertical"
+          style={{ marginTop: 16 }}
+          initialValues={{ multiLevel: 'no', sortOrder: 0 }}
+        >
+          <Form.Item label="所属分组" name="group" required rules={[{ required: true, message: '请选择分组' }]}>
+            <Select placeholder="请选择所属分组" options={[
+              { value: 'collection_scene', label: '采集场景' },
+              { value: 'hardware_config', label: '硬件配置' },
+              { value: 'data_annotation', label: '数据标注' },
+            ]} />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="分类名称" name="name" required rules={[{ required: true, message: '请输入分类名称' }]}>
+                <Input placeholder="请输入分类名称" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="英文名称" name="enName" required rules={[{ required: true, message: '请输入英文名称' }]}>
+                <Input placeholder="请输入英文名称" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="唯一标识" name="identifier" required rules={[{ required: true, message: '请输入唯一标识' }]}>
+            <Input placeholder="请输入唯一标识，如 scene_type" />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="可添加多级" name="multiLevel" required>
+                <Radio.Group>
+                  <Radio.Button value="no">否</Radio.Button>
+                  <Radio.Button value="yes">是</Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="排序值" name="sortOrder" required>
+                <InputNumber style={{ width: '100%' }} min={0} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="分类描述" name="desc">
+            <Input.TextArea placeholder="请输入描述" rows={3} />
+          </Form.Item>
+        </Form>
       </Modal>
     </MainLayout>
   );
