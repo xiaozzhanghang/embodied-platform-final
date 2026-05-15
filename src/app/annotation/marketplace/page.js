@@ -36,7 +36,7 @@ export default function MarketplacePage() {
             title: '操作', key: 'action', width: 180,
             render: (_, record) => (
                 <Space>
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => setDetailOpen(true)}>查看</Button>
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => setDetailOpen(true)}>查看详情</Button>
                     {record.status === '可领取' && <Button type="primary" size="small" onClick={() => message.success('领取成功')}>领取任务</Button>}
                 </Space>
             ),

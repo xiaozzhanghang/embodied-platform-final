@@ -145,7 +145,7 @@ function DeviceTable({ data, type, onEdit, partData }) {
         return (
           <Space size="middle">
             <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/device-types/${detailPath}/${record.key}`)}>
-              详情
+              查看详情
             </Button>
             <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/device-types/${detailPath}/${record.key}?edit=true`)}>
               编辑

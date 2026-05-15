@@ -42,7 +42,7 @@ export default function TaskbooksPage() {
       title: '操作', key: 'action', width: 160, fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
-          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/taskbooks/detail/${record.id}`)}>详情</Button>
+          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/taskbooks/detail/${record.id}`)}>查看详情</Button>
           <Button type="link" size="small" icon={<DownloadOutlined />} style={{ padding: 0 }}>下载</Button>
         </Space>
       )

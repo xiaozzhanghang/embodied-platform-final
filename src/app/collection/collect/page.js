@@ -41,7 +41,7 @@ export default function CollectTaskPage() {
             title: '操作', key: 'action', width: 200, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/collect/detail/${record.taskId}`)}>查看任务</Button>
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/collect/detail/${record.taskId}`)}>查看详情</Button>
                     {record.collectStatus !== '采集完成' && (
                         <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => window.open(`/collection/collect/workspace/${record.taskId}`, '_blank')}>
                             {record.collectStatus === '待采集' ? '开始采集' : '继续采集'}

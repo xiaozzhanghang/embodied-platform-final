@@ -33,7 +33,7 @@ export default function RawDataPage() {
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<ThunderboltOutlined />} onClick={() => { setSelectedData(record); setParseOpen(true); }}>数据解析</Button>
-                    <Button type="link" size="small" icon={<EyeOutlined />}>查看</Button>
+                    <Button type="link" size="small" icon={<EyeOutlined />}>查看详情</Button>
                 </Space>
             ),
         },

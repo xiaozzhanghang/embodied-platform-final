@@ -78,7 +78,7 @@ export default function ReviewPage() {
                                 render: (_, record) => (
                                     <Space>
                                         {record.status !== '已通过' && <Button type="primary" size="small" onClick={() => setReviewOpen(true)}>开始审核</Button>}
-                                        {record.status === '已通过' && <Button size="small">查看</Button>}
+                                        {record.status === '已通过' && <Button size="small">查看详情</Button>}
                                     </Space>
                                 ),
                             },

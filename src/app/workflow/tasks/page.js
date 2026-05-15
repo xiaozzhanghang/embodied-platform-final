@@ -45,7 +45,7 @@ export default function WorkflowTaskPage() {
             title: '操作', key: 'action', width: 220, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedTask(record); setDetailOpen(true); }}>查看</Button>
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedTask(record); setDetailOpen(true); }}>查看详情</Button>
                     {record.status === '运行中' && <Button type="link" size="small" danger icon={<StopOutlined />} onClick={() => message.warning('任务已终止')}>终止</Button>}
                     {record.status === '运行失败' && <Button type="link" size="small" icon={<RedoOutlined />} onClick={() => message.success('重新运行')}>重启</Button>}
                     <Popconfirm title="确定删除？" onConfirm={() => message.success('已删除')}><Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>

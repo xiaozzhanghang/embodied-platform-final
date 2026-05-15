@@ -73,7 +73,7 @@ export default function AcceptancePage() {
             render: (_, record) => (
                 <Space>
                     <Button type="primary" size="small" icon={<AuditOutlined />} onClick={() => { setSelectedProject(record); setBatchModalVisible(true); }}>批量处理</Button>
-                    <Button size="small" icon={<EyeOutlined />}>详情</Button>
+                    <Button size="small" icon={<EyeOutlined />}>查看详情</Button>
                     <Button size="small" icon={<CloudUploadOutlined />} disabled={record.progress < 100}>准备发布</Button>
                 </Space>
             ),

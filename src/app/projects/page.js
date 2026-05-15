@@ -32,7 +32,7 @@ export default function ProjectManagementPage() {
             render: () => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<SettingOutlined />} onClick={() => setEditOpen(true)}>配置</Button>
-                    <Button type="link" size="small" icon={<EyeOutlined />}>查看</Button>
+                    <Button type="link" size="small" icon={<EyeOutlined />}>查看详情</Button>
                     <Popconfirm title="确定删除此项目？" onConfirm={() => message.success('已删除')} okText="确定" cancelText="取消">
                         <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
                     </Popconfirm>

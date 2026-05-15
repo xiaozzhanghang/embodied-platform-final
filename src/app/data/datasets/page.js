@@ -71,7 +71,7 @@ export default function DatasetPage() {
             title: '操作', key: 'action', width: 150, fixed: 'right',
             render: () => (
                 <Space size="small">
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => setDetailOpen(true)}>查看</Button>
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => setDetailOpen(true)}>查看详情</Button>
                     <Popconfirm title="确定从数据集中移除此子集？"><Button type="link" size="small" danger icon={<DeleteOutlined />}>移除</Button></Popconfirm>
                 </Space>
             ),
@@ -254,7 +254,7 @@ export default function DatasetPage() {
                             render: (_, r) => (
                                 <Space>
                                     <Tooltip title="下载"><Button type="text" icon={<DownloadOutlined />} onClick={() => router.push('/data/download')} /></Tooltip>
-                                    <Button type="link" size="small">详情</Button>
+                                    <Button type="link" size="small">查看详情</Button>
                                 </Space>
                             ),
                         },

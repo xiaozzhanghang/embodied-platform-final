@@ -61,7 +61,7 @@ function NodeTable({ data, isCustom }) {
                             <Popconfirm title="确定删除？" onConfirm={() => message.success('已删除')}><Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>
                         </>
                     ) : (
-                        <Button type="link" size="small" icon={<EyeOutlined />}>查看</Button>
+                        <Button type="link" size="small" icon={<EyeOutlined />}>查看详情</Button>
                     )}
                 </Space>
             ),
