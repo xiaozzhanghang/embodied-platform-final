@@ -49,15 +49,15 @@ const sceneByKey = getAllScenes(categoryTree);
 
 // ─── Mock Data ─────────────────────────────────────────────────────
 const mockObjects = [
-  { key: '1', scene: 'Industry(工业)', name: '网线', enName: 'Network cable', material: '塑料', img: null, creator: '天奇管理员', updater: '天奇管理员', createTime: '2026-03-06 16:40' },
-  { key: '2', scene: 'Industry(工业)', name: '毛滚线', enName: 'power cord', material: null, img: null, creator: '大奇管理员', updater: '大奇管理员', createTime: '2026-03-06 16:42' },
-  { key: '3', scene: 'Industry(工业)', name: '四零插排板', enName: 'four-compartment board', material: '塑料', img: null, creator: '天奇管理员', updater: '天奇管理员', createTime: '2026-03-06 16:44' },
-  { key: '4', scene: 'Industry(工业)', name: 'HDMI主', enName: 'HDMI cable', material: null, img: null, creator: '天奇管理员', updater: '天奇管理员', createTime: '2026-03-06 16:45' },
-  { key: '5', scene: 'Industry(工业)', name: 'USB线', enName: 'USB cable', material: null, img: null, creator: '大奇管理员', updater: '大奇管理员', createTime: '2026-03-06 16:47' },
-  { key: '6', scene: 'Kitchen(厨房)', name: '水杯', enName: 'Cup', material: '陶瓷', img: null, creator: '管理员', updater: '管理员', createTime: '2026-02-20 10:00' },
-  { key: '7', scene: 'Kitchen(厨房)', name: '炒锅', enName: 'Wok', material: '金属', img: null, creator: '管理员', updater: '管理员', createTime: '2026-02-21 09:30' },
-  { key: '8', scene: 'Supermarket(超市)', name: '可乐瓶', enName: 'Cola bottle', material: '塑料', img: null, creator: '管理员', updater: '管理员', createTime: '2026-02-18 09:30' },
-  { key: '9', scene: 'Supermarket(超市)', name: '薯片桶', enName: 'Chips tube', material: '塑料', img: null, creator: '管理员', updater: '管理员', createTime: '2026-02-19 11:20' },
+  { key: '1', scene: 'Industry(工业)', name: '网线', enName: 'Network cable', objType: 'RigidBody', material: '塑料', img: null, creator: '天奇管理员', updater: '天奇管理员', createTime: '2026-03-06 16:40' },
+  { key: '2', scene: 'Industry(工业)', name: '毛滚线', enName: 'power cord', objType: 'Deformable', material: null, img: null, creator: '大奇管理员', updater: '大奇管理员', createTime: '2026-03-06 16:42' },
+  { key: '3', scene: 'Industry(工业)', name: '四零插排板', enName: 'four-compartment board', objType: 'RigidBody', material: '塑料', img: null, creator: '天奇管理员', updater: '天奇管理员', createTime: '2026-03-06 16:44' },
+  { key: '4', scene: 'Industry(工业)', name: 'HDMI主', enName: 'HDMI cable', objType: 'Deformable', material: null, img: null, creator: '天奇管理员', updater: '天奇管理员', createTime: '2026-03-06 16:45' },
+  { key: '5', scene: 'Industry(工业)', name: 'USB线', enName: 'USB cable', objType: 'Deformable', material: null, img: null, creator: '大奇管理员', updater: '大奇管理员', createTime: '2026-03-06 16:47' },
+  { key: '6', scene: 'Kitchen(厨房)', name: '水杯', enName: 'Cup', objType: 'RigidBody', material: '陶瓷', img: null, creator: '管理员', updater: '管理员', createTime: '2026-02-20 10:00' },
+  { key: '7', scene: 'Kitchen(厨房)', name: '炒锅', enName: 'Wok', objType: 'RigidBody', material: '金属', img: null, creator: '管理员', updater: '管理员', createTime: '2026-02-21 09:30' },
+  { key: '8', scene: 'Supermarket(超市)', name: '可乐瓶', enName: 'Cola bottle', objType: 'RigidBody', material: '塑料', img: null, creator: '管理员', updater: '管理员', createTime: '2026-02-18 09:30' },
+  { key: '9', scene: 'Supermarket(超市)', name: '薯片桶', enName: 'Chips tube', objType: 'RigidBody', material: '塑料', img: null, creator: '管理员', updater: '管理员', createTime: '2026-02-19 11:20' },
 ];
 
 // ─── Category Tree Node ─────────────────────────────────────────────
@@ -449,15 +449,28 @@ export default function ObjectLibraryPage() {
 
       <Modal title="物体详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={640}>
         {selectedObj && (
-          <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
-            <Descriptions.Item label="名称">{selectedObj.name}</Descriptions.Item>
-            <Descriptions.Item label="英文名称">{selectedObj.enName}</Descriptions.Item>
-            <Descriptions.Item label="场景">{selectedObj.scene}</Descriptions.Item>
-            <Descriptions.Item label="材质特性">{selectedObj.material || '—'}</Descriptions.Item>
-            <Descriptions.Item label="创建人">{selectedObj.creator}</Descriptions.Item>
-            <Descriptions.Item label="更新人">{selectedObj.updater}</Descriptions.Item>
-            <Descriptions.Item label="创建时间" span={2}>{selectedObj.createTime}</Descriptions.Item>
-          </Descriptions>
+          <>
+            <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
+              <Descriptions.Item label="名称">{selectedObj.name}</Descriptions.Item>
+              <Descriptions.Item label="英文名称">{selectedObj.enName}</Descriptions.Item>
+              <Descriptions.Item label="物体类型">{selectedObj.objType || '—'}</Descriptions.Item>
+              <Descriptions.Item label="场景">{selectedObj.scene}</Descriptions.Item>
+              <Descriptions.Item label="材质特性">{selectedObj.material || '—'}</Descriptions.Item>
+              <Descriptions.Item label="创建人">{selectedObj.creator}</Descriptions.Item>
+              <Descriptions.Item label="更新人">{selectedObj.updater}</Descriptions.Item>
+              <Descriptions.Item label="创建时间">{selectedObj.createTime}</Descriptions.Item>
+            </Descriptions>
+            <div style={{ marginTop: 16 }}>
+              <Text strong style={{ display: 'block', marginBottom: 8 }}>物体图片</Text>
+              {selectedObj.img ? (
+                <Image src={selectedObj.img} width={120} height={120} style={{ objectFit: 'cover', borderRadius: 8 }} />
+              ) : (
+                <div style={{ width: 120, height: 120, background: '#f5f5f5', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #d9d9d9', color: '#bfbfbf', fontSize: 13 }}>
+                  暂无图片
+                </div>
+              )}
+            </div>
+          </>
         )}
       </Modal>
 
