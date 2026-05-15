@@ -229,132 +229,48 @@ export default function DeviceListPage() {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
-        width={900}
+        width={560}
         okText="确定"
         cancelText="取消"
         centered
       >
-        <Form form={form} layout="vertical" onFinish={handleCreate} style={{ marginTop: 24 }}>
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item name="name" label="设备名称" rules={[{ required: true }]}>
-                <Input placeholder="请输入设备名称" showCount maxLength={50} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="enName" label={<Space><span>英文名称</span><Tooltip title="仅支持英文、数字、下划线"><InfoCircleOutlined style={{ color: '#bfbfbf' }} /></Tooltip></Space>}>
-                <Input placeholder="请输入英文名称" showCount maxLength={50} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item name="deviceNum" label="设备编号" rules={[{ required: true }]}>
-                <Input placeholder="请输入设备编号" showCount maxLength={50} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="deviceType" label="设备类型" rules={[{ required: true }]}>
-                <Select placeholder="请选择设备类型" options={deviceTypes} onChange={handleDeviceTypeChange} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item name="linkedParts" label="部件">
-            <Select 
-                mode="multiple" 
-                placeholder="请选择部件" 
-                maxTagCount="responsive"
-                options={partData.map(p => ({ label: p.name, value: p.key }))}
-            />
+        <Form form={form} layout="horizontal" labelCol={{ flex: '80px' }} wrapperCol={{ flex: 1 }} onFinish={handleCreate} style={{ marginTop: 24 }}>
+          <Form.Item name="name" label="设备名称" rules={[{ required: true, message: '请输入设备名称' }]}>
+            <Input placeholder="请输入设备名称" showCount maxLength={50} />
           </Form.Item>
 
-          <Form.Item label="已选部件">
-            <Form.Item shouldUpdate={(prevValues, curValues) => prevValues.linkedParts !== curValues.linkedParts} noStyle>
-                {({ getFieldValue, setFieldsValue }) => {
-                    const selectedIds = getFieldValue('linkedParts') || [];
-                    const dataSource = selectedIds.map(id => partData.find(p => p.key === id)).filter(Boolean);
-                    
-                    return (
-                        <Table 
-                            size="small"
-                            pagination={false}
-                            dataSource={dataSource}
-                            rowKey="key"
-                            bordered
-                            columns={[
-                                { 
-                                    title: '对齐点', 
-                                    key: 'alignment', 
-                                    width: 80, 
-                                    align: 'center',
-                                    render: (_, record) => (
-                                        <Form.Item name="alignmentPoint" noStyle>
-                                            <Radio.Group onChange={(e) => setFieldsValue({ alignmentPoint: record.key })}>
-                                                <Radio value={record.key} />
-                                            </Radio.Group>
-                                        </Form.Item>
-                                    )
-                                },
-                                { title: '部件名称', dataIndex: 'name', key: 'name' },
-                                { 
-                                    title: '部件类型', 
-                                    dataIndex: 'category', 
-                                    key: 'category',
-                                    render: (cat) => {
-                                        const found = componentCategories.find(c => c.value === cat);
-                                        return found ? found.label : cat;
-                                    }
-                                },
-                                {
-                                    title: '操作',
-                                    key: 'action',
-                                    width: 60,
-                                    align: 'center',
-                                    render: (_, record) => (
-                                        <Button 
-                                            type="text" 
-                                            danger 
-                                            icon={<DeleteOutlined />} 
-                                            onClick={() => {
-                                                const current = getFieldValue('linkedParts') || [];
-                                                setFieldsValue({ linkedParts: current.filter(id => id !== record.key) });
-                                            }}
-                                        />
-                                    )
-                                }
-                            ]}
-                        />
-                    );
-                }}
-            </Form.Item>
+          <Form.Item name="enName" label={<span>英文名称&nbsp;<Tooltip title="仅支持英文、数字、下划线"><InfoCircleOutlined style={{ color: '#bfbfbf' }} /></Tooltip></span>}>
+            <Input placeholder="请输入英文名称" showCount maxLength={50} />
           </Form.Item>
 
-          <Form.Item name="sensorDesc" label="传感器描述" rules={[{ required: true }]}>
-            <TextArea placeholder="请输入传感器描述" rows={3} showCount maxLength={500} />
+          <Form.Item name="deviceNum" label="设备编号" rules={[{ required: true, message: '请输入设备编号' }]}>
+            <Input placeholder="请输入设备编号" showCount maxLength={50} />
           </Form.Item>
 
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item label="URDF">
-                <Upload>
-                    <Button icon={<PlusOutlined />} ghost type="primary">上传URDF文件</Button>
-                </Upload>
-                <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>可上传最多1份urdf格式的文件</Text>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="设备图片">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ width: 100, height: 100, border: '1px dashed #d9d9d9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#fafafa' }}>
-                    <PlusOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />
-                  </div>
-                  <Text type="secondary" style={{ fontSize: 12 }}>可上传最多5张单个不超过2MB且格式为jpg/jpeg/png/gif的图片</Text>
+          <Form.Item name="deviceType" label="设备类型" rules={[{ required: true, message: '请选择设备类型' }]}>
+            <Select placeholder="请选择设备类型" options={deviceTypes} />
+          </Form.Item>
+
+          <Form.Item label="URDF" name="urdf">
+            <Upload listType="picture-card" maxCount={1} showUploadList={false} accept=".urdf,.xml">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
+                <PlusOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />
+              </div>
+            </Upload>
+          </Form.Item>
+
+          <Form.Item label="设备图片" name="image">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Upload listType="picture-card" maxCount={5} showUploadList={false}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
+                  <PlusOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />
                 </div>
-              </Form.Item>
-            </Col>
-          </Row>
+              </Upload>
+              <div style={{ fontSize: 12, color: '#bfbfbf', marginTop: 8 }}>
+                可上传最多5张单个不超过2MB且格式为jpg/jpeg/png/gif的图片
+              </div>
+            </div>
+          </Form.Item>
         </Form>
       </Modal>
     </MainLayout>
