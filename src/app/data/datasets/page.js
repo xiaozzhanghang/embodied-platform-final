@@ -283,10 +283,12 @@ export default function DatasetPage() {
                 <Descriptions bordered size="small" column={3} style={{ marginBottom: 16 }}>
                     <Descriptions.Item label="子集ID">SS-001</Descriptions.Item>
                     <Descriptions.Item label="子集名称">抓取子集-01</Descriptions.Item>
-                    <Descriptions.Item label="Episode数">120</Descriptions.Item>
+                    <Descriptions.Item label="英文名称">grasp-subset-01</Descriptions.Item>
                     <Descriptions.Item label="所属数据集ID">DS-001</Descriptions.Item>
-                    <Descriptions.Item label="创建时间">2025-03-05 10:00</Descriptions.Item>
                     <Descriptions.Item label="所属项目">具身抓取项目A</Descriptions.Item>
+                    <Descriptions.Item label="Episode数">120</Descriptions.Item>
+                    <Descriptions.Item label="创建时间">2025-03-05 10:00</Descriptions.Item>
+                    <Descriptions.Item label="描述" span={2}>这是具身抓取项目A的第一个数据子集，包含120个抓取动作序列。</Descriptions.Item>
                 </Descriptions>
                 <Table 
                   size="small" 

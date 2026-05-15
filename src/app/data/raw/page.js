@@ -8,11 +8,11 @@ import MainLayout from '@/components/MainLayout';
 const { Title } = Typography;
 
 const mockData = [
-    { key: '1', name: 'franka_grasp_20250301', rawId: 'RD-001', project: '具身抓取项目A', duration: '02:30:00', createTime: '2025-03-01 10:00', creator: '管理员' },
-    { key: '2', name: 'franka_place_20250301', rawId: 'RD-002', project: '具身抓取项目A', duration: '01:45:00', createTime: '2025-03-01 14:00', creator: '管理员' },
-    { key: '3', name: 'ur5e_carry_20250302', rawId: 'RD-003', project: '具身搬运项目B', duration: '03:00:00', createTime: '2025-03-02 09:00', creator: '张三' },
-    { key: '4', name: 'franka_sort_20250303', rawId: 'RD-004', project: '具身分拣项目C', duration: '02:15:00', createTime: '2025-03-03 10:00', creator: '管理员' },
-    { key: '5', name: 'franka_assembly_20250305', rawId: 'RD-005', project: '具身装配项目D', duration: '04:00:00', createTime: '2025-03-05 08:00', creator: '李四' },
+    { key: '1', name: 'franka_grasp_20250301', rawId: 'RD-001', project: '具身抓取项目A', duration: '02:30:00', createTime: '2025-03-01 10:00', creator: '管理员', format: 'ZIP', fileSize: '2.5 GB' },
+    { key: '2', name: 'franka_place_20250301', rawId: 'RD-002', project: '具身抓取项目A', duration: '01:45:00', createTime: '2025-03-01 14:00', creator: '管理员', format: 'TAR.GZ', fileSize: '1.8 GB' },
+    { key: '3', name: 'ur5e_carry_20250302', rawId: 'RD-003', project: '具身搬运项目B', duration: '03:00:00', createTime: '2025-03-02 09:00', creator: '张三', format: 'ZIP', fileSize: '3.2 GB' },
+    { key: '4', name: 'franka_sort_20250303', rawId: 'RD-004', project: '具身分拣项目C', duration: '02:15:00', createTime: '2025-03-03 10:00', creator: '管理员', format: 'ZIP', fileSize: '1.5 GB' },
+    { key: '5', name: 'franka_assembly_20250305', rawId: 'RD-005', project: '具身装配项目D', duration: '04:00:00', createTime: '2025-03-05 08:00', creator: '李四', format: 'TAR.GZ', fileSize: '4.1 GB' },
 ];
 
 export default function RawDataPage() {
@@ -118,6 +118,8 @@ export default function RawDataPage() {
                             <Descriptions.Item label="原始数据ID">{selectedRaw.rawId}</Descriptions.Item>
                             <Descriptions.Item label="所属项目">{selectedRaw.project}</Descriptions.Item>
                             <Descriptions.Item label="时长">{selectedRaw.duration}</Descriptions.Item>
+                            <Descriptions.Item label="文件格式">{selectedRaw.format || '—'}</Descriptions.Item>
+                            <Descriptions.Item label="文件大小">{selectedRaw.fileSize || '—'}</Descriptions.Item>
                             <Descriptions.Item label="创建人">{selectedRaw.creator}</Descriptions.Item>
                             <Descriptions.Item label="创建时间">{selectedRaw.createTime}</Descriptions.Item>
                         </Descriptions>

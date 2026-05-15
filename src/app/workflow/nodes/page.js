@@ -13,15 +13,15 @@ const ioNodeData = [
 ];
 
 const presetToolData = [
-    { key: '1', id: 1, name: 'rosbag解析工具', nodeId: 'NT-001', desc: '解析ROS bag格式数据', status: true, creator: '系统', createTime: '2025-01-01' },
-    { key: '2', id: 2, name: 'HDF5转换工具', nodeId: 'NT-002', desc: '数据格式转换为HDF5', status: true, creator: '系统', createTime: '2025-01-01' },
-    { key: '3', id: 3, name: '视频抽帧工具', nodeId: 'NT-003', desc: '从视频中按帧率抽取图片', status: true, creator: '系统', createTime: '2025-01-15' },
+    { key: '1', id: 1, name: 'rosbag解析工具', nodeId: 'NT-001', desc: '解析ROS bag格式数据', status: true, creator: '系统', createTime: '2025-01-01', image: 'registry.cn-hangzhou.aliyuncs.com/tools/rosbag:v1.0', packageName: 'C2', command: 'python3 parse.py' },
+    { key: '2', id: 2, name: 'HDF5转换工具', nodeId: 'NT-002', desc: '数据格式转换为HDF5', status: true, creator: '系统', createTime: '2025-01-01', image: 'registry.cn-hangzhou.aliyuncs.com/tools/hdf5:v2.1', packageName: 'C4', command: 'python3 convert.py' },
+    { key: '3', id: 3, name: '视频抽帧工具', nodeId: 'NT-003', desc: '从视频中按帧率抽取图片', status: true, creator: '系统', createTime: '2025-01-15', image: 'registry.cn-hangzhou.aliyuncs.com/tools/video:v1.5', packageName: 'C2', command: 'ffmpeg -i input.mp4' },
 ];
 
 const customToolData = [
-    { key: '1', id: 1, name: '点云预处理工具', nodeId: 'NT-C01', desc: '3D点云数据预处理', status: true, creator: '管理员', createTime: '2025-02-01' },
-    { key: '2', id: 2, name: '图像增强工具', nodeId: 'NT-C02', desc: '采集图像亮度对比度增强', status: true, creator: '张三', createTime: '2025-02-15' },
-    { key: '3', id: 3, name: '数据清洗工具', nodeId: 'NT-C03', desc: '过滤无效数据', status: false, creator: '管理员', createTime: '2025-03-01' },
+    { key: '1', id: 1, name: '点云预处理工具', nodeId: 'NT-C01', desc: '3D点云数据预处理', status: true, creator: '管理员', createTime: '2025-02-01', image: 'registry.local/tools/pointcloud:v1.0', packageName: 'C8', command: 'python3 process.py' },
+    { key: '2', id: 2, name: '图像增强工具', nodeId: 'NT-C02', desc: '采集图像亮度对比度增强', status: true, creator: '张三', createTime: '2025-02-15', image: 'registry.local/tools/image_enhance:v1.2', packageName: 'C4', command: 'python3 enhance.py' },
+    { key: '3', id: 3, name: '数据清洗工具', nodeId: 'NT-C03', desc: '过滤无效数据', status: false, creator: '管理员', createTime: '2025-03-01', image: 'registry.local/tools/cleaner:v2.0', packageName: 'C2', command: 'python3 clean.py' },
 ];
 
 const nodeTreeData = [
@@ -125,11 +125,14 @@ function NodeTable({ data, isCustom }) {
                 </Form>
             </Modal>
 
-            <Modal title="节点详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={560}>
+            <Modal title="节点详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={640}>
                 {selectedNode && (
                     <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
                         <Descriptions.Item label="节点名称">{selectedNode.name}</Descriptions.Item>
                         <Descriptions.Item label="节点ID">{selectedNode.nodeId}</Descriptions.Item>
+                        <Descriptions.Item label="镜像地址" span={2}>{selectedNode.image || '—'}</Descriptions.Item>
+                        <Descriptions.Item label="资源套餐">{selectedNode.packageName || '—'}</Descriptions.Item>
+                        <Descriptions.Item label="启动命令">{selectedNode.command || '—'}</Descriptions.Item>
                         <Descriptions.Item label="节点描述" span={2}>{selectedNode.desc}</Descriptions.Item>
                         <Descriptions.Item label="状态">{selectedNode.status ? '启用' : '停用'}</Descriptions.Item>
                         <Descriptions.Item label="创建人">{selectedNode.creator}</Descriptions.Item>
