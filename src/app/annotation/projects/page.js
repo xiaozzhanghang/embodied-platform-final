@@ -213,7 +213,7 @@ export default function AnnotationProjectsPage() {
       render: (_, r) => (
         <Space size="small">
           <Button type="link" size="small" onClick={() => router.push('/annotation/answer')}>标注</Button>
-          <Button type="link" size="small" onClick={() => router.push('/annotation/review')}>审核</Button>
+          <Button type="link" size="small" onClick={() => router.push('/annotation/review-list')}>审核</Button>
           <Button type="link" size="small" icon={<TeamOutlined />} onClick={() => openAssign(r)}>分配</Button>
         </Space>
       ),
