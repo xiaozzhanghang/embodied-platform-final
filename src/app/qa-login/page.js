@@ -21,7 +21,7 @@ export default function QALoginPage() {
     setTimeout(() => {
       message.success('质检员身份确认，进入审计空间...');
       setTimeout(() => {
-        router.push('/annotation/review-list'); 
+        router.push('/annotation/review'); 
       }, 600);
     }, 1200);
   };
