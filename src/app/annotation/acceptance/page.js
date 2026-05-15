@@ -43,6 +43,8 @@ export default function AcceptancePage() {
     const [batchModalVisible, setBatchModalVisible] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
     const [acceptVisible, setAcceptVisible] = useState(false);
+    const [detailVisible, setDetailVisible] = useState(false);
+    const [detailRecord, setDetailRecord] = useState(null);
 
     const handleBatchPass = () => {
         message.success('选中题包已全部验收通过，数据已进入就绪库');
@@ -73,7 +75,7 @@ export default function AcceptancePage() {
             render: (_, record) => (
                 <Space>
                     <Button type="primary" size="small" icon={<AuditOutlined />} onClick={() => { setSelectedProject(record); setBatchModalVisible(true); }}>批量处理</Button>
-                    <Button size="small" icon={<EyeOutlined />}>查看详情</Button>
+                    <Button size="small" icon={<EyeOutlined />} onClick={() => { setDetailRecord(record); setDetailVisible(true); }}>查看详情</Button>
                     <Button size="small" icon={<CloudUploadOutlined />} disabled={record.progress < 100}>准备发布</Button>
                 </Space>
             ),
@@ -194,6 +196,21 @@ export default function AcceptancePage() {
                         </div>
                     </div>
                 </div>
+            </Modal>
+
+            <Modal title="验收项目详情" open={detailVisible} onCancel={() => setDetailVisible(false)} footer={null} width={640}>
+                {detailRecord && (
+                    <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
+                        <Descriptions.Item label="项目ID">{detailRecord.projectId}</Descriptions.Item>
+                        <Descriptions.Item label="项目名称">{detailRecord.name}</Descriptions.Item>
+                        <Descriptions.Item label="标注类型">{detailRecord.type}</Descriptions.Item>
+                        <Descriptions.Item label="抽检率">{detailRecord.samplingRate}</Descriptions.Item>
+                        <Descriptions.Item label="验收进度">{detailRecord.progress}%</Descriptions.Item>
+                        <Descriptions.Item label="平均质量分">{detailRecord.qualityScore}</Descriptions.Item>
+                        <Descriptions.Item label="题包概览" span={2}>通过 {detailRecord.passed} / 打回 {detailRecord.rejected} / 待验收 {detailRecord.pendingAcceptance} / 总 {detailRecord.totalPacks}</Descriptions.Item>
+                        <Descriptions.Item label="最后更新" span={2}>{detailRecord.lastUpdate}</Descriptions.Item>
+                    </Descriptions>
+                )}
             </Modal>
         </MainLayout>
     );

@@ -20,6 +20,8 @@ export default function RawDataPage() {
     const [uploadOpen, setUploadOpen] = useState(false);
     const [parseOpen, setParseOpen] = useState(false);
     const [selectedData, setSelectedData] = useState(null);
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [selectedRaw, setSelectedRaw] = useState(null);
 
     const columns = [
         { title: '数据名称', dataIndex: 'name', key: 'name', width: 260 },
@@ -33,7 +35,7 @@ export default function RawDataPage() {
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<ThunderboltOutlined />} onClick={() => { setSelectedData(record); setParseOpen(true); }}>数据解析</Button>
-                    <Button type="link" size="small" icon={<EyeOutlined />}>查看详情</Button>
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedRaw(record); setDetailOpen(true); }}>查看详情</Button>
                 </Space>
             ),
         },
@@ -106,6 +108,19 @@ export default function RawDataPage() {
                                 <Select placeholder="请选择数据子集" options={[{ value: '子集A-01' }, { value: '子集B-01' }]} />
                             </Form.Item>
                         </Form>
+                    )}
+                </Modal>
+
+                <Modal title="原始数据详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={600}>
+                    {selectedRaw && (
+                        <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
+                            <Descriptions.Item label="数据名称">{selectedRaw.name}</Descriptions.Item>
+                            <Descriptions.Item label="原始数据ID">{selectedRaw.rawId}</Descriptions.Item>
+                            <Descriptions.Item label="所属项目">{selectedRaw.project}</Descriptions.Item>
+                            <Descriptions.Item label="时长">{selectedRaw.duration}</Descriptions.Item>
+                            <Descriptions.Item label="创建人">{selectedRaw.creator}</Descriptions.Item>
+                            <Descriptions.Item label="创建时间">{selectedRaw.createTime}</Descriptions.Item>
+                        </Descriptions>
                     )}
                 </Modal>
             </MainLayout>

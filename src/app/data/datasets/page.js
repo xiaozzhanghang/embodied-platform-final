@@ -254,7 +254,7 @@ export default function DatasetPage() {
                             render: (_, r) => (
                                 <Space>
                                     <Tooltip title="下载"><Button type="text" icon={<DownloadOutlined />} onClick={() => router.push('/data/download')} /></Tooltip>
-                                    <Button type="link" size="small">查看详情</Button>
+                                    <Button type="link" size="small" onClick={() => message.info(`版本 ${r.version} — 格式: ${r.format}, Episode数: ${r.episodes}, 大小: ${r.size}`)}>查看详情</Button>
                                 </Space>
                             ),
                         },
@@ -298,7 +298,7 @@ export default function DatasetPage() {
                     { title: '序号', dataIndex: 'id', width: 60 },
                     { title: '数据名称', dataIndex: 'name', width: 200 },
                     { title: '数据ID', dataIndex: 'dataId', width: 120 },
-                    { title: '操作', key: 'op', render: () => <Button type="link" size="small">查看详情</Button> }
+                    { title: '操作', key: 'op', render: (_, record) => <Button type="link" size="small" onClick={() => message.info(`数据文件: ${record.name}, ID: ${record.dataId}, 大小: ${record.size}`)}>查看详情</Button> }
                   ]}
                 />
             </Modal>

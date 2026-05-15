@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, Button, Tag, Space, Input, Form, Card, Typography, Tabs, Modal, Row, Col, Switch, Popconfirm, Tree, App } from 'antd';
+import { Table, Button, Tag, Space, Input, Form, Card, Typography, Tabs, Modal, Row, Col, Switch, Popconfirm, Tree, App, Descriptions } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -41,6 +41,8 @@ const nodeTreeData = [
 function NodeTable({ data, isCustom }) {
   const { message } = App.useApp();
     const [addOpen, setAddOpen] = useState(false);
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [selectedNode, setSelectedNode] = useState(null);
 
     const columns = [
         { title: '序号', dataIndex: 'id', key: 'id', width: 60 },
@@ -61,7 +63,7 @@ function NodeTable({ data, isCustom }) {
                             <Popconfirm title="确定删除？" onConfirm={() => message.success('已删除')}><Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>
                         </>
                     ) : (
-                        <Button type="link" size="small" icon={<EyeOutlined />}>查看详情</Button>
+                        <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedNode(record); setDetailOpen(true); }}>查看详情</Button>
                     )}
                 </Space>
             ),
@@ -121,6 +123,19 @@ function NodeTable({ data, isCustom }) {
                         <Button type="dashed" block icon={<PlusOutlined />}>添加动态参数</Button>
                     </Card>
                 </Form>
+            </Modal>
+
+            <Modal title="节点详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={560}>
+                {selectedNode && (
+                    <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
+                        <Descriptions.Item label="节点名称">{selectedNode.name}</Descriptions.Item>
+                        <Descriptions.Item label="节点ID">{selectedNode.nodeId}</Descriptions.Item>
+                        <Descriptions.Item label="节点描述" span={2}>{selectedNode.desc}</Descriptions.Item>
+                        <Descriptions.Item label="状态">{selectedNode.status ? '启用' : '停用'}</Descriptions.Item>
+                        <Descriptions.Item label="创建人">{selectedNode.creator}</Descriptions.Item>
+                        <Descriptions.Item label="创建时间" span={2}>{selectedNode.createTime}</Descriptions.Item>
+                    </Descriptions>
+                )}
             </Modal>
         </>
     );

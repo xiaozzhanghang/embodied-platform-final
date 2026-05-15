@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, Button, Input, Select, Space, Tag, Typography, Breadcrumb, App, DatePicker, Image, Empty, Modal, Form, Upload, Tooltip, Row, Col, Card } from 'antd';
+import { Table, Button, Input, Select, Space, Tag, Typography, Breadcrumb, App, DatePicker, Image, Empty, Modal, Form, Upload, Tooltip, Row, Col, Card, Descriptions } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, DownOutlined, UpOutlined, EyeOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -118,6 +118,8 @@ export default function ObjectLibraryPage() {
   const [typeForm] = Form.useForm();
   const [objectModalVisible, setObjectModalVisible] = useState(false);
   const [objectForm] = Form.useForm();
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedObj, setSelectedObj] = useState(null);
 
   const handleAddType = () => {
     typeForm.validateFields().then(values => {
@@ -190,9 +192,9 @@ export default function ObjectLibraryPage() {
       key: 'action',
       width: 180,
       fixed: 'right',
-      render: () => (
+      render: (_, record) => (
         <Space size={4}>
-          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: '0 4px' }}>查看详情</Button>
+          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: '0 4px' }} onClick={() => { setSelectedObj(record); setDetailOpen(true); }}>查看详情</Button>
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" size="small" danger icon={<DeleteOutlined />} style={{ padding: '0 4px' }}>删除</Button>
         </Space>
@@ -445,6 +447,19 @@ export default function ObjectLibraryPage() {
         </Form>
       </Modal>
 
+      <Modal title="物体详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={640}>
+        {selectedObj && (
+          <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
+            <Descriptions.Item label="名称">{selectedObj.name}</Descriptions.Item>
+            <Descriptions.Item label="英文名称">{selectedObj.enName}</Descriptions.Item>
+            <Descriptions.Item label="场景">{selectedObj.scene}</Descriptions.Item>
+            <Descriptions.Item label="材质特性">{selectedObj.material || '—'}</Descriptions.Item>
+            <Descriptions.Item label="创建人">{selectedObj.creator}</Descriptions.Item>
+            <Descriptions.Item label="更新人">{selectedObj.updater}</Descriptions.Item>
+            <Descriptions.Item label="创建时间" span={2}>{selectedObj.createTime}</Descriptions.Item>
+          </Descriptions>
+        )}
+      </Modal>
 
     </MainLayout>
   );

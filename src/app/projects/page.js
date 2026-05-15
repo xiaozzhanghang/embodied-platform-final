@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Popconfirm, App } from 'antd';
+import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Popconfirm, App, Descriptions } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, SettingOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -19,6 +19,8 @@ export default function ProjectManagementPage() {
   const { message } = App.useApp();
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [selectedProject, setSelectedProject] = useState(null);
 
     const columns = [
         { title: '项目ID', dataIndex: 'projectId', key: 'projectId', width: 100 },
@@ -29,10 +31,10 @@ export default function ProjectManagementPage() {
         { title: '创建人', dataIndex: 'creator', key: 'creator', width: 100 },
         {
             title: '操作', key: 'action', width: 220,
-            render: () => (
+            render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<SettingOutlined />} onClick={() => setEditOpen(true)}>配置</Button>
-                    <Button type="link" size="small" icon={<EyeOutlined />}>查看详情</Button>
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedProject(record); setDetailOpen(true); }}>查看详情</Button>
                     <Popconfirm title="确定删除此项目？" onConfirm={() => message.success('已删除')} okText="确定" cancelText="取消">
                         <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
                     </Popconfirm>
@@ -72,6 +74,19 @@ export default function ProjectManagementPage() {
                         <Form.Item label="项目中文名称" required><Input defaultValue="具身抓取项目A" /></Form.Item>
                         <Form.Item label="描述"><Input.TextArea rows={3} defaultValue="桌面场景抓取数据采集项目" /></Form.Item>
                     </Form>
+                </Modal>
+
+                <Modal title="项目详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={640}>
+                    {selectedProject && (
+                        <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
+                            <Descriptions.Item label="项目ID">{selectedProject.projectId}</Descriptions.Item>
+                            <Descriptions.Item label="项目名称">{selectedProject.name}</Descriptions.Item>
+                            <Descriptions.Item label="英文名称">{selectedProject.enName}</Descriptions.Item>
+                            <Descriptions.Item label="创建人">{selectedProject.creator}</Descriptions.Item>
+                            <Descriptions.Item label="备注" span={2}>{selectedProject.remark}</Descriptions.Item>
+                            <Descriptions.Item label="创建时间" span={2}>{selectedProject.createTime}</Descriptions.Item>
+                        </Descriptions>
+                    )}
                 </Modal>
             </MainLayout>
     );
