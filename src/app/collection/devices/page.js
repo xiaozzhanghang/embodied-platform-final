@@ -70,6 +70,8 @@ export default function DeviceListPage() {
   const [expand, setExpand] = useState(false);
   const { message } = App.useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState(null);
   const [deviceData, setDeviceData] = useState(initialDeviceData);
   const [form] = Form.useForm();
 
@@ -105,7 +107,7 @@ export default function DeviceListPage() {
       title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
-          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/devices/detail/${record.key}`)}>查看详情</Button>
+          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => { setSelectedDevice(record); setDetailOpen(true); }}>查看详情</Button>
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/devices/detail/${record.key}?edit=true`)}>编辑</Button>
           <Popconfirm title="确定禁用此设备吗？">
             <Button type="link" danger size="small" icon={<StopOutlined />} style={{ padding: 0 }}>禁用</Button>
@@ -287,6 +289,30 @@ export default function DeviceListPage() {
             </Col>
           </Row>
         </Form>
+      </Modal>
+
+      <Modal title="设备详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={720}>
+        {selectedDevice && (
+          <>
+            <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
+              <Descriptions.Item label="设备名称">{selectedDevice.name}</Descriptions.Item>
+              <Descriptions.Item label="英文名称">{selectedDevice.enName || '—'}</Descriptions.Item>
+              <Descriptions.Item label="设备编号">{selectedDevice.deviceNum}</Descriptions.Item>
+              <Descriptions.Item label="设备类型">{deviceTypes.find(t => t.value === selectedDevice.deviceType)?.label || selectedDevice.deviceType || 'galbot_2.2_RGB'}</Descriptions.Item>
+              <Descriptions.Item label="URDF文件" span={2}>{selectedDevice.urdf ? <a>{selectedDevice.urdf}</a> : '—'}</Descriptions.Item>
+            </Descriptions>
+            <div style={{ marginTop: 16 }}>
+              <Text strong style={{ display: 'block', marginBottom: 8 }}>设备图片</Text>
+              {selectedDevice.image ? (
+                <img src={selectedDevice.image} alt="设备图片" style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8, border: '1px solid #f0f0f0' }} />
+              ) : (
+                <div style={{ width: 120, height: 120, background: '#fafafa', border: '1px dashed #d9d9d9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text type="secondary" style={{ fontSize: 13 }}>暂无图片</Text>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </Modal>
     </MainLayout>
   );
