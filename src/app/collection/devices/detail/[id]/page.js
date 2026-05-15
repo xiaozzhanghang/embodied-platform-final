@@ -26,12 +26,16 @@ export default function DeviceInstanceDetailPage() {
   const device = {
     id: params.id || 'DEV-2026-001',
     name: 'Galbot-G2-Node-105',
-    type: 'Galbot-G2-Standard',
+    enName: 'galbot_g2_node_105',
+    deviceNum: 'DEV-2026-001',
+    type: 'galbot_2.2_RGB',
     status: '在线',
     ip: '192.168.1.105',
     uptime: '15d 4h 22m',
     battery: 85,
     lastActive: '2026-05-11 13:15:22',
+    urdf: 'galbot_model.urdf',
+    image: null,
     parts: [
       { name: 'Head-Camera', status: 'normal', latency: '12ms', temp: '42°C' },
       { name: 'Arm-Right', status: 'normal', load: '15%', temp: '38°C' },
@@ -183,11 +187,24 @@ export default function DeviceInstanceDetailPage() {
         <Col span={6}>
           <Card title="实例信息" bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
             <Descriptions column={1} size="small">
-              <Descriptions.Item label="所属类型">{device.type}</Descriptions.Item>
+              <Descriptions.Item label="设备编号">{device.deviceNum}</Descriptions.Item>
+              <Descriptions.Item label="英文名称">{device.enName || '—'}</Descriptions.Item>
+              <Descriptions.Item label="设备类型">{device.type}</Descriptions.Item>
               <Descriptions.Item label="内网IP">{device.ip}</Descriptions.Item>
               <Descriptions.Item label="注册时间">2026-02-25</Descriptions.Item>
               <Descriptions.Item label="最后通讯">{device.lastActive}</Descriptions.Item>
+              <Descriptions.Item label="URDF文件">{device.urdf ? <a>{device.urdf}</a> : '—'}</Descriptions.Item>
             </Descriptions>
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>设备图片</Text>
+              {device.image ? (
+                <img src={device.image} alt="设备图片" style={{ width: '100%', borderRadius: 8, border: '1px solid #f0f0f0' }} />
+              ) : (
+                <div style={{ width: '100%', height: 120, background: '#fafafa', border: '1px dashed #d9d9d9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text type="secondary">暂无图片</Text>
+                </div>
+              )}
+            </div>
           </Card>
 
           <Card title="运行日志" bordered={false} style={{ borderRadius: 8 }}>
