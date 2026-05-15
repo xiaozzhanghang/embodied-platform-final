@@ -235,21 +235,31 @@ export default function DeviceListPage() {
         centered
       >
         <Form form={form} layout="vertical" onFinish={handleCreate} style={{ marginTop: 24 }}>
-          <Form.Item name="name" label="设备名称" rules={[{ required: true }]}>
-            <Input placeholder="请输入设备名称" showCount maxLength={50} />
-          </Form.Item>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item name="name" label="设备名称" rules={[{ required: true }]}>
+                <Input placeholder="请输入设备名称" showCount maxLength={50} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="enName" label={<Space><span>英文名称</span><Tooltip title="仅支持英文、数字、下划线"><InfoCircleOutlined style={{ color: '#bfbfbf' }} /></Tooltip></Space>}>
+                <Input placeholder="请输入英文名称" showCount maxLength={50} />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Form.Item name="enName" label={<Space><span>英文名称</span><Tooltip title="仅支持英文、数字、下划线"><InfoCircleOutlined style={{ color: '#bfbfbf' }} /></Tooltip></Space>}>
-            <Input placeholder="请输入英文名称" showCount maxLength={50} />
-          </Form.Item>
-
-          <Form.Item name="deviceNum" label="设备编号" rules={[{ required: true }]}>
-            <Input placeholder="请输入设备编号" showCount maxLength={50} />
-          </Form.Item>
-
-          <Form.Item name="deviceType" label="设备类型" rules={[{ required: true }]}>
-            <Select placeholder="请选择设备类型" options={deviceTypes} onChange={handleDeviceTypeChange} />
-          </Form.Item>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item name="deviceNum" label="设备编号" rules={[{ required: true }]}>
+                <Input placeholder="请输入设备编号" showCount maxLength={50} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="deviceType" label="设备类型" rules={[{ required: true }]}>
+                <Select placeholder="请选择设备类型" options={deviceTypes} onChange={handleDeviceTypeChange} />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item name="linkedParts" label="部件">
             <Select 
@@ -325,21 +335,26 @@ export default function DeviceListPage() {
             <TextArea placeholder="请输入传感器描述" rows={3} showCount maxLength={500} />
           </Form.Item>
 
-          <Form.Item label="URDF">
-            <Upload>
-                <Button icon={<PlusOutlined />} ghost type="primary">上传URDF文件</Button>
-            </Upload>
-            <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>可上传最多1份urdf格式的文件</Text>
-          </Form.Item>
-
-          <Form.Item label="设备图片">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ width: 100, height: 100, border: '1px dashed #d9d9d9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#fafafa' }}>
-                <PlusOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />
-              </div>
-              <Text type="secondary" style={{ fontSize: 12 }}>可上传最多5张单个不超过2MB且格式为jpg/jpeg/png/gif的图片</Text>
-            </div>
-          </Form.Item>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item label="URDF">
+                <Upload>
+                    <Button icon={<PlusOutlined />} ghost type="primary">上传URDF文件</Button>
+                </Upload>
+                <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>可上传最多1份urdf格式的文件</Text>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="设备图片">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ width: 100, height: 100, border: '1px dashed #d9d9d9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#fafafa' }}>
+                    <PlusOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />
+                  </div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>可上传最多5张单个不超过2MB且格式为jpg/jpeg/png/gif的图片</Text>
+                </div>
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </MainLayout>
