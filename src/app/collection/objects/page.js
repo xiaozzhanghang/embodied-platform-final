@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Table, Button, Input, Select, Space, Tag, Typography, Breadcrumb, App, DatePicker, Image, Empty, Modal, Form, Upload, Tooltip, Row, Col, Card } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, DownOutlined, UpOutlined, EyeOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -188,10 +188,11 @@ export default function ObjectLibraryPage() {
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 180,
       fixed: 'right',
       render: () => (
         <Space size={4}>
+          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: '0 4px' }}>查看详情</Button>
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" size="small" danger icon={<DeleteOutlined />} style={{ padding: '0 4px' }}>删除</Button>
         </Space>
