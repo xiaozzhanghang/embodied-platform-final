@@ -40,9 +40,10 @@ export default function CollectorLoginPage() {
       }}
     >
       <div className="collector-login-root" style={{
+        backgroundColor: '#020817', // Fallback
         backgroundImage: `url(${heroImg.src || heroImg})`,
-        backgroundSize: '100% 100%',
-        backgroundPosition: 'center',
+        backgroundSize: 'contain', 
+        backgroundPosition: 'left center',
         backgroundRepeat: 'no-repeat',
         position: 'relative'
       }}>
