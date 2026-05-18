@@ -318,7 +318,7 @@ export default function DeviceStatusPage() {
               size="large" 
               disabled={isErrorMode}
               icon={<PlayCircleOutlined />} 
-              onClick={() => router.push(`/collection/collect/workspace/${taskId}`)}
+              onClick={() => router.push('/collection/collect')}
             >
               {isErrorMode ? '请先排除异常' : '确认并进入工作台'}
             </Button>
