@@ -73,6 +73,8 @@ export default function LoginPage() {
           }
         `}</style>
 
+        <div className="hero-gradient-overlay" style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
+
         {/* Left Panel */}
         <div style={{
           width: '55%',
@@ -82,7 +84,6 @@ export default function LoginPage() {
           justifyContent: 'space-between',
           padding: '60px',
         }}>
-          <div className="hero-gradient-overlay" style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
           
           <div style={{ position: 'relative', zIndex: 10, animation: 'slideIn 0.8s ease' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>

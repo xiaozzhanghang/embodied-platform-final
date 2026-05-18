@@ -91,6 +91,8 @@ export default function CollectorLoginPage() {
           }
         `}</style>
 
+        <div className="hero-gradient-overlay" style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
+
         {/* Left Panel — Hero & Status */}
         <div style={{
           width: '55%',
@@ -101,7 +103,6 @@ export default function CollectorLoginPage() {
           padding: '60px',
         }}>
           {/* Background Image with Overlay */}
-          <div className="hero-gradient-overlay" style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
           
           {/* Grid lines decoration */}
           <div style={{
