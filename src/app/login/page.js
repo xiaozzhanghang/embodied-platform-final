@@ -75,17 +75,8 @@ export default function LoginPage() {
 
         <div className="hero-gradient-overlay" style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
 
-        {/* Left Panel */}
-        <div style={{
-          width: '55%',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: '60px',
-        }}>
-          
-          <div style={{ position: 'relative', zIndex: 10, animation: 'slideIn 0.8s ease' }}>
+        {/* Header Logo */}
+        <div style={{ position: 'absolute', top: 60, left: 60, zIndex: 10, animation: 'slideIn 0.8s ease' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 14,
@@ -101,7 +92,29 @@ export default function LoginPage() {
                 <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase' }}>Management Console V2.0</div>
               </div>
             </div>
-          </div>
+        </div>
+
+        {/* Main Content Row aligned at bottom */}
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 60px',
+          flex: 1,
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            width: '100%',
+            maxWidth: 1300,
+            gap: 60,
+          }}>
+            {/* Left Content (Title & Stats) */}
+            <div style={{ flex: 1, paddingBottom: 10 }}>
 
           <div style={{ position: 'relative', zIndex: 10, maxWidth: 500, animation: 'slideIn 1s ease' }}>
             <h1 style={{ fontSize: '48px', fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 24 }}>
@@ -125,29 +138,21 @@ export default function LoginPage() {
               </div>
             ))}
           </div>
-        </div>
+            </div>
 
-        {/* Right Panel */}
-        <div style={{
-          width: '45%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '40px',
-          position: 'relative',
-        }}>
-          <div style={{ 
-            width: '100%', 
-            maxWidth: 480, 
-            background: 'rgba(2, 8, 23, 0.65)',
-            backdropFilter: 'blur(20px)',
-            borderRadius: 24,
-            padding: '50px 40px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            animation: 'fadeIn 1s ease' 
-          }}>
+            {/* Right Panel (Form Card) */}
+            <div style={{ width: 480, flexShrink: 0 }}> 
+              <div style={{
+                width: '100%', 
+                maxWidth: 480, 
+                background: 'rgba(2, 8, 23, 0.65)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: 24,
+                padding: '50px 40px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                animation: 'fadeIn 1s ease' 
+              }}>
             <div style={{ marginBottom: 48, textAlign: 'center' }}>
               <div style={{ 
                 width: 64, height: 64, borderRadius: 20, 
@@ -187,11 +192,10 @@ export default function LoginPage() {
               </Form.Item>
             </Form>
           </div>
-
-          <div style={{ position: 'absolute', bottom: 40, color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
-            © 2026 天奇股份 · 具身智能事业部
-          </div>
         </div>
+      </div>
+      <div style={{ position: 'absolute', bottom: 40, width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
+            © 2026 天奇股份 · 具身智能事业部
       </div>
     </ConfigProvider>
   );

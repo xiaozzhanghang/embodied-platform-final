@@ -75,17 +75,8 @@ export default function QALoginPage() {
 
         <div className="hero-gradient-overlay" style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
 
-        {/* Left Panel */}
-        <div style={{
-          width: '55%',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: '60px',
-        }}>
-          
-          <div style={{ position: 'relative', zIndex: 10, animation: 'slideIn 0.8s ease' }}>
+        {/* Header Logo */}
+        <div style={{ position: 'absolute', top: 60, left: 60, zIndex: 10, animation: 'slideIn 0.8s ease' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 14,
@@ -101,7 +92,41 @@ export default function QALoginPage() {
                 <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase' }}>Quality Assurance V1.2</div>
               </div>
             </div>
-          </div>
+        </div>
+
+        {/* Back link - Absolute positioned */}
+        <div style={{ position: 'absolute', top: 60, right: 60, zIndex: 10 }}>
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => router.push('/')}
+            style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}
+          >
+            返回系统主页
+          </Button>
+        </div>
+
+        {/* Main Content Row aligned at bottom */}
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 60px',
+          flex: 1,
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+            width: '100%',
+            maxWidth: 1300,
+            gap: 60,
+          }}>
+            {/* Left Content (Title & Stats) */}
+            <div style={{ flex: 1, paddingBottom: 10 }}>
 
           <div style={{ position: 'relative', zIndex: 10, maxWidth: 500, animation: 'slideIn 1s ease' }}>
             <h1 style={{ fontSize: '48px', fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 24 }}>
@@ -125,29 +150,10 @@ export default function QALoginPage() {
               </div>
             ))}
           </div>
-        </div>
+            </div>
 
-        {/* Right Panel */}
-        <div style={{
-          width: '45%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '40px',
-          position: 'relative',
-        }}>
-          <div style={{ position: 'absolute', top: 40, left: 40 }}>
-            <Button
-              type="text"
-              icon={<ArrowLeftOutlined />}
-              onClick={() => router.push('/')}
-              style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}
-            >
-              返回系统主页
-            </Button>
-          </div>
-
+            {/* Right Panel (Form Card) */}
+            <div style={{ width: 480, flexShrink: 0 }}>
           <div style={{ 
             width: '100%', 
             maxWidth: 480, 
