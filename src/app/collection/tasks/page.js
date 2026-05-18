@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Table, Button, Tag, Space, Input, Select, Form, Card, Typography, 
-  Breadcrumb, Tabs, Tooltip, App, Popconfirm, Modal, Checkbox, 
+  Breadcrumb, Tabs, Tooltip, App, Modal, Checkbox, 
   Row, Col, Dropdown, Divider, Switch 
 } from 'antd';
 import { 
@@ -116,7 +116,7 @@ export default function TaskCenterPage() {
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/tasks/${record.taskId}`)} style={{ padding: '0 4px' }}>查看详情</Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
-          <Popconfirm title="确定删除？" onConfirm={() => message.success('已删除')}><Button type="link" size="small" icon={<DeleteOutlined />} danger style={{ padding: '0 4px' }}>删除</Button></Popconfirm>
+          <Button type="link" size="small" icon={<DeleteOutlined />} danger style={{ padding: '0 4px' }} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>删除</Button>
         </Space>
       )
     },
