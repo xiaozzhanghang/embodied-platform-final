@@ -2,14 +2,15 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Breadcrumb, Select, Form, Tooltip, Row, Col } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined, ColumnHeightOutlined, SettingOutlined, RobotOutlined, DownOutlined, UpOutlined, EditOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Breadcrumb, Select, Form, Tooltip, Row, Col, Popconfirm, App } from 'antd';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined, ColumnHeightOutlined, SettingOutlined, RobotOutlined, DownOutlined, UpOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
 
 export default function TaskbooksPage() {
   const router = useRouter();
+  const { message } = App.useApp();
   const [expand, setExpand] = useState(false);
 
   const mockData = [
@@ -39,12 +40,13 @@ export default function TaskbooksPage() {
     { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
     { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: 170 },
     {
-      title: '操作', key: 'action', width: 220, fixed: 'right',
+      title: '操作', key: 'action', width: 280, fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
           <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/taskbooks/detail/${record.id}`)}>查看详情</Button>
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/taskbooks/create?mode=edit&id=${record.id}`)}>编辑</Button>
           <Button type="link" size="small" icon={<DownloadOutlined />} style={{ padding: 0 }}>下载</Button>
+          <Popconfirm title="确定删除？" onConfirm={() => message.success('已删除')}><Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: 0 }}>删除</Button></Popconfirm>
         </Space>
       )
     },
