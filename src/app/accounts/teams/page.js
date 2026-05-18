@@ -44,7 +44,7 @@ export default function TeamManagementPage() {
         { title: '创建时间', dataIndex: 'createTime', width: 170 },
         { title: '状态', dataIndex: 'status', width: 80, render: (s) => <Tag color={s === '启用' ? 'success' : 'default'}>{s}</Tag> },
         {
-            title: '操作', key: 'action', width: 300,
+            title: '操作', key: 'action', width: 300, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" onClick={() => message.success(record.status === '启用' ? '已停用' : '已启用')}>{record.status === '启用' ? '停用' : '启用'}</Button>
@@ -61,7 +61,7 @@ export default function TeamManagementPage() {
         { title: '是否管理员', dataIndex: 'isAdmin', width: 100, render: (a) => a ? <Tag color="blue">管理员</Tag> : '-' },
         { title: '加入时间', dataIndex: 'joinTime', width: 120 },
         {
-            title: '操作', key: 'action', width: 220,
+            title: '操作', key: 'action', width: 220, fixed: 'right',
             render: (_, record) => (
                 <Space>
                     <Button type="link" size="small" icon={<UserSwitchOutlined />} onClick={() => message.success(record.isAdmin ? '已移除管理员' : '已设为管理员')}>

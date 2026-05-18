@@ -30,7 +30,7 @@ export default function ProjectManagementPage() {
         { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
         { title: '创建人', dataIndex: 'creator', key: 'creator', width: 100 },
         {
-            title: '操作', key: 'action', width: 220,
+            title: '操作', key: 'action', width: 220, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<SettingOutlined />} onClick={() => setEditOpen(true)}>配置</Button>

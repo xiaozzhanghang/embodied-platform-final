@@ -18,7 +18,7 @@ export default function LabelDetailPage({ params }) {
   const columns = [
     { title: '子标签名', dataIndex: 'name' },
     { title: '唯一编码', dataIndex: 'code' },
-    { title: '操作', render: () => <Space><Button type="link" size="small" icon={<EditOutlined />}>编辑</Button><Button type="link" size="small" danger icon={<DeleteOutlined />}>移除</Button></Space> }
+    { title: '操作', fixed: 'right', render: () => <Space><Button type="link" size="small" icon={<EditOutlined />}>编辑</Button><Button type="link" size="small" danger icon={<DeleteOutlined />}>移除</Button></Space> }
   ];
 
   const dataSource = [

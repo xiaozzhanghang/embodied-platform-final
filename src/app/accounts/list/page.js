@@ -36,7 +36,7 @@ export default function AccountListPage() {
         { title: '创建时间', dataIndex: 'createTime', width: 170 },
         { title: '账号状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '启用' ? 'success' : 'default'}>{s}</Tag> },
         {
-            title: '操作', key: 'action', width: 360,
+            title: '操作', key: 'action', width: 360, fixed: 'right',
             render: (_, record) => (
                 <Space size="small" wrap>
                     <Button type="link" size="small" onClick={() => message.success(record.status === '启用' ? '已停用' : '已启用')}>{record.status === '启用' ? '停用' : '启用'}</Button>

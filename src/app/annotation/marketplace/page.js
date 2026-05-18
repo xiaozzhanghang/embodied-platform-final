@@ -33,7 +33,7 @@ export default function MarketplacePage() {
         { title: '报酬', dataIndex: 'reward', width: 100 },
         { title: '状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '可领取' ? 'success' : 'default'}>{s}</Tag> },
         {
-            title: '操作', key: 'action', width: 180,
+            title: '操作', key: 'action', width: 180, fixed: 'right',
             render: (_, record) => (
                 <Space>
                     <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => setDetailOpen(true)}>查看详情</Button>
@@ -53,7 +53,7 @@ export default function MarketplacePage() {
         { title: '状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '已完成' ? 'success' : 'processing'}>{s}</Tag> },
         { title: '截止日期', dataIndex: 'deadline', width: 120 },
         {
-            title: '操作', key: 'action', width: 150,
+            title: '操作', key: 'action', width: 150, fixed: 'right',
             render: (_, record) => (
                 <Space>
                     {record.status === '进行中' && <Button type="primary" size="small">继续标注</Button>}

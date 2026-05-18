@@ -52,7 +52,7 @@ export default function CollectTaskDetailPage() {
       }
     },
     { 
-      title: '操作', 
+      title: '操作', fixed: 'right',
       key: 'action',
       render: (_, record) => (
         <Space>

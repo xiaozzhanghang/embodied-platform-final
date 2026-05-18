@@ -31,7 +31,7 @@ export default function RawDataPage() {
         { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
         { title: '创建人', dataIndex: 'creator', key: 'creator', width: 100 },
         {
-            title: '操作', key: 'action', width: 200,
+            title: '操作', key: 'action', width: 200, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<ThunderboltOutlined />} onClick={() => { setSelectedData(record); setParseOpen(true); }}>数据解析</Button>

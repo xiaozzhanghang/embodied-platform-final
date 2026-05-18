@@ -136,7 +136,7 @@ function DeviceTable({ data, type, onEdit, partData }) {
       render: (topics) => <Tag color="blue">{topics?.length || 0} 个节点</Tag> 
     },
     {
-      title: '操作',
+      title: '操作', fixed: 'right',
       key: 'action',
       width: 150,
       fixed: 'right',
@@ -552,7 +552,7 @@ export default function DeviceTypesPage() {
                                     }
                                 },
                                 { 
-                                    title: '操作', 
+                                    title: '操作', fixed: 'right',
                                     key: 'action', 
                                     width: 80, 
                                     align: 'center',

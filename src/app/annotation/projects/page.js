@@ -206,7 +206,7 @@ export default function AnnotationProjectsPage() {
       width: 160,
     },
     {
-      title: '操作',
+      title: '操作', fixed: 'right',
       key: 'action',
       width: 180,
       fixed: 'right',

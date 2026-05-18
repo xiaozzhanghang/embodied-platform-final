@@ -188,7 +188,7 @@ export default function ObjectLibraryPage() {
     { title: '更新人', dataIndex: 'updater', key: 'updater', width: 110 },
     { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 150 },
     {
-      title: '操作',
+      title: '操作', fixed: 'right',
       key: 'action',
       width: 180,
       fixed: 'right',

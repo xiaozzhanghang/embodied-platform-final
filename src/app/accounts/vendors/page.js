@@ -25,7 +25,7 @@ export default function VendorPage() {
         { title: '创建时间', dataIndex: 'createTime', width: 170 },
         { title: '服务商状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '启用' ? 'success' : 'default'}>{s}</Tag> },
         {
-            title: '操作', key: 'action', width: 250,
+            title: '操作', key: 'action', width: 250, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" onClick={() => message.success(record.status === '启用' ? '已停用' : '已启用')}>{record.status === '启用' ? '停用' : '启用'}</Button>

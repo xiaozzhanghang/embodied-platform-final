@@ -12,9 +12,11 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
+import { Suspense } from 'react';
+
 const { Title, Text } = Typography;
 
-export default function CreateTemplatePage() {
+function TemplateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { message } = App.useApp();
@@ -107,7 +109,7 @@ export default function CreateTemplatePage() {
       )
     },
     {
-      title: '操作',
+      title: '操作', fixed: 'right',
       width: 60,
       align: 'center',
       render: (_, record) => (
@@ -203,5 +205,13 @@ export default function CreateTemplatePage() {
         </div>
       </Form>
     </MainLayout>
+  );
+}
+
+export default function CreateTemplatePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TemplateForm />
+    </Suspense>
   );
 }

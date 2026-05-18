@@ -147,7 +147,7 @@ export default function AcceptancePage() {
                         { title: '标注/审核人', key: 'people', render: (_, r) => <Text style={{ fontSize: 12 }}>{r.annotator} / {r.auditor}</Text> },
                         { title: '审核评分', dataIndex: 'score', render: (v) => <Badge status={v > 95 ? 'success' : 'warning'} text={`${v}分`} /> },
                         { title: '审核时间', dataIndex: 'auditTime' },
-                        { title: '操作', key: 'op', render: () => (
+                        { title: '操作', key: 'op', fixed: 'right', render: () => (
                             <Space>
                                 <Button type="link" size="small" onClick={() => setAcceptVisible(true)}>抽检审核</Button>
                             </Space>

@@ -30,7 +30,7 @@ export default function WorkflowListPage() {
         { title: '创建人', dataIndex: 'creator', key: 'creator', width: 100 },
         { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
         {
-            title: '操作', key: 'action', width: 250,
+            title: '操作', key: 'action', width: 250, fixed: 'right',
             render: () => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => setEditorOpen(true)}>编辑</Button>

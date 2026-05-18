@@ -31,7 +31,7 @@ export default function ReviewPage() {
         { title: '标注场景', dataIndex: 'scene', width: 140 },
         { title: '发布时间', dataIndex: 'publishTime', width: 170 },
         {
-            title: '操作', key: 'action', width: 150,
+            title: '操作', key: 'action', width: 150, fixed: 'right',
             render: () => <Button type="primary" size="small" icon={<PlayCircleOutlined />} onClick={() => setPackOpen(true)}>开始审核</Button>,
         },
     ];
@@ -74,7 +74,7 @@ export default function ReviewPage() {
                             { title: '已审核', dataIndex: 'reviewed', width: 80 },
                             { title: '状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '已通过' ? 'success' : s === '审核中' ? 'processing' : 'default'}>{s}</Tag> },
                             {
-                                title: '操作', key: 'action', width: 200,
+                                title: '操作', key: 'action', width: 200, fixed: 'right',
                                 render: (_, record) => (
                                     <Space>
                                         {record.status !== '已通过' && <Button type="primary" size="small" onClick={() => setReviewOpen(true)}>开始审核</Button>}

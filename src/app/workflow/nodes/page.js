@@ -53,7 +53,7 @@ function NodeTable({ data, isCustom }) {
         { title: '创建人', dataIndex: 'creator', key: 'creator', width: 80 },
         { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 120 },
         {
-            title: '操作', key: 'action', width: isCustom ? 220 : 150,
+            title: '操作', key: 'action', width: isCustom ? 220 : 150, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" onClick={() => message.success(record.status ? '已停用' : '已启用')}>{record.status ? '停用' : '启用'}</Button>

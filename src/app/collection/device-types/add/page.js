@@ -44,7 +44,7 @@ export default function AddRobotDevicePage() {
     { title: '部件名称', dataIndex: 'name', key: 'name' },
     { title: '部件类型', dataIndex: 'type', key: 'type' },
     { 
-      title: '操作', 
+      title: '操作', fixed: 'right',
       key: 'action', 
       width: 80, 
       align: 'center',
