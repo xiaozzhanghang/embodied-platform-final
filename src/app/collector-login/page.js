@@ -325,13 +325,15 @@ export default function CollectorLoginPage() {
               </p>
             </div>
           </div>
-
-          {/* Footer Copyright */}
-          <div style={{ position: 'absolute', bottom: 40, color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
-            © 2025 天奇股份 · 具身智能事业部
-          </div>
         </div>
       </div>
+    </div>
+
+    {/* Footer Copyright */}
+    <div style={{ position: 'absolute', bottom: 40, width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
+      © 2025 天奇股份 · 具身智能事业部
+    </div>
+  </div>
     </ConfigProvider>
   );
 }
