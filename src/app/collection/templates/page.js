@@ -18,7 +18,7 @@ const { Title, Text } = Typography;
 
 export default function TaskTemplatesPage() {
   const router = useRouter();
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [expand, setExpand] = useState(false);
 
   const mockTemplates = [
@@ -208,6 +208,7 @@ export default function TaskTemplatesPage() {
                 <div 
                   style={{ flex: 1, textAlign: 'center', padding: '12px 0', cursor: 'pointer' }}
                   className="hover-action"
+                  onClick={() => modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}
                 >
                   <Text type="secondary" style={{ fontSize: 12 }}>删除</Text>
                 </div>
