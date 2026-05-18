@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { 
   Table, Button, Tag, Space, Card, Typography, Breadcrumb, 
   Badge, App, Modal, Form, Select, Input, Switch, Tabs, 
-  Progress, Tooltip, Descriptions, Divider, Row, Col, InputNumber, Upload, Radio, Checkbox, Alert
+  Progress, Tooltip, Descriptions, Divider, Row, Col, InputNumber, Upload, Radio, Checkbox, Alert, Popconfirm
 } from 'antd';
 import { 
   ArrowLeftOutlined, PlusOutlined, SearchOutlined, SyncOutlined, 
@@ -97,7 +97,7 @@ export default function TaskInstancePage() {
       return (
         <Space separator={<Divider type="vertical" />} size={0}>
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: '0 4px' }}>编辑</Button>
-          <Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: '0 4px' }}>删除</Button>
+          <Popconfirm title="确定删除？" onConfirm={() => message.success('已删除')}><Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: '0 4px' }}>删除</Button></Popconfirm>
         </Space>
       );
     }

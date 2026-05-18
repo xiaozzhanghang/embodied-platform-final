@@ -116,7 +116,7 @@ export default function TaskCenterPage() {
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/tasks/${record.taskId}`)} style={{ padding: '0 4px' }}>查看详情</Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
-          <Button type="link" size="small" icon={<DeleteOutlined />} danger style={{ padding: '0 4px' }}>删除</Button>
+          <Popconfirm title="确定删除？" onConfirm={() => message.success('已删除')}><Button type="link" size="small" icon={<DeleteOutlined />} danger style={{ padding: '0 4px' }}>删除</Button></Popconfirm>
         </Space>
       )
     },

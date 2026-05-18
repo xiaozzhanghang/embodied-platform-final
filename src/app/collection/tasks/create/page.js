@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Typography, Space, Input, Select, Form, Row, Col, 
   Card, Table, Radio, Switch, App, Breadcrumb, Steps, 
-  InputNumber, Upload, Checkbox, Avatar, Tag, Divider, Alert, Modal
+  InputNumber, Upload, Checkbox, Avatar, Tag, Divider, Alert, Modal, Popconfirm
 } from 'antd';
 import { 
   ArrowLeftOutlined, SaveOutlined, PlusOutlined, 
@@ -419,7 +419,7 @@ function CreateTaskContent() {
                    { title: '原子技能', render: (_, r) => <Select value={r.skill} onChange={v => updateStep(r.id, 'skill', v)} style={{ width: '100%' }} options={[{value:'识别', label:'识别'}, {value:'抓取', label:'抓取'}, {value:'移动', label:'移动'}, {value:'放置', label:'放置'}]} /> },
                    { title: '操作对象', render: (_, r) => <Select value={r.object} onChange={v => updateStep(r.id, 'object', v)} style={{ width: '100%' }} options={[{value:'目标物品', label:'目标物品'}, {value:'抽屉', label:'抽屉'}, {value:'门把手', label:'门把手'}]} /> },
                    { title: '操作目标', render: (_, r) => <Select value={r.target} onChange={v => updateStep(r.id, 'target', v)} style={{ width: '100%' }} options={[{value:'确认位置', label:'确认位置'}, {value:'上方', label:'上方'}, {value:'目标点', label:'目标点'}]} /> },
-                   { title: '操作', width: 80, align: 'center', fixed: 'right', render: (_, r) => <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeStep(r.id)} /> }
+                   { title: '操作', width: 80, align: 'center', fixed: 'right', render: (_, r) => <Popconfirm title="确定删除？" onConfirm={() => removeStep(r.id)}><Button type="text" danger icon={<DeleteOutlined />} /></Popconfirm> }
                  ]} 
                />
                <Row gutter={24} style={{marginTop:24}}>

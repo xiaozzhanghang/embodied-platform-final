@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Card, Typography, Space, Descriptions, Badge, App } from 'antd';
+import { Button, Card, Typography, Space, Descriptions, Badge, App, Popconfirm } from 'antd';
 import { ArrowLeftOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -39,7 +39,7 @@ export default function TaskDetailPage({ params }) {
         </div>
         <Space>
             <Button icon={<EditOutlined />}>编辑任务</Button>
-            <Button danger icon={<DeleteOutlined />}>废弃任务</Button>
+            <Popconfirm title="确定废弃？" onConfirm={() => message.success('已废弃')}><Button danger icon={<DeleteOutlined />}>废弃任务</Button></Popconfirm>
         </Space>
       </div>
 
