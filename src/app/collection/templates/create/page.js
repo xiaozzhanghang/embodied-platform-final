@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Typography, Space, Input, Select, Form, Row, Col, 
   Card, Table, Radio, App, Breadcrumb, Divider, Tag
@@ -16,12 +16,31 @@ const { Title, Text } = Typography;
 
 export default function CreateTemplatePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { message } = App.useApp();
   const [form] = Form.useForm();
+  const editId = searchParams.get('id');
+  const isEdit = !!editId;
   
   const [steps, setSteps] = useState([
-    { key: '1', effector: '右手', skill: '识别', object: '目标物品', target: '确认位置' }
+    { key: '1', effector: '右手', skill: '识别', object: '目标物品', target: '确认位置' },
+    ...(isEdit ? [
+      { key: '2', effector: '右手', skill: '接近', object: '目标物品', target: '对齐中心' },
+      { key: '3', effector: '右手', skill: '抓取', object: '目标物品', target: '稳定握持' }
+    ] : [])
   ]);
+
+  useEffect(() => {
+    if (isEdit) {
+      form.setFieldsValue({
+        name: '通用物体抓取模板',
+        code: 'TPL_GEN_GRASP',
+        device: 'galbot_2.2_RGB',
+        mode: 'WholeBody',
+        desc: '适用于大部分规则几何形状物体的桌面抓取任务。'
+      });
+    }
+  }, [isEdit, form]);
 
   const addStep = () => {
     const newKey = (steps.length + 1).toString();
@@ -33,7 +52,7 @@ export default function CreateTemplatePage() {
   };
 
   const onFinish = (values) => {
-    message.success('任务模版创建成功');
+    message.success(isEdit ? '任务模版修改成功' : '任务模版创建成功');
     router.push('/collection/templates');
   };
 
@@ -104,13 +123,13 @@ export default function CreateTemplatePage() {
           items={[
             { title: '数据采集' },
             { title: '任务模板', href: '/collection/templates' },
-            { title: '新建模板' }
+            { title: isEdit ? '编辑模板' : '新建模板' }
           ]} 
           style={{ marginBottom: 16 }}
         />
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-          <Title level={3} style={{ margin: 0 }}>新建任务模版</Title>
+          <Title level={3} style={{ margin: 0 }}>{isEdit ? '编辑任务模版' : '新建任务模版'}</Title>
         </div>
       </div>
 
@@ -180,7 +199,7 @@ export default function CreateTemplatePage() {
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, paddingBottom: 60 }}>
           <Button style={{ width: 120 }} onClick={() => router.back()}>取消</Button>
-          <Button type="primary" htmlType="submit" icon={<SaveOutlined />} style={{ width: 120 }}>保存模版</Button>
+          <Button type="primary" htmlType="submit" icon={<SaveOutlined />} style={{ width: 120 }}>{isEdit ? '保存更改' : '保存模版'}</Button>
         </div>
       </Form>
     </MainLayout>

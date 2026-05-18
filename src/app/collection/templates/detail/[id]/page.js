@@ -66,7 +66,7 @@ export default function TemplateDetailPage({ params }) {
           </div>
           <Space>
             <Button icon={<CopyOutlined />}>克隆模板</Button>
-            <Button type="primary" icon={<EditOutlined />}>编辑模板</Button>
+            <Button type="primary" icon={<EditOutlined />} onClick={() => router.push(`/collection/templates/create?id=${template.id}`)}>编辑模板</Button>
           </Space>
         </div>
       </div>
