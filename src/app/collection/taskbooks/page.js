@@ -40,7 +40,7 @@ export default function TaskbooksPage() {
     { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
     { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: 170 },
     {
-      title: '操作', key: 'action', width: 280, fixed: 'right',
+      title: '操作', key: 'action', width: 360, fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
           <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/taskbooks/detail/${record.id}`)}>查看详情</Button>
