@@ -41,8 +41,9 @@ export default function CollectorLoginPage() {
     >
       <div className="collector-login-root" style={{
         backgroundImage: `url(${heroImg.src || heroImg})`,
-        backgroundSize: 'cover',
+        backgroundSize: '100% 100%',
         backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         position: 'relative'
       }}>
         <style jsx global>{`
