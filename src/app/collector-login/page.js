@@ -39,7 +39,12 @@ export default function CollectorLoginPage() {
         },
       }}
     >
-      <div className="collector-login-root">
+      <div className="collector-login-root" style={{
+        backgroundImage: `url(${heroImg.src || heroImg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        position: 'relative'
+      }}>
         <style jsx global>{`
           @keyframes float {
             0% { transform: translateY(0px); }
@@ -62,7 +67,6 @@ export default function CollectorLoginPage() {
           .collector-login-root {
             min-height: 100vh;
             display: flex;
-            background: #020817;
             color: #f8fafc;
             overflow: hidden;
             font-family: 'Inter', -apple-system, sans-serif;
@@ -97,13 +101,6 @@ export default function CollectorLoginPage() {
           padding: '60px',
         }}>
           {/* Background Image with Overlay */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            backgroundImage: `url(${heroImg.src || heroImg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            zIndex: 0,
-          }} />
           <div className="hero-gradient-overlay" style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
           
           {/* Grid lines decoration */}
@@ -189,10 +186,11 @@ export default function CollectorLoginPage() {
           </div>
         </div>
 
-        {/* Right Panel — Login Form */}
+        {/* Right Panel */}
         <div style={{
           width: '45%',
-          background: '#020817',
+          background: 'rgba(2, 8, 23, 0.65)',
+          backdropFilter: 'blur(20px)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',

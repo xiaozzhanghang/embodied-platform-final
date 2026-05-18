@@ -56,10 +56,11 @@ export default function LoginPage() {
           .collector-login-root {
             min-height: 100vh;
             display: flex;
-            background: #020817;
+            background: url('/assets/login_bg_admin.png') center/cover no-repeat;
             color: #f8fafc;
             overflow: hidden;
             font-family: 'Inter', -apple-system, sans-serif;
+            position: relative;
           }
           .glass-panel {
             background: rgba(15, 23, 42, 0.65);
@@ -81,13 +82,6 @@ export default function LoginPage() {
           justifyContent: 'space-between',
           padding: '60px',
         }}>
-          <div style={{
-            position: 'absolute', inset: 0,
-            backgroundImage: "url('/assets/login_bg_admin.png')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            zIndex: 0,
-          }} />
           <div className="hero-gradient-overlay" style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
           
           <div style={{ position: 'relative', zIndex: 10, animation: 'slideIn 0.8s ease' }}>
@@ -135,7 +129,8 @@ export default function LoginPage() {
         {/* Right Panel */}
         <div style={{
           width: '45%',
-          background: '#020817',
+          background: 'rgba(2, 8, 23, 0.65)',
+          backdropFilter: 'blur(20px)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
