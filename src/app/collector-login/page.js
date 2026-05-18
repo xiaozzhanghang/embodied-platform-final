@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Checkbox, App, ConfigProvider, theme } from 'antd';
 import { UserOutlined, LockOutlined, ApiOutlined, HddOutlined, DashboardOutlined, CheckCircleFilled, WarningFilled, ArrowLeftOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import heroImg from '../../assets/collector_login_hero.png';
+import heroImg from '../../assets/collector_login_hero_16_9.png';
 
 export default function CollectorLoginPage() {
   const { message } = App.useApp();
@@ -40,10 +40,9 @@ export default function CollectorLoginPage() {
       }}
     >
       <div className="collector-login-root" style={{
-        backgroundColor: '#020817', // Fallback
         backgroundImage: `url(${heroImg.src || heroImg})`,
-        backgroundSize: 'contain', 
-        backgroundPosition: 'left center',
+        backgroundSize: 'cover', 
+        backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         position: 'relative'
       }}>
