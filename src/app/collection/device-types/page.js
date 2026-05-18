@@ -138,7 +138,7 @@ function DeviceTable({ data, type, onEdit, partData }) {
     {
       title: '操作', fixed: 'right',
       key: 'action',
-      width: 150,
+      width: 260,
       fixed: 'right',
       render: (_, record) => {
         const detailPath = isRobot ? 'detail' : 'part-detail';
@@ -150,11 +150,9 @@ function DeviceTable({ data, type, onEdit, partData }) {
             <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/device-types/${detailPath}/${record.key}?edit=true`)}>
               编辑
             </Button>
-            <Popconfirm title="确定删除吗？">
-              <Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: 0 }}>
-                删除
-              </Button>
-            </Popconfirm>
+            <Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: 0 }} onClick={() => Modal.confirm({ title: '确定删除吗？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>
+              删除
+            </Button>
           </Space>
         );
       },
