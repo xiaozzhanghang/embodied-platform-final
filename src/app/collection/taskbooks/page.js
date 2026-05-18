@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Breadcrumb, Select, Form, Tooltip, Row, Col } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined, ColumnHeightOutlined, SettingOutlined, RobotOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined, ColumnHeightOutlined, SettingOutlined, RobotOutlined, DownOutlined, UpOutlined, EditOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -39,10 +39,11 @@ export default function TaskbooksPage() {
     { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
     { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: 170 },
     {
-      title: '操作', key: 'action', width: 160, fixed: 'right',
+      title: '操作', key: 'action', width: 220, fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
           <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/taskbooks/detail/${record.id}`)}>查看详情</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/taskbooks/create?mode=edit&id=${record.id}`)}>编辑</Button>
           <Button type="link" size="small" icon={<DownloadOutlined />} style={{ padding: 0 }}>下载</Button>
         </Space>
       )
