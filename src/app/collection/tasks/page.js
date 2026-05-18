@@ -110,7 +110,7 @@ export default function TaskCenterPage() {
       render: (s) => <Tag color={s === '已完成' ? 'success' : 'processing'}>{s}</Tag>
     },
     {
-      title: '操作', key: 'action', width: 280, fixed: 'right',
+      title: '操作', key: 'action', width: 350, fixed: 'right',
       render: (_, record) => (
         <Space separator={<Divider type="vertical" />} size={0}>
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/tasks/${record.taskId}`)} style={{ padding: '0 4px' }}>查看详情</Button>

@@ -42,7 +42,7 @@ export default function WorkflowTaskPage() {
         { title: '创建人', dataIndex: 'creator', key: 'creator', width: 80 },
         { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 160 },
         {
-            title: '操作', key: 'action', width: 220, fixed: 'right',
+            title: '操作', key: 'action', width: 260, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedTask(record); setDetailOpen(true); }}>查看详情</Button>
