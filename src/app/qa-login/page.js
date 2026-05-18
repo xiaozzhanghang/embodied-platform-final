@@ -129,8 +129,6 @@ export default function QALoginPage() {
         {/* Right Panel */}
         <div style={{
           width: '45%',
-          background: 'rgba(2, 8, 23, 0.65)',
-          backdropFilter: 'blur(20px)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -149,7 +147,17 @@ export default function QALoginPage() {
             </Button>
           </div>
 
-          <div style={{ width: '100%', maxWidth: 400, animation: 'fadeIn 1s ease' }}>
+          <div style={{ 
+            width: '100%', 
+            maxWidth: 480, 
+            background: 'rgba(2, 8, 23, 0.65)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: 24,
+            padding: '50px 40px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            animation: 'fadeIn 1s ease' 
+          }}>
             <div style={{ marginBottom: 48, textAlign: 'center' }}>
               <div style={{ 
                 width: 64, height: 64, borderRadius: 20, 
