@@ -201,6 +201,7 @@ export default function TaskTemplatesPage() {
                 <div 
                   style={{ flex: 1, textAlign: 'center', padding: '12px 0', cursor: 'pointer', borderRight: '1px solid #f0f0f0' }}
                   className="hover-action"
+                  onClick={() => router.push(`/collection/templates/detail/${tpl.key}`)}
                 >
                   <Text type="secondary" style={{ fontSize: 12 }}>编辑</Text>
                 </div>
