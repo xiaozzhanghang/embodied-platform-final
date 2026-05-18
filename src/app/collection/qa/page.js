@@ -138,7 +138,7 @@ function QaContent() {
         { title: '已质检', dataIndex: 'isQaed', key: 'isQaed', width: 80 },
         { title: '通过质检(数量)', dataIndex: 'passedCount', key: 'passedCount', width: 120 },
         {
-            title: '操作', key: 'action', width: 200, fixed: 'right',
+            title: '操作', key: 'action', width: 220, fixed: 'right',
             render: (_, record) => (
                 <Space size="middle">
                     <Button 

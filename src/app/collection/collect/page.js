@@ -38,7 +38,7 @@ export default function CollectTaskPage() {
         { title: '数据状态', dataIndex: 'dataStatus', key: 'dataStatus', width: 100, render: (s) => <Tag color={dataStatusMap[s]}>{s}</Tag> },
         { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
         {
-            title: '操作', key: 'action', width: 200, fixed: 'right',
+            title: '操作', key: 'action', width: 320, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/collect/detail/${record.taskId}`)}>查看详情</Button>
