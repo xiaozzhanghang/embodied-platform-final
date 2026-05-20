@@ -1,0 +1,3009 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数采系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;font-size:13px;color:#333;background:#f0f2f5;display:flex;height:100vh;overflow:hidden}
+
+/* ======= SIDEBAR ======= */
+.sidebar{width:210px;background:#001529;display:flex;flex-direction:column;flex-shrink:0;transition:width .25s}
+.logo{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#1a73e8,#0d47a1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.logo-text{font-size:15px;font-weight:700;color:#fff;white-space:nowrap}
+.nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav::-webkit-scrollbar{width:3px}
+.nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.nav-group-title{padding:12px 16px 4px;font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.8px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;color:rgba(255,255,255,.65);transition:all .15s;position:relative;font-size:13px}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:#1a73e8;color:#fff}
+.nav-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#69b1ff;border-radius:0 2px 2px 0}
+.nav-item .ni{font-size:14px;width:16px;text-align:center;flex-shrink:0}
+.nav-item .arrow{margin-left:auto;font-size:10px;transition:transform .2s;color:rgba(255,255,255,.3)}
+.nav-item.open .arrow{transform:rotate(90deg)}
+.sub-menu{overflow:hidden;max-height:0;transition:max-height .25s ease}
+.sub-menu.open{max-height:300px}
+.sub-item{display:flex;align-items:center;gap:8px;padding:8px 16px 8px 42px;cursor:pointer;color:rgba(255,255,255,.5);font-size:12.5px;transition:all .15s}
+.sub-item:hover{color:#fff;background:rgba(255,255,255,.05)}
+.sub-item.active{color:#69b1ff;background:rgba(24,144,255,.1)}
+.sub-item .si{font-size:12px;width:14px;text-align:center}
+
+/* ======= MAIN ======= */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:#fff;border-bottom:1px solid #e8e8e8;padding:0 20px;height:50px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.breadcrumb{display:flex;align-items:center;gap:6px;color:#999;font-size:13px}
+.breadcrumb .bc{color:#333;font-weight:500}
+.breadcrumb .sep{color:#ddd}
+.breadcrumb .bcl{color:#1a73e8;cursor:pointer}
+.breadcrumb .bcl:hover{text-decoration:underline}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.top-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#666;font-size:16px;transition:all .15s;position:relative}
+.top-icon:hover{background:#f5f5f5;color:#1a73e8}
+.badge{position:absolute;top:4px;right:4px;width:8px;height:8px;background:#ff4d4f;border-radius:50%;border:1px solid #fff}
+.divider-v{width:1px;height:20px;background:#e8e8e8}
+.user-info{display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:background .15s}
+.user-info:hover{background:#f5f5f5}
+.avatar{width:30px;height:30px;background:linear-gradient(135deg,#1a73e8,#0d47a1);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600}
+.user-name{font-size:13px;color:#333;font-weight:500}
+
+/* ======= CONTENT AREA ======= */
+.content-wrap{flex:1;overflow-y:auto;padding:16px}
+.content-wrap::-webkit-scrollbar{width:5px}
+.content-wrap::-webkit-scrollbar-thumb{background:#ddd;border-radius:3px}
+
+/* ======= PAGES (single page shown) ======= */
+.page{display:none}
+.page.active{display:block}
+
+/* ======= COMMON ======= */
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:20px}
+.card-title{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title .ct-icon{width:20px;height:20px;border-radius:5px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:11px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+
+/* Buttons */
+.btn{height:32px;padding:0 14px;border-radius:6px;font-size:13px;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap;font-family:inherit}
+.btn-primary{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.btn-primary:hover{background:#1557b0}
+.btn-default{background:#fff;color:#555;border-color:#d9d9d9}
+.btn-default:hover{border-color:#1a73e8;color:#1a73e8}
+.btn-danger{background:#fff;color:#ff4d4f;border-color:#ff4d4f}
+.btn-danger:hover{background:#fff1f0}
+.btn-sm{height:26px;padding:0 10px;font-size:12px;border-radius:4px}
+.btn-text{background:none;border:none;color:#1a73e8;cursor:pointer;font-size:12.5px;padding:0 4px}
+.btn-text:hover{opacity:.75}
+.btn-text.danger{color:#ff4d4f}
+
+/* Form */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;margin-bottom:4px}
+.form-row-3{grid-template-columns:1fr 1fr 1fr}
+.form-item{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.form-item.full{grid-column:1/-1}
+.form-label{font-size:12.5px;color:#555;font-weight:500;display:flex;align-items:center;gap:3px}
+.req{color:#ef4444;font-size:12px}
+.form-ctrl{height:32px;border:1px solid #d9d9d9;border-radius:6px;padding:0 10px;font-size:13px;color:#333;background:#fff;outline:none;transition:border-color .15s,box-shadow .15s;appearance:none;-webkit-appearance:none;width:100%;font-family:inherit}
+.form-ctrl:focus{border-color:#1a73e8;box-shadow:0 0 0 2px rgba(26,115,232,.1)}
+select.form-ctrl{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%23999' d='M5 6L0 0h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer}
+textarea.form-ctrl{height:70px;resize:none;padding:8px 10px;line-height:1.5}
+.form-ctrl::placeholder{color:#c0c0c0}
+.char-count{text-align:right;font-size:11px;color:#bbb;margin-top:1px}
+
+/* Table */
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{background:#fafafa;border-bottom:1px solid #f0f0f0;padding:10px 12px;font-size:12px;color:#888;font-weight:500;text-align:left;white-space:nowrap}
+.tbl td{padding:11px 12px;border-bottom:1px solid #f7f7f7;font-size:13px;color:#333;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#fafcff}
+.tbl th:first-child,.tbl td:first-child{padding-left:18px}
+.tbl th:last-child,.tbl td:last-child{padding-right:18px}
+.tbl-link{color:#1a73e8;cursor:pointer;font-weight:500}
+.tbl-link:hover{text-decoration:underline}
+
+/* Status badges */
+.badge-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:10px;font-size:12px;white-space:nowrap}
+.badge-tag::before{content:'';width:5px;height:5px;border-radius:50%}
+.tag-done{background:#f0faf0;color:#52c41a}.tag-done::before{background:#52c41a}
+.tag-running{background:#fff7e6;color:#fa8c16}.tag-running::before{background:#fa8c16}
+.tag-error{background:#fff1f0;color:#ff4d4f}.tag-error::before{background:#ff4d4f}
+.tag-pending{background:#f5f5f5;color:#999}.tag-pending::before{background:#bbb}
+.tag-blue{background:#e6f4ff;color:#1a73e8}.tag-blue::before{background:#1a73e8}
+.tag-purple{background:#f9f0ff;color:#722ed1}.tag-purple::before{background:#722ed1}
+
+/* Progress */
+.prog-wrap{display:flex;align-items:center;gap:7px}
+.prog-bar{flex:1;min-width:55px;max-width:88px;height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#52c41a,#73d13d)}
+.prog-fill.warn{background:linear-gradient(90deg,#fa8c16,#ffa940)}
+.prog-fill.blue{background:linear-gradient(90deg,#1a73e8,#4096ff)}
+.prog-txt{font-size:11.5px;color:#888;white-space:nowrap}
+
+/* Action buttons in table */
+.act-btns{display:flex;align-items:center;gap:0;white-space:nowrap}
+.act-btn{background:none;border:none;font-size:12px;cursor:pointer;padding:0 5px;color:#1a73e8;font-family:inherit}
+.act-btn:hover{color:#1557b0}
+.act-btn.del{color:#ff4d4f}
+.act-btn.del:hover{color:#cf1322}
+.act-sep{color:#e0e0e0;font-size:11px;user-select:none}
+
+/* Tabs */
+.tabs-bar{padding:0 16px;background:#fff;border-bottom:1px solid #eef2f7}
+.tabs-pill{display:inline-flex;gap:4px;background:#eef4fd;border-radius:10px;padding:4px;margin:10px 0 0}
+.tab-pill{display:flex;align-items:center;gap:5px;padding:5px 14px;cursor:pointer;font-size:13px;color:#7a92b0;background:transparent;border-radius:7px;border:none;transition:all .18s;white-space:nowrap;user-select:none;font-family:inherit}
+.tab-pill:hover{background:#ddeaf9;color:#4a6fa5}
+.tab-pill.active{background:#fff;color:#1a73e8;font-weight:600;box-shadow:0 1px 4px rgba(26,115,232,.13),0 0 0 1px rgba(26,115,232,.07)}
+.tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:16px;padding:0 4px;background:rgba(26,115,232,.1);color:#5a92d8;border-radius:8px;font-size:10px;font-weight:700}
+.tab-pill.active .tab-count{background:#dbeafe;color:#1a73e8}
+.tab-pill[data-t="running"].active{color:#d97706}.tab-pill[data-t="running"].active .tab-count{background:#fef3c7;color:#d97706}
+.tab-pill[data-t="done"].active{color:#059669}.tab-pill[data-t="done"].active .tab-count{background:#d1fae5;color:#059669}
+.tab-pill[data-t="error"].active{color:#ef4444}.tab-pill[data-t="error"].active .tab-count{background:#fee2e2;color:#dc2626}
+.tab-pill[data-t="pending"].active{color:#6b7280}.tab-pill[data-t="pending"].active .tab-count{background:#f3f4f6;color:#6b7280}
+.tab-pill[data-t="labeling"].active{color:#7c3aed}.tab-pill[data-t="labeling"].active .tab-count{background:#ede9fe;color:#7c3aed}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px}
+.toolbar-left{display:flex;align-items:center;gap:8px}
+.toolbar-right{display:flex;align-items:center;gap:6px}
+.tbl-title{font-size:13.5px;font-weight:600;color:#222}
+.icon-btn{width:30px;height:30px;border:1px solid #e8e8e8;border-radius:5px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;transition:all .15s}
+.icon-btn:hover{border-color:#1a73e8;color:#1a73e8}
+
+/* Filter card */
+.filter-card{background:#fff;border-radius:10px;padding:14px 18px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.filter-row{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.filter-row:last-child{margin-bottom:0}
+.filter-item{display:flex;align-items:center;gap:7px;flex:1;max-width:300px}
+.filter-lbl{font-size:12.5px;color:#666;white-space:nowrap;min-width:48px;text-align:right}
+.filter-ctrl{flex:1;height:30px;border:1px solid #d9d9d9;border-radius:5px;padding:0 9px;font-size:12.5px;color:#333;background:#fff;outline:none;appearance:none;-webkit-appearance:none;font-family:inherit}
+select.filter-ctrl{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%23999' d='M5 6L0 0h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;cursor:pointer}
+.filter-ctrl:focus{border-color:#1a73e8;box-shadow:0 0 0 2px rgba(26,115,232,.08)}
+.filter-actions{display:flex;align-items:center;gap:7px;margin-left:auto;flex-shrink:0}
+
+/* Pagination */
+.pager{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid #f0f0f0}
+.pager-info{color:#999;font-size:12.5px}
+.pager-right{display:flex;align-items:center;gap:6px}
+.pager-size{border:1px solid #d9d9d9;border-radius:4px;padding:3px 22px 3px 8px;font-size:12.5px;color:#333;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%23999' d='M5 6L0 0h10z'/%3E%3C/svg%3E") no-repeat right 6px center;appearance:none;cursor:pointer;outline:none;font-family:inherit}
+.pager-btn{width:26px;height:26px;border:1px solid #d9d9d9;background:#fff;border-radius:4px;cursor:pointer;font-size:12.5px;color:#555;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.pager-btn:hover{border-color:#1a73e8;color:#1a73e8}
+.pager-btn.cur{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.pager-btn:disabled{color:#ccc;cursor:not-allowed}
+
+/* ========== PAGE: DASHBOARD ========== */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.stat-card{background:#fff;border-radius:10px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;right:-10px;top:-10px;width:60px;height:60px;border-radius:50%;opacity:.06}
+.stat-card.blue::after{background:#1a73e8}.stat-card.green::after{background:#10b981}.stat-card.orange::after{background:#f59e0b}.stat-card.red::after{background:#ef4444}
+.stat-label{font-size:12.5px;color:#888;margin-bottom:8px}
+.stat-value{font-size:26px;font-weight:700;color:#1a1a2e;line-height:1;margin-bottom:6px}
+.stat-value.blue{color:#1a73e8}.stat-value.green{color:#10b981}.stat-value.orange{color:#f59e0b}.stat-value.red{color:#ef4444}
+.stat-sub{font-size:11.5px;color:#bbb;display:flex;align-items:center;gap:4px}
+.stat-sub .up{color:#10b981}.stat-sub .dn{color:#ef4444}
+.stat-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.stat-icon.blue{background:#eff6ff}.stat-icon.green{background:#ecfdf5}.stat-icon.orange{background:#fffbeb}.stat-icon.red{background:#fff1f0}
+
+.chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:14px}
+.chart-box{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.chart-title{font-size:13.5px;font-weight:600;color:#222;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.chart-legend{display:flex;align-items:center;gap:14px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:12px;color:#888}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+
+/* Fake bar chart */
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding-bottom:2px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.bar-stack{display:flex;flex-direction:column;align-items:center;width:100%;gap:2px;flex:1;justify-content:flex-end}
+.bar-seg{width:100%;border-radius:3px 3px 0 0;min-height:3px}
+.bar-lbl{font-size:10px;color:#aaa;white-space:nowrap}
+
+/* Donut chart fake */
+.donut-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+.donut{width:120px;height:120px;border-radius:50%;position:relative;background:conic-gradient(#1a73e8 0deg 154deg,#10b981 154deg 226deg,#f59e0b 226deg 273deg,#ef4444 273deg 360deg)}
+.donut::after{content:'';position:absolute;inset:22px;background:#fff;border-radius:50%}
+.donut-legs{display:flex;flex-direction:column;gap:6px;width:100%}
+.donut-leg{display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.donut-leg-l{display:flex;align-items:center;gap:6px;color:#666}
+.donut-leg-v{font-weight:600;color:#333}
+
+/* Recent tasks mini */
+.mini-table{width:100%;border-collapse:collapse}
+.mini-table th{font-size:11.5px;color:#aaa;font-weight:500;padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:left}
+.mini-table td{font-size:12.5px;color:#555;padding:8px 8px;border-bottom:1px solid #f8f8f8}
+.mini-table tr:last-child td{border-bottom:none}
+
+/* ========== TASK DETAIL / WORK ORDER ========== */
+.td-info-item{display:flex;flex-direction:column;gap:3px}
+.td-info-label{font-size:11.5px;color:#aaa}
+.td-info-value{font-size:13px;color:#333;font-weight:500}
+.wo-stat-card{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;align-items:center;gap:12px}
+.wo-stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.wo-stat-val{font-size:20px;font-weight:700;line-height:1.2}
+.wo-stat-lbl{font-size:11.5px;color:#aaa;margin-top:2px}
+.tag-unassigned{background:#f5f5f5;color:#888}
+.tag-assigned{background:#e8f0fe;color:#1a73e8}
+.tag-closed{background:#f3f4f6;color:#6b7280}
+
+/* ========== TASK CENTER ========== */
+/* Already styled above (filter-card, tabs, tbl, etc.) */
+
+/* ========== FORM VIEW ========== */
+.form-view{max-width:900px;margin:0 auto}
+.fv-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.fv-back{display:flex;align-items:center;gap:5px;color:#1a73e8;background:none;border:none;cursor:pointer;font-size:13px;font-family:inherit}
+.fv-back:hover{opacity:.75}
+.fv-title{font-size:16px;font-weight:700;color:#1a1a2e}
+.fv-divider{color:#e0e0e0}
+
+/* Stepper */
+.stepper-card{background:#fff;border-radius:10px;padding:22px 32px 18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.stepper{display:flex;align-items:center;justify-content:center}
+.stp{display:flex;flex-direction:column;align-items:center;gap:7px}
+.stp-circle{width:32px;height:32px;border-radius:50%;border:2px solid #d9d9d9;background:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#bbb;transition:all .3s;z-index:1}
+.stp.active .stp-circle{border-color:#1a73e8;background:#1a73e8;color:#fff;box-shadow:0 0 0 5px rgba(26,115,232,.12)}
+.stp.done .stp-circle{border-color:#10b981;background:#10b981;color:#fff}
+.stp-label{font-size:12px;color:#bbb;white-space:nowrap;font-weight:500;transition:color .3s}
+.stp.active .stp-label{color:#1a73e8}
+.stp.done .stp-label{color:#10b981}
+.stp-line{width:300px;height:2px;background:#e8e8e8;margin:0 10px 18px;position:relative;overflow:hidden}
+.stp-fill{position:absolute;left:0;top:0;bottom:0;background:#10b981;width:0;transition:width .45s}
+.stp-line.done .stp-fill{width:100%}
+
+.form-sec{background:#fff;border-radius:10px;padding:20px 24px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.form-sec-title{font-size:13px;font-weight:700;color:#222;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:7px}
+.sec-ic{width:22px;height:22px;background:#eff6ff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
+
+.parts-tbl{border:1px solid #ebebeb;border-radius:7px;overflow:hidden}
+.parts-hdr{display:flex;background:#f8f9fb;border-bottom:1px solid #ebebeb;padding:7px 12px;font-size:11.5px;color:#999;font-weight:600}
+.parts-row{display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid #f5f5f5;transition:background .12s}
+.parts-row:last-child{border-bottom:none}
+.parts-row:hover{background:#fafcff}
+.pc{width:30px}.pn{flex:1;font-size:12.5px;color:#888}.pt{flex:1.8;font-size:12px;color:#555}
+
+.radio-grp{display:flex;align-items:center;gap:18px;height:32px}
+.radio-item{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#555}
+.radio-item input{accent-color:#1a73e8;width:13px;height:13px;cursor:pointer}
+.toggle-wrap{display:flex;align-items:center;height:32px}
+.toggle{position:relative;width:34px;height:18px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-sl{position:absolute;inset:0;background:#d1d5db;border-radius:9px;transition:background .2s}
+.toggle-sl::before{content:'';position:absolute;width:14px;height:14px;left:2px;top:2px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle input:checked+.toggle-sl{background:#1a73e8}
+.toggle input:checked+.toggle-sl::before{transform:translateX(16px)}
+
+.form-footer{background:#fff;border-radius:10px;padding:12px 24px;display:flex;align-items:center;justify-content:flex-end;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:4px}
+.fb{height:32px;border-radius:6px;font-size:13px;cursor:pointer;transition:all .15s;padding:0 20px;border:none;font-family:inherit}
+.fb-cancel,.fb-prev{background:#fff;color:#555;border:1px solid #d9d9d9}
+.fb-cancel:hover,.fb-prev:hover{border-color:#1a73e8;color:#1a73e8}
+.fb-next,.fb-confirm{background:#1a73e8;color:#fff;font-weight:500;padding:0 24px}
+.fb-next:hover,.fb-confirm:hover{background:#1557b0}
+
+/* ========== DEVICE MANAGEMENT ========== */
+.device-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.device-card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;transition:all .2s;border:1.5px solid transparent}
+.device-card:hover{border-color:#1a73e8;box-shadow:0 4px 16px rgba(26,115,232,.12)}
+.device-card.online{border-left:3px solid #10b981}
+.device-card.offline{border-left:3px solid #bbb}
+.device-card.running{border-left:3px solid #fa8c16}
+.dc-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.dc-name{font-size:14px;font-weight:600;color:#1a1a2e}
+.dc-id{font-size:11.5px;color:#aaa;margin-top:2px}
+.dc-status{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:8px;font-size:11.5px;font-weight:500}
+.dc-status.online{background:#ecfdf5;color:#059669}
+.dc-status.offline{background:#f5f5f5;color:#999}
+.dc-status.running{background:#fff7e6;color:#d97706}
+.dc-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.dc-info-item{display:flex;flex-direction:column;gap:2px}
+.dc-info-label{font-size:11px;color:#aaa}
+.dc-info-value{font-size:12.5px;color:#555;font-weight:500}
+.dc-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #f0f0f0;padding-top:10px}
+.dc-task{font-size:12px;color:#888}
+
+/* ========== DATA QUALITY ========== */
+.quality-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}.qs-card{background:#fff;border-radius:8px;padding:14px 16px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.qs-val{font-size:22px;font-weight:700;margin-bottom:4px}
+.qs-lbl{font-size:11.5px;color:#aaa}
+
+/* ========== LABEL MANAGEMENT — 物体库 ========== */
+.otree-item{padding:8px 14px;cursor:pointer;font-size:13px;color:#444;position:relative;display:flex;align-items:center;gap:4px;border-bottom:1px solid #f7f7f7;transition:background .12s}
+.otree-item:hover{background:#f5f7ff;color:#1a73e8}
+.otree-item.active{background:#e8f0fe;color:#1a73e8;font-weight:500}
+.otree-arrow{font-size:11px;color:#bbb;transition:transform .2s;margin-right:2px;flex-shrink:0}
+.otree-sub{display:none;padding:4px 0 4px 20px}
+.otree-item.open .otree-arrow{transform:rotate(90deg)}
+.otree-item.open .otree-sub{display:block}
+.otree-leaf{padding:5px 10px;font-size:12.5px;color:#666;cursor:pointer;border-radius:4px;transition:background .1s}
+.otree-leaf:hover{background:#f0f4ff;color:#1a73e8}
+
+/* ========== LABEL MANAGEMENT — 任务/物体标签 ========== */
+.tlcat-item{padding:10px 16px;cursor:pointer;border-bottom:1px solid #f5f5f5;transition:background .12s}
+.tlcat-item:hover{background:#f5f7ff}
+.tlcat-item.active{background:#e8f0fe}
+.tlcat-name{display:block;font-size:13px;color:#222;font-weight:500;line-height:1.4}
+.tlcat-item.active .tlcat-name{color:#1a73e8}
+.tlcat-sub{display:block;font-size:11.5px;color:#bbb;margin-top:1px}
+.custom-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:4px;font-size:12.5px;cursor:default;line-height:1.4}
+.custom-tag.tag-red{background:#fff1f0;color:#cf1322;border:1px solid #ffa39e}
+.custom-tag.tag-blue{background:#e6f4ff;color:#0958d9;border:1px solid #91caff}
+.tag-num{background:rgba(0,0,0,.08);border-radius:8px;padding:0 5px;font-size:11px}
+.tag-x{cursor:pointer;opacity:.6;font-size:14px;line-height:1;margin-left:2px}
+.tag-x:hover{opacity:1}
+.add-tag-btn{display:inline-flex;align-items:center;padding:4px 12px;border-radius:4px;font-size:12.5px;color:#1a73e8;border:1px dashed #91caff;background:#f0f8ff;cursor:pointer;transition:all .12s}
+.add-tag-btn:hover{background:#e6f4ff}
+
+/* ========== LABEL MANAGEMENT — NEW DESIGN ========== */
+.lm-layout{display:grid;grid-template-columns:240px 1fr;gap:0;background:#fff;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);overflow:hidden;min-height:calc(100vh - 160px)}
+.lm-sidebar{border-right:1px solid #f0f0f0;display:flex;flex-direction:column}
+.lm-sidebar-hd{padding:16px 18px 12px;border-bottom:1px solid #f0f0f0}
+.lm-sidebar-title{display:block;font-size:13.5px;font-weight:700;color:#1a1a1a;margin-bottom:3px}
+.lm-sidebar-hint{display:block;font-size:11.5px;color:#bbb}
+.lm-dim-item{display:flex;align-items:center;gap:10px;padding:12px 18px;cursor:pointer;border-bottom:1px solid #fafafa;transition:background .12s;position:relative}
+.lm-dim-item:hover{background:#f7f9ff}
+.lm-dim-item.active{background:#f0f5ff}
+.lm-dim-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#1a73e8;border-radius:0 2px 2px 0}
+.lm-dim-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.lm-dim-info{flex:1;min-width:0}
+.lm-dim-name{display:block;font-size:13px;font-weight:500;color:#222;line-height:1.4}
+.lm-dim-item.active .lm-dim-name{color:#1a73e8}
+.lm-dim-desc{display:block;font-size:11px;color:#bbb;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lm-dim-cnt{font-size:11px;color:#999;background:#f0f0f0;border-radius:10px;padding:1px 7px;flex-shrink:0;font-weight:600;min-width:22px;text-align:center}
+.lm-dim-item.active .lm-dim-cnt{background:#d0e2ff;color:#1a4db3}
+.lm-main{padding:20px 24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
+.lm-main-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.lm-main-title{font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:4px}
+.lm-main-desc{font-size:12.5px;color:#888;line-height:1.5;max-width:500px}
+.lm-quota{font-size:12px;color:#999;background:#f5f5f5;border-radius:8px;padding:3px 10px;white-space:nowrap;flex-shrink:0;margin-top:4px}
+.lm-usage-tip{display:flex;align-items:flex-start;gap:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#78350f;line-height:1.6}
+.lm-tip-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.lm-tags-wrap{display:flex;flex-wrap:wrap;gap:10px;padding:2px 0}
+/* tag card */
+.lm-tag-card{display:flex;align-items:stretch;border:1.5px solid #ebebeb;border-radius:8px;background:#fff;overflow:hidden;transition:all .15s}
+.lm-tag-card:hover{border-color:#c8d8f8;box-shadow:0 3px 10px rgba(26,115,232,.08);transform:translateY(-1px)}
+.lm-tag-color-bar{width:4px;flex-shrink:0}
+.lm-tag-body{padding:9px 12px;min-width:110px}
+.lm-tag-cn{font-size:13px;font-weight:600;color:#222;line-height:1.4}
+.lm-tag-en{font-size:11px;color:#aaa;margin-top:2px}
+.lm-tag-usage{font-size:11px;color:#bbb;margin-top:3px;display:flex;align-items:center;gap:3px}
+.lm-tag-actions{display:flex;flex-direction:column;border-left:1px solid #f0f0f0}
+.lm-tag-btn{flex:1;width:26px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;color:#ccc;transition:all .12s;font-size:12px}
+.lm-tag-btn:hover{background:#f5f5f5;color:#555}
+.lm-tag-btn.del:hover{background:#fff0f0;color:#ef4444}
+.lm-tag-btn:first-child{border-bottom:1px solid #f0f0f0}
+.lm-tag-new{border:1.5px dashed #c8d8f8;background:#f8faff;color:#1a73e8;border-radius:8px;padding:9px 18px;font-size:12.5px;cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:6px;font-weight:500}
+.lm-tag-new:hover{background:#e8f0fe;border-color:#1a73e8}
+.lm-add-bar{display:flex;align-items:center;gap:10px;background:#f0f5ff;border:1px solid #c8d8f8;border-top:none;border-radius:0 0 12px 12px;padding:12px 20px}
+.lm-add-label{font-size:13px;color:#555;font-weight:500;white-space:nowrap}
+.lm-add-input{border:1px solid #c8d8f8;border-radius:6px;padding:6px 12px;font-size:13px;outline:none;min-width:160px;background:#fff;transition:border .15s}
+.lm-add-input:focus{border-color:#1a73e8;box-shadow:0 0 0 2px rgba(26,115,232,.1)}
+
+/* ========== LABEL MANAGEMENT ========== */
+.label-tree{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tree-node{padding:6px 0}
+.tree-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;cursor:pointer;transition:background .12s}
+.tree-row:hover{background:#f5f7ff}
+.tree-row.active{background:#e8f0fe}
+.tree-toggle{width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa;flex-shrink:0;transition:transform .2s}
+.tree-toggle.open{transform:rotate(90deg)}
+.tree-icon{font-size:13px}
+.tree-name{font-size:13px;color:#333;flex:1}
+.tree-count{font-size:11.5px;color:#aaa;background:#f5f5f5;border-radius:8px;padding:0 6px}
+.tree-children{padding-left:22px;overflow:hidden;max-height:0;transition:max-height .25s}
+.tree-children.open{max-height:600px}
+.tree-leaf{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:5px;cursor:pointer;font-size:12.5px;color:#555;transition:background .12s}
+.tree-leaf:hover{background:#f5f7ff;color:#1a73e8}
+.tree-leaf.active{color:#1a73e8;background:#e8f0fe}
+
+/* ========== PERMISSION ========== */
+.perm-layout{display:grid;grid-template-columns:240px 1fr;gap:12px}
+.role-list{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+.role-item{padding:12px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#555;border-bottom:1px solid #f5f5f5;transition:all .15s}
+.role-item:hover{background:#f5f7ff;color:#1a73e8}
+.role-item.active{background:#e8f0fe;color:#1a73e8;font-weight:500}
+.role-item:last-child{border-bottom:none}
+.role-count-badge{background:#f0f0f0;color:#888;border-radius:8px;padding:1px 7px;font-size:11px}
+.perm-table{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:16px}
+.perm-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.perm-grid{display:grid;gap:0}
+.perm-row{display:grid;grid-template-columns:180px repeat(4,1fr);border-bottom:1px solid #f5f5f5;padding:10px 0}
+.perm-row:last-child{border-bottom:none}
+.perm-row.header{background:#fafafa;font-size:12px;color:#888;font-weight:600;border-bottom:1px solid #e8e8e8}
+.perm-cell{display:flex;align-items:center;justify-content:center;font-size:13px}
+.perm-cell:first-child{justify-content:flex-start;padding-left:12px;color:#333;font-weight:500}
+.perm-check{accent-color:#1a73e8;width:14px;height:14px;cursor:pointer}
+
+/* ========== ANNOTATION REVIEW ========== */
+.review-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.review-card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+.review-img{height:140px;background:linear-gradient(135deg,#667eea22,#764ba222);display:flex;align-items:center;justify-content:center;font-size:40px;position:relative}
+.review-img .review-badge{position:absolute;top:8px;right:8px}
+.review-info{padding:12px}
+.review-name{font-size:13px;font-weight:600;color:#222;margin-bottom:4px}
+.review-meta{font-size:11.5px;color:#aaa;display:flex;gap:10px}
+
+/* Checkbox */
+input[type="checkbox"]{width:13px;height:13px;cursor:pointer;accent-color:#1a73e8}
+
+/* Row animation */
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.fade-rows tr{animation:fadeUp .2s ease both}
+.fade-rows tr:nth-child(1){animation-delay:0ms}.fade-rows tr:nth-child(2){animation-delay:25ms}
+.fade-rows tr:nth-child(3){animation-delay:50ms}.fade-rows tr:nth-child(4){animation-delay:75ms}
+.fade-rows tr:nth-child(5){animation-delay:100ms}.fade-rows tr:nth-child(6){animation-delay:125ms}
+.fade-rows tr:nth-child(7){animation-delay:150ms}
+
+/* Steps for step2 */
+.steps-tbl-wrap{border:1px solid #ebebeb;border-radius:7px;overflow:hidden}
+.steps-toolbar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #ebebeb;background:#f8f9fb}
+.steps-tbl-title{font-size:13px;font-weight:600;color:#333}
+.steps-tbl{width:100%;border-collapse:collapse}
+.steps-tbl th{background:#f8f9fb;border-bottom:1px solid #ebebeb;padding:8px 12px;font-size:11.5px;color:#999;font-weight:600;text-align:left}
+.steps-tbl td{padding:20px 12px;font-size:13px;color:#bbb;text-align:center}
+.upload-row{border:1px dashed #d0d0d0;border-radius:6px;padding:0 11px;font-size:12.5px;color:#aaa;display:flex;align-items:center;gap:7px;background:#fafafa;height:32px}
+.btn-upload{background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+
+/* Views */
+.views{flex:1;position:relative;overflow:hidden}
+.view{position:absolute;inset:0;overflow-y:auto;padding:16px;transition:transform .3s cubic-bezier(.4,0,.2,1),opacity .25s;background:#f0f2f5}
+.view.active{transform:translateX(0);opacity:1;pointer-events:auto}
+.view.left{transform:translateX(-50px);opacity:0;pointer-events:none}
+.view.right{transform:translateX(50px);opacity:0;pointer-events:none}
+
+/* Download center */
+.download-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.dl-card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);text-align:center;cursor:pointer;transition:all .2s;border:1.5px solid transparent}
+.dl-card:hover{border-color:#1a73e8;transform:translateY(-2px);box-shadow:0 6px 20px rgba(26,115,232,.12)}
+.dl-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 10px}
+.dl-name{font-size:13.5px;font-weight:600;color:#222;margin-bottom:4px}
+.dl-size{font-size:11.5px;color:#aaa}
+
+/* Stats page charts */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-area{height:160px;display:flex;align-items:flex-end;gap:4px;padding:0 4px}
+.line-chart{height:140px;position:relative;border-left:1px dashed #eee;border-bottom:1px dashed #eee;margin-bottom:4px}
+.line-labels{display:flex;justify-content:space-between;font-size:10.5px;color:#bbb;padding:0 2px}
+</style>
+</head>
+<body>
+
+<!-- ======= SIDEBAR ======= -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <span class="logo-text">数采系统</span>
+  </div>
+  <div class="nav">
+    <div class="nav-item" onclick="nav('dashboard')" id="n-dashboard">
+      <span class="ni">🏠</span>首页
+    </div>
+    <div class="nav-item" onclick="nav('stats')" id="n-stats">
+      <span class="ni">📈</span>统计看板
+    </div>
+    <div class="nav-item" onclick="toggleSub('label-sub','n-label')" id="n-label">
+      <span class="ni">🏷️</span>标签管理<span class="arrow">›</span>
+    </div>
+    <div class="sub-menu" id="label-sub">
+      <div class="sub-item" onclick="nav('label-scene')"><span class="si">🌐</span>场景标签</div>
+      <div class="sub-item" onclick="nav('label-task')"><span class="si">📋</span>任务标签</div>
+      <div class="sub-item" onclick="nav('label-skill')"><span class="si">⚡</span>技能标签</div>
+    </div>
+    <div class="nav-item" onclick="toggleSub('device-sub','n-device')" id="n-device">
+      <span class="ni">⚙️</span>设备管理<span class="arrow">›</span>
+    </div>
+    <div class="sub-menu" id="device-sub">
+      <div class="sub-item" onclick="nav('device-list')"><span class="si">🤖</span>设备列表</div>
+      <div class="sub-item" onclick="nav('device-type')"><span class="si">📦</span>设备类型</div>
+    </div>
+    <div class="nav-item open active" onclick="toggleSub('data-sub','n-data')" id="n-data">
+      <span class="ni">💾</span>数据采集<span class="arrow">›</span>
+    </div>
+    <div class="sub-menu open" id="data-sub">
+      <div class="sub-item active" onclick="nav('task-center')" id="sn-task"><span class="si">📋</span>任务中心</div>
+      <div class="sub-item" onclick="nav('quality')" id="sn-quality"><span class="si">✅</span>数据质检</div>
+      <div class="sub-item" onclick="nav('review')" id="sn-review"><span class="si">📝</span>标注审核</div>
+      <div class="sub-item" onclick="nav('template')" id="sn-template"><span class="si">🗂️</span>任务模版</div>
+      <div class="sub-item" onclick="nav('taskbook')" id="sn-taskbook"><span class="si">📄</span>任务书</div>
+    </div>
+    <div class="nav-item" onclick="toggleSub('app-sub','n-app')" id="n-app">
+      <span class="ni">🖥️</span>数据应用<span class="arrow">›</span>
+    </div>
+    <div class="sub-menu" id="app-sub">
+      <div class="sub-item" onclick="nav('dataset')"><span class="si">🗄️</span>数据集</div>
+      <div class="sub-item" onclick="nav('export')"><span class="si">📤</span>数据导出</div>
+    </div>
+    <div class="nav-item" onclick="toggleSub('sim-sub','n-sim')" id="n-sim">
+      <span class="ni">🎮</span>仿真资产<span class="arrow">›</span>
+    </div>
+    <div class="sub-menu" id="sim-sub">
+      <div class="sub-item" onclick="nav('sim-scene')"><span class="si">🌍</span>场景资产</div>
+      <div class="sub-item" onclick="nav('sim-obj')"><span class="si">📦</span>物体资产</div>
+    </div>
+    <div class="nav-item" onclick="nav('download')" id="n-download">
+      <span class="ni">⬇️</span>下载中心
+    </div>
+    <div class="nav-item" onclick="nav('permission')" id="n-permission">
+      <span class="ni">🔒</span>权限设置
+    </div>
+  </div>
+</div>
+
+<!-- ======= MAIN ======= -->
+<div class="main">
+  <div class="topbar">
+    <div class="breadcrumb" id="breadcrumb">
+      数据采集<span class="sep">/</span><span class="bc">任务中心</span>
+    </div>
+    <div class="topbar-right">
+      <div class="top-icon" title="消息">🔔<span class="badge"></span></div>
+      <div class="top-icon" title="帮助">❓</div>
+      <div class="divider-v"></div>
+      <span style="font-size:12.5px;color:#888">天奇数采中心 📍</span>
+      <div class="divider-v"></div>
+      <div class="user-info">
+        <div class="avatar">T</div>
+        <span class="user-name">tq_gly</span>
+        <span style="color:#aaa;font-size:11px">▾</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="views">
+
+    <!-- ========== DASHBOARD ========== -->
+    <div class="view" id="page-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card blue">
+          <div class="stat-label">任务总数</div>
+          <div class="stat-value blue">1,284</div>
+          <div class="stat-sub">较上月 <span class="up">↑ 12.3%</span></div>
+          <div class="stat-icon blue">📋</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">已采集数据量</div>
+          <div class="stat-value green">86,432</div>
+          <div class="stat-sub">较上月 <span class="up">↑ 8.7%</span></div>
+          <div class="stat-icon green">💾</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">进行中任务</div>
+          <div class="stat-value orange">47</div>
+          <div class="stat-sub">今日新增 <span class="up">+6</span></div>
+          <div class="stat-icon orange">⚡</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">异常任务</div>
+          <div class="stat-value red">8</div>
+          <div class="stat-sub">较昨日 <span class="dn">↑ 2</span></div>
+          <div class="stat-icon red">⚠️</div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-box">
+          <div class="chart-title">
+            近7日数据采集趋势
+            <div class="chart-legend">
+              <div class="leg-item"><div class="leg-dot" style="background:#1a73e8"></div>采集量</div>
+              <div class="leg-item"><div class="leg-dot" style="background:#10b981"></div>完成量</div>
+            </div>
+          </div>
+          <div class="bar-chart">
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:65%;background:rgba(26,115,232,.85);width:60%"></div></div><div class="bar-lbl">周一</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:80%;background:rgba(26,115,232,.85);width:60%"></div></div><div class="bar-lbl">周二</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:55%;background:rgba(26,115,232,.85);width:60%"></div></div><div class="bar-lbl">周三</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:90%;background:rgba(26,115,232,.85);width:60%"></div></div><div class="bar-lbl">周四</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:75%;background:rgba(26,115,232,.85);width:60%"></div></div><div class="bar-lbl">周五</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:60%;background:rgba(26,115,232,.85);width:60%"></div></div><div class="bar-lbl">周六</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:95%;background:rgba(26,115,232,.85);width:60%"></div></div><div class="bar-lbl">周日</div></div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">任务状态分布</div>
+          <div class="donut-wrap">
+            <div class="donut"></div>
+            <div class="donut-legs">
+              <div class="donut-leg"><div class="donut-leg-l"><div class="leg-dot" style="background:#1a73e8"></div>已完成</div><div class="donut-leg-v">43%</div></div>
+              <div class="donut-leg"><div class="donut-leg-l"><div class="leg-dot" style="background:#10b981"></div>进行中</div><div class="donut-leg-v">20%</div></div>
+              <div class="donut-leg"><div class="donut-leg-l"><div class="leg-dot" style="background:#f59e0b"></div>未开始</div><div class="donut-leg-v">13%</div></div>
+              <div class="donut-leg"><div class="donut-leg-l"><div class="leg-dot" style="background:#ef4444"></div>异常</div><div class="donut-leg-v">24%</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="card">
+          <div class="card-title">最近任务</div>
+          <table class="mini-table">
+            <thead><tr><th>任务名称</th><th>状态</th><th>进度</th><th>时间</th></tr></thead>
+            <tbody>
+              <tr><td class="tbl-link">餐具摆放</td><td><span class="badge-tag tag-running">进行中</span></td><td>50%</td><td>今天</td></tr>
+              <tr><td class="tbl-link">物品整理</td><td><span class="badge-tag tag-pending">未开始</span></td><td>0%</td><td>昨天</td></tr>
+              <tr><td class="tbl-link">InternalCommercial</td><td><span class="badge-tag tag-done">已完成</span></td><td>100%</td><td>3天前</td></tr>
+              <tr><td class="tbl-link">test任务</td><td><span class="badge-tag tag-error">异常</span></td><td>95%</td><td>3天前</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">设备状态概览</div>
+          <table class="mini-table">
+            <thead><tr><th>设备</th><th>类型</th><th>状态</th><th>任务</th></tr></thead>
+            <tbody>
+              <tr><td>galbot_2.2_001</td><td>galbot_2.2_RGB</td><td><span class="badge-tag tag-running">采集中</span></td><td>餐具摆放</td></tr>
+              <tr><td>galbot_2.2_002</td><td>galbot_2.2_RGB</td><td><span class="badge-tag tag-done">空闲</span></td><td>—</td></tr>
+              <tr><td>galbot_2.2_003</td><td>galbot_2.2_RGB</td><td><span class="badge-tag tag-error">离线</span></td><td>—</td></tr>
+              <tr><td>galbot_2.2_004</td><td>galbot_2.2_RGB</td><td><span class="badge-tag tag-running">采集中</span></td><td>商业采集</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== TASK CENTER ========== -->
+    <div class="view active" id="page-task-center">
+      <div class="filter-card">
+        <div class="filter-row">
+          <div class="filter-item"><span class="filter-lbl">一级项目</span><select class="filter-ctrl"><option>请选择一级项目</option><option selected>InternalCommercial</option><option>SimulatedCollection</option></select></div>
+          <div class="filter-item"><span class="filter-lbl">二级项目</span><select class="filter-ctrl"><option>请选择二级项目</option><option selected>GroceryVLA</option></select></div>
+          <div class="filter-item"><span class="filter-lbl">任务书</span><select class="filter-ctrl"><option>请选择任务书</option><option>tianqi001 采集任务书</option></select></div>
+          <div class="filter-actions">
+            <button class="btn btn-primary btn-sm">🔍 查询</button>
+            <button class="btn btn-default btn-sm">↺ 重置</button>
+            <button class="btn btn-default btn-sm" style="color:#1a73e8;border-color:#1a73e8">展开 ▾</button>
+          </div>
+        </div>
+        <div class="filter-row">
+          <div class="filter-item"><span class="filter-lbl">任务名称</span><input class="filter-ctrl" placeholder="请输入任务名称"></div>
+          <div class="filter-item"><span class="filter-lbl">任务ID</span><input class="filter-ctrl" placeholder="请输入任务ID"></div>
+          <div class="filter-item"><span class="filter-lbl">任务状态</span><select class="filter-ctrl"><option>全部状态</option><option>进行中</option><option>已完成</option><option>未开始</option><option>异常</option></select></div>
+          <div class="filter-item"><span class="filter-lbl">遥操类型</span><select class="filter-ctrl"><option>全部类型</option><option>VR(VR)</option><option>Master-slave</option></select></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0">
+        <div class="tabs-bar">
+          <div class="tabs-pill">
+            <button class="tab-pill active" data-t="all" onclick="switchTab(this,'all','task')">📋 全部 <span class="tab-count">7</span></button>
+            <button class="tab-pill" data-t="running" onclick="switchTab(this,'running','task')">⚡ 进行中 <span class="tab-count">2</span></button>
+            <button class="tab-pill" data-t="pending" onclick="switchTab(this,'pending','task')">🕐 未开始 <span class="tab-count">1</span></button>
+            <button class="tab-pill" data-t="error" onclick="switchTab(this,'error','task')">⚠️ 异常 <span class="tab-count">1</span></button>
+            <button class="tab-pill" data-t="closed" onclick="switchTab(this,'closed','task')">🔒 已关闭 <span class="tab-count">3</span></button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <span class="tbl-title">任务列表</span>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-primary btn-sm" onclick="showNewTask()">＋ 新建任务</button>
+            <button class="btn btn-default btn-sm">☰ 批量添加标注</button>
+            <div class="icon-btn">↻</div>
+            <div class="icon-btn">⊞</div>
+            <div class="icon-btn">⛶</div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:36px"><input type="checkbox"></th>
+                <th>任务名称</th><th>项目</th><th>任务ID</th><th>任务状态</th>
+                <th>创建人</th><th>设备类型</th><th>任务用途</th><th>场景分类</th>
+                <th>采集模式</th><th>遥操类型</th><th>采集进度</th><th>创建时间</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="task-tbody" class="fade-rows">
+            </tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <span class="pager-info">共 <b>7</b> 条数据</span>
+          <div class="pager-right">
+            <select class="pager-size"><option>20 条/页</option><option>50 条/页</option></select>
+            <button class="pager-btn" disabled>‹</button>
+            <button class="pager-btn cur">1</button>
+            <button class="pager-btn" disabled>›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== NEW TASK FORM ========== -->
+    <div class="view right" id="page-new-task">
+      <div class="form-view">
+        <div class="fv-header">
+          <button class="fv-back" onclick="hideNewTask()">← 返回</button>
+          <span class="fv-divider">|</span>
+          <span class="fv-title">新建任务</span>
+        </div>
+        <div class="stepper-card">
+          <div class="stepper">
+            <div class="stp active" id="stp1"><div class="stp-circle" id="sc1">1</div><div class="stp-label">基础信息</div></div>
+            <div class="stp-line" id="stpline"><div class="stp-fill"></div></div>
+            <div class="stp" id="stp2"><div class="stp-circle">2</div><div class="stp-label">任务配置</div></div>
+          </div>
+        </div>
+        <div id="nt-step1">
+          <div class="form-sec">
+            <div class="form-sec-title"><span class="sec-ic">📁</span>基本信息</div>
+            <div class="form-row">
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 一级项目</div><select class="form-ctrl"><option>InternalCommercial(内部-商业)</option></select></div>
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 二级项目</div><select class="form-ctrl"><option>GroceryVLA</option></select></div>
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 任务名称</div><input class="form-ctrl" placeholder="请输入任务名称"></div>
+              <div class="form-item"><div class="form-label">英文名称</div><input class="form-ctrl" placeholder="请输入英文名称"></div>
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 任务用途</div><select class="form-ctrl"><option>OfficialCollection(正式采集)</option><option>Operational</option></select></div>
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 采集模式</div><select class="form-ctrl"><option>WholeBody(全身)</option><option>UpperBody</option></select></div>
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 场景分类</div><select class="form-ctrl"><option>Supermarket</option><option>Household</option><option>Industry(工业)</option></select></div>
+              <div class="form-item"><div class="form-label">子场景分类</div><select class="form-ctrl"><option>Workshop(车间)</option><option>Kitchen</option></select></div>
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 设备类型</div><select class="form-ctrl"><option>galbot_2.2_RGB</option><option>galbot_2.2_R</option></select></div>
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 遥操类型</div><select class="form-ctrl"><option>VR(VR)</option><option>Master-slave</option></select></div>
+              <div class="form-item full"><div class="form-label">任务书</div><select class="form-ctrl"><option>tianqi001 采集任务书</option></select></div>
+            </div>
+          </div>
+          <div class="form-sec">
+            <div class="form-sec-title"><span class="sec-ic">🤖</span>设备部件</div>
+            <div class="parts-tbl">
+              <div class="parts-hdr"><div class="pc"><input type="checkbox" checked style="accent-color:#1a73e8"></div><div class="pn">部件名称</div><div class="pt">部件类型</div></div>
+              <div class="parts-row"><div class="pc"><input type="checkbox" checked style="accent-color:#1a73e8"></div><div class="pn">头部左相机</div><div class="pt">Body-HeadLeftCamera(本体-头部左相机)</div></div>
+              <div class="parts-row"><div class="pc"><input type="checkbox" checked style="accent-color:#1a73e8"></div><div class="pn">头部右相机</div><div class="pt">Body-HeadRightCamera(本体-头部右相机)</div></div>
+              <div class="parts-row"><div class="pc"><input type="checkbox" checked style="accent-color:#1a73e8"></div><div class="pn">手部左相机_RGB</div><div class="pt">Body-HandLeftCamera(本体-手部左相机)</div></div>
+              <div class="parts-row"><div class="pc"><input type="checkbox" checked style="accent-color:#1a73e8"></div><div class="pn">手部右相机_RGB</div><div class="pt">Body-HandRightCamera(本体-手部右相机)</div></div>
+            </div>
+          </div>
+          <div class="form-sec">
+            <div class="form-sec-title"><span class="sec-ic">⚙️</span>采集配置</div>
+            <div class="form-row">
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 数据生成模式</div><div class="radio-grp"><label class="radio-item"><input type="radio" name="dm" checked> 直机</label><label class="radio-item"><input type="radio" name="dm"> 仿真</label></div></div>
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 结束录制删除留白</div><div class="toggle-wrap"><label class="toggle"><input type="checkbox"><span class="toggle-sl"></span></label></div></div>
+              <div class="form-item full"><div class="form-label">任务描述</div><textarea class="form-ctrl" placeholder="请输入任务描述" id="desc-ta" oninput="document.getElementById('desc-cnt').textContent=this.value.length"></textarea><div class="char-count"><span id="desc-cnt">0</span>/1000</div></div>
+            </div>
+          </div>
+        </div>
+        <div id="nt-step2" style="display:none">
+          <div class="form-sec">
+            <div class="form-sec-title"><span class="sec-ic">🎯</span>动作步骤</div>
+            <div class="form-row" style="margin-bottom:16px">
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 动作步骤类型</div><div class="radio-grp"><label class="radio-item"><input type="radio" name="sm" checked> 格式化步骤</label><label class="radio-item"><input type="radio" name="sm"> 自然语言描述步骤</label></div></div>
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 任务模板</div><select class="form-ctrl"><option value="">请选择任务模板</option></select></div>
+            </div>
+            <div class="steps-tbl-wrap">
+              <div class="steps-toolbar"><span class="steps-tbl-title">格式化步骤配置</span><button class="btn btn-primary btn-sm">⊕ 新增步骤</button></div>
+              <table class="steps-tbl"><thead><tr><th>步骤</th><th>执行末端类型</th><th>原子技能</th><th>操作对象</th><th>操作目标</th></tr></thead><tbody><tr><td colspan="5">暂无数据</td></tr></tbody></table>
+            </div>
+          </div>
+          <div class="form-sec">
+            <div class="form-sec-title"><span class="sec-ic">📐</span>采集参数</div>
+            <div class="form-row">
+              <div class="form-item"><div class="form-label"><span class="req">*</span> 总采集数量</div><input class="form-ctrl" type="number" id="nt-total-cnt" placeholder="请输入总采集数量" oninput="calcPackSize()"></div>
+              <div class="form-item"><div class="form-label">上传文件</div><div class="upload-row"><button class="btn-upload">⬆ 上传文件</button><span>请上传场景的 layout 文件</span></div></div>
+              <div class="form-item full" style="flex-direction:row;align-items:center;gap:12px"><div class="form-label">是否为货架</div><label class="toggle"><input type="checkbox"><span class="toggle-sl"></span></label></div>
+            </div>
+          </div>
+          <div class="form-sec">
+            <div class="form-sec-title"><span class="sec-ic">📦</span>拆包配置<span style="font-size:11.5px;color:#aaa;font-weight:400;margin-left:8px">将任务拆分为多个工单，每个工单分配给一名采集员</span></div>
+            <div class="form-row" style="margin-bottom:16px">
+              <div class="form-item">
+                <div class="form-label"><span class="req">*</span> 初始包数</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <input class="form-ctrl" type="number" id="nt-pack-count" placeholder="包数" min="1" style="flex:1" oninput="calcPackSize()">
+                  <span style="font-size:12px;color:#aaa;white-space:nowrap">包</span>
+                </div>
+              </div>
+              <div class="form-item">
+                <div class="form-label">每包数量</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <input class="form-ctrl" id="nt-pack-size" placeholder="自动计算" readonly style="flex:1;background:#f8f9fb;color:#555">
+                  <span style="font-size:12px;color:#aaa;white-space:nowrap">条/包</span>
+                </div>
+              </div>
+              <div class="form-item">
+                <div class="form-label">追加包说明</div>
+                <div style="background:#f0f5ff;border-radius:6px;padding:7px 12px;font-size:12px;color:#1a4db3;line-height:1.5;border:1px solid #d0e2ff">
+                  任务创建后可随时在<b>工单管理</b>中追加包，追加的包与初始包独立分配
+                </div>
+              </div>
+            </div>
+            <div id="nt-pack-preview" style="display:none">
+              <div style="font-size:12.5px;color:#555;margin-bottom:10px;font-weight:500">工单预览</div>
+              <div id="nt-pack-list" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+            </div>
+          </div>
+          <div class="form-sec">
+            <div class="form-sec-title"><span class="sec-ic">🌐</span>场景信息</div>
+            <div class="form-row">
+              <div class="form-item"><div class="form-label">场景初始状态</div><textarea class="form-ctrl" placeholder="请描述场景初始状态" oninput="this.nextElementSibling.children[0].textContent=this.value.length"></textarea><div class="char-count"><span>0</span>/500</div></div>
+              <div class="form-item"><div class="form-label">英文场景初始状态</div><textarea class="form-ctrl" placeholder="Please describe scene state" oninput="this.nextElementSibling.children[0].textContent=this.value.length"></textarea><div class="char-count"><span>0</span>/500</div></div>
+              <div class="form-item full"><div class="form-label">泛化条件</div><textarea class="form-ctrl" placeholder="请描述泛化条件" oninput="this.nextElementSibling.children[0].textContent=this.value.length"></textarea><div class="char-count"><span>0</span>/500</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-footer" id="nt-footer">
+          <button class="fb fb-cancel" onclick="hideNewTask()">取消</button>
+          <button class="fb fb-next" onclick="ntNext()">下一步 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== TASK DETAIL — 包列表 ========== -->
+    <div class="view right" id="page-task-detail">
+      <div class="form-view" style="max-width:1100px">
+        <div class="fv-header">
+          <button class="fv-back" onclick="hideTaskDetail()">← 返回任务列表</button>
+          <span class="fv-divider">|</span>
+          <span class="fv-title" id="td-title">任务详情</span>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn btn-default btn-sm" id="td-close-btn" onclick="closeTask()">🔒 关闭任务</button>
+          </div>
+        </div>
+
+        <!-- 任务基本信息 -->
+        <div class="form-sec" style="margin-bottom:14px">
+          <div class="form-sec-title" onclick="toggleTaskInfo()" style="cursor:pointer; user-select:none; display:flex; align-items:center; justify-content:space-between">
+            <div style="display:flex; align-items:center; gap:7px">
+              <span class="sec-ic">📋</span>任务基本信息
+            </div>
+            <span id="td-info-toggle-icon" style="font-size:12px; color:#aaa; font-weight:normal; transition:all .2s">展开 ▾</span>
+          </div>
+          <div id="td-info-container" style="display:none; transition: all .3s ease">
+            <div style="padding-top:10px; display:grid; grid-template-columns:repeat(4,1fr); gap:16px 24px" id="td-info-grid"></div>
+          </div>
+        </div>
+
+        <!-- 包进度统计 -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px" id="td-stats-row"></div>
+
+        <!-- 包列表 -->
+        <div class="card" style="padding:0">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <span class="tbl-title">包列表</span>
+              <span style="font-size:12px;color:#aaa;margin-left:8px">每个包分配给一名采集员，包内包含多条采集记录</span>
+            </div>
+            <div class="toolbar-right">
+              <button class="btn btn-primary btn-sm" id="td-add-btn" onclick="showAddPackModal()">＋ 追加包</button>
+              <div class="icon-btn" onclick="refreshTdTable()">↻</div>
+            </div>
+          </div>
+          <div class="tabs-bar" style="border-top:1px solid #f5f5f5">
+            <div class="tabs-pill">
+              <button class="tab-pill active" data-wt="all"        onclick="switchWoTab(this,'all')">全部 <span class="tab-count" id="wc-all">—</span></button>
+              <button class="tab-pill" data-wt="unassigned"        onclick="switchWoTab(this,'unassigned')">待分配 <span class="tab-count" id="wc-unassigned">—</span></button>
+              <button class="tab-pill" data-wt="collecting"        onclick="switchWoTab(this,'collecting')">采集中 <span class="tab-count" id="wc-collecting">—</span></button>
+              <button class="tab-pill" data-wt="done"              onclick="switchWoTab(this,'done')">已完成 <span class="tab-count" id="wc-done">—</span></button>
+              <button class="tab-pill" data-wt="error"             onclick="switchWoTab(this,'error')">异常 <span class="tab-count" id="wc-error">—</span></button>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox"></th>
+                  <th>包ID</th><th>包编号</th><th>采集员</th><th>状态</th>
+                  <th>目标采集数</th><th>已采集</th><th>进度</th>
+                  <th>创建时间</th><th>完成时间</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="wo-tbody" class="fade-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 追加工单弹窗 -->
+    <div id="add-pack-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9100;display:none;align-items:center;justify-content:center">
+      <div style="background:#fff;border-radius:14px;padding:28px 32px;width:440px;box-shadow:0 8px 40px rgba(0,0,0,.18)">
+        <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:20px">追加工单</div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="form-item" style="flex-direction:column;gap:6px">
+            <div class="form-label"><span class="req">*</span> 追加包数</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input class="form-ctrl" type="number" id="ap-count" min="1" placeholder="请输入追加的包数" style="flex:1">
+              <span style="font-size:12px;color:#aaa">包</span>
+            </div>
+          </div>
+          <div class="form-item" style="flex-direction:column;gap:6px">
+            <div class="form-label"><span class="req">*</span> 每包采集数量</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input class="form-ctrl" type="number" id="ap-size" min="1" placeholder="请输入每包数量" style="flex:1">
+              <span style="font-size:12px;color:#aaa">条/包</span>
+            </div>
+          </div>
+          <div class="form-item" style="flex-direction:column;gap:6px">
+            <div class="form-label">指定采集员（选填，可创建后再分配）</div>
+            <select class="form-ctrl" id="ap-assignee">
+              <option value="">暂不分配</option>
+              <option>张三</option><option>李四</option><option>王五</option><option>赵六</option><option>陈七</option>
+            </select>
+          </div>
+          <div style="background:#f0f5ff;border-radius:8px;padding:10px 14px;font-size:12px;color:#1a4db3;line-height:1.6">
+            💡 追加的工单状态为「待分配」，不影响当前正在执行的工单。任务需手动关闭，不会因工单全完成自动关闭。
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px">
+          <button class="btn btn-default" onclick="hideAddPackModal()">取消</button>
+          <button class="btn btn-primary" onclick="confirmAddPack()">确认追加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分配采集员弹窗 -->
+    <div id="assign-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9100;align-items:center;justify-content:center">
+      <div style="background:#fff;border-radius:14px;padding:28px 32px;width:360px;box-shadow:0 8px 40px rgba(0,0,0,.18)">
+        <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:20px">分配采集员</div>
+        <input type="hidden" id="assign-wo-id">
+        <div class="form-item" style="flex-direction:column;gap:6px;margin-bottom:20px">
+          <div class="form-label"><span class="req">*</span> 选择采集员</div>
+          <select class="form-ctrl" id="assign-person">
+            <option value="">请选择采集员</option>
+            <option>张三</option><option>李四</option><option>王五</option><option>赵六</option><option>陈七</option>
+          </select>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px">
+          <button class="btn btn-default" onclick="hideAssignModal()">取消</button>
+          <button class="btn btn-primary" onclick="confirmAssign()">确认分配</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== DATA QUALITY ========== -->
+    <div class="view right" id="page-quality">
+      <!-- 统计卡片 -->
+      <div class="quality-stats">
+        <div class="qs-card"><div class="qs-val" style="color:#1a73e8" id="qs-pending">0</div><div class="qs-lbl">待质检（包）</div><div style="font-size:11px;color:#10b981;margin-top:4px">较上月 ↑ 12.3%</div></div>
+        <div class="qs-card"><div class="qs-val" style="color:#10b981" id="qs-done">0</div><div class="qs-lbl">已通过（包）</div><div style="font-size:11px;color:#10b981;margin-top:4px">较上月 ↑ 8.7%</div></div>
+        <div class="qs-card"><div class="qs-val" style="color:#ef4444" id="qs-error">0</div><div class="qs-lbl">已拒绝（包）</div><div style="font-size:11px;color:#ef4444;margin-top:4px">今日新增 +2</div></div>
+        <div class="qs-card"><div class="qs-val" style="color:#f59e0b" id="qs-recheck">0</div><div class="qs-lbl">待复检（包）</div><div style="font-size:11px;color:#aaa;margin-top:4px">&nbsp;</div></div>
+        <div class="qs-card"><div class="qs-val" style="color:#6b7280" id="qs-rate">—</div><div class="qs-lbl">通过率</div><div style="font-size:11px;color:#aaa;margin-top:4px">&nbsp;</div></div>
+      </div>
+      <!-- 筛选栏 -->
+      <div class="filter-card">
+        <div class="filter-row">
+          <div class="filter-item"><span class="filter-lbl">任务名称</span><input class="filter-ctrl" placeholder="请输入任务名称"></div>
+          <div class="filter-item"><span class="filter-lbl">采集员</span><input class="filter-ctrl" placeholder="请输入采集员"></div>
+          <div class="filter-item"><span class="filter-lbl">质检状态</span><select class="filter-ctrl"><option>全部</option><option>待质检</option><option>已通过</option><option>已拒绝</option><option>待复检</option></select></div>
+          <div class="filter-actions">
+            <button class="btn btn-primary btn-sm">🔍 查询</button>
+            <button class="btn btn-default btn-sm">↺ 重置</button>
+          </div>
+        </div>
+      </div>
+      <!-- 包列表 -->
+      <div class="card" style="padding:0">
+        <div class="tabs-bar">
+          <div class="tabs-pill">
+            <button class="tab-pill active" data-t="all" onclick="switchQualityTab(this,'all')">📋 全部 <span class="tab-count">—</span></button>
+            <button class="tab-pill" data-t="pending" onclick="switchQualityTab(this,'pending')">🕐 待质检 <span class="tab-count">—</span></button>
+            <button class="tab-pill" data-t="done" onclick="switchQualityTab(this,'done')">✅ 已通过 <span class="tab-count">—</span></button>
+            <button class="tab-pill" data-t="error" onclick="switchQualityTab(this,'error')">❌ 已拒绝 <span class="tab-count">—</span></button>
+            <button class="tab-pill" data-t="recheck" onclick="switchQualityTab(this,'recheck')">🔄 待复检 <span class="tab-count">—</span></button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-left"><span class="tbl-title">包列表</span><span style="font-size:12px;color:#aaa;margin-left:8px">每行为一个包，点「查看」进入逐条工单审核</span></div>
+          <div class="toolbar-right">
+            <button class="btn btn-primary btn-sm" onclick="qualityBatchPass()">批量通过</button>
+            <button class="btn btn-danger btn-sm" onclick="qualityBatchReject()">批量拒绝</button>
+            <div class="icon-btn" onclick="refreshQualityTable()">↻</div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:36px"><input type="checkbox"></th>
+                <th>包ID</th><th>包编号</th><th>任务名称</th><th>采集员</th>
+                <th>设备</th><th>工单数</th><th>提交时间</th>
+                <th>质检状态</th><th>质检人</th><th>质检时间</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="quality-tbody" class="fade-rows"></tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <span class="pager-info" id="quality-pager-info">共 <b>0</b> 条</span>
+          <div class="pager-right">
+            <select class="pager-size"><option>20 条/页</option></select>
+            <button class="pager-btn" disabled>‹</button>
+            <button class="pager-btn cur">1</button>
+            <button class="pager-btn" disabled>›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== QUALITY DETAIL (包详情 + Episode列表) ========== -->
+    <div class="view right" id="page-quality-detail">
+      <div class="form-view" style="max-width:1100px">
+        <div class="fv-header">
+          <button class="fv-back" onclick="hideQualityDetail()">← 返回质检列表</button>
+          <span class="fv-divider">|</span>
+          <span class="fv-title" id="qd-title">包详情</span>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" id="qd-pass-all" onclick="qdPassAll()">✅ 整包通过</button>
+            <button class="btn btn-danger btn-sm" id="qd-reject-all" onclick="qdRejectAll()">❌ 整包拒绝</button>
+          </div>
+        </div>
+
+        <!-- 包基本信息 -->
+        <div class="form-sec" style="margin-bottom:14px">
+          <div class="form-sec-title"><span class="sec-ic">📦</span>包信息</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px" id="qd-info-grid"></div>
+        </div>
+
+        <!-- 工单统计 -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px" id="qd-stats-row"></div>
+
+        <!-- 工单列表 -->
+        <div class="card" style="padding:0">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <span class="tbl-title">工单列表</span>
+              <span style="font-size:12px;color:#aaa;margin-left:8px">逐条审核每条工单</span>
+            </div>
+            <div class="toolbar-right">
+              <button class="btn btn-primary btn-sm" onclick="qdBatchPassWo()">批量通过</button>
+              <button class="btn btn-danger btn-sm" onclick="qdBatchRejectWo()">批量拒绝</button>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" id="qd-check-all" onchange="qdToggleAll(this)"></th>
+                  <th>工单ID</th><th>时长</th><th>文件大小</th><th>状态</th><th>备注</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="qd-wo-tbody" class="fade-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== ANNOTATION REVIEW ========== -->
+    <div class="view right" id="page-review">
+      <div class="quality-stats" style="grid-template-columns:repeat(4,1fr)">
+        <div class="qs-card"><div class="qs-val" style="color:#1a73e8">1,254</div><div class="qs-lbl">总标注数</div><div style="font-size:11px;color:#10b981;margin-top:4px">较上月 ↑ 9.2%</div></div>
+        <div class="qs-card"><div class="qs-val" style="color:#10b981">60,402</div><div class="qs-lbl">已完成帧</div><div style="font-size:11px;color:#10b981;margin-top:4px">较上月 ↑ 14.1%</div></div>
+        <div class="qs-card"><div class="qs-val" style="color:#f59e0b">47</div><div class="qs-lbl">待审核</div><div style="font-size:11px;color:#aaa;margin-top:4px">今日新增 +3</div></div>
+        <div class="qs-card"><div class="qs-val" style="color:#ef4444">6</div><div class="qs-lbl">已驳回</div><div style="font-size:11px;color:#ef4444;margin-top:4px">较昨日 ↑ 1</div></div>
+      </div>
+      <div class="filter-card">
+        <div class="filter-row">
+          <div class="filter-item"><span class="filter-lbl">任务名称</span><input class="filter-ctrl" placeholder="请输入任务名称"></div>
+          <div class="filter-item"><span class="filter-lbl">标注状态</span><select class="filter-ctrl"><option>全部</option><option>待标注</option><option>标注中</option><option>已完成</option></select></div>
+          <div class="filter-item"><span class="filter-lbl">标注人</span><input class="filter-ctrl" placeholder="请输入标注人"></div>
+          <div class="filter-actions">
+            <button class="btn btn-primary btn-sm">🔍 查询</button>
+            <button class="btn btn-default btn-sm">↺ 重置</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0">
+        <div class="tabs-bar">
+          <div class="tabs-pill">
+            <button class="tab-pill active" data-t="all">📋 全部 <span class="tab-count">156</span></button>
+            <button class="tab-pill" data-t="pending">🕐 待标注 <span class="tab-count">42</span></button>
+            <button class="tab-pill" data-t="labeling">✏️ 标注中 <span class="tab-count">38</span></button>
+            <button class="tab-pill" data-t="done">✅ 已完成 <span class="tab-count">76</span></button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <div class="toolbar-left"><span class="tbl-title">标注审核列表</span></div>
+          <div class="toolbar-right">
+            <button class="btn btn-primary btn-sm">分配标注</button>
+            <div class="icon-btn">↻</div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th><input type="checkbox"></th><th>数据ID</th><th>任务名称</th><th>标注类型</th><th>标注人</th><th>标注状态</th><th>审核状态</th><th>创建时间</th><th>操作</th></tr></thead>
+            <tbody id="review-tbody" class="fade-rows">
+            </tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <span class="pager-info">共 <b>156</b> 条数据</span>
+          <div class="pager-right">
+            <select class="pager-size"><option>20 条/页</option></select>
+            <button class="pager-btn" disabled>‹</button>
+            <button class="pager-btn cur">1</button>
+            <button class="pager-btn">2</button>
+            <button class="pager-btn">›</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========== DEVICE LIST ========== -->
+    <div class="view right" id="page-device-list">
+      <div class="filter-card">
+        <div class="filter-row">
+          <div class="filter-item"><span class="filter-lbl">设备名称</span><input class="filter-ctrl" placeholder="请输入设备名称"></div>
+          <div class="filter-item"><span class="filter-lbl">设备类型</span><select class="filter-ctrl"><option>全部</option><option>galbot_2.2_RGB</option></select></div>
+          <div class="filter-item"><span class="filter-lbl">设备状态</span><select class="filter-ctrl"><option>全部</option><option>在线</option><option>离线</option><option>采集中</option></select></div>
+          <div class="filter-actions">
+            <button class="btn btn-primary btn-sm">🔍 查询</button>
+            <button class="btn btn-default btn-sm">↺ 重置</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:14px;font-weight:600;color:#222">设备列表</span>
+        <button class="btn btn-primary btn-sm">＋ 添加设备</button>
+      </div>
+      <div class="device-grid">
+        <div class="device-card running">
+          <div class="dc-head"><div><div class="dc-name">galbot_2.2_001</div><div class="dc-id">DEV001</div></div><span class="dc-status running">采集中</span></div>
+          <div class="dc-info">
+            <div class="dc-info-item"><div class="dc-info-label">设备类型</div><div class="dc-info-value">galbot_2.2_RGB</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">所在位置</div><div class="dc-info-value">天奇数采中心</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">遥操类型</div><div class="dc-info-value">VR(VR)</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">当前任务</div><div class="dc-info-value" style="color:#1a73e8">餐具摆放</div></div>
+          </div>
+          <div class="dc-footer"><span class="dc-task" style="font-size:11px;color:#aaa">最后活跃: 2分钟前</span><div class="act-btns"><button class="act-btn">详情</button><span class="act-sep">|</span><button class="act-btn">编辑</button></div></div>
+        </div>
+        <div class="device-card online">
+          <div class="dc-head"><div><div class="dc-name">galbot_2.2_002</div><div class="dc-id">DEV002</div></div><span class="dc-status online">在线</span></div>
+          <div class="dc-info">
+            <div class="dc-info-item"><div class="dc-info-label">设备类型</div><div class="dc-info-value">galbot_2.2_RGB</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">所在位置</div><div class="dc-info-value">天奇数采中心</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">遥操类型</div><div class="dc-info-value">Master-slave</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">当前任务</div><div class="dc-info-value" style="color:#aaa">—</div></div>
+          </div>
+          <div class="dc-footer"><span class="dc-task" style="font-size:11px;color:#aaa">最后活跃: 5分钟前</span><div class="act-btns"><button class="act-btn">详情</button><span class="act-sep">|</span><button class="act-btn">编辑</button></div></div>
+        </div>
+        <div class="device-card offline">
+          <div class="dc-head"><div><div class="dc-name">galbot_2.2_003</div><div class="dc-id">DEV003</div></div><span class="dc-status offline">离线</span></div>
+          <div class="dc-info">
+            <div class="dc-info-item"><div class="dc-info-label">设备类型</div><div class="dc-info-value">galbot_2.2_RGB</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">所在位置</div><div class="dc-info-value">仓储中心</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">遥操类型</div><div class="dc-info-value">VR(VR)</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">当前任务</div><div class="dc-info-value" style="color:#aaa">—</div></div>
+          </div>
+          <div class="dc-footer"><span class="dc-task" style="font-size:11px;color:#aaa">最后活跃: 3小时前</span><div class="act-btns"><button class="act-btn">详情</button><span class="act-sep">|</span><button class="act-btn">编辑</button></div></div>
+        </div>
+        <div class="device-card running">
+          <div class="dc-head"><div><div class="dc-name">galbot_2.2_004</div><div class="dc-id">DEV004</div></div><span class="dc-status running">采集中</span></div>
+          <div class="dc-info">
+            <div class="dc-info-item"><div class="dc-info-label">设备类型</div><div class="dc-info-value">galbot_2.2_RGB</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">所在位置</div><div class="dc-info-value">天奇数采中心</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">遥操类型</div><div class="dc-info-value">Master-slave</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">当前任务</div><div class="dc-info-value" style="color:#1a73e8">商业采集</div></div>
+          </div>
+          <div class="dc-footer"><span class="dc-task" style="font-size:11px;color:#aaa">最后活跃: 1分钟前</span><div class="act-btns"><button class="act-btn">详情</button><span class="act-sep">|</span><button class="act-btn">编辑</button></div></div>
+        </div>
+        <div class="device-card online">
+          <div class="dc-head"><div><div class="dc-name">galbot_2.2_005</div><div class="dc-id">DEV005</div></div><span class="dc-status online">在线</span></div>
+          <div class="dc-info">
+            <div class="dc-info-item"><div class="dc-info-label">设备类型</div><div class="dc-info-value">galbot_2.2_RGB</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">所在位置</div><div class="dc-info-value">研发中心</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">遥操类型</div><div class="dc-info-value">VR(VR)</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">当前任务</div><div class="dc-info-value" style="color:#aaa">—</div></div>
+          </div>
+          <div class="dc-footer"><span class="dc-task" style="font-size:11px;color:#aaa">最后活跃: 20分钟前</span><div class="act-btns"><button class="act-btn">详情</button><span class="act-sep">|</span><button class="act-btn">编辑</button></div></div>
+        </div>
+        <div class="device-card offline">
+          <div class="dc-head"><div><div class="dc-name">galbot_2.2_006</div><div class="dc-id">DEV006</div></div><span class="dc-status offline">离线</span></div>
+          <div class="dc-info">
+            <div class="dc-info-item"><div class="dc-info-label">设备类型</div><div class="dc-info-value">galbot_2.2_R</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">所在位置</div><div class="dc-info-value">仓储中心</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">遥操类型</div><div class="dc-info-value">Master-slave</div></div>
+            <div class="dc-info-item"><div class="dc-info-label">当前任务</div><div class="dc-info-value" style="color:#aaa">—</div></div>
+          </div>
+          <div class="dc-footer"><span class="dc-task" style="font-size:11px;color:#aaa">最后活跃: 1天前</span><div class="act-btns"><button class="act-btn">详情</button><span class="act-sep">|</span><button class="act-btn">编辑</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 物体库 (label-scene) ========== -->
+    <div class="view right" id="page-label-scene">
+      <!-- filter bar -->
+      <div class="filter-card" style="margin-bottom:12px">
+        <div class="filter-row" style="flex-wrap:wrap;gap:8px">
+          <div class="filter-item"><span class="filter-lbl">场景</span><select class="filter-ctrl" style="min-width:130px"><option>请选择场景</option><option>Supermarket(超市)</option><option>Household(家庭)</option><option>Industry(工业)</option><option>Kitchen(厨房)</option></select></div>
+          <div class="filter-item"><span class="filter-lbl" style="display:none"></span><input class="filter-ctrl" placeholder="请输入名称" style="min-width:140px"></div>
+          <div class="filter-item">
+            <div style="display:flex;align-items:center;gap:6px;border:1px solid #d9d9d9;border-radius:6px;padding:0 10px;height:32px;background:#fff;font-size:12.5px;color:#aaa;min-width:220px">
+              <span style="font-size:12px">🕐</span>
+              <span>开始时间</span>
+              <span style="margin:0 4px;color:#ddd">至</span>
+              <span>结束时间</span>
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-primary btn-sm">🔍 搜索</button>
+            <button class="btn btn-default btn-sm">↺ 重置</button>
+            <button class="btn btn-primary btn-sm" onclick="toast('添加物体')">＋ 添加</button>
+          </div>
+        </div>
+      </div>
+      <!-- body: left tree + right table -->
+      <div style="display:grid;grid-template-columns:210px 1fr;gap:12px;align-items:start">
+        <!-- left: category tree -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:11px 14px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:13px;font-weight:600;color:#222">物体类型</span>
+            <span style="color:#1a73e8;font-size:12.5px;cursor:pointer" onclick="toast('去添加物体类型')">去添加</span>
+          </div>
+          <div style="padding:6px 0" id="obj-tree">
+            <div class="otree-item active" onclick="selectObjCat(this,'饮品类')">饮品类</div>
+            <div class="otree-item" onclick="selectObjCat(this,'酒类')">
+              <span class="otree-arrow">›</span>酒类
+              <div class="otree-sub">
+                <div class="otree-leaf" onclick="event.stopPropagation();selectObjCat(this,'红酒')">红酒</div>
+                <div class="otree-leaf" onclick="event.stopPropagation();selectObjCat(this,'白酒')">白酒</div>
+              </div>
+            </div>
+            <div class="otree-item" onclick="selectObjCat(this,'零食类')">零食类</div>
+            <div class="otree-item" onclick="selectObjCat(this,'方便食品类')">方便食品类</div>
+            <div class="otree-item" onclick="selectObjCat(this,'罐头食品类')">罐头食品类</div>
+            <div class="otree-item" onclick="selectObjCat(this,'日常用品显类')">
+              <span class="otree-arrow">›</span>日常用品显类
+              <div class="otree-sub">
+                <div class="otree-leaf">卫生用品</div>
+                <div class="otree-leaf">药品类</div>
+                <div class="otree-leaf">工具类</div>
+                <div class="otree-leaf">家具类</div>
+                <div class="otree-leaf">仓储类</div>
+                <div class="otree-leaf">机器本体</div>
+                <div class="otree-leaf">区域</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- right: table -->
+        <div class="card" style="padding:0">
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox"></th>
+                  <th>场景</th><th>名称</th><th>英文名称</th><th>材质特性</th><th>物体图片</th>
+                  <th>创建人</th><th>更新人</th><th>创建时间</th><th>更新时间</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="obj-tbody">
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Industry(...</td><td class="tbl-link">网线</td><td>Network cable</td><td>—</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-03-06 16:51:50</td><td style="color:#aaa;font-size:11.5px">2026-03-06 16:51:50</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Industry(...</td><td class="tbl-link">电源线</td><td>power cord</td><td>—</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-03-06 16:51:27</td><td style="color:#aaa;font-size:11.5px">2026-03-06 16:51:27</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Industry(...</td><td class="tbl-link">四宫格料架</td><td>four-compar...</td><td>塑料</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-03-06 16:50:52</td><td style="color:#aaa;font-size:11.5px">2026-03-06 16:50:52</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Industry(...</td><td class="tbl-link">HDMI线</td><td>HDMI cable</td><td>—</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-03-06 16:49:08</td><td style="color:#aaa;font-size:11.5px">2026-03-06 16:49:08</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Industry(...</td><td class="tbl-link">USB线</td><td>USB cable</td><td>—</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-03-06 16:48:35</td><td style="color:#aaa;font-size:11.5px">2026-03-06 16:48:35</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Region(...</td><td class="tbl-link">盘子左侧</td><td>left side of t...</td><td>—</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:57:37</td><td style="color:#aaa;font-size:11.5px">2026-02-27 09:18:35</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Kitchen(...</td><td class="tbl-link">盘子右侧</td><td>right side of ...</td><td>—</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:54:43</td><td style="color:#aaa;font-size:11.5px">2026-02-27 09:19:03</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Kitchen(...</td><td class="tbl-link">托盘正中</td><td>center of the...</td><td>—</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:54:09</td><td style="color:#aaa;font-size:11.5px">2026-02-27 09:19:19</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Household(...</td><td class="tbl-link">台面上方</td><td>on the table</td><td>—</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:53:11</td><td style="color:#aaa;font-size:11.5px">2026-02-27 09:19:35</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Kitchen(...</td><td class="tbl-link">餐刀</td><td>knife</td><td>金属</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:43:52</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:43:52</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Kitchen(...</td><td class="tbl-link">叉子</td><td>fork</td><td>金属</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:43:14</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:43:14</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Kitchen(...</td><td class="tbl-link">盘子</td><td>plate</td><td>陶瓷</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:42:12</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:42:12</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Kitchen(...</td><td class="tbl-link">桌子</td><td>table</td><td>木质</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:40:55</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:40:55</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">Kitchen(...</td><td class="tbl-link">托盘</td><td>tray</td><td>塑料</td><td style="color:#bbb;font-size:12px">无图片</td><td>天奇管理员</td><td>天奇管理员</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:39:16</td><td style="color:#aaa;font-size:11.5px">2026-02-26 13:39:16</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+                <tr><td><input type="checkbox"></td><td style="color:#888;font-size:12px">pharmac...</td><td class="tbl-link">药房工作台</td><td>drugstore</td><td>木质</td><td style="color:#bbb;font-size:12px">无图片</td><td>研究管理员</td><td>研究管理员</td><td style="color:#aaa;font-size:11.5px">2025-11-17 17:25:04</td><td style="color:#aaa;font-size:11.5px">2025-11-18 19:02:56</td><td><div class="act-btns"><button class="act-btn">✏️ 编辑</button><span class="act-sep">|</span><button class="act-btn del">🗑 删除</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <span class="pager-info">共 <b>79</b> 条</span>
+            <div class="pager-right">
+              <select class="pager-size"><option>20条/页</option><option>50条/页</option></select>
+              <button class="pager-btn" disabled>‹</button>
+              <button class="pager-btn cur">1</button>
+              <button class="pager-btn">2</button>
+              <button class="pager-btn">3</button>
+              <button class="pager-btn">4</button>
+              <button class="pager-btn">›</button>
+              <span style="font-size:12px;color:#aaa;margin-left:8px">前往</span>
+              <input type="number" style="width:42px;border:1px solid #d9d9d9;border-radius:4px;padding:2px 6px;font-size:12px;text-align:center" value="1">
+              <span style="font-size:12px;color:#aaa">页</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 场景标签 (label-task→sidebar routes here) ========== -->
+    <div class="view right" id="page-label-task">
+      <div class="lm-layout">
+        <div class="lm-sidebar">
+          <div class="lm-sidebar-hd">
+            <span class="lm-sidebar-title">场景维度</span>
+            <span class="lm-sidebar-hint">对应新建任务「场景分类」字段</span>
+          </div>
+          <div id="scene-dim-list">
+            <div class="lm-dim-item active" onclick="selectDim(this,'scene','场景分类','新建任务时选择机器人的采集场景类型，决定数据集的应用领域','#1a73e8')">
+              <div class="lm-dim-dot" style="background:#1a73e8"></div>
+              <div class="lm-dim-info"><span class="lm-dim-name">场景分类</span><span class="lm-dim-desc">→ 新建任务·场景分类</span></div>
+              <span class="lm-dim-cnt" id="cnt-scene-场景分类">11</span>
+            </div>
+            <div class="lm-dim-item" onclick="selectDim(this,'scene','子场景分类','对主场景的细化分类，如超市下的生鲜区、日用品区等','#7c3aed')">
+              <div class="lm-dim-dot" style="background:#7c3aed"></div>
+              <div class="lm-dim-info"><span class="lm-dim-name">子场景分类</span><span class="lm-dim-desc">→ 新建任务·子场景分类</span></div>
+              <span class="lm-dim-cnt" id="cnt-scene-子场景分类">6</span>
+            </div>
+            <div class="lm-dim-item" onclick="selectDim(this,'scene','场景初始状态','描述任务开始时的场景物理状态模板','#0891b2')">
+              <div class="lm-dim-dot" style="background:#0891b2"></div>
+              <div class="lm-dim-info"><span class="lm-dim-name">场景初始状态</span><span class="lm-dim-desc">→ 新建任务·初始状态</span></div>
+              <span class="lm-dim-cnt" id="cnt-scene-场景初始状态">4</span>
+            </div>
+          </div>
+        </div>
+        <div class="lm-main">
+          <div class="lm-main-hd">
+            <div>
+              <div class="lm-main-title" id="scene-dim-title">场景分类</div>
+              <div class="lm-main-desc" id="scene-dim-desc">新建任务时选择机器人的采集场景类型，决定数据集的应用领域</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="lm-quota" id="scene-quota">11 / 500</span>
+              <button class="btn btn-primary btn-sm" onclick="openAddTagModal('scene')">＋ 添加标签</button>
+            </div>
+          </div>
+          <div class="lm-usage-tip">
+            <span class="lm-tip-icon">💡</span>
+            <span id="scene-usage-tip">这里的标签值将同步到 <b>新建任务 → 基础信息 → 场景分类</b> 下拉列表，新增后可立即在任务表单中使用</span>
+          </div>
+          <div class="lm-tags-wrap" id="scene-tags-wrap"></div>
+        </div>
+      </div>
+      <div class="lm-add-bar" id="scene-add-bar" style="display:none">
+        <span class="lm-add-label">新增标签：</span>
+        <input class="lm-add-input" id="scene-add-cn" placeholder="中文名称（必填）">
+        <input class="lm-add-input" id="scene-add-en" placeholder="英文名称（选填）">
+        <button class="btn btn-primary btn-sm" onclick="confirmAddTag('scene')">确认添加</button>
+        <button class="btn btn-default btn-sm" onclick="closeAddTagModal('scene')">取消</button>
+      </div>
+    </div>
+
+    <!-- ========== 任务标签 (label-skill→sidebar routes here) ========== -->
+    <div class="view right" id="page-label-skill">
+      <div class="lm-layout">
+        <div class="lm-sidebar">
+          <div class="lm-sidebar-hd">
+            <span class="lm-sidebar-title">任务维度</span>
+            <span class="lm-sidebar-hint">对应新建任务各字段枚举值</span>
+          </div>
+          <div id="task-dim-list">
+            <div class="lm-dim-item active" onclick="selectDim(this,'task','一级项目','任务所属的顶层项目分组，决定数据归属的业务线','#1a73e8')">
+              <div class="lm-dim-dot" style="background:#1a73e8"></div>
+              <div class="lm-dim-info"><span class="lm-dim-name">一级项目</span><span class="lm-dim-desc">→ 新建任务·一级项目</span></div>
+              <span class="lm-dim-cnt" id="cnt-task-一级项目">5</span>
+            </div>
+            <div class="lm-dim-item" onclick="selectDim(this,'task','任务用途','采集数据的使用目的，影响数据处理和分发流程','#10b981')">
+              <div class="lm-dim-dot" style="background:#10b981"></div>
+              <div class="lm-dim-info"><span class="lm-dim-name">任务用途</span><span class="lm-dim-desc">→ 新建任务·任务用途</span></div>
+              <span class="lm-dim-cnt" id="cnt-task-任务用途">3</span>
+            </div>
+            <div class="lm-dim-item" onclick="selectDim(this,'task','采集模式','机器人的采集姿态和运动范围配置','#f59e0b')">
+              <div class="lm-dim-dot" style="background:#f59e0b"></div>
+              <div class="lm-dim-info"><span class="lm-dim-name">采集模式</span><span class="lm-dim-desc">→ 新建任务·采集模式</span></div>
+              <span class="lm-dim-cnt" id="cnt-task-采集模式">3</span>
+            </div>
+            <div class="lm-dim-item" onclick="selectDim(this,'task','遥操类型','操作员远程控制机器人的方式','#ef4444')">
+              <div class="lm-dim-dot" style="background:#ef4444"></div>
+              <div class="lm-dim-info"><span class="lm-dim-name">遥操类型</span><span class="lm-dim-desc">→ 新建任务·遥操类型</span></div>
+              <span class="lm-dim-cnt" id="cnt-task-遥操类型">2</span>
+            </div>
+            <div class="lm-dim-item" onclick="selectDim(this,'task','执行末端类型','机器人手部执行器类型，影响动作步骤配置','#7c3aed')">
+              <div class="lm-dim-dot" style="background:#7c3aed"></div>
+              <div class="lm-dim-info"><span class="lm-dim-name">执行末端类型</span><span class="lm-dim-desc">→ 新建任务步骤·执行末端</span></div>
+              <span class="lm-dim-cnt" id="cnt-task-执行末端类型">2</span>
+            </div>
+            <div class="lm-dim-item" onclick="selectDim(this,'task','相机类型','机器人搭载的视觉传感器规格','#0891b2')">
+              <div class="lm-dim-dot" style="background:#0891b2"></div>
+              <div class="lm-dim-info"><span class="lm-dim-name">相机类型</span><span class="lm-dim-desc">→ 设备部件·相机规格</span></div>
+              <span class="lm-dim-cnt" id="cnt-task-相机类型">3</span>
+            </div>
+          </div>
+        </div>
+        <div class="lm-main">
+          <div class="lm-main-hd">
+            <div>
+              <div class="lm-main-title" id="task-dim-title">一级项目</div>
+              <div class="lm-main-desc" id="task-dim-desc">任务所属的顶层项目分组，决定数据归属的业务线</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="lm-quota" id="task-quota">5 / 500</span>
+              <button class="btn btn-primary btn-sm" onclick="openAddTagModal('task')">＋ 添加标签</button>
+            </div>
+          </div>
+          <div class="lm-usage-tip">
+            <span class="lm-tip-icon">💡</span>
+            <span id="task-usage-tip">这里的标签值将同步到 <b>新建任务 → 基础信息 → 一级项目</b> 下拉列表，新增后可立即在任务表单中使用</span>
+          </div>
+          <div class="lm-tags-wrap" id="task-tags-wrap"></div>
+        </div>
+      </div>
+      <div class="lm-add-bar" id="task-add-bar" style="display:none">
+        <span class="lm-add-label">新增标签：</span>
+        <input class="lm-add-input" id="task-add-cn" placeholder="中文名称（必填）">
+        <input class="lm-add-input" id="task-add-en" placeholder="英文名称（选填）">
+        <button class="btn btn-primary btn-sm" onclick="confirmAddTag('task')">确认添加</button>
+        <button class="btn btn-default btn-sm" onclick="closeAddTagModal('task')">取消</button>
+      </div>
+    </div>
+
+    <!-- placeholder stub removed -->
+
+    <!-- ========== TASK TEMPLATE ========== -->
+    <div class="view right" id="page-template">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:14px;font-weight:600;color:#222">任务模版列表</span>
+        <button class="btn btn-primary btn-sm">＋ 新建模版</button>
+      </div>
+      <div class="filter-card">
+        <div class="filter-row">
+          <div class="filter-item"><span class="filter-lbl">模版名称</span><input class="filter-ctrl" placeholder="请输入模版名称"></div>
+          <div class="filter-item"><span class="filter-lbl">场景分类</span><select class="filter-ctrl"><option>全部</option><option>Supermarket</option><option>Household</option></select></div>
+          <div class="filter-actions">
+            <button class="btn btn-primary btn-sm">🔍 查询</button>
+            <button class="btn btn-default btn-sm">↺ 重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th><input type="checkbox"></th><th>模版名称</th><th>场景分类</th><th>采集模式</th><th>步骤数量</th><th>使用次数</th><th>创建人</th><th>创建时间</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td><input type="checkbox"></td><td class="tbl-link">超市货架整理</td><td>Supermarket</td><td>WholeBody</td><td>6</td><td>28</td><td>天奇管理员</td><td style="color:#aaa;font-size:12px">2026-01</td><td><div class="act-btns"><button class="act-btn">查看</button><span class="act-sep">|</span><button class="act-btn">编辑</button><span class="act-sep">|</span><button class="act-btn del">删除</button></div></td></tr>
+              <tr><td><input type="checkbox"></td><td class="tbl-link">家庭物品摆放</td><td>Household</td><td>WholeBody</td><td>4</td><td>15</td><td>天奇管理员</td><td style="color:#aaa;font-size:12px">2026-01</td><td><div class="act-btns"><button class="act-btn">查看</button><span class="act-sep">|</span><button class="act-btn">编辑</button><span class="act-sep">|</span><button class="act-btn del">删除</button></div></td></tr>
+              <tr><td><input type="checkbox"></td><td class="tbl-link">工业零件抓取</td><td>Industry</td><td>UpperBody</td><td>8</td><td>42</td><td>天奇管理员</td><td style="color:#aaa;font-size:12px">2026-01</td><td><div class="act-btns"><button class="act-btn">查看</button><span class="act-sep">|</span><button class="act-btn">编辑</button><span class="act-sep">|</span><button class="act-btn del">删除</button></div></td></tr>
+              <tr><td><input type="checkbox"></td><td class="tbl-link">餐厅餐具摆放</td><td>Restaurant</td><td>WholeBody</td><td>5</td><td>19</td><td>天奇管理员</td><td style="color:#aaa;font-size:12px">2026-01</td><td><div class="act-btns"><button class="act-btn">查看</button><span class="act-sep">|</span><button class="act-btn">编辑</button><span class="act-sep">|</span><button class="act-btn del">删除</button></div></td></tr>
+              <tr><td><input type="checkbox"></td><td class="tbl-link">便利店补货</td><td>Supermarket</td><td>WholeBody</td><td>7</td><td>31</td><td>天奇管理员</td><td style="color:#aaa;font-size:12px">2026-01</td><td><div class="act-btns"><button class="act-btn">查看</button><span class="act-sep">|</span><button class="act-btn">编辑</button><span class="act-sep">|</span><button class="act-btn del">删除</button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pager"><span class="pager-info">共 <b>5</b> 条数据</span><div class="pager-right"><select class="pager-size"><option>20 条/页</option></select><button class="pager-btn" disabled>‹</button><button class="pager-btn cur">1</button><button class="pager-btn" disabled>›</button></div></div>
+      </div>
+    </div>
+
+    <!-- ========== TASK BOOK ========== -->
+    <div class="view right" id="page-taskbook">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:14px;font-weight:600;color:#222">任务书列表</span>
+        <button class="btn btn-primary btn-sm">＋ 新建任务书</button>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th><input type="checkbox"></th><th>任务书名称</th><th>一级项目</th><th>二级项目</th><th>任务数</th><th>采集总量</th><th>完成率</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td><input type="checkbox"></td><td class="tbl-link">tianqi001 采集任务书</td><td>InternalCommercial</td><td>GroceryVLA</td><td>7</td><td>2500</td>
+              <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill blue" style="width:85%"></div></div><span class="prog-txt">85%</span></div></td>
+              <td><span class="badge-tag tag-running">进行中</span></td><td style="color:#aaa;font-size:12px">2026-01</td>
+              <td><div class="act-btns"><button class="act-btn">查看</button><span class="act-sep">|</span><button class="act-btn">编辑</button><span class="act-sep">|</span><button class="act-btn del">删除</button></div></td></tr>
+              <tr><td><input type="checkbox"></td><td class="tbl-link">tianqi002 仿真任务书</td><td>SimulatedCollection</td><td>RobotArm</td><td>12</td><td>800</td>
+              <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill blue" style="width:62%"></div></div><span class="prog-txt">62%</span></div></td>
+              <td><span class="badge-tag tag-running">进行中</span></td><td style="color:#aaa;font-size:12px">2026-01</td>
+              <td><div class="act-btns"><button class="act-btn">查看</button><span class="act-sep">|</span><button class="act-btn">编辑</button><span class="act-sep">|</span><button class="act-btn del">删除</button></div></td></tr>
+              <tr><td><input type="checkbox"></td><td class="tbl-link">tianqi003 测试任务书</td><td>InternalCommercial</td><td>TestProject</td><td>3</td><td>100</td>
+              <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill blue" style="width:100%"></div></div><span class="prog-txt">100%</span></div></td>
+              <td><span class="badge-tag tag-done">已完成</span></td><td style="color:#aaa;font-size:12px">2026-01</td>
+              <td><div class="act-btns"><button class="act-btn">查看</button><span class="act-sep">|</span><button class="act-btn">编辑</button><span class="act-sep">|</span><button class="act-btn del">删除</button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STATS ========== -->
+    <div class="view right" id="page-stats">
+      <div class="stat-grid">
+        <div class="stat-card blue"><div class="stat-label">本月采集量</div><div class="stat-value blue">12,847</div><div class="stat-sub">较上月 <span class="up">↑ 18.2%</span></div><div class="stat-icon blue">📊</div></div>
+        <div class="stat-card green"><div class="stat-label">标注完成量</div><div class="stat-value green">9,234</div><div class="stat-sub">标注率 71.9%</div><div class="stat-icon green">✅</div></div>
+        <div class="stat-card orange"><div class="stat-label">质检通过量</div><div class="stat-value orange">8,891</div><div class="stat-sub">通过率 96.3%</div><div class="stat-icon orange">🔍</div></div>
+        <div class="stat-card red"><div class="stat-label">异常数据量</div><div class="stat-value red">343</div><div class="stat-sub">较上月 <span class="dn">↑ 3.7%</span></div><div class="stat-icon red">⚠️</div></div>
+      </div>
+      <div class="stats-grid">
+        <div class="chart-box">
+          <div class="chart-title">月度采集趋势 <span style="font-size:12px;color:#aaa;font-weight:400">过去12个月</span></div>
+          <div class="bar-chart" style="height:140px">
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:45%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Jan</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:62%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Feb</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:78%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Mar</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:55%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Apr</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:88%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">May</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:72%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Jun</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:65%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Jul</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:80%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Aug</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:58%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Sep</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:91%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Oct</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:76%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Nov</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:95%;background:linear-gradient(180deg,#4096ff,#1a73e8);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">Dec</div></div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">任务完成率趋势</div>
+          <div class="bar-chart" style="height:140px">
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:72%;background:linear-gradient(180deg,#34d399,#10b981);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">W1</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:58%;background:linear-gradient(180deg,#34d399,#10b981);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">W2</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:85%;background:linear-gradient(180deg,#34d399,#10b981);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">W3</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:65%;background:linear-gradient(180deg,#34d399,#10b981);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">W4</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:91%;background:linear-gradient(180deg,#34d399,#10b981);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">W5</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:77%;background:linear-gradient(180deg,#34d399,#10b981);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">W6</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:82%;background:linear-gradient(180deg,#34d399,#10b981);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">W7</div></div>
+            <div class="bar-col"><div class="bar-stack"><div class="bar-seg" style="height:94%;background:linear-gradient(180deg,#34d399,#10b981);width:70%;border-radius:4px 4px 0 0"></div></div><div class="bar-lbl">W8</div></div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">设备使用率</div>
+          <div style="padding:8px 0">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:12px;color:#666;width:90px">galbot_001</span><div style="flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden"><div style="height:100%;width:88%;background:linear-gradient(90deg,#1a73e8,#4096ff);border-radius:4px"></div></div><span style="font-size:12px;color:#888;width:32px;text-align:right">88%</span></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:12px;color:#666;width:90px">galbot_002</span><div style="flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden"><div style="height:100%;width:72%;background:linear-gradient(90deg,#1a73e8,#4096ff);border-radius:4px"></div></div><span style="font-size:12px;color:#888;width:32px;text-align:right">72%</span></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:12px;color:#666;width:90px">galbot_003</span><div style="flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden"><div style="height:100%;width:45%;background:linear-gradient(90deg,#1a73e8,#4096ff);border-radius:4px"></div></div><span style="font-size:12px;color:#888;width:32px;text-align:right">45%</span></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:12px;color:#666;width:90px">galbot_004</span><div style="flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden"><div style="height:100%;width:91%;background:linear-gradient(90deg,#1a73e8,#4096ff);border-radius:4px"></div></div><span style="font-size:12px;color:#888;width:32px;text-align:right">91%</span></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:12px;color:#666;width:90px">galbot_005</span><div style="flex:1;height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden"><div style="height:100%;width:60%;background:linear-gradient(90deg,#1a73e8,#4096ff);border-radius:4px"></div></div><span style="font-size:12px;color:#888;width:32px;text-align:right">60%</span></div>
+          </div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">数据质量分布</div>
+          <div class="donut-wrap">
+            <div class="donut" style="width:100px;height:100px;background:conic-gradient(#10b981 0deg 210deg,#1a73e8 210deg 280deg,#ef4444 280deg 310deg,#f59e0b 310deg 360deg)"></div>
+            <div class="donut-legs">
+              <div class="donut-leg"><div class="donut-leg-l"><div class="leg-dot" style="background:#10b981"></div>优质数据</div><div class="donut-leg-v">58.3%</div></div>
+              <div class="donut-leg"><div class="donut-leg-l"><div class="leg-dot" style="background:#1a73e8"></div>良好数据</div><div class="donut-leg-v">19.4%</div></div>
+              <div class="donut-leg"><div class="donut-leg-l"><div class="leg-dot" style="background:#ef4444"></div>异常数据</div><div class="donut-leg-v">8.3%</div></div>
+              <div class="donut-leg"><div class="donut-leg-l"><div class="leg-dot" style="background:#f59e0b"></div>待处理</div><div class="donut-leg-v">14%</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== DOWNLOAD CENTER ========== -->
+    <div class="view right" id="page-download">
+      <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:14px;font-weight:600;color:#222">下载中心</span>
+        <button class="btn btn-default btn-sm">查看下载记录</button>
+      </div>
+      <div class="download-grid">
+        <div class="dl-card"><div class="dl-icon" style="background:#eff6ff">📦</div><div class="dl-name">数据集导出</div><div class="dl-size">galbot_v1.2.zip · 2.4 GB</div><div style="margin-top:10px"><button class="btn btn-primary btn-sm" style="width:100%;justify-content:center">⬇ 下载</button></div></div>
+        <div class="dl-card"><div class="dl-icon" style="background:#ecfdf5">📊</div><div class="dl-name">统计报告</div><div class="dl-size">monthly_report.xlsx · 1.2 MB</div><div style="margin-top:10px"><button class="btn btn-primary btn-sm" style="width:100%;justify-content:center">⬇ 下载</button></div></div>
+        <div class="dl-card"><div class="dl-icon" style="background:#fffbeb">🤖</div><div class="dl-name">模型权重</div><div class="dl-size">model_weights.pt · 850 MB</div><div style="margin-top:10px"><button class="btn btn-primary btn-sm" style="width:100%;justify-content:center">⬇ 下载</button></div></div>
+        <div class="dl-card"><div class="dl-icon" style="background:#eff6ff">📋</div><div class="dl-name">任务清单</div><div class="dl-size">task_list.csv · 128 KB</div><div style="margin-top:10px"><button class="btn btn-primary btn-sm" style="width:100%;justify-content:center">⬇ 下载</button></div></div>
+      </div>
+      <div class="card" style="padding:0">
+        <div style="padding:12px 16px;border-bottom:1px solid #f0f0f0"><span style="font-size:13.5px;font-weight:600">近期下载记录</span></div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>文件名称</th><th>文件大小</th><th>下载状态</th><th>下载时间</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>galbot_dataset_v2.zip</td><td>3.6 GB</td><td><span class="badge-tag tag-done">已完成</span></td><td style="color:#aaa;font-size:12px">2026-03-10 14:22</td><td><button class="act-btn">重新下载</button></td></tr>
+              <tr><td>model_weights_v3.pt</td><td>1.2 GB</td><td><span class="badge-tag tag-running">下载中</span></td><td style="color:#aaa;font-size:12px">2026-03-11 09:15</td><td><button class="act-btn">重新下载</button></td></tr>
+              <tr><td>task_report_feb.pdf</td><td>2.3 MB</td><td><span class="badge-tag tag-done">已完成</span></td><td style="color:#aaa;font-size:12px">2026-03-08 16:40</td><td><button class="act-btn">重新下载</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PERMISSION ========== -->
+    <div class="view right" id="page-permission">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:14px;font-weight:600;color:#222">权限设置</span>
+        <button class="btn btn-primary btn-sm">＋ 新建角色</button>
+      </div>
+      <div class="perm-layout">
+        <div class="role-list">
+          <div style="padding:12px 16px;border-bottom:1px solid #f0f0f0;font-size:13px;font-weight:600;color:#666">角色列表</div>
+          <div class="role-item active"><span>超级管理员</span><span class="role-count-badge">1人</span></div>
+          <div class="role-item"><span>数据管理员</span><span class="role-count-badge">4人</span></div>
+          <div class="role-item"><span>采集员</span><span class="role-count-badge">12人</span></div>
+          <div class="role-item"><span>质检员</span><span class="role-count-badge">8人</span></div>
+          <div class="role-item"><span>标注员</span><span class="role-count-badge">15人</span></div>
+          <div class="role-item"><span>只读用户</span><span class="role-count-badge">6人</span></div>
+        </div>
+        <div class="perm-table">
+          <div class="perm-header">
+            <span style="font-size:13.5px;font-weight:600;color:#222">超级管理员 · 权限配置</span>
+            <button class="btn btn-primary btn-sm">保存</button>
+          </div>
+          <div class="perm-grid">
+            <div class="perm-row header">
+              <div class="perm-cell" style="justify-content:flex-start;padding-left:12px">功能模块</div>
+              <div class="perm-cell">查看</div>
+              <div class="perm-cell">新增</div>
+              <div class="perm-cell">编辑</div>
+              <div class="perm-cell">删除</div>
+            </div>
+            <div class="perm-row"><div class="perm-cell">任务中心</div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div></div>
+            <div class="perm-row"><div class="perm-cell">数据质检</div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check"></div></div>
+            <div class="perm-row"><div class="perm-cell">标注审核</div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check"></div></div>
+            <div class="perm-row"><div class="perm-cell">设备管理</div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div></div>
+            <div class="perm-row"><div class="perm-cell">标签管理</div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div></div>
+            <div class="perm-row"><div class="perm-cell">任务模版</div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div></div>
+            <div class="perm-row"><div class="perm-cell">统计看板</div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check"></div><div class="perm-cell"><input type="checkbox" class="perm-check"></div><div class="perm-cell"><input type="checkbox" class="perm-check"></div></div>
+            <div class="perm-row"><div class="perm-cell">权限设置</div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div></div>
+            <div class="perm-row"><div class="perm-cell">下载中心</div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check" checked></div><div class="perm-cell"><input type="checkbox" class="perm-check"></div><div class="perm-cell"><input type="checkbox" class="perm-check"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Placeholder pages -->
+    <div class="view right" id="page-device-type"><div class="card"><div class="card-title">设备类型管理</div><p style="color:#aaa;padding:40px;text-align:center">功能页面开发中...</p></div></div>
+    <div class="view right" id="page-dataset"><div class="card"><div class="card-title">数据集管理</div><p style="color:#aaa;padding:40px;text-align:center">功能页面开发中...</p></div></div>
+    <div class="view right" id="page-export"><div class="card"><div class="card-title">数据导出</div><p style="color:#aaa;padding:40px;text-align:center">功能页面开发中...</p></div></div>
+    <div class="view right" id="page-sim-scene"><div class="card"><div class="card-title">场景资产</div><p style="color:#aaa;padding:40px;text-align:center">功能页面开发中...</p></div></div>
+    <div class="view right" id="page-sim-obj"><div class="card"><div class="card-title">物体资产</div><p style="color:#aaa;padding:40px;text-align:center">功能页面开发中...</p></div></div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   LABEL MANAGEMENT — full state & interactions
+   ============================================================ */
+
+// Central tag data store, keyed by group+dimension
+const labelStore = {
+  scene: {
+    '场景分类': [
+      {cn:'Supermarket',en:'超市',usage:15},
+      {cn:'Household',en:'家庭',usage:10},
+      {cn:'Industry',en:'工业',usage:7},
+      {cn:'Kitchen',en:'厨房',usage:5},
+      {cn:'Hotel',en:'酒店',usage:3},
+      {cn:'Scientific',en:'科研',usage:2},
+      {cn:'Shelf',en:'货架',usage:8},
+      {cn:'Container',en:'容器',usage:4},
+      {cn:'pharmacy',en:'药店',usage:2},
+      {cn:'Warehousing',en:'仓储',usage:6},
+      {cn:'Region',en:'区域',usage:3},
+    ],
+    '子场景分类': [
+      {cn:'Workshop',en:'车间',usage:4},
+      {cn:'FreshZone',en:'生鲜区',usage:3},
+      {cn:'DailyZone',en:'日用品区',usage:2},
+      {cn:'Checkout',en:'收银区',usage:2},
+      {cn:'Storage',en:'储物区',usage:1},
+      {cn:'CookingArea',en:'烹饪区',usage:1},
+    ],
+    '场景初始状态': [
+      {cn:'货架满载',en:'FullShelf',usage:8},
+      {cn:'货架半载',en:'HalfShelf',usage:5},
+      {cn:'桌面整洁',en:'CleanTable',usage:4},
+      {cn:'桌面凌乱',en:'MessyTable',usage:3},
+    ],
+  },
+  task: {
+    '一级项目': [
+      {cn:'InternalCommercial',en:'内部-商业',usage:5},
+      {cn:'ExternalKupasi',en:'外部-库帕思',usage:2},
+      {cn:'InternalIndustrial',en:'内部-工业需求',usage:1},
+      {cn:'Backflow',en:'反馈回流',usage:1},
+      {cn:'SimulatedCollection',en:'模拟采集',usage:1},
+    ],
+    '任务用途': [
+      {cn:'OfficialCollection',en:'正式采集',usage:12},
+      {cn:'Operational',en:'运营采集',usage:8},
+      {cn:'Research',en:'研究用途',usage:3},
+    ],
+    '采集模式': [
+      {cn:'WholeBody',en:'全身',usage:20},
+      {cn:'UpperBody',en:'上身',usage:12},
+      {cn:'HandOnly',en:'仅手部',usage:6},
+    ],
+    '遥操类型': [
+      {cn:'VR',en:'VR遥操',usage:18},
+      {cn:'Master-slave',en:'主从控制',usage:14},
+    ],
+    '执行末端类型': [
+      {cn:'Gripper',en:'夹爪',usage:10},
+      {cn:'Dexterous',en:'灵巧手',usage:8},
+    ],
+    '相机类型': [
+      {cn:'RGB',en:'彩色相机',usage:22},
+      {cn:'RGBD',en:'深度相机',usage:15},
+      {cn:'Fisheye',en:'鱼眼镜头',usage:4},
+    ],
+  }
+};
+
+// Current active dimension per group
+const activeDim = { scene: '场景分类', task: '一级项目' };
+const dimColors = {
+  scene: { '场景分类':'#1a73e8','子场景分类':'#7c3aed','场景初始状态':'#0891b2' },
+  task:  { '一级项目':'#1a73e8','任务用途':'#10b981','采集模式':'#f59e0b','遥操类型':'#ef4444','执行末端类型':'#7c3aed','相机类型':'#0891b2' }
+};
+const usageTips = {
+  scene: {
+    '场景分类':    '新建任务 → 基础信息 → <b>场景分类</b>',
+    '子场景分类':  '新建任务 → 基础信息 → <b>子场景分类</b>',
+    '场景初始状态':'新建任务 → 场景信息 → <b>场景初始状态</b>',
+  },
+  task: {
+    '一级项目':    '新建任务 → 基础信息 → <b>一级项目</b>',
+    '任务用途':    '新建任务 → 基础信息 → <b>任务用途</b>',
+    '采集模式':    '新建任务 → 基础信息 → <b>采集模式</b>',
+    '遥操类型':    '新建任务 → 基础信息 → <b>遥操类型</b>',
+    '执行末端类型':'新建任务 → 动作步骤 → <b>执行末端类型</b>',
+    '相机类型':    '设备部件配置 → <b>相机类型</b>',
+  }
+};
+
+function renderTagsWrap(group) {
+  const dim = activeDim[group];
+  const tags = labelStore[group][dim] || [];
+  const color = (dimColors[group]||{})[dim] || '#1a73e8';
+  const wrapId = group+'-tags-wrap';
+  const wrap = document.getElementById(wrapId);
+  if(!wrap) return;
+  wrap.innerHTML = tags.map((t,i) => `
+    <div class="lm-tag-card" id="ltag-${group}-${i}">
+      <div class="lm-tag-color-bar" style="background:${color}"></div>
+      <div class="lm-tag-body">
+        <div class="lm-tag-cn">${t.cn}</div>
+        ${t.en ? `<div class="lm-tag-en">${t.en}</div>` : ''}
+        <div class="lm-tag-usage">🔗 已关联 ${t.usage} 个任务</div>
+      </div>
+      <div class="lm-tag-actions">
+        <button class="lm-tag-btn" title="编辑" onclick="editTag('${group}',${i})">✏️</button>
+        <button class="lm-tag-btn del" title="删除" onclick="deleteTag('${group}',${i})">🗑</button>
+      </div>
+    </div>`).join('') +
+    `<div class="lm-tag-new" onclick="openAddTagModal('${group}')">＋ 添加标签</div>`;
+
+  // update quota
+  const quotaEl = document.getElementById(group+'-quota');
+  if(quotaEl) quotaEl.textContent = tags.length + ' / 500';
+  // update sidebar count
+  const cntEl = document.getElementById('cnt-'+group+'-'+dim);
+  if(cntEl) cntEl.textContent = tags.length;
+}
+
+function selectDim(el, group, dimName, desc, color) {
+  // update sidebar active state
+  const listId = group+'-dim-list';
+  document.querySelectorAll('#'+listId+' .lm-dim-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+
+  activeDim[group] = dimName;
+
+  // update header
+  const titleEl = document.getElementById(group+'-dim-title');
+  const descEl  = document.getElementById(group+'-dim-desc');
+  if(titleEl) titleEl.textContent = dimName;
+  if(descEl)  descEl.textContent  = desc;
+
+  // update tip
+  const tipEl = document.getElementById(group+'-usage-tip');
+  const tipPath = (usageTips[group]||{})[dimName] || '';
+  if(tipEl) tipEl.innerHTML = `这里的标签值将同步到 ${tipPath} 下拉列表，新增后可立即在任务表单中使用`;
+
+  // re-render tags
+  renderTagsWrap(group);
+}
+
+function openAddTagModal(group) {
+  closeAddTagModal('scene');
+  closeAddTagModal('task');
+  const bar = document.getElementById(group+'-add-bar');
+  if(bar){ bar.style.display='flex'; document.getElementById(group+'-add-cn').focus(); }
+}
+function closeAddTagModal(group) {
+  const bar = document.getElementById(group+'-add-bar');
+  if(bar) bar.style.display='none';
+  const cn = document.getElementById(group+'-add-cn');
+  const en = document.getElementById(group+'-add-en');
+  if(cn) cn.value='';
+  if(en) en.value='';
+}
+
+function confirmAddTag(group) {
+  const cnEl = document.getElementById(group+'-add-cn');
+  const enEl = document.getElementById(group+'-add-en');
+  const cn = cnEl.value.trim();
+  const en = enEl ? enEl.value.trim() : '';
+  if(!cn){ cnEl.style.borderColor='#ef4444'; cnEl.focus(); return; }
+  cnEl.style.borderColor='';
+  const dim = activeDim[group];
+  if(!labelStore[group][dim]) labelStore[group][dim]=[];
+  labelStore[group][dim].push({cn, en, usage:0});
+  closeAddTagModal(group);
+  renderTagsWrap(group);
+  syncTagsToForm(group, dim);
+  toast(`标签「${cn}」已添加，新建任务表单已同步更新`);
+}
+
+function editTag(group, idx) {
+  const dim = activeDim[group];
+  const tag = labelStore[group][dim][idx];
+  if(!tag) return;
+  const newCn = window.prompt('修改中文名称：', tag.cn);
+  if(newCn === null) return;
+  if(!newCn.trim()){ toast('名称不能为空','warn'); return; }
+  const newEn = window.prompt('修改英文名称：', tag.en||'');
+  tag.cn = newCn.trim();
+  tag.en = newEn ? newEn.trim() : tag.en;
+  renderTagsWrap(group);
+  syncTagsToForm(group, dim);
+  toast(`标签已更新`);
+}
+
+function deleteTag(group, idx) {
+  const dim = activeDim[group];
+  const tag = labelStore[group][dim][idx];
+  if(!tag) return;
+  if(tag.usage > 0) {
+    if(!window.confirm(`「${tag.cn}」已被 ${tag.usage} 个任务使用，确认仍要删除？`)) return;
+  }
+  labelStore[group][dim].splice(idx, 1);
+  renderTagsWrap(group);
+  syncTagsToForm(group, dim);
+  toast(`标签「${tag.cn}」已删除`, 'error');
+}
+
+// Sync to new-task form dropdowns
+function syncTagsToForm(group, dim) {
+  const fieldMap = {
+    scene: { '场景分类':'场景分类', '子场景分类':'子场景分类' },
+    task:  { '一级项目':'一级项目', '任务用途':'任务用途', '采集模式':'采集模式', '遥操类型':'遥操类型' }
+  };
+  const fieldName = (fieldMap[group]||{})[dim];
+  if(!fieldName) return;
+  // find the select in step1 form
+  const selects = document.querySelectorAll('#nt-step1 .form-label');
+  selects.forEach(lbl => {
+    if(lbl.textContent.includes(fieldName)) {
+      const sel = lbl.closest('.form-item').querySelector('select');
+      if(sel) {
+        const tags = labelStore[group][dim]||[];
+        sel.innerHTML = `<option value="">请选择${fieldName}</option>` +
+          tags.map(t => `<option>${t.cn}${t.en?'('+t.en+')':''}</option>`).join('');
+      }
+    }
+  });
+}
+
+// Init both pages on load
+function initLabelPages() {
+  renderTagsWrap('scene');
+  renderTagsWrap('task');
+  // sync all form fields initially
+  ['场景分类','子场景分类'].forEach(d => syncTagsToForm('scene', d));
+  ['一级项目','任务用途','采集模式','遥操类型'].forEach(d => syncTagsToForm('task', d));
+}
+</script>
+
+<script>
+/* ============================================================
+   LABEL MANAGEMENT (old stubs kept for compat)
+   ============================================================ */
+function selectTLCat(){}
+function removeCustomTag(){}
+function addTag(){}
+function updateTagCount(){}
+</script>
+
+<script>
+/* ============================================================
+   SHARED STATE — single source of truth for the whole app
+   ============================================================ */
+let appState = {
+  tasks: [
+    {id:'12853',name:'InternalCommercial(内部-商业)...',proj:'InternalCommercial...',sub:'tianqi001 采集任务书',status:'closed',creator:'天奇管理员',device:'galbot_2.2_R...',purpose:'OfficialCollection',scene:'Supermarket',mode:'WholeBody',remote:'Master-slave',date:'2026-03',
+     packs:[
+       {pid:'PK-12853-01',packNo:'Pack-01',assignee:'张三',status:'done',target:10,done:10,created:'2026-03-01',finished:'2026-03-02'},
+       {pid:'PK-12853-02',packNo:'Pack-02',assignee:'李四',status:'done',target:10,done:10,created:'2026-03-01',finished:'2026-03-02'},
+       {pid:'PK-12853-03',packNo:'Pack-03',assignee:'王五',status:'done',target:10,done:10,created:'2026-03-01',finished:'2026-03-03'},
+     ]},
+    {id:'12837',name:'InternalCommercial(内部-商业)...',proj:'InternalCommercial...',sub:'tianqi001 采集任务书',status:'closed',creator:'天奇管理员',device:'galbot_2.2_R...',purpose:'OfficialCollection',scene:'Supermarket',mode:'WholeBody',remote:'VR(VR)',date:'2026-03',
+     packs:[
+       {pid:'PK-12837-01',packNo:'Pack-01',assignee:'赵六',status:'done',target:20,done:20,created:'2026-03-02',finished:'2026-03-04'},
+       {pid:'PK-12837-02',packNo:'Pack-02',assignee:'陈七',status:'done',target:20,done:20,created:'2026-03-02',finished:'2026-03-04'},
+     ]},
+    {id:'10383',name:'餐具摆放',proj:'SimulatedCollection...',sub:'tianqi001 采集任务书',status:'running',creator:'天奇管理员',device:'galbot_2.2_R...',purpose:'Operational',scene:'Household',mode:'WholeBody',remote:'Master-slave',date:'2026-03',
+     packs:[
+       {pid:'PK-10383-01',packNo:'Pack-01',assignee:'张三',status:'done',target:10,done:10,created:'2026-03-05',finished:'2026-03-06'},
+       {pid:'PK-10383-02',packNo:'Pack-02',assignee:'李四',status:'collecting',target:10,done:7,created:'2026-03-05',finished:'—'},
+       {pid:'PK-10383-03',packNo:'Pack-03',assignee:'王五',status:'collecting',target:10,done:4,created:'2026-03-05',finished:'—'},
+       {pid:'PK-10383-04',packNo:'Pack-04',assignee:'',status:'unassigned',target:10,done:0,created:'2026-03-08',finished:'—'},
+     ]},
+    {id:'9353', name:'测试任务',proj:'InternalCommercial...',sub:'tianqi001 采集任务书',status:'running',creator:'天奇管理员',device:'galbot_2.2_R...',purpose:'OfficialCollection',scene:'Supermarket',mode:'WholeBody',remote:'Master-slave',date:'2026-03',
+     packs:[
+       {pid:'PK-9353-01',packNo:'Pack-01',assignee:'赵六',status:'collecting',target:50,done:30,created:'2026-03-06',finished:'—'},
+       {pid:'PK-9353-02',packNo:'Pack-02',assignee:'陈七',status:'collecting',target:50,done:20,created:'2026-03-06',finished:'—'},
+       {pid:'PK-9353-03',packNo:'Pack-03',assignee:'',status:'unassigned',target:50,done:0,created:'2026-03-09',finished:'—'},
+     ]},
+    {id:'8751', name:'test',proj:'SimulatedCollection...',sub:'tianqi001 采集任务书',status:'closed',creator:'天奇管理员',device:'galbot_2.2_R...',purpose:'Operational',scene:'Supermarket',mode:'WholeBody',remote:'Master-slave',date:'2026-03',
+     packs:[
+       {pid:'PK-8751-01',packNo:'Pack-01',assignee:'张三',status:'done',target:20,done:20,created:'2026-03-01',finished:'2026-03-02'},
+     ]},
+    {id:'7760', name:'测试任务',proj:'InternalCommercial...',sub:'tianqi001 采集任务书',status:'error',creator:'天奇管理员',device:'galbot_2.2_R...',purpose:'Operational',scene:'Supermarket',mode:'WholeBody',remote:'Master-slave',date:'2026-03',
+     packs:[
+       {pid:'PK-7760-01',packNo:'Pack-01',assignee:'李四',status:'error',target:20,done:19,created:'2026-03-03',finished:'—'},
+     ]},
+    {id:'7245', name:'物品整理',proj:'InternalCommercial...',sub:'tianqi001 采集任务书',status:'pending',creator:'天奇管理员',device:'galbot_2.2_R...',purpose:'Operational',scene:'Household',mode:'WholeBody',remote:'VR(VR)',date:'2026-03',
+     packs:[
+       {pid:'PK-7245-01',packNo:'Pack-01',assignee:'',status:'unassigned',target:25,done:0,created:'2026-03-10',finished:'—'},
+       {pid:'PK-7245-02',packNo:'Pack-02',assignee:'',status:'unassigned',target:25,done:0,created:'2026-03-10',finished:'—'},
+     ]}
+  ],
+  quality: [
+    {
+      id:'QP-10383-01', packId:'WO-10383-01', packNo:'Pack-01',
+      taskId:'10383', taskName:'餐具摆放', assignee:'张三',
+      device:'galbot_2.2_RGB', submitTime:'2026-03-06 09:12',
+      recordCount:10, status:'pending', inspector:'—', inspectTime:'—',
+      records:[
+        {rid:'REC-001',dur:'2m 34s',size:'1.2GB',status:'pending',note:''},
+        {rid:'REC-002',dur:'1m 58s',size:'0.9GB',status:'pending',note:''},
+        {rid:'REC-003',dur:'3m 05s',size:'1.4GB',status:'pending',note:''},
+        {rid:'REC-004',dur:'2m 12s',size:'1.0GB',status:'pending',note:''},
+        {rid:'REC-005',dur:'1m 45s',size:'0.8GB',status:'pending',note:''},
+        {rid:'REC-006',dur:'2m 50s',size:'1.3GB',status:'pending',note:''},
+        {rid:'REC-007',dur:'3m 20s',size:'1.5GB',status:'pending',note:''},
+        {rid:'REC-008',dur:'1m 30s',size:'0.7GB',status:'pending',note:''},
+        {rid:'REC-009',dur:'2m 00s',size:'0.9GB',status:'pending',note:''},
+        {rid:'REC-010',dur:'2m 40s',size:'1.2GB',status:'pending',note:''},
+      ]
+    },
+    {
+      id:'QP-10383-02', packId:'WO-10383-02', packNo:'Pack-02',
+      taskId:'10383', taskName:'餐具摆放', assignee:'李四',
+      device:'galbot_2.2_RGB', submitTime:'2026-03-06 14:30',
+      recordCount:10, status:'done', inspector:'tq_gly', inspectTime:'2026-03-07',
+      records:[
+        {rid:'REC-011',dur:'2m 10s',size:'1.0GB',status:'done',note:''},
+        {rid:'REC-012',dur:'1m 55s',size:'0.9GB',status:'done',note:''},
+        {rid:'REC-013',dur:'3m 00s',size:'1.4GB',status:'done',note:''},
+        {rid:'REC-014',dur:'2m 20s',size:'1.1GB',status:'done',note:''},
+        {rid:'REC-015',dur:'1m 40s',size:'0.8GB',status:'error',note:'采集中断，数据不完整'},
+        {rid:'REC-016',dur:'2m 45s',size:'1.3GB',status:'done',note:''},
+        {rid:'REC-017',dur:'3m 10s',size:'1.5GB',status:'done',note:''},
+        {rid:'REC-018',dur:'1m 25s',size:'0.7GB',status:'done',note:''},
+        {rid:'REC-019',dur:'2m 05s',size:'1.0GB',status:'done',note:''},
+        {rid:'REC-020',dur:'2m 35s',size:'1.2GB',status:'done',note:''},
+      ]
+    },
+    {
+      id:'QP-9353-01', packId:'WO-9353-01', packNo:'Pack-01',
+      taskId:'9353', taskName:'测试任务', assignee:'赵六',
+      device:'galbot_2.2_RGB', submitTime:'2026-03-07 10:00',
+      recordCount:8, status:'recheck', inspector:'tq_gly', inspectTime:'2026-03-08',
+      records:[
+        {rid:'REC-021',dur:'2m 00s',size:'1.0GB',status:'error',note:'机器人姿态异常'},
+        {rid:'REC-022',dur:'1m 50s',size:'0.9GB',status:'done',note:''},
+        {rid:'REC-023',dur:'3m 00s',size:'1.4GB',status:'done',note:''},
+        {rid:'REC-024',dur:'2m 10s',size:'1.0GB',status:'error',note:'遮挡严重'},
+        {rid:'REC-025',dur:'1m 45s',size:'0.8GB',status:'done',note:''},
+        {rid:'REC-026',dur:'2m 30s',size:'1.2GB',status:'done',note:''},
+        {rid:'REC-027',dur:'3m 05s',size:'1.4GB',status:'done',note:''},
+        {rid:'REC-028',dur:'1m 20s',size:'0.6GB',status:'done',note:''},
+      ]
+    },
+    {
+      id:'QP-12853-01', packId:'WO-12853-01', packNo:'Pack-01',
+      taskId:'12853', taskName:'InternalCommercial(内部-商业)...', assignee:'张三',
+      device:'galbot_2.2_R', submitTime:'2026-03-02 11:00',
+      recordCount:10, status:'done', inspector:'tq_gly', inspectTime:'2026-03-03',
+      workOrders: Array.from({length:10},(_,i)=>({rid:`REC-0${30+i+1}`,dur:'2m 10s',size:'1.0GB',status:'done',note:''}))
+    },
+    {
+      id:'QP-12853-02', packId:'WO-12853-02', packNo:'Pack-02',
+      taskId:'12853', taskName:'InternalCommercial(内部-商业)...', assignee:'李四',
+      device:'galbot_2.2_R', submitTime:'2026-03-02 14:00',
+      recordCount:10, status:'error', inspector:'tq_gly', inspectTime:'2026-03-03',
+      workOrders: Array.from({length:10},(_,i)=>({rid:`REC-0${40+i+1}`,dur:'1m 55s',size:'0.9GB',status:'error',note:'数据格式错误'}))
+    },
+  ],
+  review: [
+    {id:'A001',taskName:'餐具摆放',type:'轨迹标注',person:'张三',labelStatus:'done',reviewStatus:'done',date:'2026-03-01'},
+    {id:'A002',taskName:'商业采集',type:'关键帧标注',person:'李四',labelStatus:'labeling',reviewStatus:'pending',date:'2026-03-01'},
+    {id:'A003',taskName:'物品整理',type:'关键帧标注',person:'—',labelStatus:'pending',reviewStatus:'pending',date:'2026-03-02'},
+    {id:'A004',taskName:'餐具摆放',type:'轨迹标注',person:'王五',labelStatus:'done',reviewStatus:'error',date:'2026-03-02'},
+    {id:'A005',taskName:'商业采集',type:'轨迹标注',person:'张三',labelStatus:'labeling',reviewStatus:'pending',date:'2026-03-03'}
+  ],
+  taskFilter: 'all',
+  qualityFilter: 'all',
+  reviewFilter: 'all'
+};
+
+/* ============================================================
+   TOAST NOTIFICATION
+   ============================================================ */
+function toast(msg, type='success') {
+  let t = document.getElementById('toast');
+  if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t); }
+  t.style.cssText=`position:fixed;top:60px;right:24px;z-index:9999;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,.15);transition:opacity .3s;pointer-events:none;`;
+  t.style.background = type==='success'?'#f0fdf4':type==='error'?'#fff1f0':'#fffbeb';
+  t.style.color = type==='success'?'#15803d':type==='error'?'#dc2626':'#92400e';
+  t.style.border = `1px solid ${type==='success'?'#bbf7d0':type==='error'?'#fecaca':'#fde68a'}`;
+  t.textContent = (type==='success'?'✅ ':type==='error'?'❌ ':'⚠️ ') + msg;
+  t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.style.opacity='0'; }, 2200);
+}
+
+/* ============================================================
+   CONFIRM MODAL
+   ============================================================ */
+function confirm(msg, onOk) {
+  let m = document.getElementById('modal-overlay');
+  if(!m){
+    m = document.createElement('div');
+    m.id='modal-overlay';
+    m.innerHTML=`<div id="modal-box" style="background:#fff;border-radius:12px;padding:28px 32px;min-width:320px;box-shadow:0 8px 40px rgba(0,0,0,.18);text-align:center">
+      <div id="modal-msg" style="font-size:14px;color:#333;margin-bottom:20px;line-height:1.6"></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button id="modal-cancel" class="btn btn-default" style="min-width:80px">取消</button>
+        <button id="modal-ok" class="btn btn-primary" style="min-width:80px">确认</button>
+      </div></div>`;
+    m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9000;display:flex;align-items:center;justify-content:center;';
+    document.body.appendChild(m);
+  }
+  document.getElementById('modal-msg').textContent = msg;
+  m.style.display='flex';
+  document.getElementById('modal-cancel').onclick = ()=>{ m.style.display='none'; };
+  document.getElementById('modal-ok').onclick = ()=>{ m.style.display='none'; onOk(); };
+}
+
+/* ============================================================
+   TASK CENTER
+   ============================================================ */
+const sMap = {
+  closed: {l:'已关闭',c:'tag-closed'},
+  running:{l:'进行中',c:'tag-running'},
+  error:  {l:'异常',  c:'tag-error'},
+  pending:{l:'未开始',c:'tag-pending'}
+};
+
+function taskProgress(t) {
+  const packs = t.packs || [];
+  const total = packs.reduce((s,p)=>s+p.target,0);
+  const done  = packs.reduce((s,p)=>s+p.done,0);
+  return {total, done, packCount:packs.length};
+}
+
+function renderTaskRows(filter) {
+  const list = appState.tasks.filter(t => filter==='all' || t.status===filter);
+  if(!list.length) return `<tr><td colspan="14" style="text-align:center;color:#bbb;padding:32px">暂无数据</td></tr>`;
+  return list.map(t => {
+    const s = sMap[t.status] || {l:t.status,c:'tag-pending'};
+    const {total,done,packCount} = taskProgress(t);
+    const pct = total>0 ? Math.min(100,Math.round(done/total*100)) : 0;
+    const isClosed = t.status==='closed';
+    return `<tr>
+      <td><input type="checkbox"></td>
+      <td><span class="tbl-link" onclick="taskDetail('${t.id}')">${t.name}</span></td>
+      <td><div style="line-height:1.4"><div style="font-size:12.5px">${t.proj}</div><div style="font-size:11px;color:#aaa">${t.sub}</div></div></td>
+      <td>${t.id}</td>
+      <td><span class="badge-tag ${s.c}">${s.l}</span></td>
+      <td>${t.creator}</td><td>${t.device}</td><td>${t.purpose}</td><td>${t.scene}</td><td>${t.mode}</td><td>${t.remote}</td>
+      <td>
+        <div class="prog-wrap">
+          <div class="prog-bar"><div class="prog-fill${t.status==='error'?' warn':''}" style="width:${pct}%"></div></div>
+          <span class="prog-txt">${done}/${total}</span>
+        </div>
+        <div style="font-size:11px;color:#bbb;margin-top:2px">${packCount} 个包</div>
+      </td>
+      <td style="color:#aaa;font-size:11.5px">${t.date}</td>
+      <td><div class="act-btns">
+        <button class="act-btn" style="color:#1a73e8;font-weight:500" onclick="taskDetail('${t.id}')">管理包</button><span class="act-sep">|</span>
+        <button class="act-btn" onclick="toast('编辑任务 ${t.id}')">编辑</button><span class="act-sep">|</span>
+        ${isClosed
+          ? `<button class="act-btn del" onclick="deleteTask('${t.id}')">删除</button>`
+          : `<button class="act-btn" onclick="closeTask('${t.id}')">关闭</button><span class="act-sep">|</span><button class="act-btn del" onclick="deleteTask('${t.id}')">删除</button>`
+        }
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* -------- Task Detail Page -------- */
+let curDetailTaskId = null;
+let woFilter = 'all';
+
+function taskDetail(id) {
+  const t = appState.tasks.find(x=>x.id===id);
+  if(!t) return;
+  curDetailTaskId = id;
+  woFilter = 'all';
+
+  document.getElementById('page-task-center').className='view left';
+  document.getElementById('page-task-detail').className='view active';
+  curPage='task-detail'; updateBc('task-detail');
+
+  // 默认收起信息
+  const container = document.getElementById('td-info-container');
+  const icon = document.getElementById('td-info-toggle-icon');
+  if(container) container.style.display = 'none';
+  if(icon) { icon.innerHTML = '展开 ▾'; icon.style.color = '#aaa'; }
+
+  document.getElementById('td-title').textContent = t.name;
+  const closeBtn = document.getElementById('td-close-btn');
+  if(closeBtn) closeBtn.style.display = t.status==='closed'?'none':'';
+
+  const grid = document.getElementById('td-info-grid');
+  const s = sMap[t.status]||{l:t.status,c:'tag-pending'};
+  if(grid) grid.innerHTML = [
+    ['任务ID', t.id],
+    ['任务状态', `<span class="badge-tag ${s.c}">${s.l}</span>`],
+    ['创建人', t.creator],
+    ['项目', t.proj],
+    ['场景分类', t.scene],
+    ['采集模式', t.mode],
+    ['遥操类型', t.remote],
+    ['创建时间', t.date],
+  ].map(([l,v])=>`<div class="td-info-item"><div class="td-info-label">${l}</div><div class="td-info-value">${v}</div></div>`).join('');
+
+  renderPackStats(t);
+  renderPackTable(t, woFilter);
+}
+
+function toggleTaskInfo() {
+  const container = document.getElementById('td-info-container');
+  const icon = document.getElementById('td-info-toggle-icon');
+  if(!container || !icon) return;
+  const isHidden = container.style.display === 'none';
+  if (isHidden) {
+    container.style.display = 'block';
+    icon.innerHTML = '收起 ▴';
+    icon.style.color = '#1a73e8';
+  } else {
+    container.style.display = 'none';
+    icon.innerHTML = '展开 ▾';
+    icon.style.color = '#aaa';
+  }
+}
+
+function renderPackStats(t) {
+  const packs = t.packs||[];
+  const totalRec = packs.reduce((s,p)=>s+p.target,0);
+  const doneRec  = packs.reduce((s,p)=>s+p.done,0);
+  const collecting = packs.filter(p=>p.status==='collecting').length;
+
+  const row = document.getElementById('td-stats-row');
+  if(!row) return;
+  const cards = [
+    {icon:'📦',bg:'#eff6ff',val:packs.length,        lbl:'总包数',     color:'#1a73e8'},
+    {icon:'✅',bg:'#ecfdf5',val:packs.filter(p=>p.status==='done').length, lbl:'已完成包', color:'#10b981'},
+    {icon:'⚡',bg:'#fff7e6',val:collecting,           lbl:'采集中包',   color:'#f59e0b'},
+    {icon:'🔢',bg:'#f3e8ff',val:`${doneRec}/${totalRec}`, lbl:'采集记录进度', color:'#7c3aed'},
+  ];
+  row.innerHTML = cards.map(c=>`
+    <div class="wo-stat-card">
+      <div class="wo-stat-icon" style="background:${c.bg}">${c.icon}</div>
+      <div><div class="wo-stat-val" style="color:${c.color}">${c.val}</div><div class="wo-stat-lbl">${c.lbl}</div></div>
+    </div>`).join('');
+
+  const statusKeys = ['all','unassigned','collecting','done','error'];
+  const counts = {all:packs.length, unassigned:0, collecting:0, done:0, error:0};
+  packs.forEach(p=>{ if(counts[p.status]!==undefined) counts[p.status]++; });
+  statusKeys.forEach(k=>{ const el=document.getElementById('wc-'+k); if(el) el.textContent=counts[k]; });
+}
+
+const packStatusMap = {
+  unassigned: {l:'待分配', c:'tag-unassigned'},
+  collecting: {l:'采集中', c:'tag-assigned'},
+  done:       {l:'已完成', c:'tag-done'},
+  error:      {l:'异常',   c:'tag-error'},
+};
+
+function renderPackTable(t, filter) {
+  const packs = (t.packs||[]).filter(p=>filter==='all'||p.status===filter);
+  const tbody = document.getElementById('wo-tbody');
+  if(!tbody) return;
+  const isClosed = t.status==='closed';
+  if(!packs.length){ tbody.innerHTML=`<tr><td colspan="11" style="text-align:center;color:#bbb;padding:32px">暂无包</td></tr>`; return; }
+  tbody.innerHTML = packs.map(p=>{
+    const ps = packStatusMap[p.status]||{l:p.status,c:'tag-pending'};
+    const pct = p.target>0?Math.min(100,Math.round(p.done/p.target*100)):0;
+    const assigneeCell = p.assignee
+      ? `<span style="font-size:12.5px;color:#333">${p.assignee}</span>`
+      : `<span style="color:#bbb;font-size:12px">未分配</span>`;
+    const actions = isClosed ? '—' : (p.status==='unassigned'
+      ? `<button class="act-btn" style="color:#1a73e8" onclick="openAssignModal('${p.pid}')">分配采集员</button>`
+      : p.status==='collecting'
+        ? `<button class="act-btn" onclick="openAssignModal('${p.pid}')">改派</button><span class="act-sep">|</span><button class="act-btn" onclick="markPackDone('${p.pid}')">标记完成</button>`
+        : '—');
+    return `<tr>
+      <td><input type="checkbox"></td>
+      <td style="font-size:12px;color:#555">${p.pid}</td>
+      <td style="font-weight:500">${p.packNo}</td>
+      <td>${assigneeCell}</td>
+      <td><span class="badge-tag ${ps.c}">${ps.l}</span></td>
+      <td>${p.target}</td>
+      <td>${p.done}</td>
+      <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill${p.status==='error'?' warn':''}" style="width:${pct}%"></div></div><span class="prog-txt">${pct}%</span></div></td>
+      <td style="font-size:11.5px;color:#aaa">${p.created}</td>
+      <td style="font-size:11.5px;color:#aaa">${p.finished}</td>
+      <td><div class="act-btns">${actions}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+function refreshTdTable() {
+  const t = appState.tasks.find(x=>x.id===curDetailTaskId);
+  if(!t) return;
+  renderPackStats(t);
+  renderPackTable(t, woFilter);
+}
+
+function switchWoTab(el, filter) {
+  woFilter = filter;
+  el.closest('.tabs-pill').querySelectorAll('.tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const t = appState.tasks.find(x=>x.id===curDetailTaskId);
+  if(t) renderPackTable(t, filter);
+}
+
+function hideTaskDetail() {
+  document.getElementById('page-task-detail').className='view right';
+  document.getElementById('page-task-center').className='view active';
+  curPage='task-center'; updateBc('task-center');
+}
+
+/* -------- Close Task -------- */
+function closeTask(id) {
+  const tid = id || curDetailTaskId;
+  if(!tid) return;
+  const t = appState.tasks.find(x=>x.id===tid);
+  if(!t) return;
+  const hasOpen = (t.packs||[]).some(p=>p.status==='collecting'||p.status==='unassigned');
+  const msg = hasOpen
+    ? `任务「${t.name}」仍有未完成的包，关闭后采集员将无法继续提交，确认关闭？`
+    : `确认关闭任务「${t.name}」？关闭后不可追加包。`;
+  confirm(msg, ()=>{
+    t.status='closed';
+    refreshTaskTable(); refreshTaskTabs();
+    if(curDetailTaskId===tid) taskDetail(tid);
+    toast(`任务「${t.name}」已关闭`);
+  });
+}
+
+/* -------- 追加包 -------- */
+function showAddPackModal() {
+  const t = appState.tasks.find(x=>x.id===curDetailTaskId);
+  if(!t || t.status==='closed'){ toast('任务已关闭，不可追加包','warn'); return; }
+  const m = document.getElementById('add-pack-modal');
+  if(m){ m.style.display='flex'; document.getElementById('ap-count').value=''; document.getElementById('ap-size').value=''; }
+}
+function hideAddPackModal() {
+  const m = document.getElementById('add-pack-modal');
+  if(m) m.style.display='none';
+}
+function confirmAddPack() {
+  const count    = parseInt(document.getElementById('ap-count').value)||0;
+  const size     = parseInt(document.getElementById('ap-size').value)||0;
+  const assignee = document.getElementById('ap-assignee').value;
+  if(!count||count<1){ toast('请输入有效的追加包数','warn'); return; }
+  if(!size||size<1)  { toast('请输入每包采集数量','warn'); return; }
+  const t = appState.tasks.find(x=>x.id===curDetailTaskId);
+  if(!t) return;
+  const existing = (t.packs||[]).length;
+  for(let i=0;i<count;i++){
+    const idx = existing+i+1;
+    t.packs.push({
+      pid:     `PK-${t.id}-${String(idx).padStart(2,'0')}`,
+      packNo:  `Pack-${String(idx).padStart(2,'0')}`,
+      assignee: assignee||'',
+      status:   assignee ? 'collecting' : 'unassigned',
+      target:   size,
+      done:     0,
+      created:  new Date().toISOString().slice(0,10),
+      finished: '—'
+    });
+  }
+  if(t.status==='pending' && assignee) t.status='running';
+  hideAddPackModal();
+  refreshTaskTable(); refreshTaskTabs(); refreshTdTable();
+  toast(`已追加 ${count} 个包${assignee?'，已分配给 '+assignee:'，待分配采集员'}`);
+}
+
+/* -------- 分配 / 改派 -------- */
+function openAssignModal(pid) {
+  const m = document.getElementById('assign-modal');
+  if(m){ m.style.display='flex'; document.getElementById('assign-wo-id').value=pid; document.getElementById('assign-person').value=''; }
+}
+function hideAssignModal() {
+  const m = document.getElementById('assign-modal');
+  if(m) m.style.display='none';
+}
+function confirmAssign() {
+  const pid    = document.getElementById('assign-wo-id').value;
+  const person = document.getElementById('assign-person').value;
+  if(!person){ toast('请选择采集员','warn'); return; }
+  const t = appState.tasks.find(x=>x.id===curDetailTaskId);
+  if(!t) return;
+  const pack = (t.packs||[]).find(p=>p.pid===pid);
+  if(!pack) return;
+  pack.assignee = person;
+  pack.status   = 'collecting';
+  if(t.status==='pending') t.status='running';
+  hideAssignModal();
+  refreshTaskTable(); refreshTaskTabs(); refreshTdTable();
+  toast(`包 ${pack.packNo} 已分配给 ${person}`);
+}
+
+function markPackDone(pid) {
+  const t = appState.tasks.find(x=>x.id===curDetailTaskId);
+  if(!t) return;
+  const pack = (t.packs||[]).find(p=>p.pid===pid);
+  if(!pack) return;
+  pack.status='done'; pack.done=pack.target; pack.finished=new Date().toISOString().slice(0,10);
+  refreshTdTable(); refreshTaskTable();
+  toast(`包 ${pack.packNo} 已标记完成，采集记录将流入质检队列`);
+}
+
+
+function deleteTask(id) {
+  confirm(`确认删除任务 ${id}？此操作不可撤销。`, () => {
+    appState.tasks = appState.tasks.filter(t=>t.id!==id);
+    refreshTaskTable();
+    refreshTaskTabs();
+    toast('任务已删除', 'error');
+  });
+}
+
+function refreshTaskTable() {
+  const tb = document.getElementById('task-tbody');
+  if(tb) { tb.innerHTML = renderTaskRows(appState.taskFilter); }
+  // update pager count
+  const cnt = appState.tasks.filter(t=> appState.taskFilter==='all'||t.status===appState.taskFilter).length;
+  const pi = document.querySelector('#page-task-center .pager-info');
+  if(pi) pi.innerHTML = `共 <b>${cnt}</b> 条数据`;
+}
+
+function refreshTaskTabs() {
+  const counts = {all:appState.tasks.length, running:0, closed:0, pending:0, error:0};
+  appState.tasks.forEach(t=>{ if(counts[t.status]!==undefined) counts[t.status]++; });
+  const tabs = document.querySelectorAll('#page-task-center .tab-pill');
+  tabs.forEach(tab=>{
+    const f = tab.dataset.t;
+    const badge = tab.querySelector('.tab-count');
+    if(badge && counts[f]!==undefined) badge.textContent = counts[f];
+  });
+}
+
+function switchTaskTab(el, filter) {
+  appState.taskFilter = filter;
+  el.closest('.tabs-pill').querySelectorAll('.tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  refreshTaskTable();
+}
+
+// Keep backward compat
+function switchTab(el, f, group) {
+  if(group==='task') switchTaskTab(el, f);
+}
+
+/* ============================================================
+   NEW TASK FORM
+   ============================================================ */
+let ntStep = 1;
+
+function showNewTask() {
+  ntStep=1; renderNtStep();
+  document.getElementById('page-task-center').className='view left';
+  document.getElementById('page-new-task').className='view active';
+  curPage='new-task'; updateBc('new-task');
+  document.getElementById('page-new-task').scrollTop=0;
+}
+function hideNewTask() {
+  document.getElementById('page-task-center').className='view active';
+  document.getElementById('page-new-task').className='view right';
+  curPage='task-center'; updateBc('task-center');
+}
+function ntNext() {
+  if(ntStep===1) {
+    const nameEl = document.querySelector('#nt-step1 input.form-ctrl[placeholder="请输入任务名称"]');
+    if(nameEl && !nameEl.value.trim()) { toast('请输入任务名称', 'warn'); return; }
+    ntStep=2; renderNtStep();
+    document.getElementById('page-new-task').scrollTop=0;
+  } else {
+    const totalEl = document.getElementById('nt-total-cnt');
+    const packEl  = document.getElementById('nt-pack-count');
+    if(!totalEl?.value){ toast('请输入总采集数量','warn'); return; }
+    if(!packEl?.value)  { toast('请输入初始包数','warn'); return; }
+    const totalCnt = parseInt(totalEl.value);
+    const packCount = parseInt(packEl.value);
+    const packSize = Math.ceil(totalCnt/packCount);
+    const nameEl = document.querySelector('#nt-step1 input.form-ctrl[placeholder="请输入任务名称"]');
+    const newId = String(Math.floor(Math.random()*9000)+1000);
+    const newTask = {
+      id: newId,
+      name: nameEl ? nameEl.value.trim() : '新建任务',
+      proj: 'InternalCommercial...',
+      sub: 'tianqi001 采集任务书',
+      status: 'pending',
+      creator: 'tq_gly',
+      device: 'galbot_2.2_R...',
+      purpose: 'Operational',
+      scene: 'Supermarket',
+      mode: 'WholeBody',
+      remote: 'Master-slave',
+      date: '2026-03',
+      workOrders: Array.from({length:packCount},(_,i)=>({
+        wid: `WO-${newId}-${String(i+1).padStart(2,'0')}`,
+        packNo: `Pack-${String(i+1).padStart(2,'0')}`,
+        assignee: '',
+        status: 'unassigned',
+        target: packSize,
+        done: 0,
+        created: new Date().toISOString().slice(0,10),
+        finished: '—'
+      }))
+    };
+    appState.tasks.unshift(newTask);
+    const qId = 'D' + Date.now().toString().slice(-10);
+    appState.quality.unshift({
+      id: qId, taskName: newTask.name, device:'galbot_001',
+      time:'2026-03-11 '+new Date().toTimeString().slice(0,5),
+      dur:'—', status:'pending', inspector:'—', inspectTime:'—'
+    });
+    hideNewTask();
+    refreshTaskTable();
+    refreshTaskTabs();
+    refreshQualityTable();
+    refreshQualityStats();
+    toast(`任务「${newTask.name}」创建成功，已生成 ${packCount} 个工单，请前往工单管理分配采集员`);
+    if(nameEl) nameEl.value='';
+  }
+}
+function ntPrev() { ntStep=1; renderNtStep(); document.getElementById('page-new-task').scrollTop=0; }
+
+function calcPackSize() {
+  const total = parseInt(document.getElementById('nt-total-cnt')?.value)||0;
+  const packs = parseInt(document.getElementById('nt-pack-count')?.value)||0;
+  const sizeEl = document.getElementById('nt-pack-size');
+  const previewWrap = document.getElementById('nt-pack-preview');
+  const previewList = document.getElementById('nt-pack-list');
+  if(sizeEl) sizeEl.value = (total>0&&packs>0) ? Math.ceil(total/packs) : '';
+  if(previewWrap && previewList) {
+    if(total>0 && packs>0) {
+      previewWrap.style.display='';
+      const size = Math.ceil(total/packs);
+      previewList.innerHTML = Array.from({length:packs},(_,i)=>`
+        <div style="background:#f0f5ff;border:1px solid #d0e2ff;border-radius:7px;padding:8px 14px;font-size:12px;color:#1a4db3">
+          <div style="font-weight:600">Pack-${String(i+1).padStart(2,'0')}</div>
+          <div style="color:#6b9bd1;margin-top:2px">${size} 条 · 待分配</div>
+        </div>`).join('');
+    } else { previewWrap.style.display='none'; }
+  }
+}
+
+function renderNtStep() {
+  const s1=document.getElementById('stp1'),s2=document.getElementById('stp2'),sc1=document.getElementById('sc1'),line=document.getElementById('stpline');
+  const p1=document.getElementById('nt-step1'),p2=document.getElementById('nt-step2'),footer=document.getElementById('nt-footer');
+  if(ntStep===1){
+    s1.className='stp active';s2.className='stp';sc1.textContent='1';line.className='stp-line';
+    p1.style.display='';p2.style.display='none';
+    footer.innerHTML=`<button class="fb fb-cancel" onclick="hideNewTask()">取消</button><button class="fb fb-next" onclick="ntNext()">下一步 →</button>`;
+  } else {
+    s1.className='stp done';s2.className='stp active';sc1.textContent='✓';line.className='stp-line done';
+    p1.style.display='none';p2.style.display='';
+    footer.innerHTML=`<button class="fb fb-cancel" onclick="hideNewTask()">取消</button><button class="fb fb-prev" onclick="ntPrev()">← 上一步</button><button class="fb fb-confirm" onclick="ntNext()">确定提交</button>`;
+  }
+}
+
+/* ============================================================
+   DATA QUALITY — Pack级别列表 + Episode级别详情
+   ============================================================ */
+const qMap = {
+  pending: {l:'待质检', c:'tag-pending'},
+  done:    {l:'已通过', c:'tag-done'},
+  error:   {l:'已拒绝', c:'tag-error'},
+  recheck: {l:'待复检', c:'tag-running'}
+};
+
+// ---- 包列表渲染 ----
+function renderQualityRows(filter) {
+  const list = appState.quality.filter(q => filter==='all' || q.status===filter);
+  if(!list.length) return `<tr><td colspan="12" style="text-align:center;color:#bbb;padding:32px">暂无数据</td></tr>`;
+  return list.map(q => {
+    const s = qMap[q.status]||{l:q.status,c:'tag-pending'};
+    const woDone = (q.workOrders||[]).filter(e=>e.status==='done').length;
+    const woErr  = (q.workOrders||[]).filter(e=>e.status==='error').length;
+    const isPending = q.status==='pending'||q.status==='recheck';
+    return `<tr>
+      <td><input type="checkbox"></td>
+      <td style="font-size:12px;color:#555">${q.id}</td>
+      <td style="font-weight:500">${q.packNo}</td>
+      <td><span class="tbl-link" onclick="qualityDetail('${q.id}')">${q.taskName}</span></td>
+      <td>${q.assignee}</td>
+      <td style="font-size:12px;color:#888">${q.device}</td>
+      <td>
+        <span style="font-weight:600;color:#333">${q.recordCount}</span>
+        <span style="font-size:11px;color:#aaa;margin-left:4px">条</span>
+        ${woDone>0?`<span style="font-size:11px;color:#10b981;margin-left:6px">✓${woDone}</span>`:''}
+        ${woErr>0?`<span style="font-size:11px;color:#ef4444;margin-left:4px">✗${woErr}</span>`:''}
+      </td>
+      <td style="font-size:12px;color:#aaa">${q.submitTime}</td>
+      <td><span class="badge-tag ${s.c}">${s.l}</span></td>
+      <td style="font-size:12.5px">${q.inspector}</td>
+      <td style="font-size:12px;color:#aaa">${q.inspectTime}</td>
+      <td><div class="act-btns">
+        <button class="act-btn" style="color:#1a73e8;font-weight:500" onclick="qualityDetail('${q.id}')">查看记录</button>
+        ${isPending ? `<span class="act-sep">|</span>
+        <button class="act-btn" onclick="qualityPackPass('${q.id}')">整包通过</button><span class="act-sep">|</span>
+        <button class="act-btn del" onclick="qualityPackReject('${q.id}')">整包拒绝</button>` : ''}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function refreshQualityTable() {
+  const tb = document.getElementById('quality-tbody');
+  if(tb) tb.innerHTML = renderQualityRows(appState.qualityFilter);
+}
+
+function refreshQualityStats() {
+  const q = appState.quality;
+  const pending = q.filter(x=>x.status==='pending').length;
+  const done    = q.filter(x=>x.status==='done').length;
+  const err     = q.filter(x=>x.status==='error').length;
+  const recheck = q.filter(x=>x.status==='recheck').length;
+  const total   = q.length;
+  const rate    = total>0 ? Math.round(done/total*1000)/10+'%' : '—';
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('qs-pending', pending); set('qs-done', done);
+  set('qs-error', err); set('qs-recheck', recheck); set('qs-rate', rate);
+  const tabs = document.querySelectorAll('#page-quality .tab-pill');
+  const tc = {all:total,pending,done,error:err,recheck};
+  tabs.forEach(tab=>{ const b=tab.querySelector('.tab-count'); const f=tab.dataset.t; if(b&&tc[f]!==undefined) b.textContent=tc[f]; });
+  const pi = document.getElementById('quality-pager-info');
+  if(pi) pi.innerHTML = `共 <b>${total}</b> 条`;
+}
+
+function switchQualityTab(el, filter) {
+  appState.qualityFilter = filter;
+  el.closest('.tabs-pill').querySelectorAll('.tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  refreshQualityTable();
+}
+
+// ---- 整包通过/拒绝（列表页快捷操作）----
+function qualityPackPass(id) {
+  const q = appState.quality.find(x=>x.id===id);
+  if(!q) return;
+  confirm(`整包通过「${q.packNo}」？将通过包内全部 ${q.recordCount} 条工单。`, ()=>{
+    q.status='done'; q.inspector='tq_gly'; q.inspectTime=new Date().toISOString().slice(0,10);
+    (q.workOrders||[]).forEach(e=>{ if(e.status==='pending') e.status='done'; });
+    _pushToReview(q);
+    refreshQualityTable(); refreshQualityStats(); refreshReviewTable(); refreshReviewStats();
+    toast(`包「${q.packNo}」已整包通过，已流入标注审核`);
+  });
+}
+
+function qualityPackReject(id) {
+  const q = appState.quality.find(x=>x.id===id);
+  if(!q) return;
+  confirm(`整包拒绝「${q.packNo}」？包内全部采集记录将标记为已拒绝。`, ()=>{
+    q.status='error'; q.inspector='tq_gly'; q.inspectTime=new Date().toISOString().slice(0,10);
+    (q.workOrders||[]).forEach(e=>e.status='error');
+    refreshQualityTable(); refreshQualityStats();
+    toast(`包「${q.packNo}」已整包拒绝`, 'error');
+  });
+}
+
+function qualityBatchPass() {
+  const checked = [...document.querySelectorAll('#quality-tbody input[type="checkbox"]:checked')];
+  if(!checked.length){ toast('请先勾选要批量通过的包','warn'); return; }
+  confirm(`批量通过 ${checked.length} 个包？`, ()=>{
+    checked.forEach(cb=>{
+      const id = cb.closest('tr').querySelector('td:nth-child(2)').textContent.trim();
+      const q = appState.quality.find(x=>x.id===id);
+      if(q && q.status!=='done'){ q.status='done'; q.inspector='tq_gly'; q.inspectTime=new Date().toISOString().slice(0,10); (q.workOrders||[]).forEach(e=>{if(e.status==='pending')e.status='done';}); _pushToReview(q); }
+    });
+    refreshQualityTable(); refreshQualityStats(); refreshReviewTable(); refreshReviewStats();
+    toast(`已批量通过 ${checked.length} 个包`);
+  });
+}
+
+function qualityBatchReject() {
+  const checked = [...document.querySelectorAll('#quality-tbody input[type="checkbox"]:checked')];
+  if(!checked.length){ toast('请先勾选要批量拒绝的包','warn'); return; }
+  confirm(`批量拒绝 ${checked.length} 个包？`, ()=>{
+    checked.forEach(cb=>{
+      const id = cb.closest('tr').querySelector('td:nth-child(2)').textContent.trim();
+      const q = appState.quality.find(x=>x.id===id);
+      if(q && q.status!=='error'){ q.status='error'; q.inspector='tq_gly'; q.inspectTime=new Date().toISOString().slice(0,10); (q.workOrders||[]).forEach(e=>e.status='error'); }
+    });
+    refreshQualityTable(); refreshQualityStats();
+    toast(`已批量拒绝 ${checked.length} 个包`, 'error');
+  });
+}
+
+function _pushToReview(q) {
+  if(!appState.review.find(r=>r.packId===q.id)) {
+    appState.review.unshift({
+      id:'A'+Date.now().toString().slice(-6), packId:q.id,
+      taskName:q.taskName, packNo:q.packNo, assignee:q.assignee,
+      type:'轨迹标注', person:'—', labelStatus:'pending', reviewStatus:'pending',
+      date:new Date().toISOString().slice(0,10)
+    });
+  }
+}
+
+// ---- 包详情页（Episode列表）----
+let curQPackId = null;
+
+function qualityDetail(id) {
+  const q = appState.quality.find(x=>x.id===id);
+  if(!q) return;
+  curQPackId = id;
+
+  document.getElementById('page-quality').className='view left';
+  document.getElementById('page-quality-detail').className='view active';
+  curPage='quality-detail'; updateBc('quality-detail');
+
+  document.getElementById('qd-title').textContent = `${q.taskName} · ${q.packNo}`;
+
+  // 包信息
+  const s = qMap[q.status]||{l:q.status,c:'tag-pending'};
+  document.getElementById('qd-info-grid').innerHTML = [
+    ['包ID', q.id], ['包编号', q.packNo], ['任务名称', q.taskName],
+    ['采集员', q.assignee], ['质检状态', `<span class="badge-tag ${s.c}">${s.l}</span>`],
+    ['设备', q.device], ['提交时间', q.submitTime], ['质检人', q.inspector],
+    ['质检时间', q.inspectTime], ['采集记录总数', q.recordCount+'条'],
+  ].map(([l,v])=>`<div class="td-info-item"><div class="td-info-label">${l}</div><div class="td-info-value">${v}</div></div>`).join('');
+
+  // 统计卡片
+  const wos = q.workOrders||[];
+  const woPend = wos.filter(e=>e.status==='pending').length;
+  const woDone = wos.filter(e=>e.status==='done').length;
+  const woErr  = wos.filter(e=>e.status==='error').length;
+  document.getElementById('qd-stats-row').innerHTML = [
+    {icon:'📊',bg:'#eff6ff',val:wos.length,lbl:'总工单数',color:'#1a73e8'},
+    {icon:'🕐',bg:'#fffbeb',val:woPend,lbl:'待质检',color:'#f59e0b'},
+    {icon:'✅',bg:'#ecfdf5',val:woDone,lbl:'已通过',color:'#10b981'},
+    {icon:'❌',bg:'#fff1f0',val:woErr, lbl:'已拒绝',color:'#ef4444'},
+  ].map(c=>`<div class="wo-stat-card"><div class="wo-stat-icon" style="background:${c.bg}">${c.icon}</div><div><div class="wo-stat-val" style="color:${c.color}">${c.val}</div><div class="wo-stat-lbl">${c.lbl}</div></div></div>`).join('');
+
+  // 整包操作按钮状态
+  const isPending = q.status==='pending'||q.status==='recheck';
+  document.getElementById('qd-pass-all').style.display = isPending?'':'none';
+  document.getElementById('qd-reject-all').style.display = isPending?'':'none';
+
+  renderQdEpisodes(q);
+}
+
+function renderQdEpisodes(q) {
+  const wos = q.workOrders||[];
+  const tbody = document.getElementById('qd-wo-tbody');
+  if(!tbody) return;
+  if(!wos.length){ tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;color:#bbb;padding:32px">暂无工单</td></tr>`; return; }
+  const isPending = q.status==='pending'||q.status==='recheck';
+  tbody.innerHTML = wos.map((e,i)=>{
+    const s = qMap[e.status]||{l:e.status,c:'tag-pending'};
+    const actions = isPending || e.status==='pending'
+      ? `<button class="act-btn" onclick="qdPassWo('${q.id}',${i})">通过</button><span class="act-sep">|</span><button class="act-btn del" onclick="qdRejectWo('${q.id}',${i})">拒绝</button>`
+      : e.status==='done' ? '<span style="color:#10b981;font-size:12px">已通过</span>'
+      : '<span style="color:#ef4444;font-size:12px">已拒绝</span>';
+    return `<tr>
+      <td><input type="checkbox" class="wo-cb"></td>
+      <td style="font-weight:500;color:#333">${e.woid}</td>
+      <td>${e.dur}</td>
+      <td style="font-size:12px;color:#888">${e.size}</td>
+      <td><span class="badge-tag ${s.c}">${s.l}</span></td>
+      <td style="font-size:12px;color:${e.note?'#ef4444':'#bbb'}">${e.note||'—'}</td>
+      <td><div class="act-btns">${actions}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+function hideQualityDetail() {
+  document.getElementById('page-quality-detail').className='view right';
+  document.getElementById('page-quality').className='view active';
+  curPage='quality'; updateBc('quality');
+  refreshQualityTable(); refreshQualityStats();
+}
+
+function qdPassWo(qid, idx) {
+  const q = appState.quality.find(x=>x.id===qid);
+  if(!q||!q.workOrders[idx]) return;
+  q.workOrders[idx].status='done';
+  _autoUpdatePackStatus(q);
+  renderQdEpisodes(q);
+  document.getElementById('qd-stats-row') && qualityDetail(qid);
+  toast(`工单 ${q.workOrders[idx].woid} 已通过`);
+}
+
+function qdRejectWo(qid, idx) {
+  const q = appState.quality.find(x=>x.id===qid);
+  if(!q||!q.workOrders[idx]) return;
+  const note = window.prompt('请输入拒绝原因（选填）：','');
+  if(note===null) return;
+  q.workOrders[idx].status='error'; q.workOrders[idx].note=note||'质量不合格';
+  _autoUpdatePackStatus(q);
+  renderQdEpisodes(q);
+  toast(`工单 ${q.workOrders[idx].woid} 已拒绝`, 'error');
+}
+
+function qdBatchPassWo() {
+  const q = appState.quality.find(x=>x.id===curQPackId);
+  if(!q) return;
+  const checked = [...document.querySelectorAll('#qd-wo-tbody .wo-cb:checked')];
+  if(!checked.length){ toast('请先勾选采集记录','warn'); return; }
+  checked.forEach(cb=>{ const idx=cb.closest('tr').rowIndex-1; if(q.workOrders[idx]) q.workOrders[idx].status='done'; });
+  _autoUpdatePackStatus(q);
+  qualityDetail(curQPackId);
+  toast(`已批量通过 ${checked.length} 条工单`);
+}
+
+function qdBatchRejectWo() {
+  const q = appState.quality.find(x=>x.id===curQPackId);
+  if(!q) return;
+  const checked = [...document.querySelectorAll('#qd-wo-tbody .wo-cb:checked')];
+  if(!checked.length){ toast('请先勾选采集记录','warn'); return; }
+  confirm(`批量拒绝 ${checked.length} 条工单？`, ()=>{
+    checked.forEach(cb=>{ const idx=cb.closest('tr').rowIndex-1; if(q.workOrders[idx]){ q.workOrders[idx].status='error'; q.workOrders[idx].note='质量不合格'; } });
+    _autoUpdatePackStatus(q);
+    qualityDetail(curQPackId);
+    toast(`已批量拒绝 ${checked.length} 条工单`, 'error');
+  });
+}
+
+function qdToggleAll(cb) {
+  document.querySelectorAll('#qd-wo-tbody .wo-cb').forEach(c=>c.checked=cb.checked);
+}
+
+function qdPassAll() {
+  const q = appState.quality.find(x=>x.id===curQPackId);
+  if(!q) return;
+  confirm(`整包通过「${q.packNo}」？将通过包内全部 ${q.recordCount} 条工单。`, ()=>{
+    q.status='done'; q.inspector='tq_gly'; q.inspectTime=new Date().toISOString().slice(0,10);
+    (q.workOrders||[]).forEach(e=>{ if(e.status==='pending') e.status='done'; });
+    _pushToReview(q);
+    qualityDetail(curQPackId);
+    refreshReviewTable(); refreshReviewStats();
+    toast(`包「${q.packNo}」已整包通过，已流入标注审核`);
+  });
+}
+
+function qdRejectAll() {
+  const q = appState.quality.find(x=>x.id===curQPackId);
+  if(!q) return;
+  confirm(`整包拒绝「${q.packNo}」？包内全部采集记录将标记为已拒绝。`, ()=>{
+    q.status='error'; q.inspector='tq_gly'; q.inspectTime=new Date().toISOString().slice(0,10);
+    (q.workOrders||[]).forEach(e=>e.status='error');
+    qualityDetail(curQPackId);
+    toast(`包「${q.packNo}」已整包拒绝`, 'error');
+  });
+}
+
+// 当包内所有 episode 都处理完时自动更新包状态
+function _autoUpdatePackStatus(q) {
+  const wos = q.workOrders||[];
+  if(!wos.length) return;
+  const allHandled = wos.every(e=>e.status==='done'||e.status==='error');
+  if(!allHandled) return;
+  const hasErr = wos.some(e=>e.status==='error');
+  q.status = hasErr ? 'recheck' : 'done';
+  q.inspector = 'tq_gly';
+  q.inspectTime = new Date().toISOString().slice(0,10);
+  if(!hasErr) _pushToReview(q);
+}
+
+function renderQualityRows(filter) {
+  const list = appState.quality.filter(q => filter==='all' || q.status===filter);
+  if(!list.length) return `<tr><td colspan="10" style="text-align:center;color:#bbb;padding:32px">暂无数据</td></tr>`;
+  return list.map(q => {
+    const s = qMap[q.status]||{l:q.status,c:'tag-pending'};
+    return `<tr>
+      <td><input type="checkbox"></td>
+      <td class="tbl-link" onclick="toast('查看数据 ${q.id}')">${q.id}</td>
+      <td>${q.taskName}</td><td>${q.device}</td><td>${q.time}</td><td>${q.dur}</td>
+      <td><span class="badge-tag ${s.c}">${s.l}</span></td>
+      <td>${q.inspector}</td><td>${q.inspectTime}</td>
+      <td><div class="act-btns">
+        <button class="act-btn" onclick="toast('查看数据 ${q.id}')">查看</button><span class="act-sep">|</span>
+        <button class="act-btn" onclick="qualityPass('${q.id}')">通过</button><span class="act-sep">|</span>
+        <button class="act-btn del" onclick="qualityReject('${q.id}')">拒绝</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ============================================================
+   ANNOTATION REVIEW
+   ============================================================ */
+const lMap = {pending:{l:'待标注',c:'tag-pending'},labeling:{l:'标注中',c:'tag-running'},done:{l:'已完成',c:'tag-done'}};
+const rMap = {pending:{l:'待审核',c:'tag-pending'},done:{l:'已通过',c:'tag-done'},error:{l:'已驳回',c:'tag-error'}};
+
+function renderReviewRows(filter) {
+  const list = appState.review.filter(r => {
+    if(filter==='all') return true;
+    if(filter==='pending') return r.labelStatus==='pending';
+    if(filter==='labeling') return r.labelStatus==='labeling';
+    if(filter==='done') return r.labelStatus==='done';
+    return true;
+  });
+  if(!list.length) return `<tr><td colspan="9" style="text-align:center;color:#bbb;padding:32px">暂无数据</td></tr>`;
+  return list.map(r => {
+    const ls = lMap[r.labelStatus]||{l:r.labelStatus,c:'tag-pending'};
+    const rs = rMap[r.reviewStatus]||{l:r.reviewStatus,c:'tag-pending'};
+    return `<tr>
+      <td><input type="checkbox"></td>
+      <td class="tbl-link" onclick="toast('查看标注 ${r.id}')">${r.id}</td>
+      <td>${r.taskName}</td><td>${r.type}</td><td>${r.person}</td>
+      <td><span class="badge-tag ${ls.c}">${ls.l}</span></td>
+      <td><span class="badge-tag ${rs.c}">${rs.l}</span></td>
+      <td>${r.date}</td>
+      <td><div class="act-btns">
+        <button class="act-btn" onclick="toast('查看标注 ${r.id}')">查看</button><span class="act-sep">|</span>
+        <button class="act-btn" onclick="reviewPass('${r.id}')">通过</button><span class="act-sep">|</span>
+        <button class="act-btn del" onclick="reviewReject('${r.id}')">驳回</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function reviewPass(id) {
+  const r = appState.review.find(x=>x.id===id);
+  if(!r) return;
+  if(r.reviewStatus==='done') { toast('该条数据已审核通过', 'warn'); return; }
+  if(r.labelStatus==='pending') { toast('该数据尚未开始标注，无法审核', 'warn'); return; }
+  r.reviewStatus='done'; r.labelStatus='done';
+  refreshReviewTable();
+  refreshReviewStats();
+  toast(`标注 ${id} 审核通过 ✓ — 数据已进入数据集`);
+}
+
+function reviewReject(id) {
+  const r = appState.review.find(x=>x.id===id);
+  if(!r) return;
+  confirm(`确认驳回标注 ${id}？该数据将退回重新标注。`, ()=>{
+    r.reviewStatus='error'; r.labelStatus='pending'; r.person='—';
+    refreshReviewTable();
+    refreshReviewStats();
+    toast(`标注 ${id} 已驳回，已退回待标注队列`, 'error');
+  });
+}
+
+function assignLabel() {
+  const checked = [...document.querySelectorAll('#review-tbody input[type="checkbox"]:checked')];
+  if(!checked.length) { toast('请先勾选要分配的数据', 'warn'); return; }
+  const assignees = ['张三','李四','王五','赵六'];
+  checked.forEach((cb, i)=>{
+    const row = cb.closest('tr');
+    const idCell = row.querySelector('td:nth-child(2)');
+    if(idCell){
+      const r = appState.review.find(x=>x.id===idCell.textContent.trim());
+      if(r && r.labelStatus==='pending'){
+        r.person = assignees[i % assignees.length];
+        r.labelStatus = 'labeling';
+      }
+    }
+  });
+  refreshReviewTable();
+  refreshReviewStats();
+  toast(`已为 ${checked.length} 条数据分配标注员`);
+}
+
+function switchReviewTab(el, filter) {
+  appState.reviewFilter = filter;
+  el.closest('.tabs-pill').querySelectorAll('.tab-pill').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  refreshReviewTable();
+}
+
+function refreshReviewTable() {
+  const tb = document.getElementById('review-tbody');
+  if(tb) tb.innerHTML = renderReviewRows(appState.reviewFilter);
+}
+
+function refreshReviewStats() {
+  const total = appState.review.length;
+  const completed = appState.review.filter(r=>r.reviewStatus==='done').length;
+  const pending = appState.review.filter(r=>r.reviewStatus==='pending').length;
+  const rejected = appState.review.filter(r=>r.reviewStatus==='error').length;
+  const cards = document.querySelectorAll('#page-review .qs-card .qs-val');
+  if(cards[0]) cards[0].textContent = total.toLocaleString();
+  if(cards[1]) cards[1].textContent = (total*60+402).toLocaleString();
+  if(cards[2]) cards[2].textContent = pending;
+  if(cards[3]) cards[3].textContent = rejected;
+  // Update tab counts
+  const tabs = document.querySelectorAll('#page-review .tab-pill');
+  const lPending = appState.review.filter(r=>r.labelStatus==='pending').length;
+  const lLabeling = appState.review.filter(r=>r.labelStatus==='labeling').length;
+  const lDone = appState.review.filter(r=>r.labelStatus==='done').length;
+  const tabCounts = {all:total, pending:lPending, labeling:lLabeling, done:lDone};
+  tabs.forEach(tab=>{
+    const badge = tab.querySelector('.tab-count');
+    const f = tab.dataset.t;
+    if(badge && tabCounts[f]!==undefined) badge.textContent = tabCounts[f];
+  });
+  const pi = document.querySelector('#page-review .pager-info');
+  if(pi) pi.innerHTML = `共 <b>${total}</b> 条数据`;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+let curPage = 'task-center';
+const bcMap = {
+  'dashboard':['首页',''],
+  'stats':['统计看板',''],
+  'task-center':['数据采集','任务中心'],
+  'task-detail':['数据采集 / 任务中心','工单管理'],
+  'quality':['数据质检','质检列表'],
+  'quality-detail':['数据质检 / 质检列表','包详情'],
+  'new-task':['数据采集','任务中心 / 新建任务'],
+  'quality':['数据采集','数据质检'],
+  'review':['数据采集','标注审核'],
+  'template':['数据采集','任务模版'],
+  'taskbook':['数据采集','任务书'],
+  'device-list':['设备管理','设备列表'],
+  'device-type':['设备管理','设备类型'],
+  'label-scene':['标签管理','场景标签'],
+  'label-task':['标签管理','任务标签'],
+  'label-skill':['标签管理','技能标签'],
+  'dataset':['数据应用','数据集'],
+  'export':['数据应用','数据导出'],
+  'sim-scene':['仿真资产','场景资产'],
+  'sim-obj':['仿真资产','物体资产'],
+  'download':['下载中心',''],
+  'permission':['权限设置','']
+};
+
+function nav(page) {
+  const old = document.getElementById('page-'+curPage);
+  const newP = document.getElementById('page-'+page);
+  if(!newP || curPage===page) return;
+  old.className='view left';
+  newP.className='view active';
+  curPage=page;
+  updateBc(page);
+  document.querySelectorAll('.nav-item,.sub-item').forEach(i=>i.classList.remove('active'));
+  const ni = document.getElementById('n-'+page.split('-')[0]);
+  if(ni) ni.classList.add('active');
+  const si = document.getElementById('sn-'+page);
+  if(si) si.classList.add('active');
+}
+
+function updateBc(page) {
+  const bc = bcMap[page]||['',''];
+  const el = document.getElementById('breadcrumb');
+  if(!bc[1]){ el.innerHTML=`<span class="bc">${bc[0]}</span>`; return; }
+  el.innerHTML=`${bc[0]}<span class="sep">/</span><span class="bc">${bc[1]}</span>`;
+}
+
+function toggleSub(id, navId) {
+  document.getElementById(id).classList.toggle('open');
+  document.getElementById(navId).classList.toggle('open');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+window.onload = function() {
+  refreshTaskTable();
+  refreshTaskTabs();
+  refreshQualityTable();
+  refreshQualityStats();
+  refreshReviewTable();
+  refreshReviewStats();
+  initLabelPages();
+
+  // Wire up quality tab buttons
+  document.querySelectorAll('#page-quality .tab-pill').forEach(btn=>{
+    btn.onclick = function(){ switchQualityTab(this, this.dataset.t); };
+  });
+  // Wire up review tab buttons
+  document.querySelectorAll('#page-review .tab-pill').forEach(btn=>{
+    btn.onclick = function(){ switchReviewTab(this, this.dataset.t); };
+  });
+  // Wire up quality batch buttons
+  const batchPass = document.querySelector('#page-quality .btn-primary');
+  if(batchPass) batchPass.onclick = qualityBatchPass;
+  const batchReject = document.querySelector('#page-quality .btn-danger');
+  if(batchReject) batchReject.onclick = qualityBatchReject;
+  // Wire up assign button
+  const assignBtn = document.querySelector('#page-review .toolbar-right .btn-primary');
+  if(assignBtn) assignBtn.onclick = assignLabel;
+  // Wire up task center tabs
+  document.querySelectorAll('#page-task-center .tab-pill').forEach(btn=>{
+    const f = btn.dataset.t;
+    if(f) btn.onclick = function(){ switchTaskTab(this, f); };
+  });
+};
+</script>
+</body>
+</html>

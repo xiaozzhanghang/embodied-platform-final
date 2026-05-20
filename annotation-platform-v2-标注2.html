@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>具身智能数据标注平台 v2 · 审核</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:       #f2f3f6;
+  --bg2:      #ffffff;
+  --bg3:      #f7f8fa;
+  --bg4:      #eef0f4;
+  --border:   #e2e5ec;
+  --border2:  #d0d4de;
+  --text:     #18202e;
+  --text2:    #4a5568;
+  --text3:    #8a93a8;
+  --blue:     #2563eb;
+  --blue2:    #1d4ed8;
+  --blue-bg:  rgba(37,99,235,.08);
+  --teal:     #0891b2;
+  --green:    #16a34a;
+  --red:      #dc2626;
+  --amber:    #d97706;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-size: 13px; }
+
+/* ── TOP BAR ── */
+.topbar {
+  height: 40px; background: var(--bg2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 14px; gap: 10px; flex-shrink: 0;
+  font-size: 12px;
+}
+.tb-icon { width: 26px; height: 26px; border: 1px solid var(--border); border-radius: 5px; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 12px; cursor: pointer; }
+.tb-icon:hover { background: var(--bg3); }
+.tb-sep { width: 1px; height: 16px; background: var(--border); margin: 0 2px; }
+.tb-toggle { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); }
+.toggle { position: relative; width: 34px; height: 18px; cursor: pointer; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track { position: absolute; inset: 0; background: var(--border2); border-radius: 9px; transition: .2s; }
+.toggle-track::before { content:''; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: .2s; }
+.toggle input:checked + .toggle-track { background: var(--teal); }
+.toggle input:checked + .toggle-track::before { transform: translateX(16px); }
+.tb-label-on { color: var(--teal); font-weight: 500; }
+.tb-right { margin-left: auto; display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+/* ── LAYOUT ── */
+.main { flex: 1; display: flex; overflow: hidden; }
+.left-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.right-panel { width: 300px; flex-shrink: 0; background: var(--bg2); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── CAMERA GRID ── */
+.cam-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr; overflow: hidden; border-bottom: 1px solid var(--border); min-height: 0; }
+.cam-cell { position: relative; overflow: hidden; background: #1a1f2e; border-right: 1px solid var(--border); }
+.cam-cell:last-child { border-right: none; }
+.cam-cell-large { grid-row: 1 / 3; }
+.cam-label { position: absolute; top: 0; left: 0; right: 0; background: rgba(24,32,46,.7); backdrop-filter: blur(4px); padding: 5px 10px; font-size: 11px; color: rgba(255,255,255,.75); display: flex; align-items: center; justify-content: space-between; z-index: 2; font-family: var(--mono); }
+.cam-label-arrow { color: rgba(255,255,255,.4); cursor: pointer; font-size: 10px; }
+.cam-canvas { width: 100%; height: 100%; display: block; }
+
+/* ── ACTION CHART ── */
+.chart-section { height: 140px; flex-shrink: 0; background: var(--bg2); border-bottom: 1px solid var(--border); position: relative; }
+.chart-header { position: absolute; top: 0; left: 0; right: 0; height: 22px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 10px; gap: 10px; z-index: 2; }
+.chart-title { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+.chart-legend { display: flex; gap: 10px; overflow: hidden; }
+.chart-leg-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text3); font-family: var(--mono); white-space: nowrap; }
+.chart-leg-dot { width: 20px; height: 2px; border-radius: 1px; }
+.chart-page { margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: 11px; font-family: var(--mono); color: var(--text2); }
+.chart-page button { width: 18px; height: 18px; border: none; background: transparent; cursor: pointer; color: var(--text2); font-size: 11px; display: flex; align-items: center; justify-content: center; }
+.chart-page button:hover { color: var(--blue); }
+#action-canvas { position: absolute; top: 22px; left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - 22px); display: block; }
+
+/* ── TIMELINE SECTION ── */
+.timeline-section { flex-shrink: 0; background: var(--bg2); border-bottom: 1px solid var(--border); }
+.tl-controls { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-bottom: 1px solid var(--border); }
+.tl-play { width: 28px; height: 28px; border-radius: 50%; background: var(--teal); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: background .15s; }
+.tl-play:hover { background: #0e7490; }
+.tl-frame-info { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+.tl-frame-total { color: var(--text3); }
+.tl-fps { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+.tl-speed { background: transparent; border: 1px solid var(--border); border-radius: 4px; font-family: var(--mono); font-size: 11px; color: var(--text2); padding: 2px 5px; cursor: pointer; }
+.tl-right { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+/* scrub bar */
+.tl-scrub-wrap { padding: 5px 12px 0; position: relative; }
+.tl-scrub { width: 100%; height: 8px; background: var(--bg4); border-radius: 4px; position: relative; cursor: pointer; border: 1px solid var(--border); }
+.tl-scrub-prog { position: absolute; left: 0; top: 0; height: 100%; background: var(--teal); border-radius: 3px; opacity: .5; pointer-events: none; }
+.tl-scrub-head { position: absolute; top: 50%; transform: translate(-50%,-50%); width: 14px; height: 14px; background: var(--teal); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); cursor: grab; pointer-events: none; }
+.tl-scrub-tick { position: absolute; top: 0; height: 100%; width: 2px; background: var(--blue); opacity: .4; pointer-events: none; border-radius: 1px; }
+
+/* step labels */
+.tl-steps { overflow: hidden; position: relative; border-top: 1px solid var(--border); }
+.tl-step-row { display: flex; border-bottom: 1px solid var(--border); height: 32px; }
+.tl-step-row:last-child { border-bottom: none; }
+.tl-row-label { width: 60px; flex-shrink: 0; display: flex; align-items: center; padding: 0 8px; font-size: 10px; color: var(--text3); border-right: 1px solid var(--border); background: var(--bg3); font-weight: 500; white-space: nowrap; }
+.tl-row-content { flex: 1; position: relative; overflow: hidden; }
+.tl-step-block { position: absolute; top: 3px; height: 26px; border-radius: 3px; display: flex; align-items: center; padding: 0 6px; font-size: 10px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; transition: opacity .15s; }
+.tl-step-block:hover { opacity: .85; }
+.tl-axis { display: flex; border-top: 1px solid var(--border); padding: 3px 0 3px 60px; }
+.tl-axis-inner { flex: 1; position: relative; height: 12px; }
+.tl-axis-tick { position: absolute; top: 0; font-size: 9px; font-family: var(--mono); color: var(--text3); transform: translateX(-50%); }
+
+/* region frames track */
+.tl-regions { padding: 0; }
+.region-row { display: flex; border-top: 1px solid var(--border); }
+.region-row-label { width: 60px; flex-shrink: 0; display: flex; align-items: center; padding: 0 8px; font-size: 10px; color: var(--text3); border-right: 1px solid var(--border); background: var(--bg3); font-weight: 500; flex-direction: column; justify-content: center; gap: 1px; }
+.region-track { flex: 1; height: 40px; position: relative; background: var(--bg3); }
+.region-block { position: absolute; top: 5px; height: 30px; background: rgba(37,99,235,.15); border: 1.5px solid rgba(37,99,235,.4); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--blue); font-weight: 500; cursor: pointer; transition: all .15s; overflow: hidden; white-space: nowrap; }
+.region-block:hover { background: rgba(37,99,235,.22); }
+.region-label-line { display: flex; padding: 2px 12px 4px 72px; gap: 16px; }
+.region-tick-label { font-family: var(--mono); font-size: 10px; color: var(--text2); position: absolute; transform: translateX(-50%); bottom: -16px; }
+
+/* ── RIGHT PANEL ── */
+.rp-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.rp-title { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.rp-title::before { content: ''; width: 3px; height: 16px; background: var(--blue); border-radius: 2px; display: block; }
+
+.rp-scroll { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.meta-grid { display: flex; flex-direction: column; gap: 7px; }
+.meta-row { display: flex; align-items: baseline; gap: 0; font-size: 12px; }
+.meta-key { width: 68px; flex-shrink: 0; color: var(--text3); font-size: 11px; }
+.meta-val { color: var(--text); font-weight: 400; }
+.meta-link { color: var(--blue); cursor: pointer; text-decoration: none; font-size: 11px; }
+.meta-link:hover { text-decoration: underline; }
+
+.rp-divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+.field-label { font-size: 11px; color: var(--text2); font-weight: 500; margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
+.field-label .req { color: var(--red); }
+
+.radio-group { display: flex; gap: 14px; }
+.radio-item { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; color: var(--text2); }
+.radio-item input { accent-color: var(--blue); cursor: pointer; }
+.radio-item.selected { color: var(--blue); font-weight: 500; }
+
+.select-field { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; padding: 6px 8px; font-size: 12px; color: var(--text); font-family: var(--sans); cursor: pointer; outline: none; }
+.select-field:focus { border-color: var(--blue); }
+
+.textarea-field { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; padding: 7px 8px; font-size: 12px; color: var(--text); font-family: var(--sans); resize: none; height: 56px; outline: none; line-height: 1.5; }
+.textarea-field:focus { border-color: var(--blue); }
+
+.add-btns { display: flex; gap: 12px; }
+.add-btn { background: transparent; border: none; font-size: 12px; color: var(--blue); cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0; font-family: var(--sans); font-weight: 500; }
+.add-btn:hover { color: var(--blue2); }
+
+/* single frame entries */
+.anno-entries { display: flex; flex-direction: column; gap: 8px; }
+.anno-entry { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 8px; }
+.anno-entry-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.entry-label { font-size: 11px; font-weight: 600; color: var(--text2); }
+.entry-delete { margin-left: auto; background: transparent; border: none; color: var(--text3); cursor: pointer; font-size: 13px; transition: color .15s; }
+.entry-delete:hover { color: var(--red); }
+.frame-input-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+.frame-input { width: 72px; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; font-family: var(--mono); font-size: 12px; color: var(--text); outline: none; text-align: center; }
+.frame-input:focus { border-color: var(--blue); }
+.frame-dash { color: var(--text3); font-size: 13px; }
+.entry-textarea { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 5px 7px; font-size: 11px; color: var(--text); font-family: var(--sans); resize: none; height: 44px; outline: none; line-height: 1.5; }
+.entry-textarea:focus { border-color: var(--blue); }
+
+/* scene desc */
+.scene-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 11px; color: var(--text2); line-height: 1.65; }
+.scene-title { font-size: 10px; font-weight: 600; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 5px; }
+
+/* ── SUBMIT BUTTONS ── */
+.rp-footer { padding: 12px 14px; border-top: 1px solid var(--border); flex-shrink: 0; display: flex; flex-direction: column; gap: 7px; }
+.submit-btn { width: 100%; padding: 10px; border-radius: 7px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); transition: all .15s; }
+.submit-primary { background: var(--blue); color: #fff; }
+.submit-primary:hover { background: var(--blue2); }
+.submit-secondary { background: transparent; border: 1px solid var(--border); color: var(--text2); }
+.submit-secondary:hover { background: var(--bg3); color: var(--text); }
+
+/* ── playhead vertical line across all timeline rows ── */
+.tl-vline { position: absolute; top: 0; bottom: 0; width: 1.5px; background: var(--blue); opacity: .7; pointer-events: none; z-index: 10; }
+
+/* toast */
+.toast { position: fixed; top: 14px; left: 50%; transform: translateX(-50%) translateY(-60px); background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 18px; font-size: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.1); z-index: 1000; transition: transform .3s cubic-bezier(.34,1.56,.64,1); display: flex; align-items: center; gap: 8px; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast-dot { width: 7px; height: 7px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="tb-icon" title="全屏">⛶</div>
+  <div class="tb-sep"></div>
+  <div class="tb-toggle">
+    <span>Depth</span>
+    <label class="toggle"><input type="checkbox" id="depth-tog" checked><span class="toggle-track"></span></label>
+    <span class="tb-label-on">RGB</span>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-toggle">
+    <span>轨迹图</span>
+    <label class="toggle"><input type="checkbox" id="traj-tog" checked onchange="toggleTraj(this.checked)"><span class="toggle-track"></span></label>
+  </div>
+  <div class="tb-right">
+    AID: A2D0015AB00015 &nbsp;|&nbsp; 任务ID: 7760 &nbsp;|&nbsp; 实例ID: 9196
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT AREA -->
+  <div class="left-area">
+
+    <!-- CAMERA GRID -->
+    <div class="cam-grid" id="cam-grid">
+      <!-- head_color large -->
+      <div class="cam-cell" style="grid-column:1;grid-row:1;">
+        <div class="cam-label">head_color <span class="cam-label-arrow">∨</span></div>
+        <canvas class="cam-canvas" id="cv-head"></canvas>
+      </div>
+      <!-- right column: hand_left + hand_right stacked -->
+      <div style="grid-column:2;grid-row:1;display:flex;flex-direction:column;border-right:1px solid var(--border);">
+        <div class="cam-cell" style="flex:1;border-bottom:1px solid var(--border);border-right:none;">
+          <div class="cam-label">hand_left_color <span class="cam-label-arrow">∨</span></div>
+          <canvas class="cam-canvas" id="cv-hand-l"></canvas>
+        </div>
+        <div class="cam-cell" style="flex:1;border-right:none;">
+          <div class="cam-label">hand_right_color <span class="cam-label-arrow">∨</span></div>
+          <canvas class="cam-canvas" id="cv-hand-r"></canvas>
+        </div>
+      </div>
+      <!-- sim 3D -->
+      <div class="cam-cell" style="grid-column:3;grid-row:1;">
+        <div class="cam-label">sim</div>
+        <canvas class="cam-canvas" id="cv-sim"></canvas>
+      </div>
+    </div>
+
+    <!-- ACTION CHART -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <span class="chart-title">action</span>
+        <div class="chart-legend" id="chart-legend"></div>
+        <div class="chart-page">
+          <button onclick="chartPage(-1)">◀</button>
+          <span id="chart-page-lbl">1/5</span>
+          <button onclick="chartPage(1)">▶</button>
+        </div>
+      </div>
+      <canvas id="action-canvas"></canvas>
+    </div>
+
+    <!-- TIMELINE SECTION -->
+    <div class="timeline-section">
+
+      <!-- controls row -->
+      <div class="tl-controls">
+        <button class="tl-play" id="play-btn" onclick="togglePlay()">▶</button>
+        <span class="tl-frame-info">
+          <span id="tl-cur" style="font-family:var(--mono);font-size:12px;">945</span>
+          <span class="tl-frame-total" style="font-family:var(--mono);font-size:12px;"> / 2511</span>
+        </span>
+        <span class="tl-fps">30 FPS</span>
+        <select class="tl-speed" onchange="setSpeed(this.value)">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1.0×</option>
+          <option value="1.5">1.5×</option>
+          <option value="2">2×</option>
+        </select>
+        <span class="tl-right" id="scene-state-toggle" onclick="toggleSceneDesc()" style="cursor:pointer;color:var(--amber);font-size:11px;">场景初始状态 ▾</span>
+      </div>
+
+      <!-- scrub bar -->
+      <div class="tl-scrub-wrap" id="scrub-wrap">
+        <div class="tl-scrub" id="tl-scrub">
+          <div class="tl-scrub-prog" id="tl-prog"></div>
+          <div class="tl-scrub-head" id="tl-head"></div>
+        </div>
+      </div>
+
+      <!-- step label rows -->
+      <div class="tl-steps" id="tl-steps" style="position:relative;">
+        <div class="tl-vline" id="tl-vline" style="display:none;"></div>
+        <!-- 动作步骤 row -->
+        <div class="tl-step-row">
+          <div class="tl-row-label">动作<br>步骤</div>
+          <div class="tl-row-content" id="row-action"></div>
+        </div>
+        <!-- 原子能力 row -->
+        <div class="tl-step-row">
+          <div class="tl-row-label">原子<br>能力</div>
+          <div class="tl-row-content" id="row-atomic"></div>
+        </div>
+        <!-- 操作物体 row -->
+        <div class="tl-step-row">
+          <div class="tl-row-label">操作<br>物体</div>
+          <div class="tl-row-content" id="row-object"></div>
+        </div>
+        <!-- axis -->
+        <div class="tl-axis">
+          <div class="tl-axis-inner" id="tl-axis"></div>
+        </div>
+      </div>
+
+      <!-- region frames track -->
+      <div class="tl-regions" id="tl-regions"></div>
+
+    </div><!-- /timeline-section -->
+
+  </div><!-- /left-area -->
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="rp-header">
+      <div class="rp-title">审核标注</div>
+    </div>
+
+    <div class="rp-scroll">
+
+      <!-- meta -->
+      <div class="meta-grid">
+        <div class="meta-row"><span class="meta-key">数据类型</span><span class="meta-val">常规</span></div>
+        <div class="meta-row"><span class="meta-key">采集员</span><span class="meta-val">李铁晨 (liyichen)</span></div>
+        <div class="meta-row"><span class="meta-key">AID</span><span class="meta-val" style="font-family:var(--mono);font-size:11px;">A2D0015AB00015</span></div>
+        <div class="meta-row"><span class="meta-key">数据路径</span><a class="meta-link">查看</a></div>
+      </div>
+
+      <div class="rp-divider"></div>
+
+      <!-- 审核结果 -->
+      <div>
+        <div class="field-label"><span class="req">*</span> 审核结果</div>
+        <div class="radio-group" id="review-result">
+          <label class="radio-item selected"><input type="radio" name="result" value="pass" checked onchange="onResult(this)"> 通过</label>
+          <label class="radio-item"><input type="radio" name="result" value="fail" onchange="onResult(this)"> 不通过</label>
+          <label class="radio-item"><input type="radio" name="result" value="abnormal" onchange="onResult(this)"> 异常数据</label>
+        </div>
+      </div>
+
+      <!-- 审核标签 -->
+      <div>
+        <div class="field-label"><span class="req">*</span> 审核标签</div>
+        <select class="select-field" id="review-tag">
+          <option>通过</option>
+          <option>部分通过</option>
+          <option>数据缺失</option>
+          <option>标注错误</option>
+          <option>画质问题</option>
+          <option>动作异常</option>
+        </select>
+        <textarea class="textarea-field" style="margin-top:6px;" placeholder="补充说明（可选）" id="review-note">通过</textarea>
+      </div>
+
+      <div class="rp-divider"></div>
+
+      <!-- add buttons -->
+      <div class="add-btns">
+        <button class="add-btn" onclick="addSingleFrame()">＋ 添加单帧</button>
+        <button class="add-btn" onclick="addRegionFrame()">＋ 添加区域帧</button>
+      </div>
+
+      <!-- annotation entries -->
+      <div class="anno-entries" id="anno-entries"></div>
+
+      <div class="rp-divider"></div>
+
+      <!-- scene desc -->
+      <div>
+        <div class="scene-title">场景初始状态</div>
+        <div class="scene-box">梳妆台在机器人前，化妆盒在桌面上，化妆盒的侧边摆放着物品、化妆品、护肤品盒垃圾在桌面上，垃圾桶在梳妆台的右方</div>
+      </div>
+
+    </div><!-- /rp-scroll -->
+
+    <div class="rp-footer">
+      <button class="submit-btn submit-primary" onclick="submitNext()">提交并下一条</button>
+      <button class="submit-btn submit-secondary" onclick="submitBack()">提交并返回</button>
+    </div>
+  </div><!-- /right-panel -->
+
+</div><!-- /main -->
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-dot" id="toast-dot"></div>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────
+const FRAMES = 2511, FPS = 30;
+
+const JOINT_COLORS = ['#ef4444','#22c55e','#eab308','#f97316','#06b6d4','#8b5cf6','#ec4899','#14b8a6'];
+const JOINT_NAMES = ['left_arm_joint1','left_arm_joint2','left_arm_joint3','left_arm_joint4',
+                     'left_arm_joint5','right_arm_joint1','right_arm_joint2','right_arm_joint3'];
+
+// Step data
+const STEP_DATA = [
+  {start:0,   end:228,  action:'向前移…', atomic:'Move (…', object:'B户型房间'},
+  {start:228, end:456,  action:'腰部下…', atomic:'Pick (…', object:'绿色瓶…'},
+  {start:456, end:684,  action:'右臂将…', atomic:'Place (…',object:'绿色瓶…'},
+  {start:684, end:988,  action:'右臂打开桌面上…', atomic:'Open (打开)', object:'粉饼抽屉'},
+  {start:988, end:1140, action:'右 臂',  atomic:'Pick (…', object:'肉色'},
+  {start:1140,end:1292, action:'右 臂',  atomic:'Plac e…', object:'肉色 透…'},
+  {start:1292,end:1520, action:'右臂将…', atomic:'Close (…',object:'粉饼抽屉'},
+  {start:1520,end:1672, action:'左 臂',  atomic:'Pick (…', object:'桃色'},
+  {start:1672,end:1900, action:'左臂将…', atomic:'Place (…',object:'桃色 层…'},
+  {start:1900,end:2052, action:'右 臂',  atomic:'Pick (…', object:'用过…'},
+  {start:2052,end:2204, action:'向 右',  atomic:'Turn n…', object:'用过的纸巾'},
+  {start:2204,end:2511, action:'高度下降, 右…', atomic:'Drop (丢下)', object:'用过的纸巾'},
+];
+
+const STEP_COLORS = [
+  'rgba(96,165,250,.85)','rgba(52,211,153,.85)','rgba(251,191,36,.85)',
+  'rgba(251,113,133,.85)','rgba(167,139,250,.85)','rgba(45,212,191,.85)',
+  'rgba(249,115,22,.85)','rgba(234,179,8,.85)','rgba(163,230,53,.85)',
+  'rgba(192,132,252,.85)','rgba(244,114,182,.85)','rgba(34,211,238,.85)',
+];
+const STEP_TEXT_COLORS = [
+  '#1e40af','#065f46','#78350f','#881337','#4c1d95','#134e4a',
+  '#7c2d12','#713f12','#365314','#581c87','#831843','#164e63',
+];
+
+let S = {
+  frame: 945, playing: false, speed: 1, playTmr: null,
+  showTraj: true, chartPageIdx: 0,
+  singleFrames: [{id:1, frame:770, note:'放置成功'}],
+  regionFrames: [{id:1, start:850, end:1150, note:'拉化妆盒'}],
+  nextId: 10,
+};
+
+// ─────────────────────────────────────────────────────────────
+// CAMERA CANVASES
+// ─────────────────────────────────────────────────────────────
+const CAM_SCENES = {
+  head:   ['#8fa8c8','#9ab4d0','#a0bcd6'],
+  handL:  ['#b8a8c8','#c4b4d0','#c8bcd4'],
+  handR:  ['#c8b8a0','#d0c4ac','#d4ccb8'],
+  sim:    ['#d0d4dc','#d8dce4','#dce0e8'],
+};
+
+function drawCam(canvasId, sceneKey, frame) {
+  const cv = document.getElementById(canvasId);
+  if (!cv) return;
+  const w = cv.parentElement.clientWidth, h = cv.parentElement.clientHeight;
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d');
+  const cs = CAM_SCENES[sceneKey];
+  const g = ctx.createLinearGradient(0, 0, w, h);
+  g.addColorStop(0, cs[0]); g.addColorStop(.5, cs[1]); g.addColorStop(1, cs[2]);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  const t = frame / FRAMES;
+  if (sceneKey === 'sim') {
+    drawSimBot(ctx, w, h, frame);
+  } else {
+    // Draw mock scene shapes
+    ctx.fillStyle = 'rgba(0,0,0,.07)';
+    if (sceneKey === 'head') {
+      ctx.fillRect(w*.1 + t*w*.05, h*.3, w*.35, h*.5);
+      ctx.fillRect(w*.55, h*.35, w*.3, h*.45);
+      ctx.fillStyle = 'rgba(0,0,0,.05)';
+      ctx.fillRect(w*.2, h*.55, w*.6, h*.08);
+    } else {
+      ctx.fillRect(w*.2 + t*w*.1, h*.35, w*.35, h*.3);
+      ctx.fillRect(w*.55, h*.5, w*.25, h*.15);
+    }
+    // Frame info
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = '10px JetBrains Mono, monospace';
+    ctx.fillText('F:'+frame, 8, h-8);
+    // Trajectory overlay
+    if (S.showTraj && sceneKey !== 'sim') {
+      ctx.strokeStyle = 'rgba(0,220,170,.7)'; ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
+      ctx.beginPath();
+      for (let i = 0; i <= 30; i++) {
+        const fx = (frame - 15 + i) / FRAMES;
+        const px = fx * w, py = h * (.5 + Math.sin(fx * Math.PI * 6) * .1);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+}
+
+function drawSimBot(ctx, w, h, frame) {
+  ctx.fillStyle = '#c8ccd6'; ctx.fillRect(0, 0, w, h);
+  // subtle grid
+  ctx.strokeStyle = 'rgba(180,185,200,.3)'; ctx.lineWidth = .5;
+  for (let i = 0; i < 10; i++) {
+    ctx.beginPath(); ctx.moveTo(0, h*i/10); ctx.lineTo(w, h*i/10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w*i/10, 0); ctx.lineTo(w*i/10, h); ctx.stroke();
+  }
+  const t = frame / FRAMES;
+  const lift = Math.max(0, Math.sin(t * Math.PI));
+  const cx = w/2, cy = h*.45;
+  const s = Math.min(w, h) * .55;
+  ctx.strokeStyle = 'rgba(80,90,110,.55)'; ctx.lineWidth = s*.025; ctx.lineCap = 'round';
+  const j = {
+    head: [0, -.5], neck: [0, -.35],
+    ls: [-.18, -.22], rs: [.18, -.22],
+    le: [-.28, -.05 + lift*.06], re: [.32, -.04 - lift*.15],
+    lw: [-.34, .12 + lift*.06], rw: [.38 + lift*.08, .08 - lift*.24],
+    hip: [0, .1], lh: [-.09, .1], rh: [.09, .1],
+    lk: [-.11, .32], rk: [.11, .32],
+    la: [-.11, .52], ra: [.11, .52],
+  };
+  const px = k => cx + j[k][0]*s, py = k => cy + j[k][1]*s;
+  const bones = [['head','neck'],['neck','ls'],['neck','rs'],['ls','le'],['le','lw'],
+                 ['rs','re'],['re','rw'],['neck','hip'],['hip','lh'],['hip','rh'],
+                 ['lh','lk'],['lk','la'],['rh','rk'],['rk','ra']];
+  bones.forEach(([a,b]) => {
+    ctx.beginPath(); ctx.moveTo(px(a),py(a)); ctx.lineTo(px(b),py(b)); ctx.stroke();
+  });
+  // head circle
+  ctx.beginPath(); ctx.arc(px('head'), py('head'), s*.06, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(80,90,110,.45)'; ctx.fill();
+  // base platform
+  ctx.fillStyle = 'rgba(80,90,110,.3)';
+  ctx.fillRect(cx - s*.15, cy + s*.54, s*.3, s*.04);
+  ctx.fillRect(cx - s*.2, cy + s*.58, s*.4, s*.03);
+}
+
+function drawAllCams() {
+  drawCam('cv-head', 'head', S.frame);
+  drawCam('cv-hand-l', 'handL', S.frame);
+  drawCam('cv-hand-r', 'handR', S.frame);
+  drawCam('cv-sim', 'sim', S.frame);
+}
+
+// ─────────────────────────────────────────────────────────────
+// ACTION CHART
+// ─────────────────────────────────────────────────────────────
+const JOINTS_PER_PAGE = 5;
+function drawActionChart() {
+  const cv = document.getElementById('action-canvas');
+  if (!cv) return;
+  const wrap = cv.parentElement;
+  const W = wrap.clientWidth, H = wrap.clientHeight - 22;
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+
+  const pad = {t:10, b:24, l:32, r:10};
+  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
+
+  // grid
+  ctx.strokeStyle = 'rgba(0,0,0,.06)'; ctx.lineWidth = .5;
+  [-2,-1,0,1,2].forEach(v => {
+    const y = pad.t + ch/2 - v*(ch/4);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l+cw, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.font = '9px JetBrains Mono,monospace';
+    ctx.fillText(v, 2, y+3);
+  });
+  // x axis ticks
+  const ticks = [0,166,332,498,664,830,996,1162,1328,1494,1660,1826,1992,2158,2324];
+  ticks.forEach(f => {
+    const x = pad.l + (f/FRAMES)*cw;
+    ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = .5;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t+ch); ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.font = '8px JetBrains Mono,monospace';
+    ctx.fillText(f, x-8, pad.t+ch+12);
+  });
+
+  // lines
+  const page = S.chartPageIdx;
+  const startJ = page * JOINTS_PER_PAGE;
+  for (let ji = 0; ji < JOINTS_PER_PAGE; ji++) {
+    const j = startJ + ji;
+    if (j >= JOINT_NAMES.length) break;
+    const color = JOINT_COLORS[j % JOINT_COLORS.length];
+    ctx.strokeStyle = color; ctx.lineWidth = 1.2; ctx.beginPath();
+    let first = true;
+    for (let f = 0; f <= FRAMES; f += 4) {
+      const seed = (j+1) * 137.5 + f * .008;
+      const val = Math.sin(seed) * .8 + Math.sin(seed*.37) * .6 + Math.cos(seed*.13) * .4;
+      const x = pad.l + (f/FRAMES)*cw;
+      const y = pad.t + ch/2 - val*(ch/4);
+      first ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      first = false;
+    }
+    ctx.stroke();
+  }
+
+  // current frame line
+  const fx = pad.l + (S.frame/FRAMES)*cw;
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(fx, pad.t); ctx.lineTo(fx, pad.t+ch); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // legend
+  const legend = document.getElementById('chart-legend');
+  legend.innerHTML = '';
+  for (let ji = 0; ji < JOINTS_PER_PAGE; ji++) {
+    const j = startJ + ji;
+    if (j >= JOINT_NAMES.length) break;
+    const item = document.createElement('div'); item.className = 'chart-leg-item';
+    const dot = document.createElement('div'); dot.className = 'chart-leg-dot';
+    dot.style.background = JOINT_COLORS[j % JOINT_COLORS.length];
+    item.appendChild(dot);
+    const lbl = document.createElement('span'); lbl.textContent = JOINT_NAMES[j];
+    item.appendChild(lbl); legend.appendChild(item);
+  }
+  document.getElementById('chart-page-lbl').textContent =
+    (page+1)+'/'+Math.ceil(JOINT_NAMES.length/JOINTS_PER_PAGE);
+}
+
+function chartPage(d) {
+  const maxP = Math.ceil(JOINT_NAMES.length/JOINTS_PER_PAGE);
+  S.chartPageIdx = (S.chartPageIdx + d + maxP) % maxP;
+  drawActionChart();
+}
+
+// ─────────────────────────────────────────────────────────────
+// TIMELINE STEPS
+// ─────────────────────────────────────────────────────────────
+function buildStepRows() {
+  const rowAction  = document.getElementById('row-action');
+  const rowAtomic  = document.getElementById('row-atomic');
+  const rowObject  = document.getElementById('row-object');
+  const axisEl     = document.getElementById('tl-axis');
+  [rowAction, rowAtomic, rowObject, axisEl].forEach(el => el.innerHTML = '');
+
+  STEP_DATA.forEach((st, i) => {
+    const color = STEP_COLORS[i % STEP_COLORS.length];
+    const textColor = STEP_TEXT_COLORS[i % STEP_TEXT_COLORS.length];
+    const pct = st.start / FRAMES * 100;
+    const wPct = (st.end - st.start) / FRAMES * 100;
+    const style = `left:${pct}%;width:${wPct}%;background:${color};color:${textColor};`;
+
+    const mkBlock = (label) => {
+      const b = document.createElement('div');
+      b.className = 'tl-step-block';
+      b.style.cssText = style;
+      b.textContent = label;
+      b.title = label;
+      b.onclick = () => seekFrame(Math.round((st.start+st.end)/2));
+      return b;
+    };
+    rowAction.appendChild(mkBlock(st.action));
+    rowAtomic.appendChild(mkBlock(st.atomic));
+    rowObject.appendChild(mkBlock(st.object));
+  });
+
+  // axis ticks
+  [0,228,456,684,988,1140,1292,1520,1672,1900,2052,2204,2511].forEach(f => {
+    const tick = document.createElement('div');
+    tick.className = 'tl-axis-tick';
+    tick.style.left = (f/FRAMES*100)+'%';
+    tick.textContent = f;
+    axisEl.appendChild(tick);
+  });
+
+  // keyframe markers (inverted triangles)
+  const markers = [0,228,456,684,988,1140,1292,1520,1672,1900,2052,2204];
+  const stepsContainer = document.getElementById('tl-steps');
+  stepsContainer.querySelectorAll('.kf-marker').forEach(el => el.remove());
+  markers.forEach((f, i) => {
+    const m = document.createElement('div');
+    m.className = 'kf-marker';
+    const highlighted = f <= S.frame;
+    m.style.cssText = `position:absolute;top:-1px;left:calc(${f/FRAMES*100}% + 60px - 5px);
+      width:10px;height:10px;clip-path:polygon(50% 100%,0 0,100% 0);
+      background:${highlighted?'#2563eb':'#94a3b8'};z-index:5;pointer-events:none;`;
+    stepsContainer.appendChild(m);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// REGION FRAMES TRACK
+// ─────────────────────────────────────────────────────────────
+function buildRegionTrack() {
+  const container = document.getElementById('tl-regions');
+  container.innerHTML = '';
+  if (S.regionFrames.length === 0) return;
+  S.regionFrames.forEach((rf, i) => {
+    const row = document.createElement('div');
+    row.className = 'region-row';
+    const labelEl = document.createElement('div');
+    labelEl.className = 'region-row-label';
+    labelEl.innerHTML = `<span>区域</span><span>帧${i+1}</span>`;
+    const track = document.createElement('div');
+    track.className = 'region-track';
+    track.style.position = 'relative';
+
+    const pct = rf.start / FRAMES * 100;
+    const wPct = (rf.end - rf.start) / FRAMES * 100;
+    const block = document.createElement('div');
+    block.className = 'region-block';
+    block.style.cssText = `left:${pct}%;width:${wPct}%;`;
+    block.textContent = rf.note || ('区域'+(i+1));
+    block.onclick = () => seekFrame(rf.start);
+
+    // start/end tick labels
+    const mkTick = (f, label) => {
+      const t = document.createElement('div');
+      t.style.cssText = `position:absolute;bottom:2px;left:${f/FRAMES*100}%;
+        transform:translateX(-50%);font-size:9px;font-family:var(--mono);color:var(--text2);`;
+      t.textContent = label;
+      return t;
+    };
+    track.appendChild(block);
+    track.appendChild(mkTick(rf.start, rf.start));
+    track.appendChild(mkTick(rf.end, rf.end));
+
+    row.appendChild(labelEl);
+    row.appendChild(track);
+    container.appendChild(row);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// SCRUB BAR
+// ─────────────────────────────────────────────────────────────
+const scrub = document.getElementById('tl-scrub');
+let scrubbing = false;
+
+function scrubPct(e) {
+  const r = scrub.getBoundingClientRect();
+  return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+}
+scrub.addEventListener('mousedown', e => {
+  scrubbing = true;
+  seekFrame(Math.round(scrubPct(e) * FRAMES));
+});
+document.addEventListener('mousemove', e => {
+  if (!scrubbing) return;
+  seekFrame(Math.round(scrubPct(e) * FRAMES));
+});
+document.addEventListener('mouseup', () => { scrubbing = false; });
+
+function seekFrame(f) {
+  S.frame = Math.max(0, Math.min(FRAMES, f));
+  updateUI();
+}
+
+function updateUI() {
+  const pct = S.frame / FRAMES * 100;
+  document.getElementById('tl-prog').style.width = pct + '%';
+  document.getElementById('tl-head').style.left = pct + '%';
+  document.getElementById('tl-cur').textContent = S.frame;
+  // vline in step rows (offset by row-label width 60px)
+  const vline = document.getElementById('tl-vline');
+  vline.style.display = 'block';
+  vline.style.left = 'calc(60px + ' + pct + '% * (100% - 60px) / 100%)';
+  // Actually use percentage of remaining width
+  const stepsEl = document.getElementById('tl-steps');
+  const totalW = stepsEl.clientWidth - 60;
+  vline.style.left = (60 + (S.frame/FRAMES)*totalW) + 'px';
+
+  drawAllCams();
+  drawActionChart();
+  buildStepRows();
+}
+
+// ─────────────────────────────────────────────────────────────
+// PLAYBACK
+// ─────────────────────────────────────────────────────────────
+function togglePlay() {
+  S.playing = !S.playing;
+  const btn = document.getElementById('play-btn');
+  if (S.playing) {
+    btn.textContent = '⏸';
+    S.playTmr = setInterval(() => {
+      S.frame = S.frame >= FRAMES ? 0 : S.frame + 1;
+      updateUI();
+    }, Math.round(1000 / (FPS * S.speed)));
+  } else {
+    btn.textContent = '▶';
+    clearInterval(S.playTmr);
+  }
+}
+function setSpeed(v) {
+  S.speed = parseFloat(v);
+  if (S.playing) { clearInterval(S.playTmr); S.playing = false; togglePlay(); }
+}
+
+// ─────────────────────────────────────────────────────────────
+// TOGGLE
+// ─────────────────────────────────────────────────────────────
+function toggleTraj(v) { S.showTraj = v; drawAllCams(); }
+function toggleSceneDesc() {
+  const box = document.querySelector('.scene-box');
+  box.style.display = box.style.display === 'none' ? '' : 'none';
+}
+
+// ─────────────────────────────────────────────────────────────
+// RIGHT PANEL — ANNO ENTRIES
+// ─────────────────────────────────────────────────────────────
+function onResult(radio) {
+  document.querySelectorAll('.radio-item').forEach(el => el.classList.remove('selected'));
+  radio.closest('.radio-item').classList.add('selected');
+}
+
+function renderEntries() {
+  const container = document.getElementById('anno-entries');
+  container.innerHTML = '';
+
+  S.singleFrames.forEach((sf, i) => {
+    const div = document.createElement('div');
+    div.className = 'anno-entry';
+    div.innerHTML = `
+      <div class="anno-entry-header">
+        <span class="entry-label">* 单帧${i+1}</span>
+        <button class="entry-delete" onclick="deleteSingle(${sf.id})">✕</button>
+      </div>
+      <div class="frame-input-row">
+        <input class="frame-input" type="number" value="${sf.frame}" min="0" max="${FRAMES}"
+          onchange="updateSingleFrame(${sf.id}, 'frame', this.value)"
+          onfocus="seekFrame(${sf.frame})">
+      </div>
+      <textarea class="entry-textarea" placeholder="描述（可选）"
+        onchange="updateSingleFrame(${sf.id}, 'note', this.value)">${sf.note||''}</textarea>
+    `;
+    // click on frame input → jump
+    div.querySelector('.frame-input').addEventListener('input', function() {
+      const v = parseInt(this.value);
+      if (!isNaN(v)) seekFrame(v);
+    });
+    container.appendChild(div);
+  });
+
+  S.regionFrames.forEach((rf, i) => {
+    const div = document.createElement('div');
+    div.className = 'anno-entry';
+    div.innerHTML = `
+      <div class="anno-entry-header">
+        <span class="entry-label">* 区域帧${i+1}</span>
+        <button class="entry-delete" onclick="deleteRegion(${rf.id})">✕</button>
+      </div>
+      <div class="frame-input-row">
+        <input class="frame-input" type="number" value="${rf.start}" min="0" max="${FRAMES}"
+          onchange="updateRegion(${rf.id},'start',this.value)"
+          oninput="seekFrame(parseInt(this.value)||0)">
+        <span class="frame-dash">—</span>
+        <input class="frame-input" type="number" value="${rf.end}" min="0" max="${FRAMES}"
+          onchange="updateRegion(${rf.id},'end',this.value)"
+          oninput="seekFrame(parseInt(this.value)||0)">
+      </div>
+      <textarea class="entry-textarea" placeholder="描述（可选）"
+        onchange="updateRegion(${rf.id},'note',this.value)">${rf.note||''}</textarea>
+    `;
+    container.appendChild(div);
+  });
+
+  buildRegionTrack();
+}
+
+function addSingleFrame() {
+  S.singleFrames.push({id: S.nextId++, frame: S.frame, note: ''});
+  renderEntries();
+  showToast('已添加单帧 F'+S.frame, 'success');
+}
+function addRegionFrame() {
+  const start = Math.max(0, S.frame - 20), end = Math.min(FRAMES, S.frame + 80);
+  S.regionFrames.push({id: S.nextId++, start, end, note: ''});
+  renderEntries();
+  showToast('已添加区域帧 F'+start+'–'+end, 'success');
+}
+function deleteSingle(id) {
+  S.singleFrames = S.singleFrames.filter(x => x.id !== id);
+  renderEntries();
+}
+function deleteRegion(id) {
+  S.regionFrames = S.regionFrames.filter(x => x.id !== id);
+  renderEntries();
+}
+function updateSingleFrame(id, key, val) {
+  const sf = S.singleFrames.find(x => x.id === id);
+  if (!sf) return;
+  sf[key] = key === 'frame' ? parseInt(val)||0 : val;
+  if (key === 'frame') { seekFrame(sf.frame); }
+  renderEntries();
+}
+function updateRegion(id, key, val) {
+  const rf = S.regionFrames.find(x => x.id === id);
+  if (!rf) return;
+  rf[key] = (key==='note') ? val : (parseInt(val)||0);
+  buildRegionTrack();
+}
+
+// ─────────────────────────────────────────────────────────────
+// SUBMIT
+// ─────────────────────────────────────────────────────────────
+function submitNext() {
+  showToast('已提交，加载下一条…', 'success');
+  setTimeout(() => { S.frame = 0; updateUI(); }, 1200);
+}
+function submitBack() {
+  showToast('已提交并返回列表', 'success');
+}
+
+// ─────────────────────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────────────────────
+function showToast(msg, type='success') {
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-dot').style.background =
+    type==='success' ? '#16a34a' : type==='error' ? '#dc2626' : '#d97706';
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ─────────────────────────────────────────────────────────────
+// KEYBOARD
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  if (e.key === 'z' || e.key === 'Z') seekFrame(S.frame - 1);
+  if (e.key === 'x' || e.key === 'X') seekFrame(S.frame + 1);
+  if (e.key === 'a' || e.key === 'A') seekFrame(S.frame - 10);
+  if (e.key === 'd' || e.key === 'D') seekFrame(S.frame + 10);
+});
+
+// ─────────────────────────────────────────────────────────────
+// RESIZE + INIT
+// ─────────────────────────────────────────────────────────────
+function resizeAll() {
+  drawAllCams();
+  drawActionChart();
+}
+
+window.addEventListener('resize', resizeAll);
+
+// init
+buildStepRows();
+renderEntries();
+updateUI();
+</script>
+</body>
+</html>

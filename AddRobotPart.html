@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>添加机器人部件</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 13px;
+      color: #1f2937;
+      background: #f0f2f5;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .page-layout { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 210px;
+      min-height: 100vh;
+      background: #0f172a;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 16px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+    .brand-icon {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: #2563eb;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .brand-name {
+      font-size: 13px; font-weight: 600;
+      color: #f1f5f9; line-height: 1.3;
+      letter-spacing: .01em;
+    }
+    .sidebar-nav { flex: 1; padding: 8px; overflow-y: auto; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 10px;
+      border-radius: 7px;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all .15s;
+      margin-bottom: 1px;
+      text-decoration: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,.05); color: #e2e8f0; }
+    .nav-item.active { background: rgba(37,99,235,.25); color: #60a5fa; }
+    .nav-icon { width: 16px; height: 16px; flex-shrink: 0; display: flex; align-items: center; }
+    .nav-label { flex: 1; font-size: 13px; }
+    .nav-arrow { margin-left: auto; opacity: .5; }
+    .sidebar-user {
+      padding: 14px 16px;
+      border-top: 1px solid rgba(255,255,255,.07);
+    }
+    .user-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #2563eb;
+      color: #fff; font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sidebar-nav::-webkit-scrollbar { width: 3px; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+
+    /* ── Main wrap ── */
+    .main-wrap {
+      margin-left: 210px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      height: 52px;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .menu-btn {
+      width: 32px; height: 32px; border-radius: 6px; border: none;
+      background: transparent; cursor: pointer; color: #6b7280;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .menu-btn:hover { background: #f3f4f6; }
+    .breadcrumb { display: flex; align-items: center; gap: 6px; }
+    .bc-item { font-size: 13px; color: #6b7280; }
+    .bc-sep { color: #d1d5db; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
+    .notif-btn {
+      position: relative; cursor: pointer;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      color: #6b7280;
+    }
+    .badge {
+      position: absolute; top: 2px; right: 2px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: #ef4444; color: #fff;
+      font-size: 10px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .user-info { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .user-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1px solid #e5e7eb;
+      display: flex; align-items: center; justify-content: center;
+      color: #6b7280;
+    }
+    .username { font-size: 13px; color: #374151; }
+
+    /* ── Page content ── */
+    .page-content {
+      flex: 1;
+      padding: 20px 28px 80px;
+    }
+
+    /* Sub-breadcrumb */
+    .sub-breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 14px;
+    }
+    .back-btn {
+      width: 28px; height: 28px; border-radius: 6px;
+      border: 1px solid #e5e7eb; background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #6b7280;
+      transition: all .15s;
+    }
+    .back-btn:hover { background: #f3f4f6; border-color: #d1d5db; }
+    .sub-bc-item { font-size: 13px; color: #374151; }
+    .sub-bc-item.muted { color: #9ca3af; }
+    .sub-bc-sep { color: #d1d5db; }
+
+    /* Page title */
+    .page-title-block { margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 600; color: #111827; margin-bottom: 6px; }
+    .page-desc { font-size: 13px; color: #9ca3af; }
+    .required-star { color: #ef4444; }
+
+    /* ── Form sections ── */
+    .form-section {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 24px 14px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .section-indicator {
+      width: 3px; height: 16px; border-radius: 2px;
+      background: linear-gradient(to bottom, #2563eb, #06b6d4);
+      flex-shrink: 0;
+    }
+    .section-title { font-size: 15px; font-weight: 600; color: #111827; }
+    .form-body { padding: 20px 24px; }
+
+    /* Form rows */
+    .form-row { margin-bottom: 20px; }
+    .form-row:last-child { margin-bottom: 0; }
+    .form-row.cols-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    /* Field */
+    .form-field { display: flex; flex-direction: column; gap: 7px; }
+    .form-field.required .field-label::before { content: '* '; color: #ef4444; }
+    .field-label {
+      font-size: 12px; font-weight: 500;
+      color: #374151;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .tip-icon { color: #9ca3af; cursor: help; vertical-align: middle; }
+
+    /* Inputs */
+    .input-wrap { position: relative; display: flex; align-items: center; }
+    .field-input {
+      width: 100%; height: 36px;
+      padding: 0 60px 0 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 7px;
+      font-size: 13px; color: #1f2937;
+      background: #fff; outline: none;
+      font-family: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+    .field-input::placeholder { color: #c4c9d4; }
+    .char-count {
+      position: absolute; right: 10px;
+      font-size: 11px; color: #c4c9d4;
+      pointer-events: none; white-space: nowrap;
+    }
+
+    /* Select */
+    .select-wrap { position: relative; }
+    .field-select {
+      width: 100%; height: 36px;
+      padding: 0 32px 0 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 7px;
+      font-size: 13px; color: #1f2937;
+      background: #fff;
+      appearance: none; outline: none; cursor: pointer;
+      font-family: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field-select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+    .select-arrow {
+      position: absolute; right: 10px; top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none; color: #9ca3af;
+    }
+
+    /* Textarea */
+    .textarea-wrap { position: relative; }
+    .field-textarea {
+      width: 100%;
+      padding: 10px 12px 28px;
+      border: 1px solid #e5e7eb;
+      border-radius: 7px;
+      font-size: 13px; color: #1f2937;
+      font-family: inherit;
+      resize: vertical; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+      line-height: 1.6;
+    }
+    .field-textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+    .field-textarea::placeholder { color: #c4c9d4; }
+    .textarea-count {
+      position: absolute; bottom: 8px; right: 10px;
+      font-size: 11px; color: #c4c9d4; pointer-events: none;
+    }
+
+    /* ── Topic table ── */
+    .topic-table {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .table-head {
+      display: flex;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .th {
+      flex: 1; padding: 10px 12px;
+      font-size: 12px; font-weight: 600;
+      color: #6b7280; white-space: nowrap;
+    }
+    .th.w60  { max-width: 60px; min-width: 60px; }
+    .th.w140 { max-width: 140px; min-width: 140px; }
+    .th.w80  { max-width: 80px; min-width: 80px; }
+    .table-body { }
+    .table-row {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #f3f4f6;
+      transition: background .1s;
+    }
+    .table-row:last-child { border-bottom: none; }
+    .table-row:hover { background: #fafafa; }
+    .td { flex: 1; padding: 8px 8px 8px 12px; }
+    .td.w60  { max-width: 60px; min-width: 60px; }
+    .td.w140 { max-width: 140px; min-width: 140px; padding-right: 4px; }
+    .td.w80  { max-width: 80px; min-width: 80px; }
+    .idx-cell { color: #9ca3af; font-size: 13px; }
+    .cell-input {
+      width: 100%; height: 32px;
+      padding: 0 10px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 12px; color: #1f2937;
+      background: #fff; outline: none;
+      font-family: inherit;
+      transition: border-color .15s;
+    }
+    .cell-input:focus { border-color: #2563eb; }
+    .cell-input::placeholder { color: #d1d5db; }
+    .resolution-cell { display: flex; align-items: center; gap: 4px; }
+    .res-input { width: 50px !important; }
+    .res-x { font-size: 12px; color: #9ca3af; flex-shrink: 0; }
+    .action-cell { display: flex; align-items: center; gap: 6px; justify-content: center; }
+    .action-btn {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity .15s, transform .1s;
+    }
+    .action-btn:hover { opacity: .85; transform: scale(1.05); }
+    .action-btn:disabled { opacity: .35; cursor: not-allowed; transform: none !important; }
+    .action-btn.minus { background: #ef4444; }
+    .action-btn.plus  { background: #2563eb; }
+
+    /* ── File section ── */
+    .file-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    .file-field { display: flex; flex-direction: column; gap: 8px; }
+    .file-hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+    .file-name {
+      display: none;
+      align-items: center; gap: 6px;
+      font-size: 12px; color: #16a34a;
+      margin-top: 6px;
+    }
+    .file-name.visible { display: flex; }
+    .upload-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 7px; background: #fff;
+      font-size: 13px; color: #374151;
+      cursor: pointer; width: fit-content;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .upload-btn:hover { background: #f3f4f6; border-color: #d1d5db; }
+
+    /* Image upload */
+    .image-upload-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+    .img-thumb {
+      width: 72px; height: 72px; border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden; position: relative;
+    }
+    .img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .img-remove {
+      position: absolute; top: 2px; right: 2px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: rgba(0,0,0,.55); border: none;
+      color: #fff; font-size: 14px; line-height: 1;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .img-add-btn {
+      width: 72px; height: 72px;
+      border: 1.5px dashed #d1d5db;
+      border-radius: 8px; background: #fafafa;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 4px; cursor: pointer;
+      font-size: 11px; color: #9ca3af;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .img-add-btn:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+
+    /* ── Footer ── */
+    .form-footer {
+      position: fixed; bottom: 0; left: 210px; right: 0;
+      height: 60px;
+      background: #fff;
+      border-top: 1px solid #e5e7eb;
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px;
+      z-index: 50;
+    }
+    .btn-reset {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 0 20px; height: 36px;
+      border: 1px solid #e5e7eb; border-radius: 7px;
+      background: #fff; font-size: 13px; color: #374151;
+      cursor: pointer; font-family: inherit;
+      transition: all .15s;
+    }
+    .btn-reset:hover { background: #f3f4f6; }
+    .btn-submit {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 0 24px; height: 36px;
+      border: none; border-radius: 7px;
+      background: #2563eb; color: #fff;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer; font-family: inherit;
+      transition: all .15s;
+    }
+    .btn-submit:hover { background: #1d4ed8; }
+
+    svg { display: inline-block; vertical-align: middle; }
+  </style>
+</head>
+<body>
+<div class="page-layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </div>
+      <span class="brand-name">具身智能数据平台</span>
+    </div>
+
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">N</div>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <div class="main-wrap">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="2" y1="4.5" x2="16" y2="4.5"/><line x1="2" y1="9" x2="16" y2="9"/><line x1="2" y1="13.5" x2="16" y2="13.5"/>
+          </svg>
+        </button>
+        <div class="breadcrumb">
+          <span class="bc-item">首页</span>
+          <span class="bc-sep">/</span>
+          <span class="bc-item">工作台</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="notif-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          <span class="badge">2</span>
+        </div>
+        <div class="user-info">
+          <div class="user-circle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
+            </svg>
+          </div>
+          <span class="username">管理员</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <!-- Sub breadcrumb -->
+      <div class="sub-breadcrumb">
+        <button class="back-btn" onclick="history.back()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <polyline points="10,3 5,8 10,13"/><line x1="5" y1="8" x2="13" y2="8"/>
+          </svg>
+        </button>
+        <span class="sub-bc-item muted">设备大型管理</span>
+        <span class="sub-bc-sep">/</span>
+        <span class="sub-bc-item">添加机器人部件</span>
+      </div>
+
+      <!-- Page title -->
+      <div class="page-title-block">
+        <h1 class="page-title">添加机器人部件</h1>
+        <p class="page-desc">填写以下信息填写新的机器人部件类型，带 <span class="required-star">*</span> 的为必填项。</p>
+      </div>
+
+      <!-- ── Section 1: 基本信息 ── -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-indicator"></div>
+          <h2 class="section-title">基本信息</h2>
+        </div>
+        <div class="form-body">
+          <!-- Row 1 -->
+          <div class="form-row cols-3">
+            <div class="form-field required">
+              <label class="field-label">部件名称</label>
+              <div class="input-wrap">
+                <input class="field-input" maxlength="50" placeholder="请输入部件名称" id="inp-name" oninput="updateCount(this,'cnt-name')" />
+                <span class="char-count" id="cnt-name">0 / 50</span>
+              </div>
+            </div>
+            <div class="form-field">
+              <label class="field-label">
+                英文名称
+                <svg class="tip-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="8" cy="8" r="6"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="5" r=".5" fill="currentColor"/>
+                </svg>
+              </label>
+              <div class="input-wrap">
+                <input class="field-input" maxlength="50" placeholder="请输入英文名称" id="inp-nameEn" oninput="updateCount(this,'cnt-nameEn')" />
+                <span class="char-count" id="cnt-nameEn">0 / 50</span>
+              </div>
+            </div>
+            <div class="form-field required">
+              <label class="field-label">部件类型</label>
+              <div class="select-wrap">
+                <select class="field-select">
+                  <option value="" selected disabled>选择传感器类型</option>
+                  <option value="sensor">传感器</option>
+                  <option value="actuator">执行器</option>
+                  <option value="controller">控制器</option>
+                  <option value="structure">结构件</option>
+                </select>
+                <svg class="select-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M3 5l4 4 4-4"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2 -->
+          <div class="form-row cols-3">
+            <div class="form-field">
+              <label class="field-label">部件品牌</label>
+              <div class="input-wrap">
+                <input class="field-input" maxlength="50" placeholder="请输入部件品牌" id="inp-brand" oninput="updateCount(this,'cnt-brand')" />
+                <span class="char-count" id="cnt-brand">0 / 50</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 3 -->
+          <div class="form-row">
+            <div class="form-field">
+              <label class="field-label">传感器描述</label>
+              <div class="textarea-wrap">
+                <textarea class="field-textarea" maxlength="500" placeholder="请输入传感器描述" rows="5"
+                  id="inp-desc" oninput="updateCount(this,'cnt-desc')"></textarea>
+                <span class="char-count textarea-count" id="cnt-desc">0 / 500</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section 2: Topic 组件配置 ── -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-indicator"></div>
+          <h2 class="section-title">Topic 组件配置</h2>
+        </div>
+        <div class="form-body">
+          <div class="topic-table">
+            <div class="table-head">
+              <div class="th w60">序号</div>
+              <div class="th">Topic 名称</div>
+              <div class="th">英文名称</div>
+              <div class="th">Topic</div>
+              <div class="th">标识</div>
+              <div class="th w140">分辨率</div>
+              <div class="th w80">操作</div>
+            </div>
+            <div class="table-body" id="topicTableBody"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section 3: 文件与图片 ── -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-indicator"></div>
+          <h2 class="section-title">文件与图片</h2>
+        </div>
+        <div class="form-body">
+          <div class="file-row">
+            <!-- URDF -->
+            <div class="file-field">
+              <label class="field-label">URDF 文件</label>
+              <div>
+                <button class="upload-btn" onclick="document.getElementById('urdfInput').click()">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                    <path d="M8 12V4M4 8l4-4 4 4"/><path d="M3 14h10"/>
+                  </svg>
+                  上传 URDF 文件
+                </button>
+                <input type="file" id="urdfInput" accept=".urdf" style="display:none" onchange="onUrdfChange(this)" />
+                <div class="file-hint" id="urdfHint">可上传最多 1 份 .urdf 格式的文件</div>
+                <div class="file-name" id="urdfName">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="#22c55e"><path d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm-1 11.41L3.29 7.71l1.42-1.42L7 8.59l4.29-4.3 1.42 1.42L7 11.41z"/></svg>
+                  <span id="urdfNameText"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Images -->
+            <div class="file-field">
+              <label class="field-label">设备图片</label>
+              <div class="image-upload-grid" id="imageGrid">
+                <button class="img-add-btn" id="imgAddBtn" onclick="document.getElementById('imageInput').click()">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round">
+                    <line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/>
+                  </svg>
+                  <span>上传图片</span>
+                </button>
+              </div>
+              <input type="file" id="imageInput" accept="image/jpg,image/jpeg,image/png,image/gif" multiple style="display:none" onchange="onImageChange(this)" />
+              <div class="file-hint">可上传最多 5 张，单个不超过 2MB，格式 jpg/jpeg/png/gif</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <div class="form-footer">
+      <button class="btn-reset" onclick="resetForm()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2 8a6 6 0 1 0 1.5-4L1 6"/><polyline points="1,2 1,6 5,6"/>
+        </svg>
+        重置
+      </button>
+      <button class="btn-submit" onclick="submitForm()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <polyline points="2,8 6,12 14,4"/>
+        </svg>
+        提交
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Nav items ──
+const navItems = [
+  { label: '工作台',  active: false },
+  { label: '标签管理', active: false, hasArrow: true },
+  { label: '设备管理', active: true,  hasArrow: true },
+  { label: '数据采集', active: false, hasArrow: true },
+  { label: '数据管理', active: false, hasArrow: true },
+  { label: '项目管理', active: false },
+  { label: '流程管理', active: false, hasArrow: true },
+  { label: '数据标注', active: false, hasArrow: true },
+  { label: '任务广场', active: false, hasArrow: true },
+  { label: '统计管理', active: false, hasArrow: true },
+  { label: '仿真中心', active: false, hasArrow: true },
+  { label: '系统设置', active: false, hasArrow: true },
+];
+const navIcons = [
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="16,16 12,12 8,16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M8 12h8M12 8v8"/></svg>`,
+  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`,
+];
+const arrowSvg = `<svg class="nav-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+
+const navEl = document.getElementById('sidebarNav');
+navItems.forEach((item, i) => {
+  const div = document.createElement('div');
+  div.className = 'nav-item' + (item.active ? ' active' : '');
+  div.innerHTML = `<span class="nav-icon">${navIcons[i]}</span><span class="nav-label">${item.label}</span>${item.hasArrow ? arrowSvg : ''}`;
+  navEl.appendChild(div);
+});
+
+// ── Char counters ──
+function updateCount(input, counterId) {
+  document.getElementById(counterId).textContent = input.value.length + ' / ' + input.maxLength;
+}
+
+// ── Topic rows ──
+let rowId = 1;
+const rows = [{ id: rowId++ }];
+
+function renderTopicTable() {
+  const body = document.getElementById('topicTableBody');
+  body.innerHTML = '';
+  rows.forEach((row, idx) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.id = 'row-' + row.id;
+    div.innerHTML = `
+      <div class="td w60 idx-cell">${idx + 1}</div>
+      <div class="td"><input class="cell-input" placeholder="请输入 Topic 名称" /></div>
+      <div class="td"><input class="cell-input" placeholder="请输入英文名称" /></div>
+      <div class="td"><input class="cell-input" placeholder="请输入 Topic" /></div>
+      <div class="td"><input class="cell-input" placeholder="请输入标识" /></div>
+      <div class="td w140 resolution-cell">
+        <input class="cell-input res-input" placeholder="宽" />
+        <span class="res-x">×</span>
+        <input class="cell-input res-input" placeholder="高" />
+      </div>
+      <div class="td w80 action-cell">
+        <button class="action-btn minus" ${rows.length === 1 ? 'disabled' : ''} onclick="removeRow(${row.id})">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><line x1="3" y1="7" x2="11" y2="7"/></svg>
+        </button>
+        <button class="action-btn plus" onclick="addRow(${idx})">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><line x1="7" y1="3" x2="7" y2="11"/><line x1="3" y1="7" x2="11" y2="7"/></svg>
+        </button>
+      </div>`;
+    body.appendChild(div);
+  });
+}
+
+function addRow(afterIdx) {
+  rows.splice(afterIdx + 1, 0, { id: rowId++ });
+  renderTopicTable();
+}
+function removeRow(id) {
+  if (rows.length <= 1) return;
+  const idx = rows.findIndex(r => r.id === id);
+  if (idx > -1) rows.splice(idx, 1);
+  renderTopicTable();
+}
+
+renderTopicTable();
+
+// ── URDF upload ──
+function onUrdfChange(input) {
+  const f = input.files[0];
+  if (!f) return;
+  document.getElementById('urdfHint').style.display = 'none';
+  const nameEl = document.getElementById('urdfName');
+  nameEl.classList.add('visible');
+  document.getElementById('urdfNameText').textContent = f.name;
+}
+
+// ── Image upload ──
+const deviceImages = [];
+function onImageChange(input) {
+  const files = Array.from(input.files || []);
+  for (const f of files) {
+    if (deviceImages.length >= 5) break;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      deviceImages.push(ev.target.result);
+      renderImageGrid();
+    };
+    reader.readAsDataURL(f);
+  }
+  input.value = '';
+}
+function removeImage(idx) {
+  deviceImages.splice(idx, 1);
+  renderImageGrid();
+}
+function renderImageGrid() {
+  const grid = document.getElementById('imageGrid');
+  const addBtn = document.getElementById('imgAddBtn');
+  // remove existing thumbs
+  grid.querySelectorAll('.img-thumb').forEach(el => el.remove());
+  // re-insert thumbs before add button
+  deviceImages.forEach((src, i) => {
+    const div = document.createElement('div');
+    div.className = 'img-thumb';
+    div.innerHTML = `<img src="${src}" alt=""/><button class="img-remove" onclick="removeImage(${i})">×</button>`;
+    grid.insertBefore(div, addBtn);
+  });
+  addBtn.style.display = deviceImages.length >= 5 ? 'none' : 'flex';
+}
+
+// ── Reset / Submit ──
+function resetForm() {
+  document.getElementById('inp-name').value = '';
+  document.getElementById('inp-nameEn').value = '';
+  document.getElementById('inp-brand').value = '';
+  document.getElementById('inp-desc').value = '';
+  ['cnt-name','cnt-nameEn','cnt-brand'].forEach(id => document.getElementById(id).textContent = '0 / 50');
+  document.getElementById('cnt-desc').textContent = '0 / 500';
+  document.querySelector('.field-select').selectedIndex = 0;
+  rows.length = 0; rows.push({ id: rowId++ });
+  renderTopicTable();
+  deviceImages.length = 0;
+  renderImageGrid();
+  document.getElementById('urdfHint').style.display = '';
+  document.getElementById('urdfName').classList.remove('visible');
+  document.getElementById('urdfInput').value = '';
+}
+
+function submitForm() {
+  alert('提交成功！');
+}
+</script>
+</body>
+</html>

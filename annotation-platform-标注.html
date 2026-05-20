@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>具身智能数据标注平台</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #f0f2f5; --bg2: #ffffff; --bg3: #f5f6f8;
+    --border: #dde1e8; --border-light: #c4cad6;
+    --text: #1a1f2e; --text-2: #5a6478; --text-3: #9aa0ae;
+    --accent: #2563eb; --accent-2: #1d4ed8;
+    --green: #16a34a; --green-dark: #15803d;
+    --red: #dc2626; --amber: #d97706; --teal: #0d9488; --purple: #9333ea;
+    --mono: 'DM Mono', monospace; --sans: 'Noto Sans SC', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-size: 13px; }
+
+  /* TOP BAR */
+  .topbar { height: 36px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px; gap: 10px; flex-shrink: 0; font-size: 12px; color: var(--text-2); font-family: var(--mono); }
+  .topbar-left { display: flex; gap: 8px; align-items: center; flex: 1; overflow: hidden; }
+  .tag { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .tag-green { background: rgba(22,163,74,.12); color: var(--green); border: 1px solid rgba(22,163,74,.3); }
+  .tag-amber { background: rgba(217,119,6,.12); color: var(--amber); border: 1px solid rgba(217,119,6,.3); }
+  .tag-blue  { background: rgba(37,99,235,.10); color: var(--accent); border: 1px solid rgba(37,99,235,.3); }
+  .tag-teal  { background: rgba(13,148,136,.10); color: var(--teal);  border: 1px solid rgba(13,148,136,.3); }
+  .tag-gray  { background: rgba(90,100,120,.08); color: var(--text-2); border: 1px solid var(--border); }
+  .topbar-sep { color: var(--border-light); }
+  .topbar-path { color: var(--text-3); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar-close { width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all .15s; flex-shrink: 0; }
+  .topbar-close:hover { background: rgba(220,38,38,.1); color: var(--red); border-color: var(--red); }
+
+  /* LAYOUT */
+  .main { flex: 1; display: flex; overflow: hidden; }
+
+  /* LEFT PANEL */
+  .left-panel { width: 220px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+  .panel-section { border-bottom: 1px solid var(--border); padding: 10px 12px; }
+  .panel-title { font-size: 10px; font-weight: 500; color: var(--text-3); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+
+  .mode-hint { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 7px 9px; font-size: 11px; color: var(--text-2); line-height: 1.55; margin-bottom: 10px; }
+  .mode-hint b { color: var(--text); font-weight: 500; }
+
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+  .swatch { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all .15s; flex-shrink: 0; }
+  .swatch.active { border-color: var(--text); transform: scale(1.2); }
+
+  .size-row { display: flex; gap: 4px; }
+  .size-btn { height: 24px; padding: 0 7px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text-2); font-size: 11px; cursor: pointer; transition: all .15s; font-family: var(--mono); }
+  .size-btn.active { background: rgba(37,99,235,.1); color: var(--accent); border-color: var(--accent); }
+  .size-btn:hover:not(.active) { border-color: var(--border-light); color: var(--text); }
+
+  .video-list { display: flex; flex-direction: column; gap: 3px; }
+  .video-item { padding: 5px 7px; border-radius: 4px; cursor: pointer; color: var(--text-2); font-size: 11px; border: 1px solid transparent; transition: all .15s; display: flex; align-items: center; gap: 6px; }
+  .video-item.active { background: rgba(37,99,235,.07); color: var(--accent); border-color: rgba(37,99,235,.22); }
+  .video-item:hover:not(.active) { background: var(--bg3); color: var(--text); }
+  .video-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .video-mode-tag { margin-left: auto; font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 500; flex-shrink: 0; }
+
+  .step-card { padding: 8px 12px 10px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+  .step-card:hover { background: var(--bg3); }
+  .step-card.active { background: rgba(37,99,235,.04); }
+  .step-card.done { background: rgba(0,0,0,.012); }
+  .step-card.done:hover { background: var(--bg3); }
+  .step-card-header { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+  .step-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+  .step-dot-done { width: 14px; height: 14px; }
+  .step-card-label { font-size: 11.5px; font-weight: 500; color: var(--text-2); line-height: 1.4; flex: 1; min-width: 0; }
+  .step-done-badge { font-size: 9px; font-weight: 500; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
+  .step-frame-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; padding-left: 17px; }
+  .step-frame-col { display: flex; flex-direction: column; gap: 2px; }
+  .step-frame-header { font-size: 9px; color: var(--text-3); letter-spacing: .02em; }
+  .step-frame-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; color: var(--text-3); font-family: var(--mono); font-size: 11px; padding: 3px 4px; text-align: center; cursor: default; outline: none; }
+  .step-frame-input.has-value { background: transparent; }
+  .step-frame-total { color: var(--text-2); }
+
+  .frame-badge { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; font-family: var(--mono); font-size: 16px; color: var(--accent); text-align: center; }
+
+  .shortcut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+  .shortcut-item { display: flex; gap: 5px; align-items: center; }
+  .key { background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; font-family: var(--mono); font-size: 10px; color: var(--text); flex-shrink: 0; }
+  .key-desc { font-size: 10px; color: var(--text-3); }
+
+  .range-step-select { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 11px; padding: 5px 6px; font-family: var(--sans); cursor: pointer; margin-top: 4px; }
+
+  /* CENTER */
+  .center { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; background: #e4e8ee; position: relative; overflow: hidden; }
+  #main-canvas { display: block; cursor: crosshair; max-width: 100%; max-height: 100%; border: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+
+  /* range mode canvas overlay */
+  .range-canvas-overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; pointer-events: none; }
+  .range-canvas-overlay.active { display: flex; background: rgba(240,242,245,.5); }
+  .range-canvas-msg { background: rgba(255,255,255,.92); border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; font-size: 13px; color: var(--text-2); text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,.08); line-height: 1.6; }
+  .range-canvas-msg b { color: var(--teal); display: block; margin-bottom: 2px; }
+
+  /* mode badges */
+  .mode-indicator { position: absolute; top: 12px; left: 12px; display: flex; gap: 5px; }
+  .mode-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; border: 1px solid; background: rgba(255,255,255,.75); backdrop-filter: blur(4px); }
+
+  /* hand toggle */
+  .hand-toggle { position: absolute; bottom: 12px; left: 12px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); }
+  .toggle-switch { position: relative; width: 36px; height: 20px; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 20px; cursor: pointer; transition: .2s; }
+  .toggle-slider:before { content: ''; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; background: var(--text-2); border-radius: 50%; transition: .2s; }
+  .toggle-switch input:checked + .toggle-slider { background: var(--green); }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(16px); background: #fff; }
+
+  .coord-display { position: absolute; bottom: 12px; right: 12px; font-family: var(--mono); font-size: 11px; color: var(--text-2); background: rgba(255,255,255,.85); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); }
+
+  .toast { position: absolute; top: 12px; left: 50%; transform: translateX(-50%) translateY(-60px); background: rgba(255,255,255,.95); border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px; font-size: 12px; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); transition: transform .25s cubic-bezier(.34,1.56,.64,1); z-index: 100; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,.1); color: var(--text); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* BOTTOM BAR */
+  .bottom-bar { background: var(--bg2); border-top: 1px solid var(--border); flex-shrink: 0; padding: 0 12px; }
+  .timeline-track { display: flex; align-items: center; gap: 8px; padding: 8px 0 4px; }
+  .timeline-wrap { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .timeline-bar { width: 100%; height: 8px; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; position: relative; cursor: pointer; user-select: none; overflow: visible; }
+  .timeline-bar.range-mode { height: 18px; border-color: var(--teal); cursor: col-resize; }
+  .timeline-bar.range-mode::after { content: '← 在此拖拽选取帧范围 →'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 10px; color: var(--teal); pointer-events: none; white-space: nowrap; font-family: var(--mono); opacity: .7; }
+  .timeline-progress { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent); border-radius: 3px; pointer-events: none; opacity: .5; }
+  /* segment track — always visible below the scrub bar */
+  .timeline-seg-track { width: 100%; height: 10px; position: relative; border-radius: 4px; overflow: visible; background: transparent; }
+  .timeline-segment { position: absolute; top: 0; height: 100%; border-radius: 3px; opacity: .75; pointer-events: none; }
+  .timeline-seg-label { position: absolute; top: -1px; height: 100%; display: flex; align-items: center; padding-left: 3px; font-size: 8px; font-family: var(--mono); font-weight: 500; pointer-events: none; color: #fff; overflow: hidden; white-space: nowrap; }
+  .drag-preview { position: absolute; top: 0; height: 100%; background: rgba(13,148,136,.2); border: 1.5px solid var(--teal); border-radius: 3px; pointer-events: none; display: none; }
+  .timeline-playhead { position: absolute; top: -4px; width: 2px; height: calc(100% + 8px); background: var(--accent); border-radius: 1px; pointer-events: none; transform: translateX(-50%); }
+  .time-label { font-family: var(--mono); font-size: 11px; color: var(--text-2); white-space: nowrap; }
+  .controls-row { display: flex; align-items: center; gap: 4px; padding-bottom: 7px; }
+  .ctrl-btn { width: 28px; height: 26px; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all .15s; }
+  .ctrl-btn:hover { border-color: var(--border-light); color: var(--text); background: var(--bg3); }
+  .ctrl-btn.play-btn { width: 36px; background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ctrl-btn.play-btn:hover { background: var(--accent-2); }
+  .speed-select { background: transparent; border: 1px solid var(--border); color: var(--text-2); font-family: var(--mono); font-size: 11px; border-radius: 4px; padding: 2px 4px; cursor: pointer; }
+
+  /* RIGHT PANEL */
+  .right-panel { width: 224px; flex-shrink: 0; background: var(--bg2); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .right-scroll { flex: 1; overflow-y: auto; }
+  .anno-list { display: flex; flex-direction: column; gap: 4px; padding: 8px; }
+  .anno-item { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 8px; cursor: pointer; transition: all .15s; }
+  .anno-item:hover { border-color: var(--border-light); }
+  .anno-item.selected { border-color: var(--accent); }
+  .anno-header { font-size: 11px; color: var(--text-2); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+  .anno-coords { font-family: var(--mono); font-size: 11px; color: var(--text); line-height: 1.6; }
+  .anno-coords span { color: var(--text-3); }
+  .anno-delete { background: transparent; border: none; color: var(--text-3); cursor: pointer; font-size: 12px; padding: 0; line-height: 1; transition: color .15s; }
+  .anno-delete:hover { color: var(--red); }
+  .anno-type-badge { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 500; }
+  .anno-meta { font-size: 10px; color: var(--text-3); margin-top: 3px; }
+
+  /* 3D SKELETON */
+  .skeleton-wrap { border-top: 1px solid var(--border); padding: 10px 12px; flex-shrink: 0; }
+  .skeleton-header { font-size: 10px; font-weight: 500; color: var(--text-3); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+  .skeleton-box { background: #0d1420; border-radius: 6px; overflow: hidden; position: relative; height: 118px; }
+  #sk-canvas { display: block; }
+  .sk-fps { position: absolute; top: 4px; left: 6px; font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,.35); }
+  .sk-frame { position: absolute; top: 4px; right: 6px; font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,.35); }
+
+  /* QC */
+  .qc-bar { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .qc-btn { flex: 1; padding: 7px; border-radius: 6px; border: none; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; font-family: var(--sans); }
+  .qc-btn-pass { background: var(--green); color: #fff; }
+  .qc-btn-pass:hover { background: var(--green-dark); }
+  .qc-btn-fail { background: rgba(217,119,6,.1); color: var(--amber); border: 1px solid rgba(217,119,6,.3); }
+  .qc-btn-fail:hover { background: rgba(217,119,6,.2); }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.28); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity .2s; backdrop-filter: blur(4px); }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--bg2); border: 1px solid var(--border-light); border-radius: 12px; padding: 22px; min-width: 310px; max-width: 440px; transform: scale(.95); transition: transform .2s cubic-bezier(.34,1.56,.64,1); box-shadow: 0 8px 32px rgba(0,0,0,.12); }
+  .modal-overlay.open .modal { transform: scale(1); }
+  .modal-title { font-size: 15px; font-weight: 500; margin-bottom: 8px; }
+  .modal-desc { font-size: 12px; color: var(--text-2); margin-bottom: 16px; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn { padding: 7px 16px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; font-size: 13px; font-family: var(--sans); transition: all .15s; }
+  .modal-btn:hover { background: var(--bg3); }
+  .modal-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .modal-btn.primary:hover { background: var(--accent-2); }
+  .modal-btn.danger { background: rgba(220,38,38,.1); border-color: rgba(220,38,38,.3); color: var(--red); }
+  .modal-btn.danger:hover { background: rgba(220,38,38,.2); }
+
+  .empty-state { padding: 20px 12px; text-align: center; color: var(--text-3); font-size: 12px; line-height: 1.7; }
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span style="color:var(--text-2)">训练任务_job_</span>
+    <span class="tag tag-green">解析完成</span>
+    <span class="tag tag-green">优秀</span>
+    <span class="tag tag-gray" id="anno-status-tag">未标注</span>
+    <span class="tag tag-gray">未审核</span>
+    <span class="topbar-sep">|</span>
+    <span style="color:var(--text-3)">任务ID:</span><span>7760</span>
+    <span style="color:var(--text-3)">实例ID:</span><span>9196</span>
+    <span class="topbar-sep">|</span>
+    <span class="topbar-path">collect-data/7760_9196/bcb9a0265a7d47048d6c3337d379c5d4</span>
+  </div>
+  <button class="topbar-close" onclick="confirmClose()">✕</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+
+    <!-- 标注配置 -->
+    <div class="panel-section">
+      <div class="panel-title">标注配置</div>
+
+      <!-- MODE SWITCHER -->
+      <div id="mode-tabs" style="display:flex;gap:4px;margin-bottom:10px;">
+        <button id="tab-box"   onclick="switchMode('box')"   style="flex:1;padding:4px 0;font-size:11px;border-radius:4px;cursor:pointer;border:1px solid var(--accent);background:rgba(37,99,235,.12);color:var(--accent);font-family:var(--sans);font-weight:500;transition:all .15s;">框</button>
+        <button id="tab-point" onclick="switchMode('point')" style="flex:1;padding:4px 0;font-size:11px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-2);font-family:var(--sans);font-weight:500;transition:all .15s;">点</button>
+        <button id="tab-range" onclick="switchMode('range')" style="flex:1;padding:4px 0;font-size:11px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-2);font-family:var(--sans);font-weight:500;transition:all .15s;">范围</button>
+      </div>
+
+      <!-- BOX config -->
+      <div id="cfg-box">
+        <div class="mode-hint">
+          <b>框标注模式</b>
+          在视频画面上拖拽绘制边界框，用于<b>头部相机</b>目标定位。
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:5px;">左框颜色</div>
+        <div class="swatches" id="sw-left" style="margin-bottom:8px;">
+          <div class="swatch active" style="background:#facc15" data-c="#facc15" onclick="swatchPick('left',this)"></div>
+          <div class="swatch" style="background:#22c55e" data-c="#22c55e" onclick="swatchPick('left',this)"></div>
+          <div class="swatch" style="background:#3b82f6" data-c="#3b82f6" onclick="swatchPick('left',this)"></div>
+          <div class="swatch" style="background:#ef4444" data-c="#ef4444" onclick="swatchPick('left',this)"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:5px;">右框颜色</div>
+        <div class="swatches" id="sw-right" style="margin-bottom:8px;">
+          <div class="swatch" style="background:#facc15" data-c="#facc15" onclick="swatchPick('right',this)"></div>
+          <div class="swatch active" style="background:#22c55e" data-c="#22c55e" onclick="swatchPick('right',this)"></div>
+          <div class="swatch" style="background:#3b82f6" data-c="#3b82f6" onclick="swatchPick('right',this)"></div>
+          <div class="swatch" style="background:#ef4444" data-c="#ef4444" onclick="swatchPick('right',this)"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">框线宽度</div>
+        <div class="size-row" style="margin-bottom:8px;">
+          <button class="size-btn" onclick="setLW(1,this)">1</button>
+          <button class="size-btn active" onclick="setLW(2,this)">2</button>
+          <button class="size-btn" onclick="setLW(3,this)">3</button>
+          <button class="size-btn" onclick="setLW(4,this)">4</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">抓手尺寸</div>
+        <div class="size-row">
+          <button class="size-btn" onclick="setGrip(4,this)">4</button>
+          <button class="size-btn active" onclick="setGrip(8,this)">8</button>
+          <button class="size-btn" onclick="setGrip(10,this)">10</button>
+          <button class="size-btn" onclick="setGrip(12,this)">12</button>
+        </div>
+      </div>
+
+      <!-- POINT config -->
+      <div id="cfg-point" style="display:none">
+        <div class="mode-hint">
+          <b>点标注模式</b>
+          单击画面标记精确坐标点，用于<b>手部相机</b>接触点定位。
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:5px;">颜色选择</div>
+        <div class="swatches" id="sw-point" style="margin-bottom:8px;">
+          <div class="swatch active" style="background:#3b82f6" data-c="#3b82f6" onclick="swatchPoint(this)"></div>
+          <div class="swatch" style="background:#0d9488" data-c="#0d9488" onclick="swatchPoint(this)"></div>
+          <div class="swatch" style="background:#9333ea" data-c="#9333ea" onclick="swatchPoint(this)"></div>
+          <div class="swatch" style="background:#f59e0b" data-c="#f59e0b" onclick="swatchPoint(this)"></div>
+          <div class="swatch" style="background:#ec4899" data-c="#ec4899" onclick="swatchPoint(this)"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">点半径</div>
+        <div class="size-row">
+          <button class="size-btn active" onclick="setPR(5,this)">5px</button>
+          <button class="size-btn" onclick="setPR(10,this)">10px</button>
+        </div>
+      </div>
+
+      <!-- RANGE config -->
+      <div id="cfg-range" style="display:none">
+        <div class="mode-hint">
+          <b>范围标注模式</b>
+          在下方<b>时间轴</b>上拖拽选取帧区间，画面不可操作。
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">绑定动作步骤</div>
+        <select class="range-step-select" id="range-step-sel">
+          <option value="1">步骤1：右手取药品</option>
+          <option value="2">步骤2：左手抓叉子</option>
+        </select>
+        <div style="margin-top:8px;font-size:11px;color:var(--text-3);">
+          已标注 <span id="range-count" style="color:var(--teal);font-weight:500;">0</span> 个范围
+        </div>
+      </div>
+    </div>
+
+    <!-- 标注视频 -->
+    <div class="panel-section">
+      <div class="panel-title">标注视频</div>
+      <div class="video-list">
+        <div class="video-item active" id="vi-head_left" onclick="switchVideo('head_left')">
+          <div class="video-dot" style="background:var(--accent)"></div>
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">camera_head_left</span>
+          <span class="video-mode-tag tag-blue">框</span>
+        </div>
+        <div class="video-item" id="vi-head_right" onclick="switchVideo('head_right')">
+          <div class="video-dot" style="background:var(--border)"></div>
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">camera_head_right</span>
+          <span class="video-mode-tag tag-blue" style="opacity:.45">框</span>
+        </div>
+        <div class="video-item" id="vi-hand_left" onclick="switchVideo('hand_left')">
+          <div class="video-dot" style="background:var(--border)"></div>
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">camera_hand_left</span>
+          <span class="video-mode-tag tag-teal" style="opacity:.45">点</span>
+        </div>
+        <div class="video-item" id="vi-hand_right" onclick="switchVideo('hand_right')">
+          <div class="video-dot" style="background:var(--border)"></div>
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">camera_hand_right</span>
+          <span class="video-mode-tag tag-teal" style="opacity:.45">点</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 人工标注帧 -->
+    <div class="panel-section">
+      <div class="panel-title">人工标注帧</div>
+      <div class="frame-badge" id="manual-frame-badge">0</div>
+    </div>
+
+    <!-- 快捷键 -->
+    <div class="panel-section">
+      <div class="panel-title">快捷键</div>
+      <div class="shortcut-grid">
+        <div class="shortcut-item"><span class="key">Space</span><span class="key-desc">播放/暂停</span></div>
+        <div class="shortcut-item"><span class="key">Z/X</span><span class="key-desc">逐帧</span></div>
+        <div class="shortcut-item"><span class="key">A/D</span><span class="key-desc">±10帧</span></div>
+        <div class="shortcut-item"><span class="key">W</span><span class="key-desc">左手</span></div>
+        <div class="shortcut-item"><span class="key">E</span><span class="key-desc">右手</span></div>
+        <div class="shortcut-item"><span class="key">T</span><span class="key-desc">完成</span></div>
+      </div>
+    </div>
+
+    <!-- 标注步骤 -->
+    <div class="panel-section" style="padding:10px 0 0;">
+      <div class="panel-title" style="padding:0 12px 6px;">标注步骤</div>
+      <div id="step-cards"></div>
+    </div>
+
+  </div><!-- /left-panel -->
+
+  <!-- CENTER -->
+  <div class="center">
+    <div class="canvas-wrap" id="canvas-wrap">
+
+      <canvas id="main-canvas" width="740" height="416"></canvas>
+
+      <!-- range mode overlay -->
+      <div class="range-canvas-overlay" id="range-overlay">
+        <div class="range-canvas-msg">
+          <b>范围标注模式</b>
+          请在下方时间轴上按住鼠标拖拽，选取动作帧区间
+        </div>
+      </div>
+
+      <!-- badges -->
+      <div class="mode-indicator">
+        <div class="mode-badge tag-blue" id="mode-badge">框标注</div>
+        <div class="mode-badge" id="hand-badge" style="color:var(--green);border-color:rgba(22,163,74,.4)">右手</div>
+        <div class="mode-badge tag-gray" id="video-badge">head_left</div>
+      </div>
+
+      <!-- toast -->
+      <div class="toast" id="toast">
+        <div class="toast-dot" id="toast-dot" style="background:var(--green)"></div>
+        <span id="toast-msg">保存成功</span>
+      </div>
+
+      <!-- coord -->
+      <div class="coord-display" id="coord-display">X: —  Y: —</div>
+
+      <!-- hand toggle -->
+      <div class="hand-toggle" id="hand-toggle-wrap">
+        <span id="hand-label">右手标注</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="hand-chk" checked onchange="toggleHand(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+    </div><!-- /canvas-wrap -->
+
+    <!-- BOTTOM BAR -->
+    <div class="bottom-bar">
+      <div class="timeline-track">
+        <span class="time-label" id="t-cur">0.000</span>
+        <div class="timeline-wrap">
+          <div class="timeline-bar" id="tbar">
+            <div class="timeline-progress" id="t-prog" style="width:0%"></div>
+            <div class="drag-preview" id="drag-prev"></div>
+            <div class="timeline-playhead" id="t-head" style="left:0%"></div>
+          </div>
+          <div class="timeline-seg-track" id="seg-track"></div>
+        </div>
+        <span class="time-label">6.333</span>
+      </div>
+      <div class="controls-row">
+        <button class="ctrl-btn" onclick="goStart()">⏮</button>
+        <button class="ctrl-btn" onclick="step(-10)">⏪</button>
+        <button class="ctrl-btn" onclick="step(-1)">◀</button>
+        <button class="ctrl-btn play-btn" id="play-btn" onclick="togglePlay()">▶</button>
+        <button class="ctrl-btn" onclick="step(1)">▶</button>
+        <button class="ctrl-btn" onclick="step(10)">⏩</button>
+        <button class="ctrl-btn" onclick="goEnd()">⏭</button>
+        <span style="margin-left:8px;font-family:var(--mono);font-size:11px;color:var(--text-2)">Frame <span id="frame-num">0</span></span>
+        <span style="margin-left:3px;font-size:11px;color:var(--text-3)">/ 190</span>
+        <span style="margin-left:auto">
+          <select class="speed-select" onchange="setSpeed(this.value)">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+        </span>
+      </div>
+    </div>
+
+  </div><!-- /center -->
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+
+    <!-- header -->
+    <div class="panel-section" style="flex-shrink:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="panel-title" style="margin-bottom:0">标注结果</div>
+        <div style="display:flex;gap:4px">
+          <button class="size-btn" onclick="saveAll()" style="color:var(--green);border-color:rgba(22,163,74,.3)">保存</button>
+          <button class="size-btn" onclick="clearAll()" style="color:var(--red);border-color:rgba(220,38,38,.3)">清除</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-3)">Frame: <span id="r-frame" style="color:var(--accent);font-family:var(--mono)">0</span></div>
+    </div>
+
+    <div class="right-scroll">
+      <div class="empty-state" id="empty-state">暂无标注<br>在画面或时间轴上操作</div>
+      <div class="anno-list" id="anno-list"></div>
+    </div>
+
+    <!-- 3D skeleton -->
+    <div class="skeleton-wrap">
+      <div class="skeleton-header">
+        <span>joints.json · 3D骨架参考</span>
+        <span style="font-size:10px;color:var(--teal);font-weight:400">120 FPS</span>
+      </div>
+      <div class="skeleton-box">
+        <canvas id="sk-canvas" width="200" height="118"></canvas>
+        <div class="sk-fps">Fps: 120  Res: 640×360</div>
+        <div class="sk-frame" id="sk-frame">Frame: 0</div>
+      </div>
+    </div>
+
+    <div class="qc-bar">
+      <button class="qc-btn qc-btn-pass" onclick="submitDone()">标注完成</button>
+      <button class="qc-btn qc-btn-fail" onclick="submitFail()">质检不合格</button>
+    </div>
+
+  </div><!-- /right-panel -->
+
+</div><!-- /main -->
+
+<!-- MODALS -->
+<div class="modal-overlay" id="m-done">
+  <div class="modal">
+    <div class="modal-title">✅ 确认提交标注？</div>
+    <div class="modal-desc">任务将进入审核队列，标记为「标注完成」。提交后可由审核员退回修改。</div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeM('m-done')">取消</button>
+      <button class="modal-btn primary" onclick="doDone()">确认提交</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-fail">
+  <div class="modal">
+    <div class="modal-title">⚠️ 标记质检不合格</div>
+    <div class="modal-desc">说明不合格原因（可选），任务将退回重新标注。</div>
+    <textarea id="fail-reason" placeholder="例如：框坐标偏移过大、遗漏关键帧…" style="width:100%;height:68px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px;font-size:12px;font-family:var(--sans);resize:none;outline:none;margin-bottom:16px;"></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeM('m-fail')">取消</button>
+      <button class="modal-btn danger" onclick="doFail()">确认不合格</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="m-close">
+  <div class="modal">
+    <div class="modal-title">离开此任务？</div>
+    <div class="modal-desc">未保存的标注将会丢失。</div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeM('m-close')">继续标注</button>
+      <button class="modal-btn danger" onclick="doClose()">直接离开</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────
+const FRAMES = 190, FPS = 30;
+
+// head视频 → 框模式; hand视频 → 点模式
+const VIDEO_MODE = { head_left:'box', head_right:'box', hand_left:'point', hand_right:'point' };
+
+let S = {
+  mode: 'box', frame: 0, playing: false, speed: 1, playTmr: null,
+  hand: 'right',
+  leftColor: '#facc15', rightColor: '#22c55e', pointColor: '#3b82f6',
+  lw: 2, grip: 8, pr: 5,
+  video: 'head_left', step: 1,
+  annos: [],   // {id,frame,type,data,hand,color,video,step}
+  ranges: [],  // {id,start,end,stepNum,stepLabel}
+  sel: null, dirty: false,
+  rdrag: false, rdragStart: null,
+  boxDrag: null,
+};
+
+// ─────────────────────────────────────────────────────────────
+// MAIN CANVAS
+// ─────────────────────────────────────────────────────────────
+const cv = document.getElementById('main-canvas');
+const cx = cv.getContext('2d');
+
+const SCENE_COLORS = {
+  head_left:  ['#c8d4e8','#b8c8e0','#a8bcd8'],
+  head_right: ['#c8d8e0','#b8ccd6','#a8c0cc'],
+  hand_left:  ['#d4c8d8','#c8bcd0','#bcb0c8'],
+  hand_right: ['#d8d0c0','#ccc4b4','#c0b8a8'],
+};
+
+function drawScene() {
+  const W=cv.width, H=cv.height, cs=SCENE_COLORS[S.video];
+  cx.clearRect(0,0,W,H);
+  const g=cx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,cs[0]); g.addColorStop(.5,cs[1]); g.addColorStop(1,cs[2]);
+  cx.fillStyle=g; cx.fillRect(0,0,W,H);
+  cx.strokeStyle='rgba(0,0,0,.07)'; cx.lineWidth=1;
+  for(let i=0;i<8;i++){const x=80+i*90;cx.beginPath();cx.moveTo(x,H*.4);cx.lineTo(W/2+(x-W/2)*.1,H);cx.stroke();}
+  for(let i=0;i<5;i++){const y=H*.45+i*H*.12,f=(y-H*.4)/(H*.6);cx.beginPath();cx.moveTo(W*f*.3,y);cx.lineTo(W-W*f*.3,y);cx.stroke();}
+  const p=S.frame/FRAMES;
+  if(S.video.startsWith('head')){
+    cx.fillStyle='rgba(0,0,0,.09)';
+    const rx=200+p*120;
+    cx.fillRect(rx,H*.35,80,120); cx.fillRect(rx+20,H*.55,40,60);
+    cx.fillStyle='rgba(0,0,0,.06)';
+    cx.fillRect(280,H*.5,200,8); cx.fillRect(290,H*.5,8,80); cx.fillRect(462,H*.5,8,80);
+  } else {
+    cx.fillStyle='rgba(0,0,0,.08)';
+    cx.fillRect(W*.3+p*50,H*.4,140,80); cx.fillRect(W*.5,H*.55,100,20);
+    cx.fillStyle='rgba(0,0,0,.18)'; cx.font='11px DM Mono,monospace';
+    cx.fillText('Fps: 30  Resolution: 640×360',W-212,H-36);
+    cx.fillText('Duration: '+( FRAMES/FPS).toFixed(3),W-212,H-20);
+  }
+  cx.fillStyle='rgba(0,0,0,.14)'; cx.font='11px DM Mono,monospace';
+  cx.fillText('Frame: '+S.frame+'   Time: '+(S.frame/FPS).toFixed(3)+'s',10,H-8);
+}
+
+function drawAnnos() {
+  S.annos.forEach(a=>{
+    if(a.frame!==S.frame) return;
+    if(a.type==='box'){
+      const {x1,y1,x2,y2}=a.data;
+      const px1=x1*cv.width,py1=y1*cv.height,px2=x2*cv.width,py2=y2*cv.height;
+      cx.strokeStyle=a.color; cx.lineWidth=S.lw;
+      cx.strokeRect(px1,py1,px2-px1,py2-py1);
+      const gs=S.grip;
+      [[px1,py1],[px2,py1],[px1,py2],[px2,py2]].forEach(([bx,by])=>{
+        cx.fillStyle=a.color; cx.fillRect(bx-gs/2,by-gs/2,gs,gs);
+      });
+      cx.fillStyle='rgba(0,0,0,.55)'; cx.fillRect(px1,py1-18,68,18);
+      cx.fillStyle=a.color; cx.font='10px DM Mono,monospace';
+      cx.fillText((a.hand==='right'?'右手':'左手')+'框 S'+a.step,px1+4,py1-5);
+    } else {
+      const px=a.data.x*cv.width,py=a.data.y*cv.height;
+      cx.beginPath(); cx.arc(px,py,S.pr,0,Math.PI*2);
+      cx.fillStyle=a.color; cx.fill();
+      cx.strokeStyle=a.color; cx.lineWidth=1;
+      cx.beginPath(); cx.moveTo(px-12,py); cx.lineTo(px+12,py);
+      cx.moveTo(px,py-12); cx.lineTo(px,py+12); cx.stroke();
+      cx.fillStyle='rgba(0,0,0,.55)'; cx.fillRect(px+8,py-18,62,16);
+      cx.fillStyle=a.color; cx.font='10px DM Mono,monospace';
+      cx.fillText(a.data.x.toFixed(3)+','+a.data.y.toFixed(3),px+10,py-6);
+    }
+  });
+}
+
+function drawBoxDrag() {
+  if(!S.boxDrag||S.mode!=='box') return;
+  const {sx,sy,cx:bx,cy:by}=S.boxDrag;
+  const color=S.hand==='right'?S.rightColor:S.leftColor;
+  cx.strokeStyle=color; cx.lineWidth=S.lw;
+  cx.setLineDash([5,4]); cx.strokeRect(sx,sy,bx-sx,by-sy); cx.setLineDash([]);
+}
+
+function redraw(){ drawScene(); drawAnnos(); drawBoxDrag(); }
+
+// ─────────────────────────────────────────────────────────────
+// CANVAS EVENTS
+// ─────────────────────────────────────────────────────────────
+cv.addEventListener('mousemove',e=>{
+  if(S.mode==='range') return;
+  const r=cv.getBoundingClientRect();
+  const x=(e.clientX-r.left)*(cv.width/r.width), y=(e.clientY-r.top)*(cv.height/r.height);
+  document.getElementById('coord-display').textContent='X: '+(x/cv.width).toFixed(3)+'  Y: '+(y/cv.height).toFixed(3);
+  if(S.boxDrag){ S.boxDrag.cx=x; S.boxDrag.cy=y; redraw(); }
+});
+
+cv.addEventListener('mousedown',e=>{
+  if(S.mode==='range'||e.button!==0) return;
+  const r=cv.getBoundingClientRect();
+  const x=(e.clientX-r.left)*(cv.width/r.width), y=(e.clientY-r.top)*(cv.height/r.height);
+  if(S.mode==='box') S.boxDrag={sx:x,sy:y,cx:x,cy:y};
+  if(S.mode==='point') addAnno({type:'point',data:{x:x/cv.width,y:y/cv.height}});
+});
+
+cv.addEventListener('mouseup',e=>{
+  if(S.mode!=='box'||!S.boxDrag) return;
+  const d=S.boxDrag; S.boxDrag=null;
+  const x1=Math.min(d.sx,d.cx)/cv.width, y1=Math.min(d.sy,d.cy)/cv.height;
+  const x2=Math.max(d.sx,d.cx)/cv.width, y2=Math.max(d.sy,d.cy)/cv.height;
+  if(x2-x1>.02&&y2-y1>.02) addAnno({type:'box',data:{x1,y1,x2,y2}});
+  redraw();
+});
+
+cv.addEventListener('mouseleave',()=>{
+  if(S.mode!=='range') document.getElementById('coord-display').textContent='X: —  Y: —';
+});
+
+function addAnno(opts){
+  const color=opts.type==='point'?S.pointColor:(S.hand==='right'?S.rightColor:S.leftColor);
+  S.annos.push({id:Date.now()+Math.random(),frame:S.frame,type:opts.type,data:opts.data,hand:S.hand,color,video:S.video,step:S.step});
+  S.dirty=true; onChange();
+}
+
+// ─────────────────────────────────────────────────────────────
+// TIMELINE — seek OR range drag
+// ─────────────────────────────────────────────────────────────
+const tbar=document.getElementById('tbar');
+const dprev=document.getElementById('drag-prev');
+
+function tpct(e){ const r=tbar.getBoundingClientRect(); return Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)); }
+
+tbar.addEventListener('mousedown',e=>{
+  if(S.mode==='range'){
+    S.rdrag=true; S.rdragStart=Math.round(tpct(e)*FRAMES);
+    dprev.style.display='block'; e.preventDefault();
+  } else {
+    S.frame=Math.round(tpct(e)*FRAMES); updateUI(); redraw(); drawSkel();
+  }
+});
+
+document.addEventListener('mousemove',e=>{
+  if(!S.rdrag) return;
+  const cur=Math.round(tpct(e)*FRAMES);
+  const s=Math.min(S.rdragStart,cur), en=Math.max(S.rdragStart,cur);
+  dprev.style.left=(s/FRAMES*100)+'%';
+  dprev.style.width=((en-s)/FRAMES*100)+'%';
+});
+
+document.addEventListener('mouseup',e=>{
+  if(!S.rdrag) return;
+  S.rdrag=false; dprev.style.display='none';
+  const cur=Math.round(tpct(e)*FRAMES);
+  const s=Math.min(S.rdragStart,cur), en=Math.max(S.rdragStart,cur);
+  if(en-s>1){
+    const sel=document.getElementById('range-step-sel');
+    const stepNum=parseInt(sel.value);
+    const st=STEPS.find(x=>x.n===stepNum);
+    const stepLabel=st?st.label:'步骤'+stepNum;
+    // overwrite any existing range for this step
+    S.ranges=S.ranges.filter(r=>r.stepNum!==stepNum);
+    S.ranges.push({id:'r'+Date.now(),start:s,end:en,stepNum,stepLabel});
+    S.dirty=true;
+    document.getElementById('range-count').textContent=S.ranges.length;
+    drawSegments();
+    buildStepCards();
+    onChange();
+    showToast('步骤'+stepNum+' F'+s+'–'+en+' 已标注','success');
+  }
+});
+
+// Per-step color palette (matches screenshot: blue, teal, purple, amber, pink, indigo, green, violet)
+const STEP_COLORS=['#3b82f6','#0d9488','#9333ea','#d97706','#ec4899','#4f46e5','#16a34a','#a855f7'];
+
+// Step definitions — each holds its range data
+const STEPS=[
+  {n:1, label:'双手从台面上方放置托盘到桌子'},
+  {n:2, label:'双手从桌子拿起托盘到台面上方'},
+  {n:3, label:'右手从桌子拿起盘子到台面上方'},
+  {n:4, label:'右手从台面上方放置盘子到托盘正中'},
+  {n:5, label:'右手从桌子拿起叉子到台面上方'},
+  {n:6, label:'右手从台面上方放置叉子到盘子右侧'},
+  {n:7, label:'左手从桌子拿起餐刀到台面上方'},
+  {n:8, label:'左手从台面上方放置餐刀到盘子左侧'},
+];
+
+function buildStepCards(){
+  const container=document.getElementById('step-cards');
+  container.innerHTML='';
+  const sel=document.getElementById('range-step-sel');
+  sel.innerHTML='';
+  STEPS.forEach((st,i)=>{
+    const color=STEP_COLORS[i%STEP_COLORS.length];
+    const card=document.createElement('div');
+    const r=S.ranges.find(r=>r.stepNum===st.n);
+    const done=!!r;
+    const isActive=S.step===st.n;
+    card.className='step-card'+(isActive?' active':'')+(done?' done':'');
+    card.id='step-card-'+st.n;
+    card.onclick=()=>selectStep(st.n);
+    const startVal=done?r.start:'';
+    const endVal=done?r.end:'';
+    const totalVal=done?(r.end-r.start):'0';
+    card.innerHTML=`
+      <div class="step-card-header">
+        <div class="step-dot${done?' step-dot-done':''}" style="background:${done?color:color};${done?'box-shadow:0 0 0 2px '+color+'33':''}">
+          ${done?`<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 5.2L4 7.2L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`:''}
+        </div>
+        <div class="step-card-label" style="${done?'color:var(--text)':'color:var(--text-2)'}">${st.n} ${st.label}</div>
+        ${done?`<div class="step-done-badge" style="background:${color}18;color:${color};border:1px solid ${color}44">已标注</div>`:''}
+      </div>
+      <div class="step-frame-grid">
+        <div class="step-frame-col">
+          <div class="step-frame-header">开始帧</div>
+          <input class="step-frame-input${done?' has-value':''}" id="sf-start-${st.n}" readonly value="${startVal}" placeholder="—" style="${done?'border-color:'+color+'55;color:'+color:''}">
+        </div>
+        <div class="step-frame-col">
+          <div class="step-frame-header">结束帧</div>
+          <input class="step-frame-input${done?' has-value':''}" id="sf-end-${st.n}" readonly value="${endVal}" placeholder="—" style="${done?'border-color:'+color+'55;color:'+color:''}">
+        </div>
+        <div class="step-frame-col">
+          <div class="step-frame-header">总共</div>
+          <input class="step-frame-input step-frame-total" id="sf-total-${st.n}" readonly value="${totalVal}" style="${done?'color:var(--text-2)':''}">
+        </div>
+      </div>`;
+    container.appendChild(card);
+    const opt=document.createElement('option');
+    opt.value=st.n; opt.textContent='步骤'+st.n+'：'+st.label.slice(0,10)+'…';
+    sel.appendChild(opt);
+  });
+  // restore selector to current step
+  sel.value=S.step;
+}
+
+function drawSegments(){
+  // clear old segments from both containers
+  tbar.querySelectorAll('.timeline-segment,.timeline-seg-label').forEach(el=>el.remove());
+  const segTrack=document.getElementById('seg-track');
+  segTrack.innerHTML='';
+  S.ranges.forEach(r=>{
+    const idx=r.stepNum-1;
+    const sc=STEP_COLORS[idx%STEP_COLORS.length];
+    const pct=r.start/FRAMES*100;
+    const wPct=(r.end-r.start)/FRAMES*100;
+    // segment block in dedicated track
+    const seg=document.createElement('div');
+    seg.className='timeline-segment';
+    seg.style.cssText='left:'+pct+'%;width:'+wPct+'%;background:'+sc;
+    // label inside the block
+    const lbl=document.createElement('div');
+    lbl.className='timeline-seg-label';
+    lbl.style.cssText='left:'+pct+'%;width:'+wPct+'%;color:#fff';
+    lbl.textContent='S'+r.stepNum;
+    segTrack.appendChild(seg);
+    segTrack.appendChild(lbl);
+    // also show a thin tick on the main scrub bar
+    const tick=document.createElement('div');
+    tick.style.cssText='position:absolute;top:0;height:100%;left:'+pct+'%;width:'+wPct+'%;background:'+sc+';opacity:.25;border-radius:3px;pointer-events:none;';
+    tbar.appendChild(tick);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// MODE — linked to video
+// ─────────────────────────────────────────────────────────────
+function switchMode(m){
+  setMode(m);
+  const styles={
+    active:{border:'1px solid var(--accent)',background:'rgba(37,99,235,.12)',color:'var(--accent)'},
+    point_active:{border:'1px solid var(--teal)',background:'rgba(13,148,136,.12)',color:'var(--teal)'},
+    range_active:{border:'1px solid var(--amber)',background:'rgba(217,119,6,.12)',color:'var(--amber)'},
+    inactive:{border:'1px solid var(--border)',background:'transparent',color:'var(--text-2)'},
+  };
+  ['box','point','range'].forEach(k=>{
+    const btn=document.getElementById('tab-'+k);
+    if(k===m){
+      const s=k==='box'?styles.active:k==='point'?styles.point_active:styles.range_active;
+      Object.assign(btn.style,s);
+    } else {
+      Object.assign(btn.style,styles.inactive);
+    }
+  });
+}
+
+function setMode(m){
+  S.mode=m;
+  ['box','point','range'].forEach(k=>{ document.getElementById('cfg-'+k).style.display=k===m?'':'none'; });
+  document.getElementById('range-overlay').classList.toggle('active',m==='range');
+  tbar.classList.toggle('range-mode',m==='range');
+  document.getElementById('hand-toggle-wrap').style.display=m==='range'?'none':'flex';
+  document.getElementById('coord-display').style.display=m==='range'?'none':'block';
+  cv.style.cursor=m==='range'?'default':'crosshair';
+  const lbl={box:'框标注',point:'点标注',range:'范围标注'}[m];
+  const cl={box:'tag-blue',point:'tag-teal',range:'tag-amber'}[m];
+  const b=document.getElementById('mode-badge');
+  b.textContent=lbl; b.className='mode-badge '+cl;
+}
+
+function switchVideo(v){
+  S.video=v;
+  document.querySelectorAll('.video-item').forEach(el=>{
+    el.classList.remove('active');
+    el.querySelector('.video-dot').style.background='var(--border)';
+    el.querySelector('.video-mode-tag').style.opacity='.45';
+  });
+  const item=document.getElementById('vi-'+v);
+  item.classList.add('active');
+  item.querySelector('.video-dot').style.background='var(--accent)';
+  item.querySelector('.video-mode-tag').style.opacity='1';
+  const fm=VIDEO_MODE[v]; switchMode(fm);
+  document.getElementById('video-badge').textContent=v.replace('_',' ');
+  const modeLabel={box:'→ 框标注模式',point:'→ 点标注模式'}[fm];
+  const camLabel='camera_'+v;
+  showToast('🎬 '+camLabel+'  '+modeLabel, fm==='box'?'info':'success');
+  redraw();
+}
+
+// ─────────────────────────────────────────────────────────────
+// PLAYBACK
+// ─────────────────────────────────────────────────────────────
+function togglePlay(){
+  S.playing=!S.playing;
+  const btn=document.getElementById('play-btn');
+  if(S.playing){
+    btn.textContent='⏸';
+    S.playTmr=setInterval(()=>{ S.frame=S.frame>=FRAMES?0:S.frame+1; updateUI(); redraw(); drawSkel(); }, Math.round(1000/(FPS*S.speed)));
+  } else { btn.textContent='▶'; clearInterval(S.playTmr); }
+}
+function step(d){ S.frame=Math.max(0,Math.min(FRAMES,S.frame+d)); updateUI(); redraw(); drawSkel(); }
+function goStart(){ S.frame=0; updateUI(); redraw(); drawSkel(); }
+function goEnd(){ S.frame=FRAMES; updateUI(); redraw(); drawSkel(); }
+function setSpeed(v){ S.speed=parseFloat(v); if(S.playing){ clearInterval(S.playTmr); S.playing=false; togglePlay(); } }
+
+function updateUI(){
+  const p=(S.frame/FRAMES*100).toFixed(2);
+  document.getElementById('t-prog').style.width=p+'%';
+  document.getElementById('t-head').style.left=p+'%';
+  document.getElementById('frame-num').textContent=S.frame;
+  document.getElementById('manual-frame-badge').textContent=S.frame;
+  document.getElementById('r-frame').textContent=S.frame;
+  document.getElementById('t-cur').textContent=(S.frame/FPS).toFixed(3);
+  document.getElementById('sk-frame').textContent='Frame: '+S.frame;
+  renderList();
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3D SKELETON
+// ─────────────────────────────────────────────────────────────
+const skc=document.getElementById('sk-canvas');
+const skx=skc.getContext('2d');
+
+function joints(f){
+  const t=f/FRAMES, lift=Math.max(0,Math.sin(t*Math.PI));
+  return {
+    head:[.5,.1],neck:[.5,.2],
+    ls:[.38,.26],rs:[.62,.26],
+    le:[.31,.39+lift*.03],re:[.71,.37-lift*.13],
+    lw:[.27,.52+lift*.04],rw:[.77+lift*.05,.5-lift*.2],
+    lh:[.43,.52],rh:[.57,.52],
+    lk:[.41,.70],rk:[.59,.70],
+    la:[.41,.88],ra:[.59,.88],
+  };
+}
+// [side]: 'l'=left(green), 'r'=right(blue), 'c'=center(white)
+const BONES=[
+  ['head','neck','c'],['neck','ls','l'],['neck','rs','r'],
+  ['ls','le','l'],['le','lw','l'],['rs','re','r'],['re','rw','r'],
+  ['neck','lh','l'],['neck','rh','r'],['lh','rh','c'],
+  ['lh','lk','l'],['lk','la','l'],['rh','rk','r'],['rk','ra','r']
+];
+const BONE_CLR={l:'rgba(52,211,153,.75)',r:'rgba(96,165,250,.75)',c:'rgba(200,220,255,.45)'};
+const JOINT_CLR={l:'#34d399',r:'#60a5fa',c:'#e2e8f0'};
+
+function jointSide(k){ if(k==='head'||k==='neck')return'c'; return k.startsWith('l')?'l':'r'; }
+
+function drawSkel(){
+  const W=skc.width, H=skc.height;
+  skx.clearRect(0,0,W,H);
+  // subtle grid
+  skx.strokeStyle='rgba(255,255,255,.05)'; skx.lineWidth=.5;
+  for(let i=0;i<=4;i++){
+    skx.beginPath(); skx.moveTo(0,H*i/4); skx.lineTo(W,H*i/4); skx.stroke();
+    skx.beginPath(); skx.moveTo(W*i/4,0); skx.lineTo(W*i/4,H); skx.stroke();
+  }
+  const j=joints(S.frame);
+  const px=k=>j[k][0]*W, py=k=>j[k][1]*H;
+  // draw bones with side colors
+  BONES.forEach(([a,b,side])=>{
+    skx.strokeStyle=BONE_CLR[side]; skx.lineWidth=1.8;
+    skx.beginPath(); skx.moveTo(px(a),py(a)); skx.lineTo(px(b),py(b)); skx.stroke();
+  });
+  // draw joints
+  Object.keys(j).forEach(k=>{
+    const side=jointSide(k);
+    skx.beginPath(); skx.arc(px(k),py(k),k==='head'?5:2.5,0,Math.PI*2);
+    skx.fillStyle=JOINT_CLR[side]; skx.fill();
+  });
+  // legend
+  skx.font='8px DM Mono,monospace';
+  skx.fillStyle='#34d399'; skx.fillRect(6,H-16,8,2); skx.fillText('左',16,H-11);
+  skx.fillStyle='#60a5fa'; skx.fillRect(30,H-16,8,2); skx.fillText('右',40,H-11);
+}
+
+// ─────────────────────────────────────────────────────────────
+// COLORS / SIZES
+// ─────────────────────────────────────────────────────────────
+function swatchPick(side,el){
+  document.querySelectorAll('#sw-'+side+' .swatch').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+  if(side==='left') S.leftColor=el.dataset.c; else S.rightColor=el.dataset.c;
+}
+function swatchPoint(el){
+  document.querySelectorAll('#sw-point .swatch').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active'); S.pointColor=el.dataset.c;
+}
+function setLW(w,btn){ S.lw=w; btn.closest('.size-row').querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); redraw(); }
+function setGrip(g,btn){ S.grip=g; btn.closest('.size-row').querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); redraw(); }
+function setPR(r,btn){ S.pr=r; btn.closest('.size-row').querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+
+function toggleHand(chk){
+  S.hand=chk?'right':'left';
+  document.getElementById('hand-label').textContent=(chk?'右':'左')+'手标注';
+  document.getElementById('hand-badge').textContent=chk?'右手':'左手';
+}
+
+function selectStep(n){
+  S.step=n;
+  document.querySelectorAll('.step-card').forEach(el=>el.classList.remove('active'));
+  const card=document.getElementById('step-card-'+n);
+  if(card) card.classList.add('active');
+  // sync range-step-sel
+  const sel=document.getElementById('range-step-sel');
+  if(sel) sel.value=n;
+}
+
+// ─────────────────────────────────────────────────────────────
+// ANNO LIST
+// ─────────────────────────────────────────────────────────────
+function onChange(){ updateAnnoTag(); renderList(); redraw(); }
+
+function renderList(){
+  const list=document.getElementById('anno-list');
+  list.innerHTML='';
+  const fa=S.annos.filter(a=>a.frame===S.frame);
+  const total=S.annos.length+S.ranges.length;
+  document.getElementById('empty-state').style.display=total>0?'none':'';
+
+  // frame annos
+  fa.forEach(a=>{
+    const isBox=a.type==='box';
+    const bg=isBox?'rgba(37,99,235,.1)':'rgba(13,148,136,.1)';
+    const fc=isBox?'var(--accent)':'var(--teal)';
+    let coords=isBox
+      ?`<span>X1</span> ${a.data.x1.toFixed(3)} <span>Y1</span> ${a.data.y1.toFixed(3)}<br><span>X2</span> ${a.data.x2.toFixed(3)} <span>Y2</span> ${a.data.y2.toFixed(3)}`
+      :`<span>X</span> ${a.data.x.toFixed(3)}<br><span>Y</span> ${a.data.y.toFixed(3)}`;
+    const div=document.createElement('div');
+    div.className='anno-item'+(S.sel===a.id?' selected':'');
+    div.onclick=()=>{ S.sel=a.id; renderList(); };
+    div.innerHTML=`
+      <div class="anno-header">
+        <span>
+          <span class="anno-type-badge" style="background:${bg};color:${fc}">${isBox?'框':'点'}</span>
+          <span style="font-family:var(--mono);margin-left:4px">F${a.frame}</span>
+          <span style="margin-left:4px;font-size:10px;color:var(--text-3)">${a.hand==='right'?'右手':'左手'}</span>
+        </span>
+        <button class="anno-delete" onclick="delAnno('${a.id}',event)">✕</button>
+      </div>
+      <div class="anno-coords">${coords}</div>
+      <div class="anno-meta">步骤${a.step} · ${a.video}</div>`;
+    list.appendChild(div);
+  });
+
+  // range annos
+  S.ranges.forEach(r=>{
+    const sc=SEG_COLORS[(r.stepNum-1)%SEG_COLORS.length];
+    const div=document.createElement('div');
+    div.className='anno-item'+(S.sel===r.id?' selected':'');
+    div.onclick=()=>{ S.sel=r.id; renderList(); };
+    div.innerHTML=`
+      <div class="anno-header">
+        <span>
+          <span class="anno-type-badge" style="background:rgba(13,148,136,.1);color:${sc}">范围</span>
+          <span style="font-family:var(--mono);margin-left:4px;font-size:10px">F${r.start}–${r.end}</span>
+        </span>
+        <button class="anno-delete" onclick="delRange('${r.id}',event)">✕</button>
+      </div>
+      <div class="anno-coords"><span>起始帧</span> ${r.start}<br><span>结束帧</span> ${r.end} <span style="color:var(--text-3)">(${r.end-r.start}帧)</span></div>
+      <div class="anno-meta">${r.stepLabel}</div>`;
+    list.appendChild(div);
+  });
+
+  if(fa.length===0&&S.annos.length>0){
+    const d=document.createElement('div');
+    d.style.cssText='font-size:11px;color:var(--text-3);padding:6px 8px';
+    d.textContent='其他帧共 '+S.annos.length+' 条标注';
+    list.appendChild(d);
+  }
+}
+
+function delAnno(id,e){ e.stopPropagation(); S.annos=S.annos.filter(a=>String(a.id)!==String(id)); if(S.sel===id)S.sel=null; S.dirty=true; onChange(); }
+function delRange(id,e){ e.stopPropagation(); S.ranges=S.ranges.filter(r=>r.id!==id); if(S.sel===id)S.sel=null; document.getElementById('range-count').textContent=S.ranges.length; drawSegments(); buildStepCards(); S.dirty=true; onChange(); }
+function clearAll(){ S.annos=[]; S.ranges=[]; S.sel=null; S.dirty=false; drawSegments(); buildStepCards(); document.getElementById('range-count').textContent='0'; onChange(); }
+
+function updateAnnoTag(){
+  const tag=document.getElementById('anno-status-tag');
+  const n=S.annos.length+S.ranges.length;
+  tag.textContent=n>0?'已标注 '+n:'未标注';
+  tag.className='tag '+(n>0?'tag-blue':'tag-gray');
+}
+
+// ─────────────────────────────────────────────────────────────
+// SAVE / QC
+// ─────────────────────────────────────────────────────────────
+function saveAll(){ S.dirty=false; showToast('保存成功','success'); }
+
+function showToast(msg,type='success'){
+  document.getElementById('toast-msg').textContent=msg;
+  document.getElementById('toast-dot').style.background=type==='success'?'var(--green)':type==='error'?'var(--red)':'var(--amber)';
+  const t=document.getElementById('toast'); t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function submitDone(){ openM('m-done'); }
+function submitFail(){ openM('m-fail'); }
+function doDone(){
+  closeM('m-done');
+  document.getElementById('anno-status-tag').textContent='标注完成';
+  document.getElementById('anno-status-tag').className='tag tag-green';
+  showToast('已提交审核队列','success');
+}
+function doFail(){
+  closeM('m-fail');
+  document.getElementById('anno-status-tag').textContent='质检不合格';
+  document.getElementById('anno-status-tag').className='tag tag-amber';
+  showToast('已标记质检不合格','warn');
+}
+function openM(id){ document.getElementById(id).classList.add('open'); }
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+function confirmClose(){ openM('m-close'); }
+function doClose(){ closeM('m-close'); showToast('已离开任务','warn'); }
+
+// ─────────────────────────────────────────────────────────────
+// KEYBOARD
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT') return;
+  switch(e.key){
+    case ' ': e.preventDefault(); togglePlay(); break;
+    case 'z': case 'Z': step(-1); break;
+    case 'x': case 'X': step(1); break;
+    case 'a': case 'A': step(-10); break;
+    case 'd': case 'D': step(10); break;
+    case 'w': case 'W': document.getElementById('hand-chk').checked=false; toggleHand(false); break;
+    case 'e': case 'E': document.getElementById('hand-chk').checked=true; toggleHand(true); break;
+    case 't': case 'T': submitDone(); break;
+    case 'Escape': confirmClose(); break;
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────
+switchMode('box');
+buildStepCards();
+updateUI();
+redraw();
+drawSkel();
+
+function resize(){
+  const w=document.getElementById('canvas-wrap');
+  const W=w.clientWidth-32, H=w.clientHeight-32, ratio=740/416;
+  let cw=W, ch=W/ratio;
+  if(ch>H){ch=H; cw=H*ratio;}
+  cv.style.width=cw+'px'; cv.style.height=ch+'px';
+  const sw=Math.max(160,skc.parentElement.clientWidth);
+  skc.width=sw; skc.height=118;
+  skc.style.width=sw+'px'; skc.style.height='118px';
+  drawSkel();
+}
+resize();
+window.addEventListener('resize',resize);
+</script>
+</body>
+</html>

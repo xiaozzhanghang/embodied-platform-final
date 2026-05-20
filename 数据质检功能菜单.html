@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据质检 - 具身智能数据平台</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --nav:#0b1728;--nav-2:#10213a;--bg:#f4f6f9;--panel:#fff;--line:#e5eaf1;
+  --line-2:#d7dee9;--text:#172033;--muted:#667085;--weak:#98a2b3;
+  --blue:#2563eb;--blue-2:#1d4ed8;--cyan:#0891b2;--green:#16a34a;
+  --amber:#d97706;--red:#dc2626;--purple:#7c3aed;--slate:#475569;
+  --shadow:0 1px 3px rgba(15,23,42,.08),0 8px 24px rgba(15,23,42,.04)
+}
+body{height:100vh;overflow:hidden;display:flex;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Arial,sans-serif;font-size:13px}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{display:flex;width:100%;height:100%}
+.sidebar{width:224px;background:var(--nav);color:#cbd5e1;display:flex;flex-direction:column;flex-shrink:0}
+.brand{height:58px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand-mark{width:32px;height:32px;border-radius:8px;background:#1d4ed8;display:grid;place-items:center;color:#fff;font-weight:800}
+.brand-title{font-size:15px;font-weight:700;color:#fff}
+.brand-sub{font-size:11px;color:#94a3b8;margin-top:2px}
+.nav{padding:10px 0;overflow:auto}
+.nav-title{padding:14px 18px 6px;color:#64748b;font-size:11px;letter-spacing:.08em}
+.nav-item{height:38px;padding:0 16px;display:flex;align-items:center;gap:10px;color:#cbd5e1;border-left:3px solid transparent;transition:.15s}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:var(--nav-2);color:#fff;border-left-color:#60a5fa}
+.nav-dot{width:18px;height:18px;border:1px solid rgba(255,255,255,.22);border-radius:5px;display:grid;place-items:center;font-size:10px;color:#93c5fd}
+.subnav{margin:2px 0 8px}
+.subnav .nav-item{height:32px;padding-left:45px;font-size:12px;color:#94a3b8;border-left:0}
+.subnav .active{color:#93c5fd;background:rgba(37,99,235,.12)}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:54px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0}
+.crumbs{display:flex;align-items:center;gap:7px;color:var(--weak)}
+.crumb-current{color:var(--text);font-weight:600}
+.top-actions{display:flex;align-items:center;gap:10px}
+.top-chip{height:28px;padding:0 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:#fff;display:inline-flex;align-items:center;gap:6px}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(22,163,74,.12)}
+.avatar{width:30px;height:30px;border-radius:50%;background:#e7efff;color:var(--blue);display:grid;place-items:center;font-weight:700}
+.content{flex:1;overflow:auto;padding:16px}
+.content::-webkit-scrollbar{width:6px;height:6px}.content::-webkit-scrollbar-thumb{background:#cfd6e2;border-radius:4px}
+.view{display:none}.view.active{display:block}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.page-title{font-size:20px;font-weight:700;letter-spacing:0;color:#111827}
+.page-desc{margin-top:5px;color:var(--muted);line-height:1.5}
+.head-actions,.row-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{height:32px;border:1px solid var(--line-2);border-radius:6px;background:#fff;color:#344054;padding:0 12px;display:inline-flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap}
+.btn:hover{border-color:#94a3b8;color:#111827}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn-primary:hover{background:var(--blue-2);border-color:var(--blue-2);color:#fff}
+.btn-green{background:var(--green);border-color:var(--green);color:#fff}.btn-green:hover{filter:brightness(.95);color:#fff}
+.btn-red{background:#fff;border-color:#fecaca;color:var(--red)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn-sm{height:28px;padding:0 9px;font-size:12px;border-radius:5px}
+.icon{width:14px;height:14px;display:inline-block;position:relative;flex-shrink:0}
+.i-plus::before,.i-plus::after{content:"";position:absolute;background:currentColor;left:2px;right:2px;top:6px;height:2px;border-radius:1px}.i-plus::after{transform:rotate(90deg)}
+.i-download::before{content:"";position:absolute;left:6px;top:1px;width:2px;height:8px;background:currentColor}.i-download::after{content:"";position:absolute;left:3px;top:6px;width:8px;height:8px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg)}
+.i-search::before{content:"";position:absolute;width:8px;height:8px;border:2px solid currentColor;border-radius:50%;left:1px;top:1px}.i-search::after{content:"";position:absolute;width:6px;height:2px;background:currentColor;transform:rotate(45deg);right:1px;bottom:2px}
+.i-play::before{content:"";position:absolute;left:4px;top:2px;border-left:8px solid currentColor;border-top:5px solid transparent;border-bottom:5px solid transparent}
+.grid-stats{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-bottom:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;box-shadow:var(--shadow)}
+.stat-label{color:var(--muted);font-size:12px;margin-bottom:6px}.stat-value{font-size:22px;font-weight:800;line-height:1}.stat-foot{margin-top:5px;color:var(--weak);font-size:11px}
+.stat.blue .stat-value{color:var(--blue)}.stat.green .stat-value{color:var(--green)}.stat.amber .stat-value{color:var(--amber)}.stat.red .stat-value{color:var(--red)}.stat.purple .stat-value{color:var(--purple)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);margin-bottom:12px}
+.filters{padding:14px 16px}
+.filter-grid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:10px 12px}
+.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}.ctrl{width:100%;height:32px;border:1px solid var(--line-2);border-radius:6px;background:#fff;color:#1f2937;padding:0 9px;outline:none}.ctrl:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.panel-hd{height:48px;border-bottom:1px solid var(--line);padding:0 16px;display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-weight:700;color:#111827;display:flex;align-items:center;gap:8px}.count{height:20px;min-width:20px;border-radius:999px;background:#eef2ff;color:var(--blue);display:inline-flex;align-items:center;justify-content:center;padding:0 7px;font-size:11px;font-weight:700}
+.tabs{display:inline-flex;align-items:center;background:#eef2f7;border-radius:8px;padding:3px;gap:2px}
+.tab{height:28px;border:0;background:transparent;color:#667085;border-radius:6px;padding:0 12px}.tab.active{background:#fff;color:var(--blue);font-weight:700;box-shadow:0 1px 4px rgba(15,23,42,.08)}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th{height:38px;background:#f8fafc;border-bottom:1px solid var(--line);color:#667085;font-size:12px;font-weight:600;text-align:left;padding:0 12px;white-space:nowrap}
+td{border-bottom:1px solid #eef2f7;padding:10px 12px;vertical-align:middle;color:#273248}
+tbody tr:hover td{background:#fbfdff}
+.mono{font-family:"SFMono-Regular",Consolas,monospace}
+.link{color:var(--blue);font-weight:600;cursor:pointer}.link:hover{text-decoration:underline}
+.tag{height:22px;border-radius:999px;padding:0 8px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;white-space:nowrap}
+.tag-blue{background:#e8f0ff;color:var(--blue)}.tag-green{background:#dcfce7;color:#15803d}.tag-amber{background:#fef3c7;color:#b45309}.tag-red{background:#fee2e2;color:#b91c1c}.tag-gray{background:#f1f5f9;color:#475569}.tag-purple{background:#ede9fe;color:#6d28d9}.tag-cyan{background:#cffafe;color:#0e7490}
+.progress{display:flex;align-items:center;gap:8px;min-width:110px}.bar{height:6px;background:#e5e7eb;border-radius:999px;overflow:hidden;flex:1}.fill{height:100%;border-radius:999px;background:var(--blue)}.fill.green{background:var(--green)}.fill.amber{background:var(--amber)}.fill.red{background:var(--red)}.pct{font-size:12px;color:var(--muted);min-width:34px}
+.pager{height:44px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:var(--muted)}
+.pager-btns{display:flex;gap:5px}.pagebtn{width:28px;height:28px;border:1px solid var(--line-2);background:#fff;border-radius:5px;color:var(--muted)}.pagebtn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.detail-shell{display:grid;grid-template-columns:minmax(620px,1fr) 340px;gap:12px}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.summary-item{padding:10px;border:1px solid var(--line);border-radius:7px;background:#fbfcff}.summary-label{font-size:12px;color:var(--muted);margin-bottom:5px}.summary-value{font-weight:700;color:#111827}
+.kv{display:grid;grid-template-columns:150px 1fr;border-top:1px solid var(--line)}.kv:first-child{border-top:0}.kv-k{background:#f8fafc;color:var(--muted);padding:11px 14px;border-right:1px solid var(--line)}.kv-v{padding:11px 14px;color:#273248}
+.timeline-steps{padding:12px 16px}.flow{display:flex;align-items:center;gap:8px;overflow:auto;padding-bottom:3px}.flow-step{min-width:126px;border:1px solid var(--line);border-radius:7px;background:#fff;padding:10px}.flow-step.active{border-color:var(--blue);background:#eff6ff}.flow-step.done{border-color:#bbf7d0;background:#f0fdf4}.flow-name{font-weight:700;margin-bottom:4px}.flow-note{color:var(--muted);font-size:12px}.arrow{color:#cbd5e1}
+.reason-list{padding:12px 16px;display:grid;gap:8px}.reason{border:1px solid var(--line);border-radius:7px;padding:10px;background:#fff}.reason-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}.reason-title{font-weight:700}.reason-desc{color:var(--muted);line-height:1.5;font-size:12px}
+.workbench{height:calc(100vh - 86px);min-height:620px;display:grid;grid-template-columns:260px minmax(520px,1fr) 310px;gap:12px}
+.wb-panel{background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.wb-hd{height:42px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-weight:700}
+.step-list{overflow:auto;padding:10px;display:grid;gap:8px}.step-card{border:1px solid var(--line);border-radius:7px;padding:10px;background:#fff}.step-card.active{border-color:var(--blue);background:#eff6ff}.step-card.done{border-color:#bbf7d0;background:#f0fdf4}
+.step-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}.step-title{font-weight:700}.frame-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.frame-box{background:#f8fafc;border:1px solid var(--line);border-radius:5px;padding:5px;text-align:center}.frame-label{font-size:10px;color:var(--weak);margin-bottom:2px}.frame-value{font-family:Consolas,monospace;color:#334155}
+.video-area{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;flex:1;min-height:0;background:#edf1f6}
+.video{position:relative;background:#101827;border-radius:8px;overflow:hidden;min-height:190px;border:1px solid #1e293b}
+.video::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(37,99,235,.16),transparent 42%),repeating-linear-gradient(0deg,rgba(255,255,255,.03),rgba(255,255,255,.03) 1px,transparent 1px,transparent 22px),repeating-linear-gradient(90deg,rgba(255,255,255,.025),rgba(255,255,255,.025) 1px,transparent 1px,transparent 28px)}
+.video-label{position:absolute;left:10px;top:8px;color:#dbeafe;font-size:12px;background:rgba(15,23,42,.72);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:3px 7px}.video-status{position:absolute;right:10px;top:8px;color:#86efac;font-family:Consolas,monospace;font-size:11px}.robot-arm{position:absolute;left:50%;top:50%;width:92px;height:14px;background:#94a3b8;border-radius:10px;transform-origin:left center;transform:rotate(-18deg)}.robot-arm::before{content:"";position:absolute;left:-24px;top:-18px;width:42px;height:42px;border-radius:50%;border:8px solid #64748b}.robot-arm::after{content:"";position:absolute;right:-16px;top:-8px;width:22px;height:30px;border:5px solid #cbd5e1;border-radius:8px}
+.player{border-top:1px solid var(--line);padding:10px 12px}.time-row{display:flex;align-items:center;gap:10px}.scrub{position:relative;height:12px;background:#e5e7eb;border-radius:999px;flex:1;overflow:hidden}.scrub-fill{position:absolute;left:0;top:0;bottom:0;width:36%;background:#2563eb}.segment{position:absolute;top:0;bottom:0;border-radius:999px;opacity:.82}.seg1{left:12%;width:16%;background:var(--amber)}.seg2{left:34%;width:20%;background:var(--cyan)}.seg3{left:61%;width:13%;background:var(--purple)}.playhead{position:absolute;left:36%;top:-4px;width:2px;height:20px;background:#111827}.time-code{font-family:Consolas,monospace;color:var(--muted);white-space:nowrap}
+.control-row{display:flex;align-items:center;justify-content:space-between;margin-top:10px}.controls{display:flex;gap:6px}.result-box{padding:12px;display:grid;gap:10px}.choice-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.choice{height:34px;border:1px solid var(--line-2);background:#fff;border-radius:6px;color:#344054}.choice.pass.active{background:#dcfce7;border-color:#86efac;color:#15803d;font-weight:700}.choice.pending.active{background:#fef3c7;border-color:#fcd34d;color:#b45309;font-weight:700}.choice.fail.active{background:#fee2e2;border-color:#fca5a5;color:#b91c1c;font-weight:700}
+textarea.ctrl{height:74px;padding:8px;resize:none;line-height:1.5}
+.readonly{display:none;margin-top:10px;border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;border-radius:7px;padding:10px;line-height:1.55}.readonly.show{display:block}
+@media(max-width:1180px){.grid-stats{grid-template-columns:repeat(3,1fr)}.filter-grid{grid-template-columns:repeat(3,1fr)}.detail-shell{grid-template-columns:1fr}.workbench{grid-template-columns:230px 1fr}.workbench .wb-panel:last-child{grid-column:1/-1}.video-area{min-height:420px}}
+@media(max-width:860px){body{overflow:auto;height:auto}.app{height:auto}.sidebar{display:none}.main{min-height:100vh}.grid-stats,.filter-grid,.summary{grid-template-columns:1fr 1fr}.workbench{height:auto;grid-template-columns:1fr}.video-area{grid-template-columns:1fr}.page-head{display:block}.head-actions{margin-top:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">AI</div>
+      <div><div class="brand-title">具身智能数据平台</div><div class="brand-sub">Embodied Data Platform</div></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-title">数据生产</div>
+      <div class="nav-item"><span class="nav-dot">C</span>数据采集</div>
+      <div class="nav-item"><span class="nav-dot">T</span>任务中心</div>
+      <div class="nav-item"><span class="nav-dot">A</span>数据标注</div>
+      <div class="nav-item active"><span class="nav-dot">Q</span>数据质检</div>
+      <div class="subnav">
+        <div class="nav-item active" data-view-btn="list">质检任务</div>
+        <div class="nav-item" data-view-btn="detail">序列包详情</div>
+        <div class="nav-item" data-view-btn="workbench">视频质检工作台</div>
+      </div>
+      <div class="nav-title">治理与报表</div>
+      <div class="nav-item"><span class="nav-dot">R</span>质检报表</div>
+      <div class="nav-item"><span class="nav-dot">S</span>问题分类</div>
+      <div class="nav-item"><span class="nav-dot">P</span>权限配置</div>
+    </nav>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div class="crumbs"><span>数据生产</span><span>/</span><span class="crumb-current" id="crumb">数据质检</span></div>
+      <div class="top-actions">
+        <div class="top-chip"><span class="pulse"></span>解析服务正常</div>
+        <div class="top-chip">今日待检 326</div>
+        <div class="avatar">质</div>
+      </div>
+    </header>
+    <section class="content">
+      <div class="view active" id="view-list">
+        <div class="page-head">
+          <div>
+            <h1 class="page-title">数据质检</h1>
+            <p class="page-desc">从任务分配、序列包解析、帧级复核到结果沉淀的闭环工作台。</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn"><span class="icon i-download"></span>下载报表</button>
+            <button class="btn btn-primary"><span class="icon i-plus"></span>批量分配</button>
+          </div>
+        </div>
+        <div class="grid-stats">
+          <div class="stat blue"><div class="stat-label">待分配</div><div class="stat-value">86</div><div class="stat-foot">解析完成且未派单</div></div>
+          <div class="stat amber"><div class="stat-label">质检中</div><div class="stat-value">154</div><div class="stat-foot">含 37 条草稿</div></div>
+          <div class="stat purple"><div class="stat-label">待复核</div><div class="stat-value">28</div><div class="stat-foot">待定或高风险命中</div></div>
+          <div class="stat green"><div class="stat-label">已完成</div><div class="stat-value">1,942</div><div class="stat-foot">近 7 日 +18.6%</div></div>
+          <div class="stat red"><div class="stat-label">异常包</div><div class="stat-value">41</div><div class="stat-foot">解析失败/帧数异常</div></div>
+          <div class="stat"><div class="stat-label">当前合格率</div><div class="stat-value">92.4%</div><div class="stat-foot">通过数 / 已质检</div></div>
+        </div>
+        <div class="panel filters">
+          <div class="filter-grid">
+            <div class="field"><label>项目</label><select class="ctrl"><option>SimulatedCollection</option><option>RealRobot-Factory</option></select></div>
+            <div class="field"><label>任务书</label><input class="ctrl" value="PickPlace-202605"></div>
+            <div class="field"><label>任务状态</label><select class="ctrl"><option>全部</option><option>待分配</option><option>质检中</option><option>已完成</option></select></div>
+            <div class="field"><label>解析状态</label><select class="ctrl"><option>解析完成</option><option>解析中</option><option>解析失败</option></select></div>
+            <div class="field"><label>质检员</label><select class="ctrl"><option>全部质检员</option><option>李可</option><option>周一帆</option><option>王宁</option></select></div>
+            <div class="field"><label>设备SN</label><input class="ctrl" placeholder="输入机器人SN"></div>
+            <div class="field"><label>上传时间</label><input class="ctrl" value="2026-05-01 至 2026-05-07"></div>
+            <div class="field"><label>质检结果</label><select class="ctrl"><option>全部</option><option>合格</option><option>待定</option><option>不合格</option></select></div>
+            <div class="field"><label>任务ID / 实例ID</label><input class="ctrl" placeholder="如 T-1408 / I-0321"></div>
+            <div class="field"><label>&nbsp;</label><button class="btn btn-primary" style="width:100%;justify-content:center"><span class="icon i-search"></span>查询</button></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd">
+            <div class="panel-title">质检任务列表 <span class="count">326</span></div>
+            <div class="tabs">
+              <button class="tab active">待处理</button><button class="tab">待复核</button><button class="tab">已完成</button><button class="tab">异常包</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>项目 / 任务</th><th>实例ID</th><th>采集进度</th><th>解析状态</th><th>质检员</th><th>质检进度</th><th>合格率</th><th>设备SN</th><th>状态</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr><td><div class="link" data-open-detail>SimulatedCollection</div><div class="mono" style="color:var(--muted);margin-top:3px">货架取放 / PickPlace Shelf</div></td><td class="mono">I-0321</td><td><div class="progress"><div class="bar"><div class="fill green" style="width:76%"></div></div><span class="pct">153/200</span></div></td><td><span class="tag tag-green">解析完成</span></td><td>李可</td><td><div class="progress"><div class="bar"><div class="fill" style="width:42%"></div></div><span class="pct">84/200</span></div></td><td>94.1%</td><td class="mono">RB-SN-0827</td><td><span class="tag tag-amber">质检中</span></td><td><div class="row-actions"><button class="btn btn-sm" data-open-detail>查看</button><button class="btn btn-sm btn-primary" data-open-workbench>质检</button></div></td></tr>
+                <tr><td><div class="link" data-open-detail>RealRobot-Factory</div><div class="mono" style="color:var(--muted);margin-top:3px">装配工位 / Screw Tighten</div></td><td class="mono">I-0417</td><td><div class="progress"><div class="bar"><div class="fill green" style="width:100%"></div></div><span class="pct">80/80</span></div></td><td><span class="tag tag-green">解析完成</span></td><td>未分配</td><td><div class="progress"><div class="bar"><div class="fill" style="width:0%"></div></div><span class="pct">0/80</span></div></td><td>-</td><td class="mono">RB-SN-0913</td><td><span class="tag tag-blue">待分配</span></td><td><div class="row-actions"><button class="btn btn-sm">分配</button><button class="btn btn-sm" data-open-detail>查看</button></div></td></tr>
+                <tr><td><div class="link" data-open-detail>SimulatedCollection</div><div class="mono" style="color:var(--muted);margin-top:3px">抽屉开合 / Drawer Open</div></td><td class="mono">I-0388</td><td><div class="progress"><div class="bar"><div class="fill green" style="width:88%"></div></div><span class="pct">176/200</span></div></td><td><span class="tag tag-red">解析失败</span></td><td>周一帆</td><td><div class="progress"><div class="bar"><div class="fill red" style="width:13%"></div></div><span class="pct">26/200</span></div></td><td>81.5%</td><td class="mono">RB-SN-0742</td><td><span class="tag tag-red">异常包</span></td><td><div class="row-actions"><button class="btn btn-sm">重新解析</button><button class="btn btn-sm" data-open-detail>查看</button></div></td></tr>
+                <tr><td><div class="link" data-open-detail>RealRobot-Factory</div><div class="mono" style="color:var(--muted);margin-top:3px">传送带抓取 / Conveyor Pick</div></td><td class="mono">I-0449</td><td><div class="progress"><div class="bar"><div class="fill green" style="width:92%"></div></div><span class="pct">184/200</span></div></td><td><span class="tag tag-green">解析完成</span></td><td>王宁</td><td><div class="progress"><div class="bar"><div class="fill amber" style="width:71%"></div></div><span class="pct">142/200</span></div></td><td>89.4%</td><td class="mono">RB-SN-0644</td><td><span class="tag tag-purple">待复核</span></td><td><div class="row-actions"><button class="btn btn-sm" data-open-detail>查看</button><button class="btn btn-sm">复核</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pager"><span>共 326 条，当前显示 1-10 条</span><div class="pager-btns"><button class="pagebtn">‹</button><button class="pagebtn active">1</button><button class="pagebtn">2</button><button class="pagebtn">3</button><button class="pagebtn">›</button></div></div>
+        </div>
+      </div>
+
+      <div class="view" id="view-detail">
+        <div class="page-head">
+          <div><h1 class="page-title">序列包详情</h1><p class="page-desc">质检前检查序列包完整性、解析状态、接管标记和覆检记录。</p></div>
+          <div class="head-actions"><button class="btn" data-open-list>返回列表</button><button class="btn">重新解析</button><button class="btn btn-primary" data-open-workbench><span class="icon i-play"></span>进入质检</button></div>
+        </div>
+        <div class="detail-shell">
+          <div>
+            <div class="panel">
+              <div class="panel-hd"><div class="panel-title">序列包 QC-766794</div><span class="tag tag-green">解析完成</span></div>
+              <div class="summary">
+                <div class="summary-item"><div class="summary-label">文件大小</div><div class="summary-value">84.71 MB</div></div>
+                <div class="summary-item"><div class="summary-label">内容帧数</div><div class="summary-value">4,216 帧</div></div>
+                <div class="summary-item"><div class="summary-label">是否接管</div><div class="summary-value">否</div></div>
+                <div class="summary-item"><div class="summary-label">覆检状态</div><div class="summary-value">未完成</div></div>
+              </div>
+              <div>
+                <div class="kv"><div class="kv-k">文件路径</div><div class="kv-v mono">collect-data/simulated/pickplace/20260507/QC-766794</div></div>
+                <div class="kv"><div class="kv-k">任务信息</div><div class="kv-v">SimulatedCollection / PickPlace Shelf / T-1408 / I-0321</div></div>
+                <div class="kv"><div class="kv-k">采集来源</div><div class="kv-v">采集员 张晨，设备 SN：RB-SN-0827，上传时间：2026-05-07 10:42:18</div></div>
+                <div class="kv"><div class="kv-k">机检结果</div><div class="kv-v">四路视频可播放；帧数与元数据一致；未命中缺帧、黑屏、损坏文件规则。</div></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-hd"><div class="panel-title">状态流转</div></div>
+              <div class="timeline-steps">
+                <div class="flow">
+                  <div class="flow-step done"><div class="flow-name">解析完成</div><div class="flow-note">机检通过</div></div><span class="arrow">→</span>
+                  <div class="flow-step done"><div class="flow-name">已分配</div><div class="flow-note">李可</div></div><span class="arrow">→</span>
+                  <div class="flow-step active"><div class="flow-name">质检中</div><div class="flow-note">保存 3 个帧段</div></div><span class="arrow">→</span>
+                  <div class="flow-step"><div class="flow-name">待复核</div><div class="flow-note">待定时进入</div></div><span class="arrow">→</span>
+                  <div class="flow-step"><div class="flow-name">已完成</div><div class="flow-note">只读留痕</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-hd"><div class="panel-title">质检标准</div></div>
+            <div class="reason-list">
+              <div class="reason"><div class="reason-h"><span class="reason-title">视频完整性</span><span class="tag tag-green">通过</span></div><div class="reason-desc">四路视频均可播放，帧数与元数据一致，无明显缺帧或损坏。</div></div>
+              <div class="reason"><div class="reason-h"><span class="reason-title">动作一致性</span><span class="tag tag-amber">待核对</span></div><div class="reason-desc">采集动作需与任务描述、步骤顺序和目标对象一致。</div></div>
+              <div class="reason"><div class="reason-h"><span class="reason-title">视角可用性</span><span class="tag tag-green">通过</span></div><div class="reason-desc">关键动作至少在一个主视角清晰可见，多视角可互相补充。</div></div>
+              <div class="reason"><div class="reason-h"><span class="reason-title">标帧准确性</span><span class="tag tag-blue">进行中</span></div><div class="reason-desc">起止帧覆盖完整动作片段，时间轴无明显漏标、错标和异常重叠。</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-workbench">
+        <div class="workbench">
+          <aside class="wb-panel">
+            <div class="wb-hd"><span>动作步骤清单</span><span class="tag tag-blue">4/7</span></div>
+            <div class="step-list">
+              <div class="step-card done"><div class="step-top"><span class="step-title">1. 靠近货架</span><span class="tag tag-green">已标</span></div><div class="frame-grid"><div class="frame-box"><div class="frame-label">起始帧</div><div class="frame-value">033</div></div><div class="frame-box"><div class="frame-label">结束帧</div><div class="frame-value">128</div></div><div class="frame-box"><div class="frame-label">持续</div><div class="frame-value">95</div></div></div></div>
+              <div class="step-card active"><div class="step-top"><span class="step-title">2. 抓取目标物</span><span class="tag tag-blue">当前</span></div><div class="frame-grid"><div class="frame-box"><div class="frame-label">起始帧</div><div class="frame-value">129</div></div><div class="frame-box"><div class="frame-label">结束帧</div><div class="frame-value">-</div></div><div class="frame-box"><div class="frame-label">持续</div><div class="frame-value">-</div></div></div></div>
+              <div class="step-card"><div class="step-top"><span class="step-title">3. 移动至放置点</span><span class="tag tag-gray">未标</span></div><div class="frame-grid"><div class="frame-box"><div class="frame-label">起始帧</div><div class="frame-value">-</div></div><div class="frame-box"><div class="frame-label">结束帧</div><div class="frame-value">-</div></div><div class="frame-box"><div class="frame-label">持续</div><div class="frame-value">-</div></div></div></div>
+              <div class="step-card"><div class="step-top"><span class="step-title">4. 放置并撤离</span><span class="tag tag-gray">未标</span></div><div class="frame-grid"><div class="frame-box"><div class="frame-label">起始帧</div><div class="frame-value">-</div></div><div class="frame-box"><div class="frame-label">结束帧</div><div class="frame-value">-</div></div><div class="frame-box"><div class="frame-label">持续</div><div class="frame-value">-</div></div></div></div>
+            </div>
+          </aside>
+          <section class="wb-panel">
+            <div class="wb-hd"><span>四路视频同步播放</span><span class="mono" style="color:var(--muted)">Time 1.107s / Frame 33</span></div>
+            <div class="video-area">
+              <div class="video"><span class="video-label">CAM-A 主视角</span><span class="video-status">SYNC</span><div class="robot-arm"></div></div>
+              <div class="video"><span class="video-label">CAM-B 侧视角</span><span class="video-status">SYNC</span><div class="robot-arm" style="transform:rotate(24deg)"></div></div>
+              <div class="video"><span class="video-label">CAM-C 末端视角</span><span class="video-status">SYNC</span><div class="robot-arm" style="transform:rotate(-42deg)"></div></div>
+              <div class="video"><span class="video-label">CAM-D 全局视角</span><span class="video-status">SYNC</span><div class="robot-arm" style="transform:rotate(8deg)"></div></div>
+            </div>
+            <div class="player">
+              <div class="time-row"><span class="time-code">00:01.107</span><div class="scrub"><div class="segment seg1"></div><div class="segment seg2"></div><div class="segment seg3"></div><div class="scrub-fill"></div><div class="playhead"></div></div><span class="time-code">00:12.860</span></div>
+              <div class="control-row"><div class="controls"><button class="btn btn-sm">上一帧</button><button class="btn btn-sm btn-primary">播放</button><button class="btn btn-sm">下一帧</button><button class="btn btn-sm">起始帧</button><button class="btn btn-sm">结束帧</button></div><span style="color:var(--muted)">彩色段代表不同步骤已标注时间区间</span></div>
+            </div>
+          </section>
+          <aside class="wb-panel">
+            <div class="wb-hd"><span>质检结论</span><span class="tag tag-amber">草稿</span></div>
+            <div class="result-box">
+              <div class="field"><label>序列包</label><input class="ctrl mono" value="QC-766794" readonly></div>
+              <div class="field"><label>质检结果</label><div class="choice-row"><button class="choice pass active">合格</button><button class="choice pending">待定</button><button class="choice fail">不合格</button></div></div>
+              <div class="field"><label>问题原因</label><select class="ctrl"><option>无</option><option>动作遗漏</option><option>视角遮挡</option><option>帧段错标</option><option>接管未标识</option></select></div>
+              <div class="field"><label>备注</label><textarea class="ctrl" placeholder="待定或不合格时必填原因说明"></textarea></div>
+              <button class="btn btn-green" id="submitQc">提交质检结果</button>
+              <button class="btn" data-open-detail>返回详情</button>
+              <div class="readonly" id="readonlyTip">质检已提交。页面进入只读状态，保留结论、帧段、原因、操作人和提交时间，用于复核与报表导出。</div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+const views={list:document.getElementById("view-list"),detail:document.getElementById("view-detail"),workbench:document.getElementById("view-workbench")};
+const labels={list:"数据质检",detail:"序列包详情",workbench:"视频质检工作台"};
+function showView(name){
+  Object.values(views).forEach(v=>v.classList.remove("active"));
+  views[name].classList.add("active");
+  document.getElementById("crumb").textContent=labels[name];
+  document.querySelectorAll("[data-view-btn]").forEach(btn=>btn.classList.toggle("active",btn.dataset.viewBtn===name));
+}
+document.querySelectorAll("[data-view-btn]").forEach(btn=>btn.addEventListener("click",()=>showView(btn.dataset.viewBtn)));
+document.querySelectorAll("[data-open-detail]").forEach(btn=>btn.addEventListener("click",()=>showView("detail")));
+document.querySelectorAll("[data-open-workbench]").forEach(btn=>btn.addEventListener("click",()=>showView("workbench")));
+document.querySelectorAll("[data-open-list]").forEach(btn=>btn.addEventListener("click",()=>showView("list")));
+document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));tab.classList.add("active")}));
+document.querySelectorAll(".choice").forEach(choice=>choice.addEventListener("click",()=>{document.querySelectorAll(".choice").forEach(c=>c.classList.remove("active"));choice.classList.add("active")}));
+document.getElementById("submitQc").addEventListener("click",()=>document.getElementById("readonlyTip").classList.add("show"));
+</script>
+</body>
+</html>
