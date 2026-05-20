@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Button, Card, Typography, Space, Descriptions, Badge, Progress, Table, Tag, Steps, message } from 'antd';
+import { Button, Card, Typography, Space, Descriptions, Badge, Progress, Table, Tag, Steps } from 'antd';
 import { ArrowLeftOutlined, VideoCameraOutlined, ApiOutlined, DesktopOutlined, EyeOutlined, SolutionOutlined, FileSearchOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -12,9 +12,19 @@ export default function CollectTaskDetailPage() {
   const router = useRouter();
   const params = useParams();
   const taskId = params?.taskId || 'CT-20250301001';
+  const isLumos = taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos');
   
   // Mock data based on taskId
-  const selectedTask = { 
+  const selectedTask = isLumos ? {
+      taskId: taskId, 
+      name: 'Lumos-双手筷子与勺子整理-001', 
+      desc: '使用Lumos离线背包数采终端进行餐具整理数据采集', 
+      robot: 'Lumos FastUMI Go 离线数采背包', 
+      scene: '离线台面', 
+      collector: '王小二', 
+      progress: '3/50', 
+      deviceStatus: '正常'
+  } : { 
       taskId: taskId || 'CT-20250301001', 
       name: 'FRANKA-FR3-抓取红色方块-001', 
       desc: '使用FR3机器人抓取红色方块', 
@@ -25,7 +35,11 @@ export default function CollectTaskDetailPage() {
       deviceStatus: '正常' 
   };
 
-  const historicalEpisodes = [
+  const historicalEpisodes = isLumos ? [
+    { key: '1', episodeId: 'EP-20260414-001', time: '2026-04-14 14:20:00', duration: '00:00:15', steps: 4, status: '已入库质检池', qaBatch: 'BATCH-202604-A' },
+    { key: '2', episodeId: 'EP-20260414-002', time: '2026-04-14 14:22:15', duration: '00:00:15', steps: 4, status: '已入库质检池', qaBatch: 'BATCH-202604-A' },
+    { key: '3', episodeId: 'EP-20260414-003', time: '2026-04-14 14:25:30', duration: '00:00:15', steps: 4, status: '废弃', qaBatch: '-' },
+  ] : [
     { key: '1', episodeId: 'EP-20250301-001', time: '2025-03-01 14:20:00', duration: '00:01:23', steps: 6, status: '已入库质检池', qaBatch: 'BATCH-766794-A' },
     { key: '2', episodeId: 'EP-20250301-002', time: '2025-03-01 14:22:15', duration: '00:01:45', steps: 6, status: '已入库质检池', qaBatch: 'BATCH-766794-A' },
     { key: '3', episodeId: 'EP-20250301-003', time: '2025-03-01 14:25:30', duration: '00:01:12', steps: 6, status: '等待解析', qaBatch: 'BATCH-766794-B' },
@@ -71,7 +85,7 @@ export default function CollectTaskDetailPage() {
             <Title level={4} style={{ margin: 0 }}>工作台采集任务详情</Title>
         </div>
         <Space>
-            <Button type="primary" size="large" onClick={() => window.open(`/collection/collect/workspace/${taskId}`, '_blank')}>进入沉浸式工作台</Button>
+            <Button type="primary" size="large" onClick={() => window.open(`/collection/collect/connection/${taskId}`, '_blank')}>进入数采自检与工作台</Button>
         </Space>
       </div>
 
@@ -93,7 +107,7 @@ export default function CollectTaskDetailPage() {
               <Descriptions.Item label="任务名称">{selectedTask.name}</Descriptions.Item>
               <Descriptions.Item label="任务描述" span={2}>{selectedTask.desc}</Descriptions.Item>
               <Descriptions.Item label="采集数量">{selectedTask.progress}</Descriptions.Item>
-              <Descriptions.Item label="平均时长">2分30秒</Descriptions.Item>
+              <Descriptions.Item label="平均时长">{isLumos ? '15.0 秒 (固定帧)' : '2分30秒'}</Descriptions.Item>
           </Descriptions>
       </Card>
       
@@ -102,10 +116,10 @@ export default function CollectTaskDetailPage() {
               <Descriptions.Item label="采集机器人">{selectedTask.robot}</Descriptions.Item>
               <Descriptions.Item label="采集场景">{selectedTask.scene}</Descriptions.Item>
               <Descriptions.Item label="设备状态"><Badge status={selectedTask.deviceStatus === '正常' ? 'success' : 'error'} text={selectedTask.deviceStatus} /></Descriptions.Item>
-              <Descriptions.Item label="采集进度"><Progress percent={parseInt(selectedTask.progress.split('/')[0]) / parseInt(selectedTask.progress.split('/')[1]) * 100} size="small" /></Descriptions.Item>
+              <Descriptions.Item label="采集进度"><Progress percent={parseFloat(selectedTask.progress.split('/')[0]) / parseFloat(selectedTask.progress.split('/')[1]) * 100} size="small" /></Descriptions.Item>
           </Descriptions>
       </Card>
-
+ 
       <Card title="已采集序列包记录 (Historical Episodes)" bordered={false} style={{ borderRadius: 8 }}>
           <Table 
             dataSource={historicalEpisodes} 

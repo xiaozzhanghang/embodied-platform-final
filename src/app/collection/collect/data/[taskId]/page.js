@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, Table, Tag, Space, Row, Col, Descriptions, Steps, Button, Typography, Breadcrumb } from 'antd';
 import { ArrowLeftOutlined, HddOutlined, PlayCircleOutlined, ApiOutlined } from '@ant-design/icons';
@@ -8,7 +8,7 @@ import MainLayout from '@/components/MainLayout';
 
 const { Title } = Typography;
 
-const historicalEpisodes = [
+const humanoidEpisodes = [
   { key: '1', episodeId: 'EP-20250301-001', time: '2025-03-01 14:20:00', duration: '00:01:23', steps: 6, status: '已入库质检池', qaBatch: 'BATCH-766794-A' },
   { key: '2', episodeId: 'EP-20250301-002', time: '2025-03-01 14:22:15', duration: '00:01:45', steps: 6, status: '已入库质检池', qaBatch: 'BATCH-766794-A' },
   { key: '3', episodeId: 'EP-20250301-003', time: '2025-03-01 14:25:30', duration: '00:01:12', steps: 6, status: '等待解析', qaBatch: 'BATCH-766794-B' },
@@ -16,15 +16,29 @@ const historicalEpisodes = [
   { key: '5', episodeId: 'EP-20250301-005', time: '2025-03-01 14:31:05', duration: '00:01:30', steps: 6, status: '等待解析', qaBatch: 'BATCH-766794-B' },
 ];
 
+const lumosEpisodes = [
+  { key: '1', episodeId: 'EP-20260414-001', time: '2026-04-14 14:20:00', duration: '00:00:15', steps: 4, status: '已入库质检池', qaBatch: 'BATCH-202604-A' },
+  { key: '2', episodeId: 'EP-20260414-002', time: '2026-04-14 14:22:15', duration: '00:00:15', steps: 4, status: '已入库质检池', qaBatch: 'BATCH-202604-A' },
+  { key: '3', episodeId: 'EP-20260414-003', time: '2026-04-14 14:25:30', duration: '00:00:15', steps: 4, status: '废弃', qaBatch: '-' },
+];
+
 export default function CollectTaskDataPage() {
   const router = useRouter();
   const params = useParams();
   const taskId = params?.taskId || 'CT-20250301002';
-  
-  const [selectedEpisode, setSelectedEpisode] = useState(historicalEpisodes[0]);
+  const isLumos = taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos');
 
-  // Mock task metadata
-  const taskName = taskId === 'CT-20250301002' ? 'FRANKA-FR3-放置蓝色圆柱-002' : 'FRANKA-FR3-抓取红色方块-001';
+  const episodes = isLumos ? lumosEpisodes : humanoidEpisodes;
+  const [selectedEpisode, setSelectedEpisode] = useState(null);
+
+  useEffect(() => {
+    if (episodes.length > 0) {
+      setSelectedEpisode(episodes[0]);
+    }
+  }, [taskId, isLumos]);
+
+  // Task metadata
+  const taskName = isLumos ? 'Lumos-双手筷子与勺子整理-001' : (taskId === 'CT-20250301002' ? 'FRANKA-FR3-放置蓝色圆柱-002' : 'FRANKA-FR3-抓取红色方块-001');
 
   return (
     <MainLayout>
@@ -54,7 +68,7 @@ export default function CollectTaskDataPage() {
         <Col span={7}>
           <Card title="已采集序列包 (Episodes)" bordered={false} styles={{ body: { padding: 0 } }} style={{ height: '100%', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', borderRadius: 8 }}>
             <Table
-              dataSource={historicalEpisodes}
+              dataSource={episodes}
               columns={[
                 {
                   title: '序列包 ID',
@@ -104,7 +118,7 @@ export default function CollectTaskDataPage() {
                   <Descriptions.Item label="所属批次">{selectedEpisode.qaBatch}</Descriptions.Item>
                   <Descriptions.Item label="采集时间">{selectedEpisode.time}</Descriptions.Item>
                   <Descriptions.Item label="视频时长">{selectedEpisode.duration}</Descriptions.Item>
-                  <Descriptions.Item label="动作帧数">{selectedEpisode.steps * 30} 帧</Descriptions.Item>
+                  <Descriptions.Item label="动作帧数">{selectedEpisode.steps * 30 || 450} 帧</Descriptions.Item>
                   <Descriptions.Item label="系统状态">
                     <Tag color={selectedEpisode.status === '已入库质检池' ? 'success' : selectedEpisode.status === '废弃' ? 'error' : 'processing'}>
                       {selectedEpisode.status}
@@ -117,36 +131,36 @@ export default function CollectTaskDataPage() {
               <Row gutter={16}>
                 {/* 4-Camera Video Grid Simulator */}
                 <Col span={14}>
-                  <Card title="多视角相机监视 (Camera CCTV)" bordered={false} styles={{ body: { padding: 8 } }} style={{ background: '#141414', color: '#fff', borderRadius: 8, overflow: 'hidden' }}>
+                  <Card title={isLumos ? "多视角相机流监视 (Lumos Multi-Cam)" : "多视角相机监视 (Camera CCTV)"} bordered={false} styles={{ body: { padding: 8 } }} style={{ background: '#141414', color: '#fff', borderRadius: 8, overflow: 'hidden' }}>
                     <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', background: '#000', borderRadius: 4, overflow: 'hidden' }}>
                       <svg viewBox="0 0 400 225" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
                         <rect width="400" height="225" fill="#18181c" />
                         <line x1="200" y1="0" x2="200" y2="225" stroke="#2a2a30" strokeWidth="1" strokeDasharray="5,5" />
                         <line x1="0" y1="112" x2="400" y2="112" stroke="#2a2a30" strokeWidth="1" strokeDasharray="5,5" />
                         
-                        {/* Cam 1: Front view */}
-                        <text x="10" y="20" fill="#888" fontSize="10" fontFamily="monospace">CAM-01: FRONT</text>
+                        {/* Cam 1: Left view / Front */}
+                        <text x="10" y="20" fill="#888" fontSize="10" fontFamily="monospace">{isLumos ? 'CAM-01: WRIST_CAM_L' : 'CAM-01: FRONT'}</text>
                         <circle cx="100" cy="56" r="30" fill="none" stroke="#52c41a" strokeWidth="1" />
                         <line x1="100" y1="26" x2="100" y2="86" stroke="#52c41a" strokeWidth="0.5" />
                         <line x1="70" y1="56" x2="130" y2="56" stroke="#52c41a" strokeWidth="0.5" />
                         <rect x="90" y="46" width="20" height="20" rx="3" fill="#1677ff" opacity="0.8" />
-                        <text x="94" y="59" fill="#fff" fontSize="8" fontWeight="bold">CUBE</text>
+                        <text x="94" y="59" fill="#fff" fontSize="8" fontWeight="bold">{isLumos ? 'BOX' : 'CUBE'}</text>
                         
-                        {/* Cam 2: Gripper wrist view */}
-                        <text x="210" y="20" fill="#888" fontSize="10" fontFamily="monospace">CAM-02: GRIPPER EYE</text>
+                        {/* Cam 2: Right view / Wrist */}
+                        <text x="210" y="20" fill="#888" fontSize="10" fontFamily="monospace">{isLumos ? 'CAM-02: WRIST_CAM_R' : 'CAM-02: GRIPPER EYE'}</text>
                         <path d="M 280 40 L 320 40 L 300 80 Z" fill="none" stroke="#1677ff" strokeWidth="1" />
                         <circle cx="300" cy="50" r="10" fill="red" opacity="0.6" />
                         
-                        {/* Cam 3: 3D pointcloud reconstruction */}
-                        <text x="10" y="132" fill="#888" fontSize="10" fontFamily="monospace">CAM-03: 3D MODEL</text>
+                        {/* Cam 3: Head left eye / 3D model */}
+                        <text x="10" y="132" fill="#888" fontSize="10" fontFamily="monospace">{isLumos ? 'CAM-03: HEAD_LEFT_EYE' : 'CAM-03: 3D MODEL'}</text>
                         <path d="M 50 180 L 100 150 L 150 180 L 100 210 Z" fill="none" stroke="#2e2e38" strokeWidth="1" />
                         <path d="M 100 150 L 100 120" stroke="#2e2e38" strokeWidth="1" />
                         <path d="M 50 180 L 50 150" stroke="#2e2e38" strokeWidth="1" />
                         <path d="M 150 180 L 150 150" stroke="#2e2e38" strokeWidth="1" />
                         <path d="M 100 210 L 100 180 L 80 150 L 90 130" fill="none" stroke="#1890ff" strokeWidth="3" strokeLinecap="round" />
                         
-                        {/* Cam 4: Depth map */}
-                        <text x="210" y="132" fill="#888" fontSize="10" fontFamily="monospace">CAM-04: DEPTH MAP</text>
+                        {/* Cam 4: LIDAR / Depth map */}
+                        <text x="210" y="132" fill="#888" fontSize="10" fontFamily="monospace">{isLumos ? 'CAM-04: LIDAR DEPTH' : 'CAM-04: DEPTH MAP'}</text>
                         <circle cx="300" cy="168" r="25" fill="#3f1285" opacity="0.7" />
                         <circle cx="300" cy="168" r="15" fill="#722ed1" opacity="0.8" />
                         <circle cx="300" cy="168" r="5" fill="#a868ff" />
@@ -159,10 +173,10 @@ export default function CollectTaskDataPage() {
                       <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 32, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', padding: '0 10px', justifyContent: 'space-between' }}>
                         <Space size="small">
                           <PlayCircleOutlined style={{ color: '#fff', fontSize: 16 }} />
-                          <span style={{ fontSize: 11, color: '#aaa', fontFamily: 'monospace' }}>00:45 / {selectedEpisode.duration}</span>
+                          <span style={{ fontSize: 11, color: '#aaa', fontFamily: 'monospace' }}>{isLumos ? '00:08' : '00:45'} / {selectedEpisode.duration}</span>
                         </Space>
                         <Space size="middle">
-                          <span style={{ fontSize: 10, color: '#52c41a', border: '1px solid #52c41a', padding: '1px 4px', borderRadius: 2 }}>AUTO-ALIGN</span>
+                          <span style={{ fontSize: 10, color: '#52c41a', border: '1px solid #52c41a', padding: '1px 4px', borderRadius: 2 }}>{isLumos ? 'LUMOS-SYNC' : 'AUTO-ALIGN'}</span>
                           <ApiOutlined style={{ color: '#fff' }} />
                         </Space>
                       </div>
@@ -204,7 +218,12 @@ export default function CollectTaskDataPage() {
                   direction="horizontal"
                   current={2}
                   size="small"
-                  items={[
+                  items={isLumos ? [
+                    { title: '端持餐具', description: 'Grasp' },
+                    { title: '平行标定', description: 'Calibrate' },
+                    { title: '平移整理', description: 'Align' },
+                    { title: '落盒置放', description: 'Place' }
+                  ] : [
                     { title: '靠近方块', description: 'Approach' },
                     { title: '张开手指', description: 'Open' },
                     { title: '贴合闭合', description: 'Grasp' },
