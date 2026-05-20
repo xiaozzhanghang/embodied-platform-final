@@ -27,7 +27,7 @@ export default function DeviceStatusPage() {
   const router = useRouter();
   const params = useParams();
   const [activeKey, setActiveKey] = useState('1');
-  const [isErrorMode, setIsErrorMode] = useState(true); // Simulate error state initially
+  const [isErrorMode, setIsErrorMode] = useState(false); // Healthy state initially for smooth demo flow
 
   const taskId = params?.taskId || 'CT-20250301001';
   const isLumos = taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos');
