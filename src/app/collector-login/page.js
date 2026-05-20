@@ -2,341 +2,325 @@
 
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Checkbox, App, ConfigProvider, theme } from 'antd';
-import { UserOutlined, LockOutlined, ApiOutlined, HddOutlined, DashboardOutlined, CheckCircleFilled, WarningFilled, ArrowLeftOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { 
+  UserOutlined, 
+  LockOutlined, 
+  ThunderboltOutlined, 
+  ApiOutlined, 
+  HddOutlined, 
+  GlobalOutlined,
+  CheckCircleOutlined
+} from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import heroImg from '../../assets/collector_login_hero_16_9.png';
+import collectorHero from '../../assets/collector_login_hero.png';
 
 export default function CollectorLoginPage() {
   const { message } = App.useApp();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [ping, setPing] = useState('1ms');
 
   useEffect(() => {
     setMounted(true);
+    const interval = setInterval(() => {
+      setPing(`${Math.floor(Math.random() * 2) + 1}ms`);
+    }, 3000);
+    return () => clearInterval(interval);
   }, []);
+
+  if (!mounted) return null;
 
   const onFinish = (values) => {
     setLoading(true);
     localStorage.setItem('userRole', 'COLLECTOR');
     setTimeout(() => {
-      message.success('采集员身份确认，接入边缘工作站...');
+      message.success('采集站会话凭证下发成功，正在启动底层驱动并进入工作台...');
       setTimeout(() => {
         router.push('/collection/collect');
-      }, 600);
+      }, 800);
     }, 1200);
   };
 
-  if (!mounted) return null;
+  const bgImgUrl = collectorHero.src || collectorHero;
 
   return (
     <ConfigProvider
       theme={{
         algorithm: theme.darkAlgorithm,
         token: {
-          colorPrimary: '#1677ff',
-          borderRadius: 12,
+          colorPrimary: '#faad14',
+          borderRadius: 8,
+          colorBgContainer: 'rgba(11, 16, 31, 0.75)',
+          colorBorder: 'rgba(255,255,255,0.06)'
         },
       }}
     >
-      <div className="collector-login-root" style={{
-        backgroundImage: `url(${heroImg.src || heroImg})`,
-        backgroundSize: 'cover', 
+      <div className="login-root-container" style={{
+        backgroundImage: `radial-gradient(circle at center, rgba(4, 7, 17, 0.8) 0%, rgba(4, 7, 17, 0.95) 100%), url(${bgImgUrl})`,
+        backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        position: 'relative'
+        backgroundRepeat: 'no-repeat'
       }}>
+        {/* Global Styles */}
         <style jsx global>{`
-          @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-9px); }
-            100% { transform: translateY(0px); }
+          @keyframes glowDrift {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-3%, 3%) scale(1.08); }
+            100% { transform: translate(0, 0) scale(1); }
           }
-          @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0.4); }
-            70% { box-shadow: 0 0 0 15px rgba(22, 119, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(22, 119, 255, 0); }
+          @keyframes borderPulse {
+            0% { border-color: rgba(250, 173, 20, 0.2); }
+            50% { border-color: rgba(250, 173, 20, 0.5); }
+            100% { border-color: rgba(250, 173, 20, 0.2); }
           }
-          @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-30px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          .collector-login-root {
+          .login-root-container {
             min-height: 100vh;
-            display: flex;
             color: #f8fafc;
-            overflow: hidden;
             font-family: 'Inter', -apple-system, sans-serif;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
-          .glass-panel {
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          .cyber-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+              linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            background-position: center;
+            z-index: 2;
+            pointer-events: none;
           }
-          .status-item {
+          .tech-login-panel {
+            background: rgba(8, 12, 20, 0.65);
+            border: 1px solid rgba(250, 173, 20, 0.25);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+            z-index: 10;
+            position: relative;
+            animation: borderPulse 5s infinite ease-in-out;
+          }
+          .tech-input .ant-input-affix-wrapper {
+            background: rgba(255, 255, 255, 0.02) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 8px !important;
+            padding: 12px 16px !important;
             transition: all 0.3s ease;
-            animation: fadeIn 0.8s ease backwards;
           }
-          .status-item:hover {
-            background: rgba(255, 255, 255, 0.08) !important;
-            border-color: rgba(22, 119, 255, 0.3) !important;
-            transform: scale(1.02);
+          .tech-input .ant-input-affix-wrapper-focused,
+          .tech-input .ant-input-affix-wrapper:focus,
+          .tech-input .ant-input-affix-wrapper:hover {
+            border-color: #faad14 !important;
+            box-shadow: 0 0 12px rgba(250, 173, 20, 0.25) !important;
           }
-          .hero-gradient-overlay {
-            background: linear-gradient(to right, rgba(2, 8, 23, 0.9) 0%, rgba(2, 8, 23, 0.4) 50%, rgba(2, 8, 23, 0.8) 100%);
+          .tech-input input {
+            color: #fff !important;
+          }
+          .custom-button {
+            height: 52px;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            background: linear-gradient(135deg, #faad14, #d89614);
+            color: #040711;
+            box-shadow: 0 8px 24px rgba(250, 173, 20, 0.25);
+            transition: all 0.3s ease;
+          }
+          .custom-button:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(250, 173, 20, 0.4);
+          }
+          .metric-badge {
+            background: rgba(8, 12, 20, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 14px 20px;
+            backdrop-filter: blur(10px);
           }
         `}</style>
 
-        <div className="hero-gradient-overlay" style={{ position: 'absolute', inset: 0, zIndex: 0 }} />
+        <div className="cyber-grid" />
 
-        {/* Header Logo */}
-        <div style={{ position: 'absolute', top: 60, left: 60, zIndex: 10, animation: 'slideIn 0.8s ease' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 14,
-                background: 'linear-gradient(135deg, #1677ff, #0958d9)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 8px 16px rgba(22,119,255,0.3)',
-                animation: 'pulse 2s infinite',
-              }}>
-                <ThunderboltOutlined style={{ color: '#fff', fontSize: 26 }} />
-              </div>
-              <div>
-                <div style={{ color: '#fff', fontWeight: 800, fontSize: 22, letterSpacing: 0.5, marginBottom: 2 }}>具身智能终端</div>
-                <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, letterSpacing: 3, textTransform: 'uppercase' }}>Edge Workstation V1.0</div>
-              </div>
-            </div>
-        </div>
-      
-        <div style={{ position: 'absolute', bottom: 40, width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
-          © 2026 天奇股份 · 具身智能事业部
-        </div>   
-
-        {/* Back link - Absolute positioned */}
-        <div style={{ position: 'absolute', top: 60, right: 60, zIndex: 10 }}>
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => router.back()}
-            style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}
-            className="hover:text-blue-400"
-          >
-            返回系统主页
-          </Button>
+        {/* Branding header */}
+        <div style={{ position: 'absolute', top: 40, left: 40, zIndex: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: 8,
+            background: 'linear-gradient(135deg, #faad14, #d89614)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(250, 173, 20, 0.3)'
+          }}>
+            <ThunderboltOutlined style={{ color: '#040711', fontSize: 18 }} />
+          </div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 0.5, color: '#fff' }}>SKYNET EDGE</div>
+            <div style={{ fontSize: 10, color: 'rgba(255, 255, 255, 0.35)', letterSpacing: 1.5 }}>天奇具身智能边缘采集站</div>
+          </div>
         </div>
 
-        {/* Main Content Row aligned at bottom */}
+        {/* Main Content split */}
         <div style={{
-          position: 'relative',
-          zIndex: 10,
           width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '0 60px',
-          flex: 1,
+          maxWidth: 1200,
+          padding: '0 40px',
+          zIndex: 10,
+          display: 'grid',
+          gridTemplateColumns: '1.2fr 1fr',
+          gap: 80,
+          alignItems: 'center'
         }}>
-          {/* Grid lines decoration for the content area */}
-          <div style={{
-            position: 'absolute', inset: 0, zIndex: -1,
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-            pointerEvents: 'none',
-          }} />
-
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-between',
-            width: '100%',
-            maxWidth: 1300,
-            gap: 60,
-          }}>
-            {/* Left Content (Title & Stats) */}
-            <div style={{ flex: 1, paddingBottom: 10 }}>
-          <div style={{ position: 'relative', zIndex: 10, maxWidth: 500, animation: 'slideIn 1s ease' }}>
-            <div style={{ 
-              display: 'inline-block', 
-              padding: '6px 12px', 
-              background: 'rgba(22, 119, 255, 0.1)', 
-              borderRadius: 6, 
-              border: '1px solid rgba(22, 119, 255, 0.2)',
-              color: '#3b82f6',
-              fontSize: 12,
-              fontWeight: 600,
-              textTransform: 'uppercase',
+          
+          {/* Left Panel: Metrics and Title */}
+          <div>
+            <div style={{
+              display: 'inline-block',
+              padding: '6px 12px',
+              borderRadius: 4,
+              border: '1px solid rgba(250, 173, 20, 0.3)',
+              background: 'rgba(250, 173, 20, 0.08)',
+              color: '#faad14',
+              fontSize: 11,
+              fontWeight: 700,
               letterSpacing: 2,
-              marginBottom: 20
+              marginBottom: 24,
+              textTransform: 'uppercase'
             }}>
-              Collector Mode
+              EDGE WORKSTATION / 边缘采集端
             </div>
-            <h1 style={{ fontSize: '48px', fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 24 }}>
-              高效采集<br />
-              <span style={{ 
-                background: 'linear-gradient(90deg, #1677ff, #60a5fa)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}>加速智能演进</span>
+
+            <h1 style={{
+              fontSize: '44px',
+              fontWeight: 900,
+              lineHeight: 1.15,
+              color: '#fff',
+              marginBottom: 16,
+              letterSpacing: '-0.5px'
+            }}>
+              高精度数据采集与<br />
+              <span style={{ color: '#faad14' }}>现场传感器融合</span>
             </h1>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 17, lineHeight: 1.7, fontWeight: 400 }}>
-              面向现场作业人员优化的专用采集系统。本地化存储、硬件加速解码、秒级低延迟反馈，确保每一条轨迹数据的精准无误。
+
+            <p style={{
+              fontSize: '15px',
+              color: 'rgba(255, 255, 255, 0.55)',
+              lineHeight: 1.6,
+              marginBottom: 48,
+              maxWidth: 500
+            }}>
+              面向现场作业专家优化的微秒级采集工作站。支持多相机流式对齐、机械臂示教轨迹以及传感器数据硬件加速写入。
             </p>
+
+            {/* Diagnostics checklist */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+              {[
+                { label: '机器人连接', value: 'FRANKA FR3', icon: <ApiOutlined style={{ color: '#faad14' }} /> },
+                { label: '边缘缓存空间', value: '105GB FREE', icon: <HddOutlined style={{ color: '#52c41a' }} /> },
+                { label: '内网实时延迟', value: ping, icon: <GlobalOutlined style={{ color: '#1677ff' }} /> }
+              ].map((item, idx) => (
+                <div className="metric-badge" key={idx}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.4)', fontSize: 11, marginBottom: 8 }}>
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{item.value}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Bottom hardware status */}
-          <div style={{ position: 'relative', zIndex: 10, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, animation: 'fadeIn 1.2s ease' }}>
-            {[
-              { icon: <ApiOutlined />, label: '机器人通讯', value: '1ms', color: '#10b981', status: 'Online' },
-              { icon: <HddOutlined />, label: '本地缓存', value: '128GB', color: '#f59e0b', status: '88% Free' },
-              { icon: <DashboardOutlined />, label: '系统负载', value: 'Balanced', color: '#3b82f6', status: 'CPU 24%' }
-            ].map((item, idx) => (
-              <div key={idx} className="status-item glass-panel" style={{ 
-                padding: '16px', 
-                borderRadius: 12, 
-                background: 'rgba(15, 23, 42, 0.4)',
-                animationDelay: `${0.2 * idx}s`
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <span style={{ color: item.color, fontSize: 18 }}>{item.icon}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{item.label}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{item.value}</span>
-                  <span style={{ fontSize: 11, color: item.color, fontWeight: 600 }}>{item.status}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Right Panel: Clean login card */}
+          <div className="tech-login-panel" style={{ padding: '54px 44px' }}>
+            <div style={{ marginBottom: 32 }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', marginBottom: 6 }}>现场采集员登录</h2>
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
+                请输入您的指派采集工程师 ID 以同步本日任务队列
+              </p>
             </div>
 
-            {/* Right Panel (Form Card) */}
-            <div style={{ width: 480, flexShrink: 0 }}>
-
-          <div style={{ 
-            width: '100%', 
-            maxWidth: 480, 
-            background: 'rgba(2, 8, 23, 0.65)',
-            backdropFilter: 'blur(20px)',
-            borderRadius: 24,
-            padding: '50px 40px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            animation: 'fadeIn 1s ease' 
-          }}>
-            <div style={{ marginBottom: 48, textAlign: 'center' }}>
-              <div style={{ 
-                width: 64, height: 64, borderRadius: 20, 
-                background: 'rgba(22, 119, 255, 0.1)', 
-                margin: '0 auto 24px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '1px solid rgba(22, 119, 255, 0.2)'
-              }}>
-                <UserOutlined style={{ fontSize: 28, color: '#1677ff' }} />
-              </div>
-              <h2 style={{ fontSize: 32, fontWeight: 800, color: '#fff', marginBottom: 12 }}>采集员登录</h2>
-              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 15 }}>请输入您的采集站账号以开始作业</p>
-            </div>
-
-            <Form
-              name="collector_login_final"
-              onFinish={onFinish}
-              size="large"
+            <Form 
+              onFinish={onFinish} 
+              size="large" 
               layout="vertical"
-              requiredMark={false}
+              className="tech-input"
             >
-              <Form.Item
-                name="username"
-                label={<span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>采集端账号</span>}
-                rules={[{ required: true, message: '请输入账号' }]}
-              >
+              <Form.Item name="username" rules={[{ required: true, message: '请输入采集员账号' }]}>
                 <Input
-                  prefix={<UserOutlined style={{ color: 'rgba(255,255,255,0.3)' }} />}
-                  placeholder="采集员 ID / 用户名"
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 12,
-                    height: 52,
-                    color: '#fff',
-                  }}
+                  prefix={<UserOutlined style={{ color: 'rgba(255,255,255,0.2)' }} />}
+                  placeholder="请输入您的采集站账号"
                 />
               </Form.Item>
-
-              <Form.Item
-                name="password"
-                label={<span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>访问密码</span>}
-                rules={[{ required: true, message: '请输入密码' }]}
-                style={{ marginBottom: 16 }}
-              >
+              
+              <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]} style={{ marginBottom: 16 }}>
                 <Input.Password
-                  prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.3)' }} />}
-                  placeholder="请输入访问密码"
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 12,
-                    height: 52,
-                    color: '#fff',
-                  }}
+                  prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.2)' }} />}
+                  placeholder="请输入访问防误触密码"
                 />
               </Form.Item>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-                <Checkbox style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>保持登录状态</Checkbox>
-                <Button type="link" style={{ padding: 0, height: 'auto', fontSize: 13, color: '#1677ff' }}>忘记密码?</Button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+                <Checkbox style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>保持此设备登录</Checkbox>
+                <Button type="link" style={{ padding: 0, fontSize: 12, color: '#faad14' }}>
+                  设备故障报备?
+                </Button>
               </div>
 
-              <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  block
+              <Form.Item style={{ marginBottom: 0 }}>
+                <Button 
+                  type="primary" 
+                  htmlType="submit" 
+                  block 
                   loading={loading}
-                  style={{
-                    height: 56,
-                    fontSize: 16,
-                    fontWeight: 700,
-                    background: 'linear-gradient(90deg, #1677ff, #2563eb)',
-                    border: 'none',
-                    borderRadius: 12,
-                    boxShadow: '0 10px 20px -5px rgba(22, 119, 255, 0.4)',
-                  }}
+                  className="custom-button"
                 >
-                  确认接入工作站
+                  解锁并登入物理工作站
                 </Button>
               </Form.Item>
             </Form>
 
-            <div style={{ 
-              marginTop: 40, 
-              padding: '16px', 
-              borderRadius: 12, 
-              background: 'linear-gradient(135deg, rgba(22, 119, 255, 0.05), rgba(22, 119, 255, 0.01))',
-              border: '1px solid rgba(22, 119, 255, 0.1)',
-              textAlign: 'center'
+            <div style={{
+              marginTop: 24,
+              padding: '12px 16px',
+              borderRadius: 8,
+              background: 'rgba(255,255,255,0.01)',
+              border: '1px solid rgba(255,255,255,0.03)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8
             }}>
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0 }}>
-                <CheckCircleFilled style={{ color: '#10b981', marginRight: 8 }} />
-                已通过设备安全校验，本次登录环境安全有效
-              </p>
+              <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 13 }} />
+              <span style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.35)' }}>
+                RT-Kernel 与物理紧急停机控制器链路已成功载入
+              </span>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    {/* Footer Copyright */}
-    <div style={{ position: 'absolute', bottom: 40, width: '100%', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
-      © 2025 天奇股份 · 具身智能事业部
-    </div>
-  </div>
+        {/* Footer info */}
+        <div style={{
+          position: 'absolute',
+          bottom: 30,
+          left: 40,
+          right: 40,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          color: 'rgba(255, 255, 255, 0.2)',
+          fontSize: 11,
+          zIndex: 5
+        }}>
+          <div>© 2026 天奇股份 · 具身智能事业部</div>
+          <div style={{ display: 'flex', gap: 20 }}>
+            <span>设备编码: MAC-FR3-WORKSTATION-001</span>
+            <span>系统版本: v1.2.0</span>
+          </div>
+        </div>
+      </div>
     </ConfigProvider>
   );
 }
-
-

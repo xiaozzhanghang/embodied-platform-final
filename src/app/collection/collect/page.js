@@ -12,6 +12,7 @@ const mockData = [
     { key: '1', taskId: 'CT-20250301001', name: 'FRANKA-FR3-抓取红色方块-001', desc: '使用FR3机器人抓取红色方块', robot: 'FRANKA-FR3-1号', scene: '桌面抓取', collector: '张三', startTime: '2025-03-01 09:00', endTime: '-', collectStatus: '采集中', dataStatus: '上传中', creator: '管理员', createTime: '2025-02-28 14:30', progress: '35/50', deviceStatus: '正常' },
     { key: '2', taskId: 'CT-20250301002', name: 'FRANKA-FR3-放置蓝色圆柱-002', desc: '使用FR3机器人放置蓝色圆柱', robot: 'FRANKA-FR3-2号', scene: '桌面放置', collector: '李四', startTime: '2025-03-01 10:30', endTime: '2025-03-01 16:00', collectStatus: '采集完成', dataStatus: '处理完成', creator: '管理员', createTime: '2025-02-28 15:00', progress: '50/50', deviceStatus: '正常' },
     { key: '3', taskId: 'CT-20250302001', name: 'UR5e-搬运任务-003', desc: '使用UR5e搬运物体', robot: 'UR5e-1号', scene: '仓库搬运', collector: '王五', startTime: '-', endTime: '-', collectStatus: '待采集', dataStatus: '-', creator: '管理员', createTime: '2025-03-02 09:00', progress: '0/30', deviceStatus: '正常' },
+    { key: '4', taskId: 'CT-20260414001', name: 'Lumos-双手筷子与勺子整理-001', desc: '使用Lumos离线背包数采终端进行餐具整理数据采集', robot: 'Lumos FastUMI Go', scene: '离线台面', collector: '王小二', startTime: '-', endTime: '-', collectStatus: '待采集', dataStatus: '-', creator: '管理员', createTime: '2026-04-14 10:00', progress: '0/50', deviceStatus: '正常' },
 ];
 
 const collectStatusMap = { '采集中': 'processing', '采集完成': 'success', '待采集': 'default' };
@@ -43,12 +44,14 @@ export default function CollectTaskPage() {
                 <Space size="small">
                     <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/collect/detail/${record.taskId}`)}>查看详情</Button>
                     {record.collectStatus !== '采集完成' && (
-                        <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => window.open(`/collection/collect/workspace/${record.taskId}`, '_blank')}>
+                        <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => window.open(`/collection/collect/connection/${record.taskId}`, '_blank')}>
                             {record.collectStatus === '待采集' ? '开始采集' : '继续采集'}
                         </Button>
                     )}
                     {record.dataStatus === '处理完成' && (
-                        <Button type="link" size="small">查看数据</Button>
+                        <Button type="link" size="small" onClick={() => {
+                            window.open(`/collection/collect/data/${record.taskId}`, '_blank');
+                        }}>查看数据</Button>
                     )}
                     {record.collectStatus === '采集完成' && record.dataStatus === '处理完成' && (
                         <Button type="link" size="small" onClick={() => message.success('任务已完成')}>完成任务</Button>
@@ -145,7 +148,6 @@ export default function CollectTaskPage() {
                     </div>
                     <Table columns={columns} dataSource={mockData} scroll={{ x: 1600 }} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>
-
 
             </MainLayout>
     );

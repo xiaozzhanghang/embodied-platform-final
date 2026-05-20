@@ -17,14 +17,15 @@ import {
 
 const { Title, Text } = Typography;
 
-const hardwareSteps = [
+// Humanoid/VR Steps and Logs
+const humanoidSteps = [
   { title: '本地网络', icon: <GlobalOutlined />, desc: '检查以太网适配器' },
   { title: '机器人控制箱', icon: <RobotOutlined />, desc: '建立 ROS2 通信握手' },
   { title: '多目感知系统', icon: <VideoCameraOutlined />, desc: '3路相机流初始化' },
   { title: '存储系统', icon: <HddOutlined />, desc: '本地 SSD 预热与权限确认' },
 ];
 
-const logMessages = [
+const humanoidLogs = [
   { time: '16:20:01', msg: '初始化边缘客户端硬件驱动...', type: 'info' },
   { time: '16:20:02', msg: '正在扫描以太网接口 (en0)...', type: 'info' },
   { time: '16:20:03', msg: '检测到网口直连: 192.168.1.50', type: 'success' },
@@ -38,6 +39,28 @@ const logMessages = [
   { time: '16:20:11', msg: '自检完成: 系统已就绪。', type: 'done' },
 ];
 
+// Lumos Steps and Logs
+const lumosSteps = [
+  { title: '本地网络', icon: <GlobalOutlined />, desc: '网卡直连 (en0)' },
+  { title: '数采背包主机', icon: <HddOutlined />, desc: '背包 192.168.54.110 通信' },
+  { title: '夹爪控制器', icon: <RobotOutlined />, desc: '双侧夹爪对位与校验' },
+  { title: '多目相机系统', icon: <VideoCameraOutlined />, desc: '3路 RGB 及雷达自检' },
+];
+
+const lumosLogs = [
+  { time: '16:20:01', msg: '启动 Lumos FastUMI Go 离线数采系统驱动...', type: 'info' },
+  { time: '16:20:02', msg: '正在扫描本地网段 192.168.54.x...', type: 'info' },
+  { time: '16:20:03', msg: '发现本地网卡直连: 192.168.54.53', type: 'success' },
+  { time: '16:20:04', msg: '正在尝试通信握手 Lumos 背包主机 (192.168.54.110)...', type: 'info' },
+  { time: '16:20:05', msg: '数采背包主机已接入 (延迟: 1.2ms)', type: 'success' },
+  { time: '16:20:06', msg: '正在检测左右夹爪 USB 总线控制接口 (/dev/ttyUSB*)...', type: 'info' },
+  { time: '16:20:07', msg: '双侧力反馈手势夹爪配置对齐成功', type: 'success' },
+  { time: '16:20:08', msg: '初始化 3 路摄像头预览 [Wrist_L, Wrist_R, Head_Eye]...', type: 'info' },
+  { time: '16:20:09', msg: '相机帧同步对齐成功 (时滞差 < 2ms)', type: 'success' },
+  { time: '16:20:10', msg: '耳机阻抗与 HDMI 诱骗接口检测通过 (ACTIVE)', type: 'success' },
+  { time: '16:20:11', msg: '自检完成: 背包系统已就绪。', type: 'done' },
+];
+
 export default function DeviceConnectionPage() {
   const router = useRouter();
   const params = useParams();
@@ -47,8 +70,14 @@ export default function DeviceConnectionPage() {
   const [scanning, setScanning] = useState(true);
   const logEndRef = useRef(null);
 
+  const taskId = params?.taskId || 'CT-20250301001';
+  const isLumos = taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos');
+
+  const steps = isLumos ? lumosSteps : humanoidSteps;
+  const logMsgs = isLumos ? lumosLogs : humanoidLogs;
+
   useEffect(() => {
-    if (step < hardwareSteps.length) {
+    if (step < steps.length) {
       const timer = setTimeout(() => {
         setStep(s => s + 1);
       }, 2000);
@@ -57,23 +86,23 @@ export default function DeviceConnectionPage() {
       setScanning(false);
       message.success('所有硬件已就绪，正在跳转至状态看板...');
       setTimeout(() => {
-        router.push(`/collection/collect/status/${params?.taskId}`);
+        router.push(`/collection/collect/status/${taskId}`);
       }, 1500);
     }
-  }, [step, params?.taskId, router]);
+  }, [step, taskId, router, steps.length, message]);
 
   useEffect(() => {
     let logIdx = 0;
     const logInterval = setInterval(() => {
-      if (logIdx < logMessages.length) {
-        setLogs(prev => [...prev, logMessages[logIdx]]);
+      if (logIdx < logMsgs.length) {
+        setLogs(prev => [...prev, logMsgs[logIdx]]);
         logIdx++;
       } else {
         clearInterval(logInterval);
       }
     }, 1000);
     return () => clearInterval(logInterval);
-  }, []);
+  }, [logMsgs]);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -128,12 +157,11 @@ export default function DeviceConnectionPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <MonitorOutlined style={{ color: '#1677ff', fontSize: 20 }} />
               <Title level={4} style={{ color: '#fff', margin: 0 }}>设备自检与握手中心</Title>
-              <Tag color="processing" style={{ marginLeft: 8 }}>Task ID: {params?.taskId}</Tag>
+              <Tag color="processing" style={{ marginLeft: 8 }}>Task ID: {taskId}</Tag>
             </div>
-            <Text style={{ color: 'rgba(255,255,255,0.45)' }}>正在检测边缘端硬件环境的稳定性...</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.45)' }}>正在检测边缘端硬件环境的稳定性 ({isLumos ? 'Lumos FastUMI Go 模式' : '通用人形机器人模式'})...</Text>
           </div>
         </Space>
-
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 32 }}>
@@ -176,13 +204,13 @@ export default function DeviceConnectionPage() {
 
               {/* Hardware Points */}
               <div style={{ position: 'absolute', top: '20%', left: '30%' }}>
-                <Badge status={step > 1 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>ROBOT ARM</span>} />
+                <Badge status={step > 1 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isLumos ? 'LUMOS BACKPACK' : 'ROBOT CONTROL BOX'}</span>} />
               </div>
               <div style={{ position: 'absolute', top: '40%', right: '25%' }}>
-                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>CAM_01 (FRONT)</span>} />
+                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isLumos ? 'LEFT GRIPPER' : 'CAM_01 (FRONT)'}</span>} />
               </div>
               <div style={{ position: 'absolute', bottom: '30%', left: '45%' }}>
-                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>CAM_02 (WRIST)</span>} />
+                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isLumos ? 'RIGHT GRIPPER' : 'CAM_02 (WRIST)'}</span>} />
               </div>
 
               {/* Center Icon */}
@@ -212,7 +240,7 @@ export default function DeviceConnectionPage() {
 
           {/* Steps Progress */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-            {hardwareSteps.map((item, idx) => (
+            {steps.map((item, idx) => (
               <Card key={idx} style={{ 
                 background: idx === step ? 'rgba(22, 119, 255, 0.1)' : idx < step ? 'rgba(82, 196, 26, 0.05)' : 'rgba(255,255,255,0.02)',
                 border: idx === step ? '1px solid #1677ff' : idx < step ? '1px solid #52c41a' : '1px solid rgba(255,255,255,0.1)',
@@ -245,15 +273,15 @@ export default function DeviceConnectionPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12 }}>
-                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>ROS2 Heartbeat</span>
+                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>{isLumos ? 'Lumos Heartbeat' : 'ROS2 Heartbeat'}</span>
                   <span style={{ color: '#52c41a' }}>STABLE</span>
                 </div>
                 <Progress percent={98} size="small" strokeColor="#1677ff" showInfo={false} />
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12 }}>
-                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>Camera Sync Lag</span>
-                  <span style={{ color: '#faad14' }}>2ms</span>
+                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>{isLumos ? 'Telemetry Latency' : 'Camera Sync Lag'}</span>
+                  <span style={{ color: '#faad14' }}>{isLumos ? '1.2ms' : '2ms'}</span>
                 </div>
                 <Progress percent={15} size="small" strokeColor="#faad14" showInfo={false} />
               </div>
@@ -275,7 +303,7 @@ export default function DeviceConnectionPage() {
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f56' }} />
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#27c93f' }} />
-              <span style={{ marginLeft: 8, fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Terminal - collector_v1.log</span>
+              <span style={{ marginLeft: 8, fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Terminal - {isLumos ? 'lumos_collector.log' : 'collector_v1.log'}</span>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {logs.map((log, i) => (
@@ -298,4 +326,3 @@ export default function DeviceConnectionPage() {
     </div>
   );
 }
-
