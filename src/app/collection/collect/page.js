@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Drawer, Descriptions, Badge, Progress, Statistic, Row, Col, Steps, Modal, App } from 'antd';
-import { SearchOutlined, ReloadOutlined, EyeOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ApiOutlined, DashboardOutlined, HddOutlined, CheckCircleFilled, WarningFilled, DownOutlined, UpOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, EyeOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ApiOutlined, DashboardOutlined, HddOutlined, CheckCircleFilled, WarningFilled, DownOutlined, UpOutlined, CloudUploadOutlined, FolderOpenOutlined, InboxOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -28,6 +28,109 @@ export default function CollectTaskPage() {
     const [isCollecting, setIsCollecting] = useState(false);
     const [timer, setTimer] = useState(0);
 
+    // Upload states
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [uploadingTask, setUploadingTask] = useState(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadedTasks, setUploadedTasks] = useState({});
+
+    // Drag-and-drop states
+    const [dragActive, setDragActive] = useState(false);
+    const [filesDropped, setFilesDropped] = useState(false);
+    const [uploadedFileList, setUploadedFileList] = useState([]);
+    const fileInputRef = React.useRef(null);
+
+    // Drag events handlers
+    const handleDrag = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            const files = Array.from(e.dataTransfer.files);
+            setUploadedFileList(files.map(f => ({ name: f.name, size: f.size, type: f.type })));
+            setFilesDropped(true);
+            message.success(`已成功识别拖入的 ${files.length} 个文件！`);
+        }
+    };
+
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const files = Array.from(e.target.files);
+            setUploadedFileList(files.map(f => ({ name: f.name, size: f.size, type: f.type })));
+            setFilesDropped(true);
+            message.success(`已成功选择 ${files.length} 个文件！`);
+        }
+    };
+
+    const handleSimulateDrop = () => {
+        setUploadedFileList([]);
+        setFilesDropped(true);
+        message.success('已模拟导入本地“鹿鸣采集数据”数采文件夹结构！');
+    };
+
+    // Load uploaded tasks from localStorage
+    useEffect(() => {
+        const stored = localStorage.getItem('luming_uploaded_tasks');
+        if (stored) {
+            try {
+                setUploadedTasks(JSON.parse(stored));
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }, []);
+
+    const handleStartUpload = () => {
+        setIsUploading(true);
+        setUploadProgress(0);
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 10;
+            setUploadProgress(progress);
+            if (progress >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    const newUploaded = { ...uploadedTasks, [uploadingTask.taskId]: true };
+                    setUploadedTasks(newUploaded);
+                    localStorage.setItem('luming_uploaded_tasks', JSON.stringify(newUploaded));
+                    
+                    // Save detailed Luming session info
+                    const sessionDetails = {
+                        taskId: uploadingTask.taskId,
+                        uploadTime: new Date().toLocaleString(),
+                        sessionName: 'session_028',
+                        status: '成功',
+                        quality: '通过',
+                        summary: {
+                            startTime: '2026年 05月 20日 星期三 10:12:37 CST',
+                            endTime: '2026年 05月 20日 星期三 10:13:17 CST',
+                            duration: '40秒',
+                            deviceCount: 2,
+                            rgbFrames: 1800,
+                            gripperType: '非平动夹爪 (pose_merge)',
+                        }
+                    };
+                    localStorage.setItem(`luming_session_${uploadingTask.taskId}`, JSON.stringify(sessionDetails));
+
+                    message.success('数据上传及质检分析处理成功！数据包 session_028 已入库。');
+                    setIsUploading(false);
+                    setIsUploadModalOpen(false);
+                }, 500);
+            }
+        }, 150);
+    };
+
     const columns = [
         { title: '采集任务ID', dataIndex: 'taskId', key: 'taskId', width: 150 },
         { title: '任务名称', dataIndex: 'name', key: 'name', width: 260 },
@@ -35,20 +138,53 @@ export default function CollectTaskPage() {
         { title: '采集机器人', dataIndex: 'robot', key: 'robot', width: 150 },
         { title: '采集场景', dataIndex: 'scene', key: 'scene', width: 120 },
         { title: '采集人员', dataIndex: 'collector', key: 'collector', width: 100 },
-        { title: '采集状态', dataIndex: 'collectStatus', key: 'collectStatus', width: 100, render: (s) => <Tag color={collectStatusMap[s]}>{s}</Tag> },
-        { title: '数据状态', dataIndex: 'dataStatus', key: 'dataStatus', width: 100, render: (s) => <Tag color={dataStatusMap[s]}>{s}</Tag> },
+        { 
+          title: '采集状态', 
+          dataIndex: 'collectStatus', 
+          key: 'collectStatus', 
+          width: 100, 
+          render: (s, record) => {
+              const status = uploadedTasks[record.taskId] ? '采集完成' : s;
+              return <Tag color={collectStatusMap[status]}>{status}</Tag>;
+          } 
+        },
+        { 
+          title: '数据状态', 
+          dataIndex: 'dataStatus', 
+          key: 'dataStatus', 
+          width: 100, 
+          render: (s, record) => {
+              const status = uploadedTasks[record.taskId] ? '处理完成' : s;
+              return <Tag color={dataStatusMap[status]}>{status}</Tag>;
+          } 
+        },
         { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
         {
-            title: '操作', key: 'action', width: 320, fixed: 'right',
+            title: '操作', key: 'action', width: 380, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/collect/detail/${record.taskId}`)}>查看详情</Button>
-                    {record.collectStatus !== '采集完成' && (
+                    {record.collectStatus !== '采集完成' && !uploadedTasks[record.taskId] && (
                         <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => window.open(`/collection/collect/connection/${record.taskId}`, '_blank')}>
                             {record.collectStatus === '待采集' ? '开始采集' : '继续采集'}
                         </Button>
                     )}
-                    {record.dataStatus === '处理完成' && (
+                    <Button 
+                        type="link" 
+                        size="small" 
+                        icon={<CloudUploadOutlined />} 
+                        onClick={() => {
+                            setUploadingTask(record);
+                            setIsUploadModalOpen(true);
+                            setUploadProgress(0);
+                            setIsUploading(false);
+                            setFilesDropped(false);
+                            setDragActive(false);
+                        }}
+                    >
+                        {uploadedTasks[record.taskId] ? '重新上传' : '上传数据'}
+                    </Button>
+                    {(record.dataStatus === '处理完成' || uploadedTasks[record.taskId]) && (
                         <Button type="link" size="small" onClick={() => {
                             window.open(`/collection/collect/data/${record.taskId}`, '_blank');
                         }}>查看数据</Button>
@@ -148,6 +284,241 @@ export default function CollectTaskPage() {
                     </div>
                     <Table columns={columns} dataSource={mockData} scroll={{ x: 1600 }} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>
+
+                {/* Upload Data Modal */}
+                <Modal
+                    title={<div style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: 10, fontSize: 16, fontWeight: 600 }}>
+                        <CloudUploadOutlined style={{ color: '#1677ff', marginRight: 8 }} />
+                        上传本地数采包数据 (任务: {uploadingTask?.name})
+                    </div>}
+                    open={isUploadModalOpen}
+                    onCancel={() => !isUploading && setIsUploadModalOpen(false)}
+                    width={720}
+                    footer={[
+                        <Button key="cancel" disabled={isUploading} onClick={() => setIsUploadModalOpen(false)}>取消</Button>,
+                        <Button 
+                            key="upload" 
+                            type="primary" 
+                            loading={isUploading} 
+                            disabled={!filesDropped} 
+                            onClick={handleStartUpload}
+                        >
+                            {isUploading ? '正在上传及分析...' : (filesDropped ? '确认上传' : '确认上传 (请先拖入文件)')}
+                        </Button>
+                    ]}
+                >
+                    <div 
+                        style={{ padding: '16px 0' }}
+                        onDragEnter={handleDrag}
+                        onDragOver={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDrop={handleDrop}
+                    >
+                        <Descriptions size="small" column={2} bordered style={{ marginBottom: 16 }}>
+                            <Descriptions.Item label="数采源目录">
+                                <Tag icon={<FolderOpenOutlined style={{ color: '#faad14' }} />} color="warning" style={{ fontSize: 12, padding: '2px 8px' }}>
+                                    ./鹿鸣采集数据
+                                </Tag>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="目标任务ID">
+                                <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{uploadingTask?.taskId}</span>
+                            </Descriptions.Item>
+                        </Descriptions>
+
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            style={{ display: 'none' }} 
+                            multiple 
+                            onChange={handleFileChange} 
+                        />
+
+                        {!filesDropped ? (
+                            <div 
+                                onClick={() => fileInputRef.current.click()}
+                                style={{
+                                    border: dragActive ? '2px dashed #1677ff' : '2px dashed #d9d9d9',
+                                    borderRadius: '12px',
+                                    background: dragActive ? '#f0f5ff' : '#fafafa',
+                                    padding: '48px 24px',
+                                    textAlign: 'center',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: dragActive ? '0 0 16px rgba(22, 119, 255, 0.15)' : 'none',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    minHeight: '300px',
+                                    margin: '8px 0'
+                                }}
+                            >
+                                <InboxOutlined style={{ fontSize: 64, color: dragActive ? '#1677ff' : '#40a9ff', marginBottom: 20, pointerEvents: 'none' }} />
+                                <div style={{ fontSize: 16, fontWeight: 600, color: dragActive ? '#1677ff' : '#262626', marginBottom: 8, pointerEvents: 'none' }}>
+                                    将数采文件（夹）或压缩包拖拽到此区域上传
+                                </div>
+                                <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 20, maxWidth: '80%', pointerEvents: 'none' }}>
+                                    支持直接拖入 ./鹿鸣采集数据 文件夹，或拖入包含 timestamps.csv 和 video.mp4 等会话包的 ZIP 压缩文件。
+                                </div>
+                                <Space size="middle" style={{ marginTop: 10 }}>
+                                    <Button type="primary" onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }}>
+                                        选择本地文件
+                                    </Button>
+                                    <Button type="default" onClick={(e) => { e.stopPropagation(); handleSimulateDrop(); }}>
+                                        一键导入模拟数据
+                                    </Button>
+                                </Space>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center', 
+                                    background: '#f6ffed', 
+                                    border: '1px solid #b7eb8f', 
+                                    borderRadius: '8px', 
+                                    padding: '12px 16px', 
+                                    marginBottom: '16px' 
+                                }}>
+                                    <Space>
+                                        <CheckCircleFilled style={{ color: '#52c41a', fontSize: 16 }} />
+                                        <Text strong style={{ color: '#389e0d' }}>
+                                            {uploadedFileList.length > 0 ? '本地文件识别成功！' : '数采包结构解析就绪！'}
+                                        </Text>
+                                        <Text type="secondary" style={{ fontSize: 12 }}>
+                                            {uploadedFileList.length > 0 
+                                                ? `(已选择 ${uploadedFileList.length} 个文件)` 
+                                                : '(已匹配 1 个 collection_summary 与 session_028 子目录)'
+                                            }
+                                        </Text>
+                                    </Space>
+                                    <Button size="small" danger onClick={() => { setFilesDropped(false); setUploadedFileList([]); }}>重新选择</Button>
+                                </div>
+
+                                {isUploading && (
+                                    <div style={{ marginBottom: 20, padding: '8px 12px', background: '#e6f4ff', borderRadius: 8 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
+                                            <Text type="secondary">正在解析上传路径位姿轨迹与视频帧数据...</Text>
+                                            <Text strong type="primary">{uploadProgress}%</Text>
+                                        </div>
+                                        <Progress percent={uploadProgress} showInfo={false} size="small" strokeColor="#1677ff" status="active" />
+                                    </div>
+                                )}
+
+                                {uploadedFileList.length > 0 ? (
+                                    <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 16, background: '#fafafa', height: 320, overflowY: 'auto' }}>
+                                        <div style={{ fontSize: 12, fontWeight: 'bold', color: '#8c8c8c', marginBottom: 12, textTransform: 'uppercase' }}>已选择的本地文件 ({uploadedFileList.length})</div>
+                                        <Table 
+                                            size="small"
+                                            dataSource={uploadedFileList}
+                                            rowKey="name"
+                                            pagination={false}
+                                            columns={[
+                                                {
+                                                    title: '文件名',
+                                                    dataIndex: 'name',
+                                                    key: 'name',
+                                                    render: (text) => (
+                                                        <Space>
+                                                            <FolderOpenOutlined style={{ color: '#faad14' }} />
+                                                            <span style={{ fontFamily: 'monospace' }}>{text}</span>
+                                                        </Space>
+                                                    )
+                                                },
+                                                {
+                                                    title: '大小',
+                                                    dataIndex: 'size',
+                                                    key: 'size',
+                                                    width: 120,
+                                                    render: (bytes) => {
+                                                        if (bytes === 0) return '0 B';
+                                                        const k = 1024;
+                                                        const sizes = ['B', 'KB', 'MB', 'GB'];
+                                                        const i = Math.floor(Math.log(bytes) / Math.log(k));
+                                                        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                                                    }
+                                                },
+                                                {
+                                                    title: '文件类型',
+                                                    dataIndex: 'type',
+                                                    key: 'type',
+                                                    width: 150,
+                                                    render: (t) => t || '未知类型'
+                                                }
+                                            ]}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', gap: 16, height: 320 }}>
+                                        {/* Left Side: Directory Tree */}
+                                        <div style={{ flex: 1, border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, background: '#fafafa', overflowY: 'auto' }}>
+                                            <div style={{ fontSize: 12, fontWeight: 'bold', color: '#8c8c8c', marginBottom: 8, textTransform: 'uppercase' }}>本地文件夹目录结构</div>
+                                            <div style={{ fontFamily: 'monospace', fontSize: 13, lineHeight: '1.8' }}>
+                                                <div style={{ color: '#faad14' }}>📁 鹿鸣采集数据/</div>
+                                                <div style={{ paddingLeft: 12, color: '#1677ff' }}>📄 collection_summary.txt <span style={{ color: '#bfbfbf', fontSize: 11 }}>(2.7 KB)</span></div>
+                                                <div style={{ paddingLeft: 12, color: '#faad14' }}>📁 session_028/</div>
+                                                <div style={{ paddingLeft: 24, color: '#d9d9d9' }}>├── 📁 left_hand_250801DR48...</div>
+                                                <div style={{ paddingLeft: 24, color: '#d9d9d9' }}>├── 📁 right_hand_250801DR...</div>
+                                                <div style={{ paddingLeft: 24, color: '#8c8c8c' }}>├── 📄 relative_transforms_left_to_right.txt</div>
+                                                <div style={{ paddingLeft: 24, color: '#8c8c8c' }}>├── 📄 relative_transforms_right_to_left.txt</div>
+                                                <div style={{ paddingLeft: 24, color: '#faad14' }}>└── 📁 quality_report/</div>
+                                                <div style={{ paddingLeft: 36, color: '#52c41a' }}>├── 📄 quality_report.json <Tag size="small" color="success" style={{ transform: 'scale(0.8)', margin: 0, padding: '0 4px' }}>JSON</Tag></div>
+                                                <div style={{ paddingLeft: 36, color: '#8c8c8c' }}>├── 📄 quality_report.txt</div>
+                                                <div style={{ paddingLeft: 36, color: '#8c8c8c' }}>└── 📄 check.log</div>
+                                            </div>
+                                        </div>
+
+                                        {/* Right Side: Text Preview */}
+                                        <div style={{ flex: 1.2, border: '1px solid #f0f0f0', borderRadius: 8, display: 'flex', flexDirection: 'column' }}>
+                                            <div style={{ borderBottom: '1px solid #f0f0f0', padding: '8px 12px', background: '#fafafa', fontSize: 12, fontWeight: 'bold', color: '#8c8c8c', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span>📄 collection_summary.txt 预览</span>
+                                                <Tag color="blue" bordered={false} style={{ margin: 0, fontSize: 10 }}>TEXT</Tag>
+                                            </div>
+                                            <div style={{ flex: 1, padding: 12, overflowY: 'auto', background: '#1e1e1e', color: '#d4d4d4', fontFamily: 'monospace', fontSize: 11, borderRadius: '0 0 8px 8px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+{`========================================
+多会话摄像头数据采集摘要（Buffered版本）
+========================================
+开始时间: 2026年 05月 20日 星期三 10:10:35 CST
+任务信息: [20260408W001] 抓杯子
+背景编号: background_00
+RGB帧数: 1800
+夹爪类型: 非平动夹爪 (pose_merge)
+质量检查开关: true
+设备模式: 双设备
+设备数量: 2
+计划会话数: 300
+会话间隔: 1秒
+
+设备信息:
+  设备 1:
+    XV序列号: 250801DR48FP26003296
+    设备标签: left_hand
+  设备 2:
+    XV序列号: 250801DR48FP26003349
+    设备标签: right_hand
+
+==========================================
+会话 28 信息 (session_028):
+==========================================
+  开始时间: 2026年 05月 20日 星期三 10:12:37 CST
+  结束时间: 2026年 05月 20日 星期三 10:13:17 CST
+  持续时间: 40秒
+  状态: 成功
+  数据验证: 通过
+  质量检查: 通过
+  数据目录: ./Data/task_20260408W001_a/background_00/
+            multi_sessions_20260520_101032/session_028/
+    ├─ left_hand_250801DR48FP26003296
+    └─ right_hand_250801DR48FP26003349`}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </Modal>
 
             </MainLayout>
     );
