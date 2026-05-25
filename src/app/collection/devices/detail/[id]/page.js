@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { 
   Button, Typography, Space, Tag, Breadcrumb, Card, Row, Col, 
   Tabs, Table, Badge, Descriptions, Divider, Avatar, Progress,
@@ -20,7 +20,10 @@ const { Title, Text } = Typography;
 export default function DeviceInstanceDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('overview');
+
+  const isEditing = searchParams.get('edit') === 'true';
 
   // Mock data for a specific device instance
   const device = {
@@ -90,7 +93,7 @@ export default function DeviceInstanceDetailPage() {
           
           <Space>
             <Button icon={<ThunderboltOutlined />}>远程诊断</Button>
-            <Button icon={<SettingOutlined />}>修改配置</Button>
+            {isEditing && <Button icon={<SettingOutlined />}>修改配置</Button>}
             <Button type="primary">开始采集</Button>
           </Space>
         </div>
