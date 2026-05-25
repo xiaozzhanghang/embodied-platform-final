@@ -39,7 +39,6 @@ export default function CollectTaskPage() {
     const [dragActive, setDragActive] = useState(false);
     const [filesDropped, setFilesDropped] = useState(false);
     const [uploadedFileList, setUploadedFileList] = useState([]);
-    const fileInputRef = React.useRef(null);
     const folderInputRef = React.useRef(null);
 
     // Drag events handlers
@@ -118,14 +117,6 @@ export default function CollectTaskPage() {
         }
     };
 
-    const handleFileChange = (e) => {
-        if (e.target.files && e.target.files.length > 0) {
-            const files = Array.from(e.target.files);
-            setUploadedFileList(files.map(f => ({ name: f.name, size: f.size, type: f.type })));
-            setFilesDropped(true);
-            message.success(`已成功选择 ${files.length} 个文件！`);
-        }
-    };
 
     const handleFolderChange = (e) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -394,13 +385,6 @@ export default function CollectTaskPage() {
 
                         <input 
                             type="file" 
-                            ref={fileInputRef} 
-                            style={{ display: 'none' }} 
-                            multiple 
-                            onChange={handleFileChange} 
-                        />
-                        <input 
-                            type="file" 
                             ref={folderInputRef} 
                             style={{ display: 'none' }} 
                             webkitdirectory=""
@@ -431,16 +415,13 @@ export default function CollectTaskPage() {
                             >
                                 <InboxOutlined style={{ fontSize: 64, color: dragActive ? '#1677ff' : '#40a9ff', marginBottom: 20, pointerEvents: 'none' }} />
                                 <div style={{ fontSize: 16, fontWeight: 600, color: dragActive ? '#1677ff' : '#262626', marginBottom: 8, pointerEvents: 'none' }}>
-                                    将数采文件（夹）或压缩包拖拽到此区域上传
+                                    将数采文件夹或压缩包拖拽到此区域上传
                                 </div>
                                 <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 20, maxWidth: '80%', pointerEvents: 'none' }}>
                                     支持直接拖入整个文件夹（例如 ./鹿鸣采集数据），或拖入包含 timestamps.csv 和 video.mp4 等会话包的 ZIP 压缩文件。
                                 </div>
                                 <Space size="middle" style={{ marginTop: 10 }}>
-                                    <Button type="primary" onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }}>
-                                        选择本地文件
-                                    </Button>
-                                    <Button type="primary" ghost onClick={(e) => { e.stopPropagation(); folderInputRef.current.click(); }}>
+                                    <Button type="primary" onClick={(e) => { e.stopPropagation(); folderInputRef.current.click(); }}>
                                         选择本地文件夹
                                     </Button>
                                     <Button type="default" onClick={(e) => { e.stopPropagation(); handleSimulateDrop(); }}>
