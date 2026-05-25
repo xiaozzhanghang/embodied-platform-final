@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Drawer, Descriptions, Badge, Progress, Statistic, Row, Col, Steps, Modal, App } from 'antd';
-import { SearchOutlined, ReloadOutlined, EyeOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ApiOutlined, DashboardOutlined, HddOutlined, CheckCircleFilled, WarningFilled, DownOutlined, UpOutlined, CloudUploadOutlined, FolderOpenOutlined, InboxOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, EyeOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ApiOutlined, DashboardOutlined, HddOutlined, CheckCircleFilled, WarningFilled, DownOutlined, UpOutlined, CloudUploadOutlined, FolderOpenOutlined, InboxOutlined, LoadingOutlined, PauseOutlined, CaretRightOutlined, WarningOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -19,8 +19,8 @@ const collectStatusMap = { '采集中': 'processing', '采集完成': 'success',
 const dataStatusMap = { '上传中': 'processing', '处理完成': 'success', '未上传': 'default', '处理中': 'warning', '-': 'default' };
 
 export default function CollectTaskPage() {
-  const router = useRouter();
-  const { message } = App.useApp();
+    const router = useRouter();
+    const { message, notification } = App.useApp();
     const [detailOpen, setDetailOpen] = useState(false);
     const [expand, setExpand] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
@@ -31,9 +31,14 @@ export default function CollectTaskPage() {
     // Upload states
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [uploadingTask, setUploadingTask] = useState(null);
-    const [uploadProgress, setUploadProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadedTasks, setUploadedTasks] = useState({});
+
+    // Multi-folder Queue States
+    const [uploadQueue, setUploadQueue] = useState([]);
+    const [activeQueueIndex, setActiveQueueIndex] = useState(null);
+    const [isMinimized, setIsMinimized] = useState(false);
+    const [cliSuggested, setCliSuggested] = useState(false);
 
     // Drag-and-drop states
     const [dragActive, setDragActive] = useState(false);
@@ -41,15 +46,45 @@ export default function CollectTaskPage() {
     const [uploadedFileList, setUploadedFileList] = useState([]);
     const folderInputRef = React.useRef(null);
 
-    // Drag events handlers
-    const handleDrag = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.type === "dragenter" || e.type === "dragover") {
-            setDragActive(true);
-        } else if (e.type === "dragleave") {
-            setDragActive(false);
-        }
+    const groupFilesByFolder = (files) => {
+        const foldersMap = {};
+        files.forEach(f => {
+            const pathParts = f.name.split('/');
+            let folderName = '默认数采包';
+            if (pathParts.length > 1) {
+                if (pathParts[0] === '鹿鸣采集数据' && pathParts.length > 2) {
+                    folderName = pathParts[1];
+                } else {
+                    folderName = pathParts[0];
+                }
+            }
+            if (!foldersMap[folderName]) {
+                foldersMap[folderName] = {
+                    id: folderName,
+                    name: folderName,
+                    size: 0,
+                    filesCount: 0,
+                    files: []
+                };
+            }
+            foldersMap[folderName].size += f.size || 0;
+            foldersMap[folderName].filesCount += 1;
+            foldersMap[folderName].files.push(f);
+        });
+        return Object.values(foldersMap).map(folder => {
+            const isLarge = folder.size > 524288000; // > 500MB
+            return {
+                id: folder.id,
+                name: folder.name,
+                size: folder.size,
+                filesCount: folder.filesCount,
+                progress: 0,
+                status: 'waiting', // 'waiting' | 'uploading' | 'paused' | 'success'
+                speed: '0 KB/s',
+                timeLeft: '—',
+                isLarge
+            };
+        });
     };
 
     const traverseFileTree = (item, path = '') => {
@@ -87,6 +122,16 @@ export default function CollectTaskPage() {
         });
     };
 
+    const handleDrag = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
     const handleDrop = async (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -103,38 +148,66 @@ export default function CollectTaskPage() {
             const results = await Promise.all(promises);
             const flatFiles = results.flat();
             if (flatFiles.length > 0) {
+                const queue = groupFilesByFolder(flatFiles);
+                setUploadQueue(queue);
                 setUploadedFileList(flatFiles);
                 setFilesDropped(true);
-                message.success(`已成功识别拖入的文件夹/文件，共包含 ${flatFiles.length} 个文件！`);
+                const hasLargeFolder = queue.some(q => q.isLarge);
+                setCliSuggested(hasLargeFolder);
+                message.success(`已成功识别拖入的 ${queue.length} 个数采会话文件夹，共包含 ${flatFiles.length} 个文件！`);
             } else {
                 message.warning('未识别到有效的可上传文件。');
             }
-        } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            const files = Array.from(e.dataTransfer.files);
-            setUploadedFileList(files.map(f => ({ name: f.name, size: f.size, type: f.type })));
-            setFilesDropped(true);
-            message.success(`已成功识别拖入的 ${files.length} 个文件！`);
         }
     };
 
-
     const handleFolderChange = (e) => {
         if (e.target.files && e.target.files.length > 0) {
-            const files = Array.from(e.target.files);
-            setUploadedFileList(files.map(f => ({ 
-                name: f.webkitRelativePath || f.name, 
-                size: f.size, 
-                type: f.type 
-            })));
+            const files = Array.from(e.target.files).map(f => ({
+                name: f.webkitRelativePath || f.name,
+                size: f.size,
+                type: f.type
+            }));
+            const queue = groupFilesByFolder(files);
+            setUploadQueue(queue);
+            setUploadedFileList(files);
             setFilesDropped(true);
-            message.success(`已识别文件夹中共 ${files.length} 个文件！`);
+            const hasLargeFolder = queue.some(q => q.isLarge);
+            setCliSuggested(hasLargeFolder);
+            message.success(`已成功选择 ${queue.length} 个数采会话文件夹，共包含 ${files.length} 个文件！`);
         }
     };
 
     const handleSimulateDrop = () => {
-        setUploadedFileList([]);
+        const simulatedQueue = [
+            {
+                id: 'session_027',
+                name: 'session_027',
+                size: 125829120, // 120MB
+                filesCount: 154,
+                progress: 0,
+                status: 'waiting',
+                speed: '0 KB/s',
+                timeLeft: '—',
+                isLarge: false
+            },
+            {
+                id: 'session_028',
+                name: 'session_028',
+                size: 713031680, // 680MB (>500MB)
+                filesCount: 1800,
+                progress: 0,
+                status: 'waiting',
+                speed: '0 KB/s',
+                timeLeft: '—',
+                isLarge: true
+            }
+        ];
+        setUploadQueue(simulatedQueue);
+        setUploadedFileList(new Array(1954).fill({ name: 'mock' }));
         setFilesDropped(true);
-        message.success('已模拟导入本地“鹿鸣采集数据”数采文件夹结构！');
+        setCliSuggested(true);
+        message.success('已模拟导入“鹿鸣采集数据”的多会话目录结构 (包含 session_027 & session_028)！');
     };
 
     // Load uploaded tasks from localStorage
@@ -149,45 +222,159 @@ export default function CollectTaskPage() {
         }
     }, []);
 
+    // Multi-folder sequential uploading simulation logic
+    useEffect(() => {
+        if (!isUploading || activeQueueIndex === null || activeQueueIndex >= uploadQueue.length) {
+            return;
+        }
+
+        const activeItem = uploadQueue[activeQueueIndex];
+        if (activeItem.status === 'success') {
+            const nextIndex = uploadQueue.findIndex((q, idx) => idx > activeQueueIndex && q.status !== 'success');
+            if (nextIndex !== -1) {
+                setActiveQueueIndex(nextIndex);
+            } else {
+                setIsUploading(false);
+                setActiveQueueIndex(null);
+                
+                const newUploaded = { ...uploadedTasks, [uploadingTask.taskId]: true };
+                setUploadedTasks(newUploaded);
+                localStorage.setItem('luming_uploaded_tasks', JSON.stringify(newUploaded));
+                
+                const sessionDetails = {
+                    taskId: uploadingTask.taskId,
+                    uploadTime: new Date().toLocaleString(),
+                    sessionName: 'session_028',
+                    status: '成功',
+                    quality: '通过',
+                    summary: {
+                        startTime: '2026年 05月 20日 星期三 10:12:37 CST',
+                        endTime: '2026年 05月 20日 星期三 10:13:17 CST',
+                        duration: '40秒',
+                        deviceCount: 2,
+                        rgbFrames: 1800,
+                        gripperType: '非平动夹爪 (pose_merge)',
+                    }
+                };
+                localStorage.setItem(`luming_session_${uploadingTask.taskId}`, JSON.stringify(sessionDetails));
+
+                notification.success({
+                    message: '数采数据包上传完成',
+                    description: `任务 [${uploadingTask.taskId}] 的数采包 (${uploadQueue.map(q => q.name).join(', ')}) 已全部成功上传并入库质检池。`,
+                    placement: 'bottomRight',
+                    duration: 6
+                });
+                
+                setIsUploadModalOpen(false);
+                setIsMinimized(false);
+            }
+            return;
+        }
+
+        if (activeItem.status === 'paused') {
+            return;
+        }
+
+        setUploadQueue(prev => prev.map((q, idx) => idx === activeQueueIndex ? { ...q, status: 'uploading' } : q));
+
+        let currentProgress = activeItem.progress;
+        const totalSize = activeItem.size;
+        
+        const interval = setInterval(() => {
+            if (uploadQueue[activeQueueIndex]?.status === 'paused') {
+                clearInterval(interval);
+                return;
+            }
+
+            currentProgress += Math.floor(Math.random() * 8) + 4;
+            if (currentProgress >= 100) {
+                currentProgress = 100;
+                clearInterval(interval);
+                
+                setUploadQueue(prev => prev.map((q, idx) => 
+                    idx === activeQueueIndex 
+                        ? { ...q, progress: 100, status: 'success', speed: '0 KB/s', timeLeft: '已完成' } 
+                        : q
+                ));
+                setTimeout(() => {
+                    setActiveQueueIndex(prev => prev + 1);
+                }, 500);
+            } else {
+                const rawSpeed = (Math.random() * 8 + 10).toFixed(1);
+                const speedStr = `${rawSpeed} MB/s`;
+                const remainingBytes = totalSize * (1 - currentProgress / 100);
+                const remainingMB = remainingBytes / 1024 / 1024;
+                const remainingSeconds = Math.ceil(remainingMB / parseFloat(rawSpeed));
+                const timeLeftStr = `${remainingSeconds} 秒`;
+
+                setUploadQueue(prev => prev.map((q, idx) => 
+                    idx === activeQueueIndex 
+                        ? { ...q, progress: currentProgress, speed: speedStr, timeLeft: timeLeftStr } 
+                        : q
+                ));
+            }
+        }, 300);
+
+        return () => clearInterval(interval);
+    }, [isUploading, activeQueueIndex, uploadQueue, uploadedTasks, uploadingTask, notification]);
+
     const handleStartUpload = () => {
         setIsUploading(true);
-        setUploadProgress(0);
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 10;
-            setUploadProgress(progress);
-            if (progress >= 100) {
-                clearInterval(interval);
-                setTimeout(() => {
-                    const newUploaded = { ...uploadedTasks, [uploadingTask.taskId]: true };
-                    setUploadedTasks(newUploaded);
-                    localStorage.setItem('luming_uploaded_tasks', JSON.stringify(newUploaded));
-                    
-                    // Save detailed Luming session info
-                    const sessionDetails = {
-                        taskId: uploadingTask.taskId,
-                        uploadTime: new Date().toLocaleString(),
-                        sessionName: 'session_028',
-                        status: '成功',
-                        quality: '通过',
-                        summary: {
-                            startTime: '2026年 05月 20日 星期三 10:12:37 CST',
-                            endTime: '2026年 05月 20日 星期三 10:13:17 CST',
-                            duration: '40秒',
-                            deviceCount: 2,
-                            rgbFrames: 1800,
-                            gripperType: '非平动夹爪 (pose_merge)',
-                        }
-                    };
-                    localStorage.setItem(`luming_session_${uploadingTask.taskId}`, JSON.stringify(sessionDetails));
-
-                    message.success('数据上传及质检分析处理成功！数据包 session_028 已入库。');
-                    setIsUploading(false);
-                    setIsUploadModalOpen(false);
-                }, 500);
-            }
-        }, 150);
+        const firstPendingIndex = uploadQueue.findIndex(q => q.status !== 'success');
+        if (firstPendingIndex === -1) {
+            message.warning('所有数采包已成功上传！');
+            setIsUploading(false);
+            return;
+        }
+        setActiveQueueIndex(firstPendingIndex);
     };
+
+    const handlePauseItem = (index) => {
+        setUploadQueue(prev => prev.map((q, idx) => 
+            idx === index 
+                ? { ...q, status: 'paused', speed: '0 KB/s', timeLeft: '已暂停' } 
+                : q
+        ));
+        if (index === activeQueueIndex) {
+            setIsUploading(false);
+        }
+    };
+
+    const handleResumeItem = (index) => {
+        setUploadQueue(prev => prev.map((q, idx) => 
+            idx === index 
+                ? { ...q, status: 'waiting', speed: '正在连接...' } 
+                : q
+        ));
+        setIsUploading(true);
+        setActiveQueueIndex(index);
+    };
+
+    const handlePauseAll = () => {
+        setUploadQueue(prev => prev.map(q => 
+            q.status === 'uploading' || q.status === 'waiting'
+                ? { ...q, status: 'paused', speed: '0 KB/s', timeLeft: '已暂停' }
+                : q
+        ));
+        setIsUploading(false);
+    };
+
+    const handleResumeAll = () => {
+        setUploadQueue(prev => prev.map(q => 
+            q.status === 'paused'
+                ? { ...q, status: 'waiting', speed: '正在连接...' }
+                : q
+        ));
+        setIsUploading(true);
+        const nextPending = uploadQueue.findIndex(q => q.status !== 'success');
+        if (nextPending !== -1) {
+            setActiveQueueIndex(nextPending);
+        }
+    };
+
+    const totalQueueSize = uploadQueue.reduce((acc, q) => acc + q.size, 0) || 1;
+    const uploadedBytes = uploadQueue.reduce((acc, q) => acc + (q.size * q.progress / 100), 0);
+    const overallProgressPercent = Math.round(uploadedBytes / totalQueueSize * 100);
 
     const columns = [
         { title: '采集任务ID', dataIndex: 'taskId', key: 'taskId', width: 150 },
@@ -196,63 +383,19 @@ export default function CollectTaskPage() {
         { title: '采集机器人', dataIndex: 'robot', key: 'robot', width: 150 },
         { title: '采集场景', dataIndex: 'scene', key: 'scene', width: 120 },
         { title: '采集人员', dataIndex: 'collector', key: 'collector', width: 100 },
-        { 
-          title: '采集状态', 
-          dataIndex: 'collectStatus', 
-          key: 'collectStatus', 
-          width: 100, 
-          render: (s, record) => {
-              const status = uploadedTasks[record.taskId] ? '采集完成' : s;
-              return <Tag color={collectStatusMap[status]}>{status}</Tag>;
-          } 
-        },
-        { 
-          title: '数据状态', 
-          dataIndex: 'dataStatus', 
-          key: 'dataStatus', 
-          width: 100, 
-          render: (s, record) => {
-              const status = uploadedTasks[record.taskId] ? '处理完成' : s;
-              return <Tag color={dataStatusMap[status]}>{status}</Tag>;
-          } 
-        },
+        { title: '采集状态', dataIndex: 'collectStatus', key: 'collectStatus', width: 100, render: (s, record) => { const status = uploadedTasks[record.taskId] ? '采集完成' : s; return <Tag color={collectStatusMap[status]}>{status}</Tag>; } },
+        { title: '数据状态', dataIndex: 'dataStatus', key: 'dataStatus', width: 100, render: (s, record) => { const status = uploadedTasks[record.taskId] ? '处理完成' : s; return <Tag color={dataStatusMap[status]}>{status}</Tag>; } },
         { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
-        {
-            title: '操作', key: 'action', width: 380, fixed: 'right',
-            render: (_, record) => (
+        { title: '操作', key: 'action', width: 380, fixed: 'right', render: (_, record) => (
                 <Space size="small">
                     <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/collect/detail/${record.taskId}`)}>查看详情</Button>
                     {record.collectStatus !== '采集完成' && !uploadedTasks[record.taskId] && (
-                        <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => window.open(`/collection/collect/connection/${record.taskId}`, '_blank')}>
-                            {record.collectStatus === '待采集' ? '开始采集' : '继续采集'}
-                        </Button>
+                        <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => window.open(`/collection/collect/connection/${record.taskId}`, '_blank')}>{record.collectStatus === '待采集' ? '开始采集' : '继续采集'}</Button>
                     )}
-                    <Button 
-                        type="link" 
-                        size="small" 
-                        icon={<CloudUploadOutlined />} 
-                        onClick={() => {
-                            setUploadingTask(record);
-                            setIsUploadModalOpen(true);
-                            setUploadProgress(0);
-                            setIsUploading(false);
-                            setFilesDropped(false);
-                            setDragActive(false);
-                        }}
-                    >
-                        {uploadedTasks[record.taskId] ? '重新上传' : '上传数据'}
-                    </Button>
-                    {(record.dataStatus === '处理完成' || uploadedTasks[record.taskId]) && (
-                        <Button type="link" size="small" onClick={() => {
-                            window.open(`/collection/collect/data/${record.taskId}`, '_blank');
-                        }}>查看数据</Button>
-                    )}
-                    {record.collectStatus === '采集完成' && record.dataStatus === '处理完成' && (
-                        <Button type="link" size="small" onClick={() => message.success('任务已完成')}>完成任务</Button>
-                    )}
+                    <Button type="link" size="small" icon={<CloudUploadOutlined />} onClick={() => { setUploadingTask(record); setIsUploadModalOpen(true); setIsUploading(false); setFilesDropped(false); setUploadQueue([]); setActiveQueueIndex(null); setIsMinimized(false); setCliSuggested(false); }}>{uploadedTasks[record.taskId] ? '重新上传' : '上传数据'}</Button>
                 </Space>
-            ),
-        },
+            )
+        }
     ];
 
     return (
@@ -353,15 +496,29 @@ export default function CollectTaskPage() {
                     onCancel={() => !isUploading && setIsUploadModalOpen(false)}
                     width={720}
                     footer={[
+                        filesDropped && (
+                            <Button 
+                                key="background" 
+                                type="default" 
+                                disabled={!isUploading}
+                                onClick={() => {
+                                    setIsMinimized(true);
+                                    setIsUploadModalOpen(false);
+                                    message.info('数采包上传已切入后台运行，您可继续操作页面。');
+                                }}
+                            >
+                                后台运行
+                            </Button>
+                        ),
                         <Button key="cancel" disabled={isUploading} onClick={() => setIsUploadModalOpen(false)}>取消</Button>,
                         <Button 
                             key="upload" 
                             type="primary" 
-                            loading={isUploading} 
-                            disabled={!filesDropped} 
+                            loading={isUploading && activeQueueIndex !== null} 
+                            disabled={!filesDropped || uploadQueue.every(q => q.status === 'success')} 
                             onClick={handleStartUpload}
                         >
-                            {isUploading ? '正在上传及分析...' : (filesDropped ? '确认上传' : '确认上传 (请先拖入文件)')}
+                            {uploadQueue.some(q => q.status === 'success') ? '继续上传' : '确认上传'}
                         </Button>
                     ]}
                 >
@@ -444,141 +601,223 @@ export default function CollectTaskPage() {
                                     <Space>
                                         <CheckCircleFilled style={{ color: '#52c41a', fontSize: 16 }} />
                                         <Text strong style={{ color: '#389e0d' }}>
-                                            {uploadedFileList.length > 0 ? '本地文件识别成功！' : '数采包结构解析就绪！'}
+                                            数采包结构解析就绪！
                                         </Text>
                                         <Text type="secondary" style={{ fontSize: 12 }}>
-                                            {uploadedFileList.length > 0 
-                                                ? `(已选择 ${uploadedFileList.length} 个文件)` 
-                                                : '(已匹配 1 个 collection_summary 与 session_028 子目录)'
-                                            }
+                                            (已识别出 {uploadQueue.length} 个数采会话)
                                         </Text>
                                     </Space>
-                                    <Button size="small" danger onClick={() => { setFilesDropped(false); setUploadedFileList([]); }}>重新选择</Button>
+                                    <Button size="small" danger disabled={isUploading} onClick={() => { setFilesDropped(false); setUploadQueue([]); setCliSuggested(false); }}>
+                                        重新选择
+                                    </Button>
                                 </div>
 
-                                {isUploading && (
-                                    <div style={{ marginBottom: 20, padding: '8px 12px', background: '#e6f4ff', borderRadius: 8 }}>
+                                {/* Overall Progress Tracker */}
+                                {(isUploading || uploadQueue.some(q => q.progress > 0)) && (
+                                    <div style={{ marginBottom: 16, padding: '12px 16px', background: '#e6f4ff', borderRadius: 8, border: '1px solid #91d5ff' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
-                                            <Text type="secondary">正在解析上传路径位姿轨迹与视频帧数据...</Text>
-                                            <Text strong type="primary">{uploadProgress}%</Text>
+                                            <Text strong type="primary">总上传进度 ({uploadQueue.filter(q => q.status === 'success').length}/{uploadQueue.length})</Text>
+                                            <Text strong type="primary">{overallProgressPercent}%</Text>
                                         </div>
-                                        <Progress percent={uploadProgress} showInfo={false} size="small" strokeColor="#1677ff" status="active" />
+                                        <Progress percent={overallProgressPercent} showInfo={false} size="small" strokeColor="#1677ff" status={isUploading ? "active" : "normal"} />
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#8c8c8c', marginTop: 4 }}>
+                                            <span>已传输: {(uploadedBytes / 1024 / 1024).toFixed(1)} MB / {(totalQueueSize / 1024 / 1024).toFixed(1)} MB</span>
+                                            <Space size="middle">
+                                                {isUploading ? (
+                                                    <Button size="small" type="text" danger icon={<PauseOutlined />} onClick={handlePauseAll} style={{ padding: 0, height: 'auto', fontSize: 11 }}>暂停全部</Button>
+                                                ) : (
+                                                    <Button size="small" type="text" icon={<PlayCircleOutlined />} onClick={handleResumeAll} style={{ padding: 0, height: 'auto', fontSize: 11, color: '#52c41a' }}>恢复全部</Button>
+                                                )}
+                                            </Space>
+                                        </div>
                                     </div>
                                 )}
 
-                                {uploadedFileList.length > 0 ? (
-                                    <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 16, background: '#fafafa', height: 320, overflowY: 'auto' }}>
-                                        <div style={{ fontSize: 12, fontWeight: 'bold', color: '#8c8c8c', marginBottom: 12, textTransform: 'uppercase' }}>已选择的本地文件 ({uploadedFileList.length})</div>
-                                        <Table 
-                                            size="small"
-                                            dataSource={uploadedFileList}
-                                            rowKey="name"
-                                            pagination={false}
-                                            columns={[
-                                                {
-                                                    title: '文件名',
-                                                    dataIndex: 'name',
-                                                    key: 'name',
-                                                    render: (text) => (
-                                                        <Space>
-                                                            <FolderOpenOutlined style={{ color: '#faad14' }} />
-                                                            <span style={{ fontFamily: 'monospace' }}>{text}</span>
-                                                        </Space>
-                                                    )
-                                                },
-                                                {
-                                                    title: '大小',
-                                                    dataIndex: 'size',
-                                                    key: 'size',
-                                                    width: 120,
-                                                    render: (bytes) => {
-                                                        if (bytes === 0) return '0 B';
-                                                        const k = 1024;
-                                                        const sizes = ['B', 'KB', 'MB', 'GB'];
-                                                        const i = Math.floor(Math.log(bytes) / Math.log(k));
-                                                        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-                                                    }
-                                                },
-                                                {
-                                                    title: '文件类型',
-                                                    dataIndex: 'type',
-                                                    key: 'type',
-                                                    width: 150,
-                                                    render: (t) => t || '未知类型'
+                                {/* Upload Queue Table */}
+                                <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden', background: '#fafafa', marginBottom: 16 }}>
+                                    <Table 
+                                        size="small"
+                                        dataSource={uploadQueue}
+                                        rowKey="id"
+                                        pagination={false}
+                                        columns={[
+                                            {
+                                                title: '会话/文件夹名称',
+                                                dataIndex: 'name',
+                                                key: 'name',
+                                                render: (text) => (
+                                                    <Space>
+                                                        <FolderOpenOutlined style={{ color: '#faad14' }} />
+                                                        <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{text}</span>
+                                                    </Space>
+                                                )
+                                            },
+                                            {
+                                                title: '大小',
+                                                dataIndex: 'size',
+                                                key: 'size',
+                                                width: 100,
+                                                render: (bytes) => {
+                                                    if (bytes === 0) return '0 B';
+                                                    const k = 1024;
+                                                    const sizes = ['B', 'KB', 'MB', 'GB'];
+                                                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                                                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
                                                 }
-                                            ]}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'flex', gap: 16, height: 320 }}>
-                                        {/* Left Side: Directory Tree */}
-                                        <div style={{ flex: 1, border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, background: '#fafafa', overflowY: 'auto' }}>
-                                            <div style={{ fontSize: 12, fontWeight: 'bold', color: '#8c8c8c', marginBottom: 8, textTransform: 'uppercase' }}>本地文件夹目录结构</div>
-                                            <div style={{ fontFamily: 'monospace', fontSize: 13, lineHeight: '1.8' }}>
-                                                <div style={{ color: '#faad14' }}>📁 鹿鸣采集数据/</div>
-                                                <div style={{ paddingLeft: 12, color: '#1677ff' }}>📄 collection_summary.txt <span style={{ color: '#bfbfbf', fontSize: 11 }}>(2.7 KB)</span></div>
-                                                <div style={{ paddingLeft: 12, color: '#faad14' }}>📁 session_028/</div>
-                                                <div style={{ paddingLeft: 24, color: '#d9d9d9' }}>├── 📁 left_hand_250801DR48...</div>
-                                                <div style={{ paddingLeft: 24, color: '#d9d9d9' }}>├── 📁 right_hand_250801DR...</div>
-                                                <div style={{ paddingLeft: 24, color: '#8c8c8c' }}>├── 📄 relative_transforms_left_to_right.txt</div>
-                                                <div style={{ paddingLeft: 24, color: '#8c8c8c' }}>├── 📄 relative_transforms_right_to_left.txt</div>
-                                                <div style={{ paddingLeft: 24, color: '#faad14' }}>└── 📁 quality_report/</div>
-                                                <div style={{ paddingLeft: 36, color: '#52c41a' }}>├── 📄 quality_report.json <Tag size="small" color="success" style={{ transform: 'scale(0.8)', margin: 0, padding: '0 4px' }}>JSON</Tag></div>
-                                                <div style={{ paddingLeft: 36, color: '#8c8c8c' }}>├── 📄 quality_report.txt</div>
-                                                <div style={{ paddingLeft: 36, color: '#8c8c8c' }}>└── 📄 check.log</div>
+                                            },
+                                            {
+                                                title: '进度/状态',
+                                                key: 'progress',
+                                                width: 180,
+                                                render: (_, record, index) => {
+                                                    let statusType = 'normal';
+                                                    if (record.status === 'success') statusType = 'success';
+                                                    if (record.status === 'paused') statusType = 'normal';
+                                                    return (
+                                                        <div style={{ width: '100%' }}>
+                                                            <Progress percent={record.progress} size="small" status={statusType} showInfo={false} />
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8c8c8c', marginTop: 2 }}>
+                                                                <span>{record.speed}</span>
+                                                                <span>{record.timeLeft}</span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                            },
+                                            {
+                                                title: '操作',
+                                                key: 'action',
+                                                width: 90,
+                                                align: 'center',
+                                                render: (_, record, index) => {
+                                                    if (record.status === 'success') {
+                                                        return <Tag color="success">已完成</Tag>;
+                                                    }
+                                                    if (record.status === 'uploading') {
+                                                        return (
+                                                            <Button 
+                                                                type="text" 
+                                                                size="small" 
+                                                                icon={<PauseOutlined />} 
+                                                                onClick={() => handlePauseItem(index)}
+                                                                style={{ color: '#faad14' }}
+                                                            />
+                                                        );
+                                                    }
+                                                    return (
+                                                        <Button 
+                                                            type="text" 
+                                                            size="small" 
+                                                            icon={<PlayCircleOutlined />} 
+                                                            onClick={() => handleResumeItem(index)}
+                                                            style={{ color: '#52c41a' }}
+                                                        />
+                                                    );
+                                                }
+                                            }
+                                        ]}
+                                    />
+                                </div>
+
+                                {/* Large File / CLI suggestions */}
+                                {cliSuggested && (
+                                    <Card 
+                                        size="small" 
+                                        style={{ 
+                                            background: '#fffbe6', 
+                                            border: '1px solid #ffe58f', 
+                                            borderRadius: 8 
+                                        }}
+                                        styles={{ body: { padding: '12px 16px' } }}
+                                    >
+                                        <div style={{ display: 'flex', gap: 12 }}>
+                                            <WarningOutlined style={{ color: '#faad14', fontSize: 18, marginTop: 2 }} />
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 600, color: '#d46b08', fontSize: 13, marginBottom: 4 }}>
+                                                    检测到超大型数据文件夹 (包含 &gt;500MB 会话包)
+                                                </div>
+                                                <div style={{ fontSize: 12, color: '#595959', lineHeight: 1.5, marginBottom: 8 }}>
+                                                    推荐使用我们的 **Lumos 数采传输命令行助手** 进行极速、稳定的断点续传与线程优化。
+                                                </div>
+                                                <div style={{ background: '#f5f5f5', borderRadius: 4, padding: '6px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <code style={{ fontFamily: 'monospace', fontSize: 11, color: '#111827' }}>
+                                                        lumos-cli upload --task-id {uploadingTask?.taskId} --dir ./鹿鸣采集数据
+                                                    </code>
+                                                    <Button 
+                                                        size="small" 
+                                                        type="link" 
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(`lumos-cli upload --task-id ${uploadingTask?.taskId} --dir ./鹿鸣采集数据`);
+                                                            message.success('命令行已复制到剪贴板！');
+                                                        }}
+                                                        style={{ padding: 0, height: 'auto', fontSize: 11 }}
+                                                    >
+                                                        复制指令
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
-
-                                        {/* Right Side: Text Preview */}
-                                        <div style={{ flex: 1.2, border: '1px solid #f0f0f0', borderRadius: 8, display: 'flex', flexDirection: 'column' }}>
-                                            <div style={{ borderBottom: '1px solid #f0f0f0', padding: '8px 12px', background: '#fafafa', fontSize: 12, fontWeight: 'bold', color: '#8c8c8c', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span>📄 collection_summary.txt 预览</span>
-                                                <Tag color="blue" bordered={false} style={{ margin: 0, fontSize: 10 }}>TEXT</Tag>
-                                            </div>
-                                            <div style={{ flex: 1, padding: 12, overflowY: 'auto', background: '#1e1e1e', color: '#d4d4d4', fontFamily: 'monospace', fontSize: 11, borderRadius: '0 0 8px 8px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-{`========================================
-多会话摄像头数据采集摘要（Buffered版本）
-========================================
-开始时间: 2026年 05月 20日 星期三 10:10:35 CST
-任务信息: [20260408W001] 抓杯子
-背景编号: background_00
-RGB帧数: 1800
-夹爪类型: 非平动夹爪 (pose_merge)
-质量检查开关: true
-设备模式: 双设备
-设备数量: 2
-计划会话数: 300
-会话间隔: 1秒
-
-设备信息:
-  设备 1:
-    XV序列号: 250801DR48FP26003296
-    设备标签: left_hand
-  设备 2:
-    XV序列号: 250801DR48FP26003349
-    设备标签: right_hand
-
-==========================================
-会话 28 信息 (session_028):
-==========================================
-  开始时间: 2026年 05月 20日 星期三 10:12:37 CST
-  结束时间: 2026年 05月 20日 星期三 10:13:17 CST
-  持续时间: 40秒
-  状态: 成功
-  数据验证: 通过
-  质量检查: 通过
-  数据目录: ./Data/task_20260408W001_a/background_00/
-            multi_sessions_20260520_101032/session_028/
-    ├─ left_hand_250801DR48FP26003296
-    └─ right_hand_250801DR48FP26003349`}
-                                            </div>
-                                        </div>
-                                    </div>
+                                    </Card>
                                 )}
                             </>
                         )}
                     </div>
                 </Modal>
+
+                {/* Minimized Background Uploading Widget */}
+                {isMinimized && uploadingTask && (
+                    <div style={{
+                        position: 'fixed',
+                        bottom: 24,
+                        right: 24,
+                        width: 320,
+                        background: 'rgba(255, 255, 255, 0.85)',
+                        backdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(0, 0, 0, 0.08)',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        borderRadius: 12,
+                        padding: 16,
+                        zIndex: 9999,
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 12
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Space size="small">
+                                <LoadingOutlined spin={isUploading} style={{ color: '#1677ff', fontSize: 16 }} />
+                                <Text strong style={{ fontSize: 13 }}>正在上传数采包...</Text>
+                            </Space>
+                            <Button 
+                                type="link" 
+                                size="small" 
+                                onClick={() => { setIsMinimized(false); setIsUploadModalOpen(true); }}
+                                style={{ padding: 0 }}
+                            >
+                                展开详情
+                            </Button>
+                        </div>
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                                <Text type="secondary">总进度 ({uploadQueue.filter(q => q.status === 'success').length}/{uploadQueue.length})</Text>
+                                <Text strong>{overallProgressPercent}%</Text>
+                            </div>
+                            <Progress percent={overallProgressPercent} status={isUploading ? "active" : "normal"} strokeColor="#1677ff" size="small" />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0', paddingTop: 8 }}>
+                            <span style={{ fontSize: 11, color: '#8c8c8c' }}>
+                                {isUploading ? `速度: ${uploadQueue[activeQueueIndex]?.speed || '—'}` : '上传已暂停'}
+                            </span>
+                            <Space size="small">
+                                {isUploading ? (
+                                    <Button size="small" icon={<PauseOutlined />} onClick={handlePauseAll}>暂停全部</Button>
+                                ) : (
+                                    <Button size="small" type="primary" icon={<CaretRightOutlined />} onClick={handleResumeAll}>恢复全部</Button>
+                                )}
+                            </Space>
+                        </div>
+                    </div>
+                )}
 
             </MainLayout>
     );
