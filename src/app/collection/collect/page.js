@@ -40,6 +40,7 @@ export default function CollectTaskPage() {
     const [filesDropped, setFilesDropped] = useState(false);
     const [uploadedFileList, setUploadedFileList] = useState([]);
     const fileInputRef = React.useRef(null);
+    const folderInputRef = React.useRef(null);
 
     // Drag events handlers
     const handleDrag = (e) => {
@@ -52,11 +53,64 @@ export default function CollectTaskPage() {
         }
     };
 
-    const handleDrop = (e) => {
+    const traverseFileTree = (item, path = '') => {
+        return new Promise((resolve) => {
+            if (item.isFile) {
+                item.file((file) => {
+                    resolve([{
+                        name: path + item.name,
+                        size: file.size,
+                        type: file.type
+                    }]);
+                });
+            } else if (item.isDirectory) {
+                const dirReader = item.createReader();
+                const entriesList = [];
+                const readEntries = () => {
+                    dirReader.readEntries(async (entries) => {
+                        if (entries.length === 0) {
+                            const promises = entriesList.map(entry => traverseFileTree(entry, path + item.name + '/'));
+                            const results = await Promise.all(promises);
+                            resolve(results.flat());
+                        } else {
+                            entriesList.push(...entries);
+                            readEntries();
+                        }
+                    }, (err) => {
+                        console.error(err);
+                        resolve([]);
+                    });
+                };
+                readEntries();
+            } else {
+                resolve([]);
+            }
+        });
+    };
+
+    const handleDrop = async (e) => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        
+        if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+            const promises = [];
+            for (let i = 0; i < e.dataTransfer.items.length; i++) {
+                const item = e.dataTransfer.items[i].webkitGetAsEntry();
+                if (item) {
+                    promises.push(traverseFileTree(item));
+                }
+            }
+            const results = await Promise.all(promises);
+            const flatFiles = results.flat();
+            if (flatFiles.length > 0) {
+                setUploadedFileList(flatFiles);
+                setFilesDropped(true);
+                message.success(`已成功识别拖入的文件夹/文件，共包含 ${flatFiles.length} 个文件！`);
+            } else {
+                message.warning('未识别到有效的可上传文件。');
+            }
+        } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             const files = Array.from(e.dataTransfer.files);
             setUploadedFileList(files.map(f => ({ name: f.name, size: f.size, type: f.type })));
             setFilesDropped(true);
@@ -70,6 +124,19 @@ export default function CollectTaskPage() {
             setUploadedFileList(files.map(f => ({ name: f.name, size: f.size, type: f.type })));
             setFilesDropped(true);
             message.success(`已成功选择 ${files.length} 个文件！`);
+        }
+    };
+
+    const handleFolderChange = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const files = Array.from(e.target.files);
+            setUploadedFileList(files.map(f => ({ 
+                name: f.webkitRelativePath || f.name, 
+                size: f.size, 
+                type: f.type 
+            })));
+            setFilesDropped(true);
+            message.success(`已识别文件夹中共 ${files.length} 个文件！`);
         }
     };
 
@@ -332,10 +399,19 @@ export default function CollectTaskPage() {
                             multiple 
                             onChange={handleFileChange} 
                         />
+                        <input 
+                            type="file" 
+                            ref={folderInputRef} 
+                            style={{ display: 'none' }} 
+                            webkitdirectory=""
+                            directory=""
+                            multiple
+                            onChange={handleFolderChange} 
+                        />
 
                         {!filesDropped ? (
                             <div 
-                                onClick={() => fileInputRef.current.click()}
+                                onClick={() => folderInputRef.current.click()}
                                 style={{
                                     border: dragActive ? '2px dashed #1677ff' : '2px dashed #d9d9d9',
                                     borderRadius: '12px',
@@ -358,11 +434,14 @@ export default function CollectTaskPage() {
                                     将数采文件（夹）或压缩包拖拽到此区域上传
                                 </div>
                                 <div style={{ fontSize: 13, color: '#8c8c8c', marginBottom: 20, maxWidth: '80%', pointerEvents: 'none' }}>
-                                    支持直接拖入 ./鹿鸣采集数据 文件夹，或拖入包含 timestamps.csv 和 video.mp4 等会话包的 ZIP 压缩文件。
+                                    支持直接拖入整个文件夹（例如 ./鹿鸣采集数据），或拖入包含 timestamps.csv 和 video.mp4 等会话包的 ZIP 压缩文件。
                                 </div>
                                 <Space size="middle" style={{ marginTop: 10 }}>
                                     <Button type="primary" onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }}>
                                         选择本地文件
+                                    </Button>
+                                    <Button type="primary" ghost onClick={(e) => { e.stopPropagation(); folderInputRef.current.click(); }}>
+                                        选择本地文件夹
                                     </Button>
                                     <Button type="default" onClick={(e) => { e.stopPropagation(); handleSimulateDrop(); }}>
                                         一键导入模拟数据
