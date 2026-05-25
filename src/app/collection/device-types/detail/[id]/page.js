@@ -5,7 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { 
   Button, Typography, Space, Input, Form, Row, Col, 
   Card, Table, Tag, Breadcrumb, Divider, App, Radio, 
-  Tooltip, Select, Modal, Upload, Progress, Badge, Descriptions
+  Tooltip, Select, Modal, Upload, Progress, Badge, Descriptions, Tabs
 } from 'antd';
 import { 
   ArrowLeftOutlined, SaveOutlined, 
