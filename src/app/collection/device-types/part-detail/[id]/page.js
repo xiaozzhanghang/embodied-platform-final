@@ -77,13 +77,11 @@ export default function PartDetailPage() {
           </Space>
           
           <Space>
-            {isEditing ? (
+            {isEditing && (
               <>
                 <Button onClick={() => setIsEditing(false)}>取消</Button>
                 <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>提交更新</Button>
               </>
-            ) : (
-              <Button type="primary" icon={<EditOutlined />} onClick={() => setIsEditing(true)}>编辑信息</Button>
             )}
           </Space>
         </div>
