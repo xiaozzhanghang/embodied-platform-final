@@ -161,17 +161,7 @@ export default function CollectTaskDetailPage() {
         </Space>
       </div>
 
-      <Card bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
-        <Steps 
-          current={hasUploaded ? 2 : 1}
-          items={[
-            { title: '任务下发', description: '管理员派发', icon: <SolutionOutlined /> },
-            { title: '采集工作台', description: '当前环节：录像暂存', icon: <VideoCameraOutlined /> },
-            { title: '质检审核', description: '打包上传后流转', icon: <FileSearchOutlined /> },
-            { title: '模型入库', description: '合格数据沉淀' },
-          ]}
-        />
-      </Card>
+
 
       <Card title="任务信息" bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
           <Descriptions bordered column={2}>
