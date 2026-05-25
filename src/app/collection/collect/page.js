@@ -419,27 +419,7 @@ export default function CollectTaskPage() {
 
     return (
             <MainLayout>
-                {/* Edge Client Hardware Status Panel */}
-                <div style={{ marginBottom: 16, padding: '12px 16px', background: '#e6f4ff', border: '1px solid #91caff', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Tag color="blue" style={{ margin: 0, fontWeight: 'bold' }}>EDGE CLIENT</Tag>
-                        <span style={{ fontSize: 14, fontWeight: 500, color: '#0958d9' }}>边缘侧采集工作站 - 就绪</span>
-                    </div>
-                    <Space size="large" separator={<span style={{ color: '#91caff' }}>|</span>}>
-                        <Space size="small">
-                            <ApiOutlined style={{ color: '#52c41a' }} />
-                            <span style={{ fontSize: 13 }}>机器人直连: <CheckCircleFilled style={{ color: '#52c41a', fontSize: 10 }} /> <span style={{ color: '#52c41a' }}>已连接 (1ms)</span></span>
-                        </Space>
-                        <Space size="small">
-                            <HddOutlined style={{ color: '#faad14' }} />
-                            <span style={{ fontSize: 13 }}>本地磁盘: <span style={{ color: '#faad14', fontWeight: 500 }}>剩余 128GB (12%)</span> <WarningFilled style={{ color: '#faad14', fontSize: 10 }} /></span>
-                        </Space>
-                        <Space size="small">
-                            <DashboardOutlined style={{ color: '#1677ff' }} />
-                            <span style={{ fontSize: 13 }}>CPU: 24% | GPU: 68%</span>
-                        </Space>
-                    </Space>
-                </div>
+
 
                 <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <h3 className="page-header-title" style={{ margin: 0 }}>采集任务</h3>
