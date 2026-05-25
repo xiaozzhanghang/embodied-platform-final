@@ -36,6 +36,11 @@ export default function CollectTaskPage() {
 
     // Multi-folder Queue States
     const [uploadQueue, setUploadQueue] = useState([]);
+    const uploadQueueRef = React.useRef(uploadQueue);
+    useEffect(() => {
+        uploadQueueRef.current = uploadQueue;
+    }, [uploadQueue]);
+
     const [activeQueueIndex, setActiveQueueIndex] = useState(null);
     const [isMinimized, setIsMinimized] = useState(false);
     const [cliSuggested, setCliSuggested] = useState(false);
@@ -224,22 +229,27 @@ export default function CollectTaskPage() {
 
     // Multi-folder sequential uploading simulation logic
     useEffect(() => {
-        if (!isUploading || activeQueueIndex === null || activeQueueIndex >= uploadQueue.length) {
+        if (!isUploading || activeQueueIndex === null || activeQueueIndex >= uploadQueueRef.current.length) {
             return;
         }
 
-        const activeItem = uploadQueue[activeQueueIndex];
+        const currentQueue = uploadQueueRef.current;
+        const activeItem = currentQueue[activeQueueIndex];
+        if (!activeItem) return;
+
         if (activeItem.status === 'success') {
-            const nextIndex = uploadQueue.findIndex((q, idx) => idx > activeQueueIndex && q.status !== 'success');
+            const nextIndex = currentQueue.findIndex((q, idx) => idx > activeQueueIndex && q.status !== 'success');
             if (nextIndex !== -1) {
                 setActiveQueueIndex(nextIndex);
             } else {
                 setIsUploading(false);
                 setActiveQueueIndex(null);
                 
-                const newUploaded = { ...uploadedTasks, [uploadingTask.taskId]: true };
-                setUploadedTasks(newUploaded);
-                localStorage.setItem('luming_uploaded_tasks', JSON.stringify(newUploaded));
+                setUploadedTasks(prev => {
+                    const newUploaded = { ...prev, [uploadingTask.taskId]: true };
+                    localStorage.setItem('luming_uploaded_tasks', JSON.stringify(newUploaded));
+                    return newUploaded;
+                });
                 
                 const sessionDetails = {
                     taskId: uploadingTask.taskId,
@@ -260,7 +270,7 @@ export default function CollectTaskPage() {
 
                 notification.success({
                     message: '数采数据包上传完成',
-                    description: `任务 [${uploadingTask.taskId}] 的数采包 (${uploadQueue.map(q => q.name).join(', ')}) 已全部成功上传并入库质检池。`,
+                    description: `任务 [${uploadingTask.taskId}] 的数采包 (${currentQueue.map(q => q.name).join(', ')}) 已全部成功上传并入库质检池。`,
                     placement: 'bottomRight',
                     duration: 6
                 });
@@ -275,13 +285,15 @@ export default function CollectTaskPage() {
             return;
         }
 
-        setUploadQueue(prev => prev.map((q, idx) => idx === activeQueueIndex ? { ...q, status: 'uploading' } : q));
+        if (activeItem.status !== 'uploading') {
+            setUploadQueue(prev => prev.map((q, idx) => idx === activeQueueIndex ? { ...q, status: 'uploading' } : q));
+        }
 
         let currentProgress = activeItem.progress;
         const totalSize = activeItem.size;
         
         const interval = setInterval(() => {
-            if (uploadQueue[activeQueueIndex]?.status === 'paused') {
+            if (uploadQueueRef.current[activeQueueIndex]?.status === 'paused') {
                 clearInterval(interval);
                 return;
             }
@@ -316,7 +328,7 @@ export default function CollectTaskPage() {
         }, 300);
 
         return () => clearInterval(interval);
-    }, [isUploading, activeQueueIndex, uploadQueue, uploadedTasks, uploadingTask, notification]);
+    }, [isUploading, activeQueueIndex, uploadingTask, notification]);
 
     const handleStartUpload = () => {
         setIsUploading(true);
