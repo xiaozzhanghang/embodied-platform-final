@@ -20,6 +20,23 @@ import MainLayout from '@/components/MainLayout';
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
+// Collectors list
+const collectorsList = [
+  { value: '张三', label: '张三 (采集员-001)' },
+  { value: '李四', label: '李四 (采集员-002)' },
+  { value: '王五', label: '王五 (采集员-003)' },
+  { value: '赵六', label: '赵六 (采集员-004)' },
+];
+
+// Device instances
+const allDeviceInstances = [
+  { value: 'R002GB-RGB-101', label: 'R002GB-RGB-101 (Galbot RGB - 在线)', parent: 'galbot_2.2_RGB' },
+  { value: 'R002GB-RGB-102', label: 'R002GB-RGB-102 (Galbot RGB - 离线)', parent: 'galbot_2.2_RGB' },
+  { value: 'R002GB-RGBD-101', label: 'R002GB-RGBD-101 (Galbot RGBD - 在线)', parent: 'galbot_2.2_RGBD' },
+  { value: 'DEV-FR-301', label: 'FRANKA-FR3-1号 (Franka Std - 在线)', parent: 'franka_std' },
+  { value: 'DEV-UR-501', label: 'UR5e-1号 (UR5e - 在线)', parent: 'ur5e_std' },
+];
+
 // Inner component to access search params safely in Suspense
 function CreateTaskContent() {
   const router = useRouter();
@@ -34,6 +51,7 @@ function CreateTaskContent() {
   // Linkage States
   const [availableParts, setAvailableParts] = useState([]);
   const [selectedPartKeys, setSelectedPartKeys] = useState([]);
+  const [filteredDeviceInstances, setFilteredDeviceInstances] = useState(allDeviceInstances);
 
   const [optionsMap, setOptionsMap] = useState({
     p1: [
@@ -237,6 +255,8 @@ function CreateTaskContent() {
         sceneCat: 'Kitchen',
         subScene: 'sub_cuisine',
         deviceType: 'galbot_2.2_RGB',
+        deviceInstance: 'R002GB-RGB-101',
+        collector: '张三',
         teleType: 'Master-slaveArm',
         count: 500,
         initState: '物体随机摆放在桌面中央，机器人初始姿态复位。',
@@ -244,11 +264,15 @@ function CreateTaskContent() {
 
       setSelectedTemplate({ name: '历史任务引用', id: 'ref' });
       form.setFieldsValue(mockExistingData);
-      handleDeviceTypeChange('galbot_2.2_RGB');
+      
+      const matchingInstances = allDeviceInstances.filter(inst => inst.parent === 'galbot_2.2_RGB');
+      setFilteredDeviceInstances(matchingInstances.length > 0 ? matchingInstances : allDeviceInstances);
+      
+      handleDeviceTypeChange('galbot_2.2_RGB', false);
     }
   }, [mode, taskId]);
 
-  const handleDeviceTypeChange = (value) => {
+  const handleDeviceTypeChange = (value, shouldResetInstance = true) => {
     const parts = [
       { key: 'p1', name: '头部左相机', type: 'Body-HeadLeftCamera' },
       { key: 'p2', name: '头部右相机', type: 'Body-HeadRightCamera' },
@@ -256,12 +280,21 @@ function CreateTaskContent() {
     ];
     setAvailableParts(parts);
     setSelectedPartKeys(['p1', 'p2', 'p3']);
+    
+    const filtered = allDeviceInstances.filter(inst => inst.parent === value);
+    setFilteredDeviceInstances(filtered.length > 0 ? filtered : allDeviceInstances);
+    if (shouldResetInstance) {
+      form.setFieldsValue({ deviceInstance: undefined });
+    }
   };
 
   const handleSelectTemplate = (tpl) => {
     setSelectedTemplate(tpl);
     setCreationStage('config');
     setCurrentStep(0);
+    
+    const matchingInstances = allDeviceInstances.filter(inst => inst.parent === tpl.device);
+    const defaultInstance = matchingInstances.length > 0 ? matchingInstances[0].value : undefined;
     
     form.setFieldsValue({
       name: `${tpl.name}_${Math.floor(1000 + Math.random() * 9000)}`,
@@ -270,9 +303,13 @@ function CreateTaskContent() {
       mode: 'Real',
       sceneCat: 'Kitchen',
       deviceType: tpl.device,
+      deviceInstance: defaultInstance,
+      collector: '张三',
       teleType: tpl.tele.includes('VR') ? 'VRController' : 'Master-slaveArm'
     });
-    handleDeviceTypeChange(tpl.device);
+    
+    setFilteredDeviceInstances(matchingInstances.length > 0 ? matchingInstances : allDeviceInstances);
+    handleDeviceTypeChange(tpl.device, false);
   };
 
   const renderSelection = () => (
@@ -382,13 +419,15 @@ function CreateTaskContent() {
                 <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择" options={optionsMap.mode} dropdownRender={m => renderDropdown(m, 'mode')} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} dropdownRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} dropdownRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="指派默认采集员" name="collector" required><Select placeholder="请选择指派采集员" options={collectorsList} /></Form.Item></Col>
               </Row>
             </Card>
 
             <Card title="采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
               <Row gutter={24}>
-                <Col span={12}><Form.Item label="设备类型" name="deviceType" required><Select options={optionsMap.deviceType} dropdownRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
-                <Col span={12}><Form.Item label="遥操主控方式" name="teleType" required><Select options={optionsMap.teleType} dropdownRender={m => renderDropdown(m, 'teleType')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="设备类型" name="deviceType" required><Select options={optionsMap.deviceType} dropdownRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="分配默认设备实例" name="deviceInstance" required><Select placeholder="请选择设备实例" options={filteredDeviceInstances} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="遥操主控方式" name="teleType" required><Select options={optionsMap.teleType} dropdownRender={m => renderDropdown(m, 'teleType')} /></Form.Item></Col>
               </Row>
               <Table dataSource={availableParts} columns={[{title:'名称', dataIndex:'name'},{title:'类型', dataIndex:'type'}]} rowSelection={{type:'checkbox', selectedRowKeys:selectedPartKeys}} pagination={false} size="small" bordered />
             </Card>

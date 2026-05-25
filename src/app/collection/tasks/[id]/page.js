@@ -20,10 +20,10 @@ const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const mockInstances = [
-  { key: '1', instanceId: '12745', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '张三', startTime: '2026-03-11 09:00', endTime: '-', collectProgress: 53, qaProgress: 0, status: '采集中' },
-  { key: '2', instanceId: '12744', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '李四', startTime: '2026-03-11 10:30', endTime: '-', collectProgress: 80, qaProgress: 0, status: '采集中' },
-  { key: '3', instanceId: '12619', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '-', startTime: '-', endTime: '-', collectProgress: 0, qaProgress: 0, status: '待分配' },
-  { key: '4', instanceId: '12511', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '王五', startTime: '2026-03-10 14:30', endTime: '2026-03-12 18:00', collectProgress: 100, qaProgress: 100, status: '已完成' },
+  { key: '1', instanceId: '12745', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '张三', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-11 09:00', endTime: '-', collectProgress: 53, qaProgress: 0, status: '采集中' },
+  { key: '2', instanceId: '12744', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '李四', deviceInstance: 'R002GB-RGB-102', startTime: '2026-03-11 10:30', endTime: '-', collectProgress: 80, qaProgress: 0, status: '采集中' },
+  { key: '3', instanceId: '12619', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '-', deviceInstance: '—', startTime: '-', endTime: '-', collectProgress: 0, qaProgress: 0, status: '待分配' },
+  { key: '4', instanceId: '12511', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '王五', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-10 14:30', endTime: '2026-03-12 18:00', collectProgress: 100, qaProgress: 100, status: '已完成' },
 ];
 
 const StatCard = ({ icon, value, label, iconBg, color }) => (
@@ -117,6 +117,7 @@ export default function TaskInstancePage() {
     { title: '单包采集量', dataIndex: 'singlePack', key: 'singlePack', width: 100 },
     { title: '计划采集量', dataIndex: 'planCount', key: 'planCount', width: 100 },
     { title: '采集人员', dataIndex: 'collector', key: 'collector', width: 100 },
+    { title: '分配设备实例', dataIndex: 'deviceInstance', key: 'deviceInstance', width: 140 },
     { title: '开始时间', dataIndex: 'startTime', key: 'startTime', width: 150 },
     {
       title: '采集进度', key: 'collectProgress', width: 140,
@@ -294,6 +295,17 @@ export default function TaskInstancePage() {
         <Form form={addPackForm} layout="vertical" style={{ paddingTop: 24 }}>
           <Form.Item label="选择采集员" name="collector" required>
             <Select placeholder="请选择采集员" options={[{ value: 'u1', label: '采集员 - 张三' }, { value: 'u2', label: '采集员 - 李四' }]} />
+          </Form.Item>
+          <Form.Item label="指派设备实例" name="deviceInstance" required>
+            <Select 
+              placeholder="请指派设备实例" 
+              options={[
+                { value: 'R002GB-RGB-101', label: 'R002GB-RGB-101 (Galbot RGB - 在线)' },
+                { value: 'R002GB-RGB-102', label: 'R002GB-RGB-102 (Galbot RGB - 离线)' },
+                { value: 'R002GB-RGBD-101', label: 'R002GB-RGBD-101 (Galbot RGBD - 在线)' },
+                { value: 'DEV-FR-301', label: 'FRANKA-FR3-1号 (Franka Std - 在线)' },
+              ]} 
+            />
           </Form.Item>
           <Form.Item label="计划采集量 (单包)" name="planCount" required initialValue={100}>
             <InputNumber min={1} style={{ width: '100%' }} />
