@@ -50,6 +50,13 @@ export default function CollectTaskPage() {
     const [filesDropped, setFilesDropped] = useState(false);
     const [uploadedFileList, setUploadedFileList] = useState([]);
     const folderInputRef = React.useRef(null);
+    const setFolderInputRef = React.useCallback((node) => {
+        if (node) {
+            node.setAttribute('webkitdirectory', '');
+            node.setAttribute('directory', '');
+        }
+        folderInputRef.current = node;
+    }, []);
 
     const groupFilesByFolder = (files) => {
         const foldersMap = {};
@@ -554,17 +561,20 @@ export default function CollectTaskPage() {
 
                         <input 
                             type="file" 
-                            ref={folderInputRef} 
+                            ref={setFolderInputRef} 
                             style={{ display: 'none' }} 
-                            webkitdirectory=""
-                            directory=""
                             multiple
                             onChange={handleFolderChange} 
                         />
 
                         {!filesDropped ? (
                             <div 
-                                onClick={() => folderInputRef.current.click()}
+                                onClick={() => {
+                                    if (folderInputRef.current) {
+                                        folderInputRef.current.value = '';
+                                        folderInputRef.current.click();
+                                    }
+                                }}
                                 style={{
                                     border: dragActive ? '2px dashed #1677ff' : '2px dashed #d9d9d9',
                                     borderRadius: '12px',
@@ -590,7 +600,13 @@ export default function CollectTaskPage() {
                                     支持直接拖入整个文件夹（例如 ./鹿鸣采集数据），或拖入包含 timestamps.csv 和 video.mp4 等会话包的 ZIP 压缩文件。
                                 </div>
                                 <Space size="middle" style={{ marginTop: 10 }}>
-                                    <Button type="primary" onClick={(e) => { e.stopPropagation(); folderInputRef.current.click(); }}>
+                                    <Button type="primary" onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (folderInputRef.current) {
+                                            folderInputRef.current.value = '';
+                                            folderInputRef.current.click();
+                                        }
+                                    }}>
                                         选择本地文件夹
                                     </Button>
                                     <Button type="default" onClick={(e) => { e.stopPropagation(); handleSimulateDrop(); }}>
