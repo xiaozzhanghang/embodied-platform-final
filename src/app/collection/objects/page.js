@@ -315,15 +315,22 @@ export default function ObjectLibraryPage() {
             background: '#f8fafc',
             borderRadius: 8,
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#94a3b8',
             border: '1px solid #e2e8f0',
-            gap: 2
+            position: 'relative',
+            overflow: 'hidden'
           }}>
-            <PictureOutlined style={{ fontSize: 14 }} />
-            <span style={{ fontSize: 9 }}>暂无图片</span>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <line x1="3" y1="18" x2="21" y2="18" stroke="#cbd5e1" strokeWidth="0.8"/>
+              <path d="M12 21V12M12 12L4 7.5M12 12L20 7.5" stroke="#cbd5e1" strokeWidth="1" strokeLinecap="round" strokeDasharray="1.5 1.5"/>
+              <path d="M12 5L18 8.5V15.5L12 19L6 15.5V8.5L12 5Z" stroke="#1677ff" strokeWidth="1.2" strokeLinejoin="round"/>
+              <path d="M12 12V19M12 12L6 8.5M12 12L18 8.5" stroke="#60a5fa" strokeWidth="0.8" strokeLinejoin="round"/>
+              <circle cx="12" cy="5" r="1" fill="#ef4444"/>
+              <circle cx="6" cy="8.5" r="1" fill="#22c55e"/>
+              <circle cx="18" cy="8.5" r="1" fill="#1677ff"/>
+              <circle cx="12" cy="12" r="1" fill="#2563eb"/>
+            </svg>
           </div>
         )
     },
@@ -821,10 +828,25 @@ export default function ObjectLibraryPage() {
                   justifyContent: 'center',
                   border: '1px dashed #cbd5e1',
                   color: '#64748b',
-                  gap: 8
+                  gap: 6
                 }}>
-                  <PictureOutlined style={{ fontSize: 28, color: '#94a3b8' }} />
-                  <span style={{ fontSize: 12, fontWeight: 500 }}>暂无物体图片</span>
+                  <svg width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: 2 }}>
+                    <path d="M8 48L56 48" stroke="#cbd5e1" strokeWidth="0.8"/>
+                    <path d="M32 54V32M32 32L12 20M32 32L52 20" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" strokeDasharray="3 3"/>
+                    <path d="M32 12L48 21.2V39.7L32 49L16 39.7V21.2L32 12Z" stroke="#1677ff" strokeWidth="1.5" strokeLinejoin="round"/>
+                    <path d="M32 30.5V49M32 30.5L16 21.2M32 30.5L48 21.2" stroke="#60a5fa" strokeWidth="1" strokeLinejoin="round"/>
+                    <line x1="32" y1="54" x2="32" y2="58" stroke="#1677ff" strokeWidth="2" strokeLinecap="round"/>
+                    <line x1="12" y1="20" x2="8" y2="18" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
+                    <line x1="52" y1="20" x2="56" y2="18" stroke="#22c55e" strokeWidth="2" strokeLinecap="round"/>
+                    <circle cx="32" cy="12" r="1.8" fill="#ef4444"/>
+                    <circle cx="16" cy="21.2" r="1.8" fill="#22c55e"/>
+                    <circle cx="48" cy="21.2" r="1.8" fill="#1677ff"/>
+                    <circle cx="32" cy="30.5" r="1.8" fill="#2563eb"/>
+                    <circle cx="16" cy="39.7" r="1.8" fill="#93c5fd"/>
+                    <circle cx="48" cy="39.7" r="1.8" fill="#93c5fd"/>
+                    <circle cx="32" cy="49" r="1.8" fill="#2563eb"/>
+                  </svg>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8' }}>暂无物理几何图片</span>
                 </div>
               )}
             </div>
