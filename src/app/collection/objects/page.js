@@ -312,25 +312,15 @@ export default function ObjectLibraryPage() {
           <div style={{
             width: 48,
             height: 48,
-            background: '#f8fafc',
+            background: 'linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%)',
             borderRadius: 8,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '1px solid #e2e8f0',
-            position: 'relative',
-            overflow: 'hidden'
+            border: '1px solid #dbeafe',
+            boxShadow: '0 2px 4px rgba(79, 70, 229, 0.05)'
           }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <line x1="3" y1="18" x2="21" y2="18" stroke="#cbd5e1" strokeWidth="0.8"/>
-              <path d="M12 21V12M12 12L4 7.5M12 12L20 7.5" stroke="#cbd5e1" strokeWidth="1" strokeLinecap="round" strokeDasharray="1.5 1.5"/>
-              <path d="M12 5L18 8.5V15.5L12 19L6 15.5V8.5L12 5Z" stroke="#1677ff" strokeWidth="1.2" strokeLinejoin="round"/>
-              <path d="M12 12V19M12 12L6 8.5M12 12L18 8.5" stroke="#60a5fa" strokeWidth="0.8" strokeLinejoin="round"/>
-              <circle cx="12" cy="5" r="1" fill="#ef4444"/>
-              <circle cx="6" cy="8.5" r="1" fill="#22c55e"/>
-              <circle cx="18" cy="8.5" r="1" fill="#1677ff"/>
-              <circle cx="12" cy="12" r="1" fill="#2563eb"/>
-            </svg>
+            <PictureOutlined style={{ fontSize: 18, color: '#4f46e5', opacity: 0.8 }} />
           </div>
         )
     },
@@ -820,33 +810,18 @@ export default function ObjectLibraryPage() {
                 <div style={{
                   width: 120,
                   height: 120,
-                  background: '#f8fafc',
-                  borderRadius: 12,
+                  background: 'linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%)',
+                  borderRadius: 16,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: '1px dashed #cbd5e1',
-                  color: '#64748b',
-                  gap: 6
+                  border: '1px solid #dbeafe',
+                  boxShadow: '0 4px 12px rgba(79, 70, 229, 0.08)',
+                  gap: 8
                 }}>
-                  <svg width="56" height="56" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: 2 }}>
-                    <path d="M8 48L56 48" stroke="#cbd5e1" strokeWidth="0.8"/>
-                    <path d="M32 54V32M32 32L12 20M32 32L52 20" stroke="#94a3b8" strokeWidth="1" strokeLinecap="round" strokeDasharray="3 3"/>
-                    <path d="M32 12L48 21.2V39.7L32 49L16 39.7V21.2L32 12Z" stroke="#1677ff" strokeWidth="1.5" strokeLinejoin="round"/>
-                    <path d="M32 30.5V49M32 30.5L16 21.2M32 30.5L48 21.2" stroke="#60a5fa" strokeWidth="1" strokeLinejoin="round"/>
-                    <line x1="32" y1="54" x2="32" y2="58" stroke="#1677ff" strokeWidth="2" strokeLinecap="round"/>
-                    <line x1="12" y1="20" x2="8" y2="18" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-                    <line x1="52" y1="20" x2="56" y2="18" stroke="#22c55e" strokeWidth="2" strokeLinecap="round"/>
-                    <circle cx="32" cy="12" r="1.8" fill="#ef4444"/>
-                    <circle cx="16" cy="21.2" r="1.8" fill="#22c55e"/>
-                    <circle cx="48" cy="21.2" r="1.8" fill="#1677ff"/>
-                    <circle cx="32" cy="30.5" r="1.8" fill="#2563eb"/>
-                    <circle cx="16" cy="39.7" r="1.8" fill="#93c5fd"/>
-                    <circle cx="48" cy="39.7" r="1.8" fill="#93c5fd"/>
-                    <circle cx="32" cy="49" r="1.8" fill="#2563eb"/>
-                  </svg>
-                  <span style={{ fontSize: 11, fontWeight: 500, color: '#94a3b8' }}>暂无物理几何图片</span>
+                  <PictureOutlined style={{ fontSize: 32, color: '#4f46e5', opacity: 0.8 }} />
+                  <span style={{ fontSize: 11, fontWeight: 500, color: '#4f46e5', opacity: 0.8 }}>暂无图片</span>
                 </div>
               )}
             </div>
