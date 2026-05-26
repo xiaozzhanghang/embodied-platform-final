@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Table, Button, Input, Select, Space, Tag, Typography, Breadcrumb, App, DatePicker, Image, Empty, Modal, Form, Upload, Tooltip, Row, Col, Card, Descriptions } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, DownOutlined, UpOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, DownOutlined, UpOutlined, EyeOutlined, PictureOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import dayjs from 'dayjs';
 
@@ -303,11 +303,24 @@ export default function ObjectLibraryPage() {
             </div>
           </div>
         )
-        : <div style={{
-          width: 48, height: 48, background: '#f5f5f5', borderRadius: 6,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 10, color: '#bfbfbf', border: '1px dashed #d9d9d9'
-        }}>无图片</div>
+        : (
+          <div style={{
+            width: 48,
+            height: 48,
+            background: '#f8fafc',
+            borderRadius: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#94a3b8',
+            border: '1px solid #e2e8f0',
+            gap: 2
+          }}>
+            <PictureOutlined style={{ fontSize: 14 }} />
+            <span style={{ fontSize: 9 }}>暂无图片</span>
+          </div>
+        )
     },
     { title: '创建人', dataIndex: 'creator', key: 'creator', width: 110 },
     { title: '更新人', dataIndex: 'updater', key: 'updater', width: 110 },
@@ -788,8 +801,21 @@ export default function ObjectLibraryPage() {
                   </div>
                 </div>
               ) : (
-                <div style={{ width: 120, height: 120, background: '#f5f5f5', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #d9d9d9', color: '#bfbfbf', fontSize: 13 }}>
-                  暂无图片
+                <div style={{
+                  width: 120,
+                  height: 120,
+                  background: '#f8fafc',
+                  borderRadius: 12,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px dashed #cbd5e1',
+                  color: '#64748b',
+                  gap: 8
+                }}>
+                  <PictureOutlined style={{ fontSize: 28, color: '#94a3b8' }} />
+                  <span style={{ fontSize: 12, fontWeight: 500 }}>暂无物体图片</span>
                 </div>
               )}
             </div>
