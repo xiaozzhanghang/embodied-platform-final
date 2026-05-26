@@ -158,6 +158,7 @@ export default function ObjectLibraryPage() {
   const [objects, setObjects] = useState(mockObjects);
   const [categories, setCategories] = useState(categoryTree);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [brokenImages, setBrokenImages] = useState({});
 
   // Modals and editing state
   const [typeModalVisible, setTypeModalVisible] = useState(false);
@@ -291,13 +292,17 @@ export default function ObjectLibraryPage() {
       dataIndex: 'img',
       key: 'img',
       width: 90,
-      render: img => img
+      render: (img, record) => (img && !brokenImages[record.key])
         ? (
           <div 
             className="thumb-preview-container-table"
             onClick={() => setPreviewImage(img)}
           >
-            <img src={img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img 
+              src={img} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              onError={() => setBrokenImages(prev => ({ ...prev, [record.key]: true }))}
+            />
             <div className="thumb-preview-mask-table">
               <EyeOutlined style={{ fontSize: 16 }} />
             </div>
@@ -790,12 +795,16 @@ export default function ObjectLibraryPage() {
             </Descriptions>
             <div style={{ marginTop: 16 }}>
               <Text strong style={{ display: 'block', marginBottom: 8 }}>物体图片</Text>
-              {selectedObj.img ? (
+              {(selectedObj.img && !brokenImages[selectedObj.key]) ? (
                 <div 
                   className="thumb-preview-container-detail"
                   onClick={() => setPreviewImage(selectedObj.img)}
                 >
-                  <img src={selectedObj.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img 
+                    src={selectedObj.img} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    onError={() => setBrokenImages(prev => ({ ...prev, [selectedObj.key]: true }))}
+                  />
                   <div className="thumb-preview-mask-detail">
                     <EyeOutlined style={{ fontSize: 20 }} />
                   </div>
