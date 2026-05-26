@@ -315,12 +315,15 @@ export default function ObjectLibraryPage() {
             background: 'linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%)',
             borderRadius: 8,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             border: '1px solid #dbeafe',
-            boxShadow: '0 2px 4px rgba(79, 70, 229, 0.05)'
+            boxShadow: '0 2px 4px rgba(79, 70, 229, 0.05)',
+            gap: 2
           }}>
-            <PictureOutlined style={{ fontSize: 18, color: '#4f46e5', opacity: 0.8 }} />
+            <PictureOutlined style={{ fontSize: 13, color: '#4f46e5', opacity: 0.8 }} />
+            <span style={{ fontSize: 8, fontWeight: 500, color: '#4f46e5', opacity: 0.6, transform: 'scale(0.85)', display: 'inline-block', whiteSpace: 'nowrap' }}>暂无图片</span>
           </div>
         )
     },
