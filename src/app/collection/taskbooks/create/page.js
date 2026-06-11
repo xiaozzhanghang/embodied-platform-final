@@ -11,6 +11,7 @@ import {
   FilePdfOutlined, InfoCircleOutlined, BookOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import SpecMarker from '@/components/SpecMarker';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -66,15 +67,28 @@ export default function CreateTaskbookPage() {
               </Form.Item>
             </Card>
 
-            <Card title="详细指导说明 (Markdown)" bordered={false} style={{ marginBottom: 40, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-              <Form.Item name="content" noStyle>
-                <TextArea 
-                  rows={15} 
-                  placeholder="# 采集环境要求\n1. 室内光照需保持在 500lux 以上...\n\n# 动作标准\n- 机器人起始位置必须在物体正前方 30cm...\n- 抓取力度需保持在..." 
-                  style={{ fontFamily: 'monospace', fontSize: 13 }}
-                />
-              </Form.Item>
-            </Card>
+            <SpecMarker
+              id="taskbooks-content"
+              number={1}
+              title="步骤富文本与数据绑定"
+              rules={[
+                "编写 SOP 指引支持图文和标准 Markdown 语法，用于具体规范机器人动作流和采集员物理操作规程。",
+                "支持在文字中通过 `{{object_coord}}` / `{{grasp_torque}}` 等变量占位符，实现与具体项目、设备参数的动作属性联动插值绑定。",
+                "支持上传 PDF/Docx 标准参考作业程序。上传大文件将自动触发分片暂存与秒传逻辑，避免网络中断导致编辑进度丢失。"
+              ]}
+              remark="将图文作业规范与底层控制物理参数进行数字链路绑定，极大程度提高人机协同数采的精准度。"
+              style={{ width: '100%' }}
+            >
+              <Card title="详细指导说明 (Markdown)" bordered={false} style={{ marginBottom: 40, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                <Form.Item name="content" noStyle>
+                  <TextArea 
+                    rows={15} 
+                    placeholder="# 采集环境要求\n1. 室内光照需保持在 500lux 以上...\n\n# 动作标准\n- 机器人起始位置必须在物体正前方 30cm...\n- 抓取力度需保持在..." 
+                    style={{ fontFamily: 'monospace', fontSize: 13 }}
+                  />
+                </Form.Item>
+              </Card>
+            </SpecMarker>
           </Col>
 
           <Col span={8}>

@@ -126,6 +126,9 @@ export default function EpisodeVideoPage() {
   const [frame, setFrame] = useState(0);
   const canvasRef = useRef(null);
 
+  const [fileContent, setFileContent] = useState('');
+  const [loadingFileContent, setLoadingFileContent] = useState(false);
+
   const currentTreeData = getTreeData(episodeId);
 
   // Initialize selected node to left hand video on load
@@ -140,7 +143,9 @@ export default function EpisodeVideoPage() {
       }
       return null;
     };
-    setSelectedFileNode(findNode(currentTreeData));
+    const node = findNode(currentTreeData);
+    setSelectedFileNode(node);
+    setFileContent('');
   }, [episodeId]);
 
   // Canvas Render Loop for Video Preview Simulation (Scaled to 640x360)
@@ -379,11 +384,47 @@ export default function EpisodeVideoPage() {
                   };
                   const node = findNode(currentTreeData);
                   setSelectedFileNode(node);
+                  
                   if (node && node.isVideo) {
                     setIsPlaying(true);
                     setFrame(0);
                   } else {
                     setIsPlaying(false);
+                  }
+
+                  if (node && node.isText) {
+                    setLoadingFileContent(true);
+                    let url = '';
+                    if (key === 'check_log') url = '/api/luming?type=log&file=log';
+                    else if (key === 'report_txt') url = '/api/luming?type=log&file=txt';
+                    else if (key === 'report_json') url = '/api/luming?type=report';
+                    else if (key === 'left_timestamps') url = '/api/luming?type=log&file=left_timestamps';
+                    else if (key === 'right_timestamps') url = '/api/luming?type=log&file=right_timestamps';
+                    else if (key === 'left_queue') url = '/api/luming?type=log&file=left_queue';
+                    else if (key === 'right_queue') url = '/api/luming?type=log&file=right_queue';
+                    else if (key === 'transforms_lr') url = '/api/luming?type=log&file=transforms_lr';
+                    else if (key === 'transforms_rl') url = '/api/luming?type=log&file=transforms_rl';
+
+                    if (url) {
+                      fetch(url)
+                        .then(res => key === 'report_json' ? res.json() : res.text())
+                        .then(data => {
+                          const text = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+                          setFileContent(text);
+                        })
+                        .catch(err => {
+                          console.error(err);
+                          setFileContent('读取数据失败: ' + err.message);
+                        })
+                        .finally(() => {
+                          setLoadingFileContent(false);
+                        });
+                    } else {
+                      setFileContent(node.content || '');
+                      setLoadingFileContent(false);
+                    }
+                  } else {
+                    setFileContent('');
                   }
                 }
               }}
@@ -421,39 +462,21 @@ export default function EpisodeVideoPage() {
                   </Text>
                 </div>
                 
-                {/* Video Player canvas simulation */}
+                {/* Video Player */}
                 {selectedFileNode.isVideo && (
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ position: 'relative', width: 640, height: 360, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
-                      <canvas 
-                        ref={canvasRef} 
-                        width={640} 
-                        height={360} 
-                        style={{ display: 'block', background: '#0f172a' }}
+                    <div style={{ position: 'relative', width: 640, height: 360, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)', background: '#000' }}>
+                      <video 
+                        key={selectedFileKey} // reload on toggle
+                        src={selectedFileKey === 'left_video' 
+                          ? `/session_028/left_hand_250801DR48FP26003296/RGB_Images/video.mp4` 
+                          : `/session_028/right_hand_250801DR48FP26003349/RGB_Images/video.mp4`}
+                        controls
+                        autoPlay
+                        loop
+                        muted
+                        style={{ width: '100%', height: '100%', display: 'block', objectFit: 'contain' }}
                       />
-                    </div>
-                    
-                    {/* Video Controls bar */}
-                    <div style={{ width: 640, display: 'flex', alignItems: 'center', gap: 16, marginTop: 12 }}>
-                      <Button 
-                        type="text" 
-                        size="middle"
-                        icon={isPlaying ? <PauseOutlined style={{ color: '#fff', fontSize: 16 }} /> : <CaretRightOutlined style={{ color: '#fff', fontSize: 16 }} />} 
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        style={{ color: '#fff' }}
-                      />
-                      <div style={{ flex: 1, color: '#aaa', fontSize: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span>00:{(Math.floor(frame / 30) % 60).toString().padStart(2, '0')}</span>
-                        <Progress 
-                          percent={(frame / 1200) * 100} 
-                          showInfo={false} 
-                          strokeColor="#1677ff" 
-                          trailColor="rgba(255,255,255,0.08)"
-                          size="small"
-                          style={{ flex: 1, margin: 0 }}
-                        />
-                        <span>00:40</span>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -475,7 +498,7 @@ export default function EpisodeVideoPage() {
                       margin: 0,
                       lineHeight: '1.6'
                     }}>
-                      {selectedFileNode.content}
+                      {loadingFileContent ? '正在从采集卡目录读取实时数据...' : fileContent}
                     </pre>
                   </div>
                 )}

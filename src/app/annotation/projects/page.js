@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Select, Form, Card, Modal, Tabs, Statistic, Row, Col, Progress, Drawer, Descriptions, App, Badge, Typography, Tooltip } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, TeamOutlined, EditOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, UserOutlined, DownOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -101,6 +102,16 @@ export default function AnnotationProjectsPage() {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [assignAnnotator, setAssignAnnotator] = useState(null);
   const [assignReviewer, setAssignReviewer] = useState(null);
+  const [filters, setFilters] = useState({});
+
+  const filteredData = React.useMemo(() => {
+    return mockData.filter(item => {
+      const nameMatch = !filters.name || item.name.toLowerCase().includes(filters.name.toLowerCase()) || item.annoId.toLowerCase().includes(filters.name.toLowerCase());
+      const typeMatch = !filters.annoType || item.annoType === filters.annoType;
+      const statusMatch = !filters.status || item.status === filters.status;
+      return nameMatch && typeMatch && statusMatch;
+    });
+  }, [filters]);
 
   const openAssign = (record) => {
     setSelectedRecord(record);
@@ -252,28 +263,24 @@ export default function AnnotationProjectsPage() {
       {/* Search Bar */}
       <Card 
         style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-        styles={{ body: { padding: '24px 24px 0' } }}
+        styles={{ body: { padding: '24px 24px 16px' } }}
       >
-        <Form layout="horizontal" labelCol={{ flex: '80px' }}>
-          <Row gutter={24}>
-            <Col span={6}>
-              <Form.Item label="任务名称"><Input placeholder="请输入" allowClear /></Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item label="标注类型"><Select placeholder="全部" allowClear options={Object.keys(ANNO_TYPE_COLORS).map(v => ({ value: v }))} /></Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item label="标注状态"><Select placeholder="全部" allowClear options={Object.keys(statusConfig).map(v => ({ value: v }))} /></Form.Item>
-            </Col>
-            <Col span={6} style={{ textAlign: 'right' }}>
-              <Space>
-                <Button icon={<ReloadOutlined />}>重置</Button>
-                <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                <Button type="link" size="small" icon={<DownOutlined />}>展开</Button>
-              </Space>
-            </Col>
-          </Row>
-        </Form>
+        <QueryFilter
+          submitter={{
+            submitButtonProps: { icon: <SearchOutlined /> },
+            resetButtonProps: { icon: <ReloadOutlined /> },
+          }}
+          onFinish={async (values) => {
+            setFilters(values);
+          }}
+          onReset={() => {
+            setFilters({});
+          }}
+        >
+          <ProFormText name="name" label="任务名称" placeholder="请输入" />
+          <ProFormSelect name="annoType" label="标注类型" placeholder="全部" options={Object.keys(ANNO_TYPE_COLORS).map(v => ({ value: v, label: v }))} />
+          <ProFormSelect name="status" label="标注状态" placeholder="全部" options={Object.keys(statusConfig).map(v => ({ value: v, label: v }))} />
+        </QueryFilter>
       </Card>
 
       <Card>
@@ -283,7 +290,7 @@ export default function AnnotationProjectsPage() {
         </div>
         <Table
           columns={columns}
-          dataSource={mockData}
+          dataSource={filteredData}
           scroll={{ x: 1600 }}
           pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }}
           rowClassName={(r) => r.status === '待分配' ? 'row-pending' : ''}

@@ -81,10 +81,10 @@ export default function AnnotationAuditEpisodeListPage() {
           <div style={{ marginBottom: 16 }}>
             <Form layout="inline">
               <Row gutter={[12, 12]} style={{ width: '100%' }}>
-                <Col><Input placeholder="ID" style={{ width: 140 }} /></Col>
-                <Col><Select placeholder="标注状态" style={{ width: 140 }} /></Col>
-                <Col><Select placeholder="审核状态" style={{ width: 140 }} /></Col>
-                <Col><Select placeholder="是否报错" style={{ width: 140 }} /></Col>
+                <Col><Input placeholder="ID" style={{ width: 160 }} /></Col>
+                <Col><Select placeholder="标注状态" style={{ width: 160 }} /></Col>
+                <Col><Select placeholder="审核状态" style={{ width: 160 }} /></Col>
+                <Col><Select placeholder="是否报错" style={{ width: 160 }} /></Col>
                 <Col>
                   <Space>
                     <Button type="primary" icon={<SearchOutlined />}>查询</Button>

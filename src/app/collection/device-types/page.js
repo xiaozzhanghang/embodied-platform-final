@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   Table, Button, Input, Space, Tabs, Tag, Typography,
   Breadcrumb, Tooltip, App, Form, Row, Col, Select, Modal,
-  Card, Collapse, Divider, Radio, Popconfirm
+  Card, Collapse, Divider, Radio, Popconfirm, Alert
 } from 'antd';
 import {
   PlusOutlined,
@@ -25,6 +25,7 @@ import {
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/MainLayout';
+import SpecMarker from '@/components/SpecMarker';
 
 const { Title, Text, Link } = Typography;
 const { Panel } = Collapse;
@@ -39,6 +40,8 @@ const componentCategories = [
   { value: 'Gripper', label: '二指夹爪' },
   { value: 'DexterousHand', label: '多指灵巧手' },
   { value: 'Camera', label: '相机' },
+  { value: 'ControlUnit', label: '控制单元(XCU)' },
+  { value: 'ComputeUnit', label: '算力单元(HPU)' },
 ];
 
 const initialPartData = [
@@ -69,6 +72,85 @@ const initialPartData = [
     regTime: '2025-12-20',
     status: 'active',
   },
+  // ─── Galbot 1.16 XCU/HPU 部件 ────────────────────────────────────────
+  {
+    key: 'xcu-1',
+    name: 'XCU 底层控制箱',
+    enName: 'XCU_Controller_v116',
+    category: 'ControlUnit',
+    version: 'v1.16.0.2',
+    urdf: '',
+    ip: '192.168.1.66',
+    sshUser: 'root',
+    sshPass: '12345678',
+    firmwareVersion: 'Galbot-OS v1.16.0.2',
+    topics: [
+      { label: '固件状态', enName: 'firmware_status', path: '/xcu/firmware_status', tag: 'xcu_fw', note: 'Galbot-OS 固件心跳' },
+      { label: '底座关节', enName: 'base_joint_states', path: '/xcu/base_joint_states', tag: 'xcu_joint', note: 'IAP 底座关节反馈' }
+    ],
+    regTime: '2026-05-29',
+    status: 'active',
+  },
+  {
+    key: 'hpu-1',
+    name: 'HPU Orin 算力单元',
+    enName: 'HPU_Orin_v116',
+    category: 'ComputeUnit',
+    version: 'v1.16.0.2',
+    urdf: '',
+    ip: '192.168.1.88',
+    sshUser: 'galbot',
+    sshPass: 'gb@2023',
+    firmwareVersion: 'Orin-JetPack 5.1.2 + VLA-Capsule',
+    topics: [
+      { label: 'VLA推理', enName: 'vla_inference', path: '/hpu/vla_inference', tag: 'hpu_vla', note: 'VLA 大模型推理输出' },
+      { label: 'GPU状态', enName: 'gpu_status', path: '/hpu/gpu_status', tag: 'hpu_gpu', note: 'Orin GPU 利用率与温度' },
+      { label: '网桥通讯', enName: 'bridge_comm', path: '/hpu/bridge_comm', tag: 'hpu_brg', note: 'galbot_upper_bridge 进程状态' }
+    ],
+    regTime: '2026-05-29',
+    status: 'active',
+  },
+  {
+    key: 'arm-g2',
+    name: '双臂机械臂_G2',
+    enName: 'DualArm_G2_v116',
+    category: 'RobotArm',
+    version: 'G2.2',
+    urdf: 'galbot_g2_dual_arm.urdf',
+    topics: [
+      { label: '关节状态', enName: 'joint_states', path: '/arm_g2/joint_states', tag: 'arm_j', note: '双臂14轴关节角度与速度' },
+      { label: '力矩反馈', enName: 'torque_feedback', path: '/arm_g2/torque_feedback', tag: 'arm_t', note: '关节电流力矩' }
+    ],
+    regTime: '2026-05-29',
+    status: 'active',
+  },
+  {
+    key: 'hand-g116',
+    name: '灵巧手_G1.16',
+    enName: 'DexHand_G116',
+    category: 'DexterousHand',
+    version: 'G1.16',
+    urdf: 'galbot_dex_hand_g116.urdf',
+    topics: [
+      { label: '关节状态', enName: 'hand_joint_states', path: '/hand_g116/joint_states', tag: 'hand_j', note: '灵巧手多指关节' },
+      { label: '触觉传感', enName: 'tactile_sensing', path: '/hand_g116/tactile', tag: 'hand_tac', note: '指尖触觉阵列' }
+    ],
+    regTime: '2026-05-29',
+    status: 'active',
+  },
+  {
+    key: 'cam-head-g2',
+    name: '头部RGB相机_G2',
+    enName: 'HeadCam_RGB_G2',
+    category: 'Camera',
+    version: 'G2.2',
+    urdf: '',
+    topics: [
+      { label: '图像流', enName: 'image_raw', path: '/head_cam/image_raw', tag: 'cam_img', note: '1080p RGB 图像流 30fps' }
+    ],
+    regTime: '2026-05-29',
+    status: 'active',
+  },
 ];
 
 const initialRobotData = [
@@ -77,8 +159,17 @@ const initialRobotData = [
     name: 'galbot_2.2_RGB',
     enName: 'galbot_2.2',
     version: 'V2.2',
-    linkedParts: ['1', '2'], // Keys of partData
+    linkedParts: ['1', '2'],
     regTime: '2025-12-20',
+    status: 'active',
+  },
+  {
+    key: 'galbot-116',
+    name: 'galbot_1.16_G2',
+    enName: 'galbot_1.16_g2',
+    version: 'V1.16',
+    linkedParts: ['xcu-1', 'hpu-1', 'arm-g2', 'hand-g116', 'cam-head-g2'],
+    regTime: '2026-05-29',
     status: 'active',
   },
 ];
@@ -179,6 +270,17 @@ export default function DeviceTypesPage() {
   const { message } = App.useApp();
   const [expand, setExpand] = useState(false);
   const [activeTab, setActiveTab] = useState('robot');
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tab = searchParams.get('tab');
+      if (tab === 'part' || tab === 'robot') {
+        setActiveTab(tab);
+      }
+    }
+  }, []);
+
   const [robotData, setRobotData] = useState(initialRobotData);
   const [partData, setPartData] = useState(initialPartData);
   
@@ -244,75 +346,100 @@ export default function DeviceTypesPage() {
       </div>
 
       <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: '0 24px 24px' }}>
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={[
-            { key: 'robot', label: '设备类型' },
-            { key: 'part', label: '部件类型' },
+        <SpecMarker
+          id="devicetypes-tab"
+          number={1}
+          title="设备与部件类型切换"
+          rules={[
+            "支持在‘设备类型’与‘部件类型’两个视图面板之间来回切换。",
+            "切换页签时需清空当前表格选中的行 ID（selectedKeys），并触发对应的类型数据接口重新抓取。"
           ]}
-        />
-
-        <Card 
-          style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-          styles={{ body: { padding: '24px 24px 0' } }}
+          remark="由于设备模型和零配件（部件）模型字段差异较大，切换页签会影响后续新增弹窗的表单布局。"
+          style={{ width: '100%' }}
         >
-          <Form layout="horizontal" labelCol={{ flex: '100px' }}>
-            <Row gutter={24}>
-              <Col span={8}>
-                <Form.Item label={activeTab === 'robot' ? "名称" : "名称"}>
-                  <Input 
-                    placeholder={activeTab === 'robot' ? "请输入设备类型" : "请输入部件类型"} 
-                    prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={8}>
-                <Form.Item label="状态">
-                  <Select placeholder="请选择状态" allowClear options={[{label:'正常', value:'active'}, {label:'禁用', value:'inactive'}]} />
-                </Form.Item>
-              </Col>
-              {!expand && (
-                <Col span={8} style={{ textAlign: 'right' }}>
-                  <Space>
-                    <Button icon={<ReloadOutlined />}>重置</Button>
-                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                    <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                      展开 <DownOutlined />
-                    </a>
-                  </Space>
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            items={[
+              { key: 'robot', label: '设备类型' },
+              { key: 'part', label: '部件类型' },
+            ]}
+          />
+        </SpecMarker>
+
+        <SpecMarker
+          id="devicetypes-query"
+          number={2}
+          title="条件检索过滤"
+          rules={[
+            "支持对设备/部件类型的名称做模糊查询，状态进行下拉精确匹配，同时支持按创建人和更新时间过滤。",
+            "各个表单项需配置‘一键清空（allowClear）’属性，以便研发调试快速重置检索条件。",
+            "重置后表单数据恢复为初始空态，且自动加载无过滤条件的全局数据。"
+          ]}
+          remark="重置和提交操作建议增加 300ms 触发防抖限制，减缓大批量资产查询的后端并发压力。"
+          style={{ width: '100%' }}
+        >
+          <Card 
+            style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+            styles={{ body: { padding: '24px 24px 0' } }}
+          >
+            <Form layout="horizontal" labelCol={{ flex: '100px' }}>
+              <Row gutter={24}>
+                <Col span={8}>
+                  <Form.Item label={activeTab === 'robot' ? "名称" : "名称"}>
+                    <Input 
+                      placeholder={activeTab === 'robot' ? "请输入设备类型" : "请输入部件类型"} 
+                      prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                    />
+                  </Form.Item>
                 </Col>
-              )}
-            </Row>
-            {expand && (
-              <>
-                <Row gutter={24}>
-                  <Col span={8}>
-                    <Form.Item label="创建人">
-                      <Input placeholder="请输入创建人" allowClear />
-                    </Form.Item>
-                  </Col>
-                  <Col span={8}>
-                    <Form.Item label="更新时间">
-                      <Input placeholder="请选择时间范围" allowClear />
-                    </Form.Item>
-                  </Col>
-                </Row>
-                <Row gutter={24}>
-                  <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
+                <Col span={8}>
+                  <Form.Item label="状态">
+                    <Select placeholder="请选择状态" allowClear options={[{label:'正常', value:'active'}, {label:'禁用', value:'inactive'}]} />
+                  </Form.Item>
+                </Col>
+                {!expand && (
+                  <Col span={8} style={{ textAlign: 'right' }}>
                     <Space>
                       <Button icon={<ReloadOutlined />}>重置</Button>
                       <Button type="primary" icon={<SearchOutlined />}>查询</Button>
                       <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                        收起 <UpOutlined />
+                        展开 <DownOutlined />
                       </a>
                     </Space>
                   </Col>
-                </Row>
-              </>
-            )}
-          </Form>
-        </Card>
+                )}
+              </Row>
+              {expand && (
+                <>
+                  <Row gutter={24}>
+                    <Col span={8}>
+                      <Form.Item label="创建人">
+                        <Input placeholder="请输入创建人" allowClear />
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item label="更新时间">
+                        <Input placeholder="请选择时间范围" allowClear />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={24}>
+                    <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
+                      <Space>
+                        <Button icon={<ReloadOutlined />}>重置</Button>
+                        <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                        <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
+                          收起 <UpOutlined />
+                        </a>
+                      </Space>
+                    </Col>
+                  </Row>
+                </>
+              )}
+            </Form>
+          </Card>
+        </SpecMarker>
 
         <div style={{ 
           background: '#fff', 
@@ -329,13 +456,25 @@ export default function DeviceTypesPage() {
             <Text strong style={{ fontSize: 15 }}>设备及部件列表</Text>
           </Space>
           <Space size={12}>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={activeTab === 'robot' ? handleAddRobot : handleAddPart}
+            <SpecMarker
+              id="devicetypes-create"
+              number={3}
+              title="新建设备/部件类型"
+              rules={[
+                "根据当前 Tab 激活状态，点击按钮分别唤起‘新建设备’或‘新建部件’的大弹窗表单。",
+                "新增设备表单：名称、版本、设备类型为必填项。支持从部件库列表中勾选关联多个零部件，并设定对齐主参考点。",
+                "新增部件表单：名称、所属分类为必填项。支持动态追加多条 ROS Topic 信息（定义其名称、英文代码、Topic 路径和同步组标识）。"
+              ]}
+              remark="Topic 标识与路径将作为采集端硬件流过滤、时间戳同步的基础路由映射。"
             >
-              {activeTab === 'robot' ? '新建设备' : '新建部件'}
-            </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={activeTab === 'robot' ? handleAddRobot : handleAddPart}
+              >
+                {activeTab === 'robot' ? '新建设备' : '新建部件'}
+              </Button>
+            </SpecMarker>
             <Button danger icon={<DeleteOutlined />}>批量删除</Button>
             <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
               共 {(activeTab === 'robot' ? robotData : partData).length} 条记录
@@ -392,6 +531,57 @@ export default function DeviceTypesPage() {
               </Form.Item>
             </Col>
           </Row>
+
+          {/* XCU/HPU 专属字段 —— 当部件类型为控制单元或算力单元时动态显示 */}
+          <Form.Item shouldUpdate={(prev, cur) => prev.category !== cur.category} noStyle>
+            {({ getFieldValue }) => {
+              const cat = getFieldValue('category');
+              const isXcuHpu = cat === 'ControlUnit' || cat === 'ComputeUnit';
+              if (!isXcuHpu) return null;
+              return (
+                <>
+                  <Alert
+                    message={cat === 'ControlUnit' ? 'XCU 控制单元专属配置' : 'HPU 算力单元专属配置'}
+                    description={cat === 'ControlUnit' 
+                      ? '请填写 XCU 底层控制箱的网络接入信息、SSH 登录凭证和固件版本，用于后续固件刷写与远程部署。'
+                      : '请填写 HPU (Nvidia Orin) 上位机的网络接入信息、SSH 登录凭证和算力环境版本，用于 VLA 算法包部署与 Supervisor 服务管理。'}
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 16 }}
+                  />
+                  <Row gutter={24}>
+                    <Col span={8}>
+                      <Form.Item name="ip" label="内网 IP 地址" rules={[{ required: true, message: '请输入内网IP' }]}>
+                        <Input placeholder={cat === 'ControlUnit' ? '192.168.1.66' : '192.168.1.88'} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item name="sshUser" label="SSH 账号" rules={[{ required: true }]}>
+                        <Input placeholder={cat === 'ControlUnit' ? 'root' : 'galbot'} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item name="sshPass" label="SSH 密码" rules={[{ required: true }]}>
+                        <Input.Password placeholder="请输入密码" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                  <Row gutter={24}>
+                    <Col span={12}>
+                      <Form.Item name="firmwareVersion" label="固件/算力环境版本">
+                        <Input placeholder={cat === 'ControlUnit' ? 'Galbot-OS v1.16.x' : 'Orin-JetPack 5.x + VLA-Capsule'} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item name="sshPort" label="SSH 端口">
+                        <Input placeholder="22" defaultValue="22" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </>
+              );
+            }}
+          </Form.Item>
           
           <Form.Item label="Topic组件" style={{ marginBottom: 16 }}>
             <div style={{ border: '1px solid #f0f0f0', borderRadius: 4 }}>
@@ -449,10 +639,22 @@ export default function DeviceTypesPage() {
           </Form.Item>
 
           <Form.Item label="URDF">
-            <Space>
-              <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: '#1677ff' }}>上传URDF文件</Button>
-              <Text type="secondary" style={{ fontSize: 12 }}>可上传最多1份urdf格式的文件</Text>
-            </Space>
+            <SpecMarker
+              id="devicetypes-urdf"
+              number={4}
+              title="URDF 机器人三维描述文件"
+              rules={[
+                "设备或部件支持上传规范的机器人物理关节描述文件（URDF）。",
+                "限制文件后缀名为 `.urdf`，每个类型限制最大上传1份。",
+                "此文件作为前端 WebGL/Three.js 虚拟空间孪生及多臂运动轨迹复现的拓扑结构树基础。"
+              ]}
+              remark="前端会动态加载并解析 URDF XML 数据，渲染对应的骨骼关节并限制转动角度范围。"
+            >
+              <Space>
+                <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: '#1677ff' }}>上传URDF文件</Button>
+                <Text type="secondary" style={{ fontSize: 12 }}>可上传最多1份urdf格式的文件</Text>
+              </Space>
+            </SpecMarker>
           </Form.Item>
 
           <Form.Item label="设备图片">
@@ -573,6 +775,31 @@ export default function DeviceTypesPage() {
                     );
                 }}
             </Form.Item>
+          </Form.Item>
+
+          {/* 双端节点提示 */}
+          <Form.Item shouldUpdate={(prev, cur) => prev.linkedParts !== cur.linkedParts} noStyle>
+            {({ getFieldValue }) => {
+              const selected = getFieldValue('linkedParts') || [];
+              const hasXcu = selected.some(id => {
+                const p = partData.find(pd => pd.key === id);
+                return p?.category === 'ControlUnit';
+              });
+              const hasHpu = selected.some(id => {
+                const p = partData.find(pd => pd.key === id);
+                return p?.category === 'ComputeUnit';
+              });
+              if (!hasXcu || !hasHpu) return null;
+              return (
+                <Alert
+                  message="检测到双端节点架构 (XCU + HPU)"
+                  description="该设备类型包含 XCU 控制单元和 HPU 算力单元，创建设备实例后可在详情页使用「XCU/HPU 部署与更新」功能进行固件刷写、VLA 算法部署、Supervisor 进程管理等操作。"
+                  type="success"
+                  showIcon
+                  style={{ marginBottom: 16 }}
+                />
+              );
+            }}
           </Form.Item>
 
           <Form.Item name="description" label="传感器描述" rules={[{ required: true }]}>

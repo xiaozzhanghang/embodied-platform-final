@@ -4,6 +4,7 @@ import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, Select, App, Row, Col, Progress, Form, Modal } from 'antd';
 import { SearchOutlined, ReloadOutlined, DownloadOutlined, UserAddOutlined, EyeOutlined, FormOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title } = Typography;
@@ -70,7 +71,6 @@ function QaContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const batchFromUrl = searchParams.get('batch') || '';
-    const [expand, setExpand] = useState(false);
     const [filterBatch, setFilterBatch] = useState(batchFromUrl);
     
     // Batch Allocate Modal State
@@ -172,55 +172,29 @@ function QaContent() {
 
             <Card 
                 style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-                styles={{ body: { padding: '24px 24px 0' } }}
+                styles={{ body: { padding: '24px 24px 16px' } }}
             >
-                <Form layout="horizontal" labelCol={{ flex: '80px' }}>
-                    <Row gutter={24}>
-                        <Col span={6}>
-                            <Form.Item label="项目搜索"><Input placeholder="请输入项目" allowClear /></Form.Item>
-                        </Col>
-                        <Col span={6}>
-                            <Form.Item label="任务ID"><Input placeholder="请输入任务ID" allowClear /></Form.Item>
-                        </Col>
-                        <Col span={6}>
-                            <Form.Item label="质检批次"><Input placeholder="例如 BATCH-..." allowClear value={filterBatch} onChange={e => setFilterBatch(e.target.value)} /></Form.Item>
-                        </Col>
-                        {!expand && (
-                            <Col span={6} style={{ textAlign: 'right' }}>
-                                <Space>
-                                    <Button icon={<ReloadOutlined />}>重置</Button>
-                                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                                    <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                                        展开 <DownOutlined />
-                                    </a>
-                                </Space>
-                            </Col>
-                        )}
-                    </Row>
-                    {expand && (
-                        <>
-                            <Row gutter={24}>
-                                <Col span={6}>
-                                    <Form.Item label="采集员"><Input placeholder="姓名" allowClear /></Form.Item>
-                                </Col>
-                                <Col span={6}>
-                                    <Form.Item label="质检结论"><Select placeholder="全部" allowClear options={[{label:'通过', value:'pass'}, {label:'驳回', value:'reject'}]} /></Form.Item>
-                                </Col>
-                            </Row>
-                            <Row gutter={24}>
-                                <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
-                                    <Space>
-                                        <Button icon={<ReloadOutlined />}>重置</Button>
-                                        <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                                        <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                                            收起 <UpOutlined />
-                                        </a>
-                                    </Space>
-                                </Col>
-                            </Row>
-                        </>
-                    )}
-                </Form>
+                    <QueryFilter
+                        submitter={{
+                            submitButtonProps: { icon: <SearchOutlined /> },
+                            resetButtonProps: { icon: <ReloadOutlined /> },
+                        }}
+                        onFinish={async (values) => {
+                            setFilterBatch(values.qaBatchId || '');
+                        }}
+                        onReset={() => {
+                            setFilterBatch('');
+                        }}
+                        initialValues={{
+                            qaBatchId: filterBatch,
+                        }}
+                    >
+                        <ProFormText name="project" label="项目搜索" placeholder="请输入项目" />
+                        <ProFormText name="taskId" label="任务ID" placeholder="请输入任务ID" />
+                        <ProFormText name="qaBatchId" label="质检批次" placeholder="例如 BATCH-..." />
+                        <ProFormText name="collector" label="采集员" placeholder="姓名" />
+                        <ProFormSelect name="conclusion" label="质检结论" placeholder="全部" options={[{label:'通过', value:'pass'}, {label:'驳回', value:'reject'}]} />
+                    </QueryFilter>
             </Card>
 
             <Card styles={{ body: { padding: 0 } }}>

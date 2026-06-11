@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Typography, Breadcrumb, Button, Input, App, Tooltip, Modal, Form, Select, InputNumber, Radio, Row, Col, Space } from 'antd';
 import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import SpecMarker from '@/components/SpecMarker';
 
 const { Text, Title } = Typography;
 
@@ -183,14 +184,26 @@ export default function ObjectLabelsPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text strong style={{ fontSize: 14 }}>标签分类</Text>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Button
-                type="text"
-                icon={<PlusOutlined />}
-                size="small"
-                onClick={() => { setEditingCatKey(null); createCatForm.resetFields(); setCreateCatOpen(true); }}
-                style={{ color: '#1890ff', padding: '0 4px' }}
-                title="创建分类"
-              />
+              <SpecMarker
+                id="objlabels-cat-create"
+                number={1}
+                title="新增标签分类"
+                rules={[
+                  "点击 '+' 按钮弹出创建标签分类弹窗。",
+                  "表单字段包含：所属分组、分类名称、英文名称、唯一标识、可添加多级、排序值、描述。",
+                  "所属分组、分类名称、英文名称、唯一标识均为必填项。"
+                ]}
+                remark="分类所属分组目前分为：物体信息、视觉感知特性、物理几何特性和动态行为特性四大板块。"
+              >
+                <Button
+                  type="text"
+                  icon={<PlusOutlined />}
+                  size="small"
+                  onClick={() => { setEditingCatKey(null); createCatForm.resetFields(); setCreateCatOpen(true); }}
+                  style={{ color: '#1890ff', padding: '0 4px' }}
+                  title="创建分类"
+                />
+              </SpecMarker>
               <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
             </div>
           </div>
@@ -275,7 +288,19 @@ export default function ObjectLabelsPage() {
                 <span style={{ fontWeight: 500 }}>{tag.name}</span>
                 {tag.desc && <span style={{ color: '#ff7875', fontSize: 11 }}>({tag.desc})</span>}
                 {tag.count > 0 && (
-                  <span style={{ background: '#ff4d4f', color: '#fff', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, flexShrink: 0 }}>{tag.count}</span>
+                  <SpecMarker
+                    id="objlabels-tag-count"
+                    number={4}
+                    title="标签引用数统计"
+                    rules={[
+                      "角标数字表示当前物体库中引用并打上了此标签的物理物体记录总数。",
+                      "例如：已在‘物体库’给 45 个物体打上了‘刚体’属性，该数字显示 45。",
+                      "点击此标签会展示或过滤出关联引用的具体物体。"
+                    ]}
+                    remark="系统在进行物体重构与动作识别数据清洗时，该参数作为过滤主索引。"
+                  >
+                    <span style={{ background: '#ff4d4f', color: '#fff', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, flexShrink: 0 }}>{tag.count}</span>
+                  </SpecMarker>
                 )}
                 <CloseOutlined onClick={() => removeTag(tag.id)} style={{ fontSize: 10, color: '#ff7875', cursor: 'pointer', marginLeft: 2 }} />
               </div>
@@ -284,7 +309,19 @@ export default function ObjectLabelsPage() {
             {adding ? (
               <Input autoFocus size="small" value={newTagInput} onChange={e => setNewTagInput(e.target.value)} onPressEnter={addTag} onBlur={addTag} style={{ width: 140, borderRadius: 20 }} placeholder="输入标签名称" />
             ) : (
-              <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={() => setAdding(true)} style={{ borderRadius: 20, color: '#8c8c8c', borderColor: '#d9d9d9' }}>添加标签</Button>
+              <SpecMarker
+                id="objlabels-tag-create"
+                number={3}
+                title="添加标签"
+                rules={[
+                  "点击‘添加标签’后输入标签名称。",
+                  "支持按回车键或输入框失去焦点时保存提交。",
+                  "新标签会计入当前分类下的 tagsMap 并重新加载渲染组件。"
+                ]}
+                remark="自动校验空输入，标签名支持中英文及英文下划线组合。"
+              >
+                <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={() => setAdding(true)} style={{ borderRadius: 20, color: '#8c8c8c', borderColor: '#d9d9d9' }}>添加标签</Button>
+              </SpecMarker>
             )}
           </div>
         </div>
@@ -328,7 +365,19 @@ export default function ObjectLabelsPage() {
             </Col>
           </Row>
           <Form.Item label="唯一标识" name="identifier" required rules={[{ required: true, message: '请输入唯一标识' }]}>
-            <Input placeholder="请输入唯一标识，如 object_tag" disabled={!!editingCatKey} />
+            <SpecMarker
+              id="objlabels-cat-identifier"
+              number={2}
+              title="唯一标识校验"
+              rules={[
+                "唯一标识在数据库中用于关联具体的物理资产（如物体的长宽高、颜色、反光度）。",
+                "标识必须为小写字母及下划线，不可重名。",
+                "处于编辑状态时该字段只读，禁止任何物理编辑修改。"
+              ]}
+              remark="关联底层三维空间物体感知算法的特征向量归一化接口字段。"
+            >
+              <Input placeholder="请输入唯一标识，如 object_tag" disabled={!!editingCatKey} />
+            </SpecMarker>
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>

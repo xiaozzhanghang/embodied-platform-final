@@ -11,6 +11,7 @@ import {
   SaveOutlined, RobotOutlined, DragOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import SpecMarker from '@/components/SpecMarker';
 
 import { Suspense } from 'react';
 
@@ -174,30 +175,43 @@ function TemplateForm() {
           </Row>
         </Card>
 
-        <Card 
-          title={
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-              <span>动作步骤编排 (SOP Steps)</span>
-              <Button type="primary" ghost icon={<PlusOutlined />} onClick={addStep}>添加步骤</Button>
-            </div>
-          } 
-          bordered={false} 
-          style={{ marginBottom: 40, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
+        <SpecMarker
+          id="templates-sequence"
+          number={1}
+          title="动作编排链条与原子规则绑定"
+          rules={[
+            "支持可视化新增、删除和调整动作步骤（SOP Steps），每个步骤明确指定“末端动作类型”、“原子技能”、“操作对象”和“操作目标”。",
+            "逻辑合理性约束：禁止存在无序、循环或矛盾的技能连接关系（如未执行“接近”或“识别”动作而直接添加“抓取”步骤）。保存时进行向导合法性校验。",
+            "在保存模版时，系统依据选定的原子技能和对象类型，自动从规则库中选出并关联对应的质检自检物理阈值校验规则（例如：最大夹爪开合力、时变误差界限等）。"
+          ]}
+          remark="在前置阶段校验动作步骤设计的合理性，防止不规范的流程定义下发污染数采及质检池数据。"
+          style={{ width: '100%' }}
         >
-          <Table 
-            dataSource={steps} 
-            columns={columns} 
-            pagination={false} 
-            size="middle" 
-            bordered 
-            style={{ marginBottom: 16 }}
-          />
-          <div style={{ background: '#fafafa', padding: 16, borderRadius: 4, border: '1px dashed #d9d9d9' }}>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              提示：编排后的动作步骤将在“新建任务”阶段作为预设值自动填充，采集员在工作台中将看到这些指引。
-            </Text>
-          </div>
-        </Card>
+          <Card 
+            title={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <span>动作步骤编排 (SOP Steps)</span>
+                <Button type="primary" ghost icon={<PlusOutlined />} onClick={addStep}>添加步骤</Button>
+              </div>
+            } 
+            bordered={false} 
+            style={{ marginBottom: 40, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
+          >
+            <Table 
+              dataSource={steps} 
+              columns={columns} 
+              pagination={false} 
+              size="middle" 
+              bordered 
+              style={{ marginBottom: 16 }}
+            />
+            <div style={{ background: '#fafafa', padding: 16, borderRadius: 4, border: '1px dashed #d9d9d9' }}>
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                提示：编排后的动作步骤将在“新建任务”阶段作为预设值自动填充，采集员在工作台中将看到这些指引。
+              </Text>
+            </div>
+          </Card>
+        </SpecMarker>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, paddingBottom: 60 }}>
           <Button style={{ width: 120 }} onClick={() => router.back()}>取消</Button>

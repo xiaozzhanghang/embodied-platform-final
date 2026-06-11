@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Modal, Row, Col, Descriptions, DatePicker, App } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, UploadOutlined, ThunderboltOutlined, EyeOutlined, DownOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import SpecMarker from '@/components/SpecMarker';
 
 const { Title } = Typography;
 
@@ -34,7 +36,19 @@ export default function RawDataPage() {
             title: '操作', key: 'action', width: 200, fixed: 'right',
             render: (_, record) => (
                 <Space size="small">
-                    <Button type="link" size="small" icon={<ThunderboltOutlined />} onClick={() => { setSelectedData(record); setParseOpen(true); }}>数据解析</Button>
+                    <SpecMarker
+                      id="raw-parsing"
+                      number={1}
+                      title="Episode 二进制数据包解析与缓存"
+                      rules={[
+                        "支持解析以 `.zip` 或 `.tar.gz` 格式打包的 ROSBag (MCAP) 或 HDF5 格式的原始动作时序数据序列。",
+                        "解析器会首先自动定位并提取包内的 `metadata.json`，检验包含的机器人信息、传感器对齐率等元参数，若结构不合法将中止并记录错误日志。",
+                        "对下载与解析动作执行权限鉴权校验（基于 JWT Token 与资源 ACL 控制），且针对大数采包生成带有时限签名（Expires signature）的安全下载 URL 保护版权。"
+                      ]}
+                      remark="该模块将数采员上传的混合二进制大文件转换为结构化的视频帧与点云时序，是训练集生成的初始清洗环境。"
+                    >
+                      <Button type="link" size="small" icon={<ThunderboltOutlined />} onClick={() => { setSelectedData(record); setParseOpen(true); }}>数据解析</Button>
+                    </SpecMarker>
                     <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedRaw(record); setDetailOpen(true); }}>查看详情</Button>
                 </Space>
             ),
@@ -46,28 +60,18 @@ export default function RawDataPage() {
                 <div className="page-header"><h3 className="page-header-title">原始数据</h3></div>
                 <Card 
                     style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-                    styles={{ body: { padding: '24px 24px 0' } }}
+                    styles={{ body: { padding: '24px 24px 16px' } }}
                 >
-                    <Form layout="horizontal" labelCol={{ flex: '80px' }}>
-                        <Row gutter={24}>
-                            <Col span={6}>
-                                <Form.Item label="所属项目"><Select placeholder="全部" allowClear options={[{ value: '具身抓取项目A' }, { value: '具身搬运项目B' }, { value: '具身分拣项目C' }]} /></Form.Item>
-                            </Col>
-                            <Col span={6}>
-                                <Form.Item label="数据名称"><Input placeholder="请输入" allowClear /></Form.Item>
-                            </Col>
-                            <Col span={6}>
-                                <Form.Item label="创建时间"><DatePicker.RangePicker style={{ width: '100%' }} /></Form.Item>
-                            </Col>
-                            <Col span={6} style={{ textAlign: 'right' }}>
-                                <Space>
-                                    <Button icon={<ReloadOutlined />}>重置</Button>
-                                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                                    <Button type="link" size="small" icon={<DownOutlined />}>展开</Button>
-                                </Space>
-                            </Col>
-                        </Row>
-                    </Form>
+                    <QueryFilter
+                        submitter={{
+                            submitButtonProps: { icon: <SearchOutlined /> },
+                            resetButtonProps: { icon: <ReloadOutlined /> },
+                        }}
+                    >
+                        <ProFormSelect name="project" label="所属项目" placeholder="全部" options={[{ value: '具身抓取项目A' }, { value: '具身搬运项目B' }, { value: '具身分拣项目C' }]} />
+                        <ProFormText name="name" label="数据名称" placeholder="请输入" />
+                        <ProFormDateRangePicker name="dateRange" label="创建时间" />
+                    </QueryFilter>
                 </Card>
 
                 <Card>

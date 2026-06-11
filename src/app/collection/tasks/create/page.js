@@ -35,6 +35,9 @@ const allDeviceInstances = [
   { value: 'R002GB-RGBD-101', label: 'R002GB-RGBD-101 (Galbot RGBD - 在线)', parent: 'galbot_2.2_RGBD' },
   { value: 'DEV-FR-301', label: 'FRANKA-FR3-1号 (Franka Std - 在线)', parent: 'franka_std' },
   { value: 'DEV-UR-501', label: 'UR5e-1号 (UR5e - 在线)', parent: 'ur5e_std' },
+  { value: 'DEV-GB116-105', label: 'Galbot-G2-Node-105 (Galbot 1.16 XCU/HPU - 在线)', parent: 'galbot_1.16_G2' },
+  { value: 'DEV-GB116-106', label: 'Galbot-G2-Node-106 (Galbot 1.16 XCU/HPU - 离线)', parent: 'galbot_1.16_G2' },
+  { value: 'DEV-LUMOS-001', label: 'Lumos-FastUMI-Go-001 (Lumos背包 - 在线)', parent: 'lumos_fastumi' },
 ];
 
 // Inner component to access search params safely in Suspense
@@ -117,6 +120,10 @@ function CreateTaskContent() {
     deviceType: [
       { value: 'galbot_2.2_RGB', label: 'galbot_2.2_RGB' },
       { value: 'galbot_2.2_RGBD', label: 'galbot_2.2_RGBD(深度)' },
+      { value: 'galbot_1.16_G2', label: 'galbot_1.16_G2 (XCU/HPU双端)' },
+      { value: 'lumos_fastumi', label: 'lumos_fastumi (离线背包)' },
+      { value: 'franka_std', label: 'franka_std (FR3标准型)' },
+      { value: 'ur5e_std', label: 'ur5e_std (UR5e协作臂)' },
     ],
     teleType: [
       { value: 'VRController', label: 'VRController(VR手柄设备)' },
@@ -235,8 +242,31 @@ function CreateTaskContent() {
       icon: <SkinOutlined />,
       bgColor: '#f0f5ff',
       iconColor: '#2f54eb'
+    },
+    {
+      id: 'galbot116_lab',
+      name: '精细整理作业',
+      desc: '使用Galbot 1.16双端控制台进行精细桌面/实验室整理任务数据采集',
+      type: '双端数采',
+      device: 'galbot_1.16_G2',
+      tele: 'DualHandControl',
+      mode: 'DualArm',
+      icon: <ExperimentOutlined />,
+      bgColor: '#f6ffed',
+      iconColor: '#52c41a'
+    },
+    {
+      id: 'lumos_tabletop',
+      name: '离线台面采集',
+      desc: '使用Lumos FastUMI Go背包终端进行离线台面数据采集',
+      type: '离线数采',
+      device: 'lumos_fastumi',
+      tele: 'DualHandControl',
+      mode: 'DualHand',
+      icon: <RestOutlined />,
+      bgColor: '#fff7e6',
+      iconColor: '#fa8c16'
     }
-    // ... other templates omitted for brevity, but logically present
   ];
 
   // Logic for Copy/Edit mode initialization
@@ -273,13 +303,48 @@ function CreateTaskContent() {
   }, [mode, taskId]);
 
   const handleDeviceTypeChange = (value, shouldResetInstance = true) => {
-    const parts = [
+    // Device-type-specific part configurations
+    const partsMap = {
+      'galbot_1.16_G2': [
+        { key: 'xcu', name: 'XCU 底座控制卡', type: 'ControlUnit-XCU (192.168.1.66)' },
+        { key: 'hpu', name: 'HPU Orin 算力板', type: 'ComputeUnit-HPU (192.168.1.88)' },
+        { key: 'cam_hl', name: '头部左相机 (GMSL2)', type: 'Camera-HEAD_L (1080p)' },
+        { key: 'cam_hr', name: '头部右相机 (GMSL2)', type: 'Camera-HEAD_R (1080p)' },
+        { key: 'cam_wl', name: '腕部左相机 (GMSL2)', type: 'Camera-HAND_L (720p)' },
+        { key: 'cam_wr', name: '腕部右相机 (GMSL2)', type: 'Camera-HAND_R (720p)' },
+        { key: 'arm_l', name: '左臂 (7-DOF)', type: 'Actuator-LeftArm' },
+        { key: 'arm_r', name: '右臂 (7-DOF)', type: 'Actuator-RightArm' },
+      ],
+      'lumos_fastumi': [
+        { key: 'backpack', name: '数采背包主机', type: 'ComputeUnit-Backpack (192.168.54.110)' },
+        { key: 'cam_wl', name: '腕部左相机', type: 'Camera-Wrist_L (RGB)' },
+        { key: 'cam_wr', name: '腕部右相机', type: 'Camera-Wrist_R (RGB)' },
+        { key: 'cam_head', name: '头部相机', type: 'Camera-Head_Eye (RGB)' },
+        { key: 'gripper_l', name: '左侧夹爪', type: 'Gripper-Left (USB)' },
+        { key: 'gripper_r', name: '右侧夹爪', type: 'Gripper-Right (USB)' },
+      ],
+      'franka_std': [
+        { key: 'ctrl', name: 'Franka 控制器', type: 'Controller-FCI (172.16.0.2)' },
+        { key: 'cam_front', name: '前置相机', type: 'Camera-Front (RGB)' },
+        { key: 'cam_wrist', name: '腕部相机', type: 'Camera-Wrist (RGB)' },
+        { key: 'cam_side', name: '侧面相机', type: 'Camera-Side (RGB)' },
+      ],
+      'ur5e_std': [
+        { key: 'ctrl', name: 'UR 控制器', type: 'Controller-URScript (192.168.1.10)' },
+        { key: 'cam_front', name: '前置相机', type: 'Camera-Front (RGB)' },
+        { key: 'cam_wrist', name: '腕部相机', type: 'Camera-Wrist (RGB)' },
+      ],
+    };
+
+    const defaultParts = [
       { key: 'p1', name: '头部左相机', type: 'Body-HeadLeftCamera' },
       { key: 'p2', name: '头部右相机', type: 'Body-HeadRightCamera' },
       { key: 'p3', name: '手部左相机_RGB', type: 'Body-HandLeftCamera' },
     ];
+
+    const parts = partsMap[value] || defaultParts;
     setAvailableParts(parts);
-    setSelectedPartKeys(['p1', 'p2', 'p3']);
+    setSelectedPartKeys(parts.map(p => p.key));
     
     const filtered = allDeviceInstances.filter(inst => inst.parent === value);
     setFilteredDeviceInstances(filtered.length > 0 ? filtered : allDeviceInstances);

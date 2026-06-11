@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { Table, Button, Input, Select, Space, Tag, Typography, Breadcrumb, App, DatePicker, Image, Empty, Modal, Form, Upload, Tooltip, Row, Col, Card, Descriptions } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, FolderOutlined, FolderOpenOutlined, QuestionCircleOutlined, DownOutlined, UpOutlined, EyeOutlined, PictureOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import SpecMarker from '@/components/SpecMarker';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -149,7 +151,6 @@ function CategoryNode({ item, selected, onSelect, depth = 0 }) {
 // ─── Main Page ──────────────────────────────────────────────────────
 export default function ObjectLibraryPage() {
   const { message } = App.useApp();
-  const [expand, setExpand] = useState(false);
   const [selectedCat, setSelectedCat] = useState('all');
   const [nameFilter, setNameFilter] = useState('');
   const [materialFilter, setMaterialFilter] = useState('');
@@ -288,7 +289,21 @@ export default function ObjectLibraryPage() {
         : <Text type="secondary" style={{ fontSize: 11 }}>无特性</Text>
     },
     {
-      title: '物体图片',
+      title: (
+        <SpecMarker
+          id="objects-upload"
+          number={4}
+          title="物体图片上传与校验"
+          rules={[
+            "图片上传格式仅限 JPG, JPEG, PNG, GIF。",
+            "图片大小限制在 2MB 以内，超出则抛出错误并拦截上传。",
+            "支持在弹窗内上传，并可在保存前点击‘删除图片’进行清除操作。"
+          ]}
+          remark="在新增/编辑表单中使用 Upload 组件上传，本地预览通过 Base64 获取，实际提交时同步发送至服务端 API。"
+        >
+          物体图片
+        </SpecMarker>
+      ),
       dataIndex: 'img',
       key: 'img',
       width: 90,
@@ -492,14 +507,26 @@ export default function ObjectLibraryPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text strong style={{ fontSize: 13 }}>物体类型</Text>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Button
-                type="text"
-                icon={<PlusOutlined />}
-                size="small"
-                onClick={() => setTypeModalVisible(true)}
-                style={{ color: '#1890ff', padding: '0 4px' }}
-                title="添加物体类型"
-              />
+              <SpecMarker
+                id="objects-type-create"
+                number={1}
+                title="物体类型维护"
+                rules={[
+                  "支持新增物体类型分类（名称中文最大 50 字符，可设置英文标识）。",
+                  "点击 '+' 按钮弹出弹窗，校验输入名称是否为空。",
+                  "提交后局部更新左侧物体分类树目录。"
+                ]}
+                remark="对应左侧物体类型管理。输入限制 50 字符，支持中英文过滤。"
+              >
+                <Button
+                  type="text"
+                  icon={<PlusOutlined />}
+                  size="small"
+                  onClick={() => setTypeModalVisible(true)}
+                  style={{ color: '#1890ff', padding: '0 4px' }}
+                  title="添加物体类型"
+                />
+              </SpecMarker>
               <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
             </div>
           </div>
@@ -532,81 +559,57 @@ export default function ObjectLibraryPage() {
             </div>
           )}
 
-          <Card 
-            style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-            styles={{ body: { padding: '24px 24px 0' } }}
+          <SpecMarker
+            id="objects-query"
+            number={2}
+            title="场景与多属性条件检索"
+            rules={[
+              "支持按场景类型、名称/英文名称模糊匹配、特性/材质特性、录入时间段以及物体ID等多重条件联合检索。",
+              "每个表单输入项均包含占位符，且需支持‘可清空（allowClear）’属性。",
+              "重置操作需同时清空左侧选中的树目录和右侧所有过滤条件，并重载全部数据。"
+            ]}
+            remark="对接表格任务的‘查询筛选’节点，保证大吞吐量异构数据分类快速过滤。"
+            style={{ width: '100%' }}
           >
-            <Form layout="horizontal" labelCol={{ flex: '80px' }}>
-              <Row gutter={24}>
-                <Col span={6}>
-                  <Form.Item label="场景选择">
-                    <Select
-                      placeholder="请选择场景" allowClear
+            <Card 
+              style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+              styles={{ body: { padding: '24px 24px 16px' } }}
+            >
+              <QueryFilter
+                  submitter={{
+                      submitButtonProps: { icon: <SearchOutlined /> },
+                      resetButtonProps: { icon: <ReloadOutlined /> },
+                  }}
+                  onFinish={async (values) => {
+                      setNameFilter(values.name || '');
+                      setMaterialFilter(values.material || '');
+                  }}
+                  onReset={() => {
+                      setNameFilter('');
+                      setMaterialFilter('');
+                  }}
+                  initialValues={{
+                      name: nameFilter,
+                      material: materialFilter,
+                  }}
+              >
+                  <ProFormSelect
+                      name="scene"
+                      label="场景选择"
+                      placeholder="请选择场景"
                       options={[
-                        { label: 'Industry(工业)', value: 'Industry(工业)' },
-                        { label: 'Kitchen(厨房)', value: 'Kitchen(厨房)' },
-                        { label: 'Supermarket(超市)', value: 'Supermarket(超市)' },
+                          { label: 'Industry(工业)', value: 'Industry(工业)' },
+                          { label: 'Kitchen(厨房)', value: 'Kitchen(厨房)' },
+                          { label: 'Supermarket(超市)', value: 'Supermarket(超市)' },
                       ]}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={6}>
-                  <Form.Item label="名称搜索">
-                    <Input
-                      placeholder="名称/英文名称" allowClear
-                      value={nameFilter} onChange={e => setNameFilter(e.target.value)}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={6}>
-                  <Form.Item label="特性/材质">
-                    <Input
-                      placeholder="请输入特性" allowClear
-                      value={materialFilter} onChange={e => setMaterialFilter(e.target.value)}
-                    />
-                  </Form.Item>
-                </Col>
-                {!expand && (
-                  <Col span={6} style={{ textAlign: 'right' }}>
-                    <Space>
-                      <Button icon={<ReloadOutlined />} onClick={() => { setNameFilter(''); setMaterialFilter(''); }}>重置</Button>
-                      <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                      <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                        展开 <DownOutlined />
-                      </a>
-                    </Space>
-                  </Col>
-                )}
-              </Row>
-              {expand && (
-                <>
-                  <Row gutter={24}>
-                    <Col span={6}>
-                      <Form.Item label="录入时间">
-                        <RangePicker style={{ width: '100%' }} />
-                      </Form.Item>
-                    </Col>
-                    <Col span={6}>
-                      <Form.Item label="物体ID">
-                        <Input placeholder="请输入ID" allowClear />
-                      </Form.Item>
-                    </Col>
-                  </Row>
-                  <Row gutter={24}>
-                    <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
-                      <Space>
-                        <Button icon={<ReloadOutlined />} onClick={() => { setNameFilter(''); setMaterialFilter(''); }}>重置</Button>
-                        <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                        <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                          收起 <UpOutlined />
-                        </a>
-                      </Space>
-                    </Col>
-                  </Row>
-                </>
-              )}
-            </Form>
-          </Card>
+                  />
+                  <ProFormText name="name" label="名称搜索" placeholder="名称/英文名称" />
+                  <ProFormText name="material" label="特性/材质" placeholder="请输入特性" />
+                  <ProFormDateRangePicker name="date" label="录入时间" />
+                  <ProFormText name="id" label="物体ID" placeholder="请输入ID" />
+              </QueryFilter>
+            </Card>
+          </SpecMarker>
 
           {/* Toolbar & Table */}
           <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -616,37 +619,63 @@ export default function ObjectLibraryPage() {
                 <Text strong style={{ fontSize: 15 }}>物体列表</Text>
               </Space>
               <Space size={12}>
-                <Button 
-                  type="primary" 
-                  icon={<PlusOutlined />} 
-                  onClick={() => {
-                    setEditingObj(null);
-                    setImageUrl(null);
-                    objectForm.resetFields();
-                    setObjectModalVisible(true);
-                  }}
+                <SpecMarker
+                  id="objects-create"
+                  number={3}
+                  title="新增/编辑物体校验"
+                  rules={[
+                    "物体中文名称、物体类型、所属场景为必填字段。",
+                    "新增或编辑保存时，唯一英文名称在系统全局不能重复，若重复需要抛出错误校验提示。",
+                    "编辑模式下需自动回显所有的描述属性和已上传的封面图片。"
+                  ]}
+                  remark="保存后列表应无刷新局部更新数据，重新加载分类缓存。"
                 >
-                  新增物体
-                </Button>
-                <Button 
-                  danger 
-                  icon={<DeleteOutlined />}
-                  disabled={selectedRowKeys.length === 0}
-                  onClick={() => Modal.confirm({
-                    title: '确定批量删除？',
-                    content: `您已选中了 ${selectedRowKeys.length} 个物体，此操作不可恢复，是否继续？`,
-                    okText: '确定',
-                    okType: 'danger',
-                    cancelText: '取消',
-                    onOk: () => {
-                      setObjects(prev => prev.filter(o => !selectedRowKeys.includes(o.key)));
-                      setSelectedRowKeys([]);
-                      message.success('批量删除成功');
-                    }
-                  })}
+                  <Button 
+                    type="primary" 
+                    icon={<PlusOutlined />} 
+                    onClick={() => {
+                      setEditingObj(null);
+                      setImageUrl(null);
+                      objectForm.resetFields();
+                      setObjectModalVisible(true);
+                    }}
+                  >
+                    新增物体
+                  </Button>
+                </SpecMarker>
+
+                <SpecMarker
+                  id="objects-delete"
+                  number={5}
+                  title="批量删除与引用防错"
+                  rules={[
+                    "批量删除按钮仅在表格有选中行（selectedRowKeys.length > 0）时激活。",
+                    "点击删除触发二次确认模态窗，内容应包含具体选中的项个数。",
+                    "物理限制：如该物体正在被任何‘数据采集任务书’或‘未归档的 Episode 轨迹包’所引用，应强拦截并报错，禁止删除。"
+                  ]}
+                  remark="删除操作需保留确认弹窗。拦截检测通常通过后端 API 切面完成。"
                 >
-                  批量删除
-                </Button>
+                  <Button 
+                    danger 
+                    icon={<DeleteOutlined />}
+                    disabled={selectedRowKeys.length === 0}
+                    onClick={() => Modal.confirm({
+                      title: '确定批量删除？',
+                      content: `您已选中了 ${selectedRowKeys.length} 个物体，此操作不可恢复，是否继续？`,
+                      okText: '确定',
+                      okType: 'danger',
+                      cancelText: '取消',
+                      onOk: () => {
+                        setObjects(prev => prev.filter(o => !selectedRowKeys.includes(o.key)));
+                        setSelectedRowKeys([]);
+                        message.success('批量删除成功');
+                      }
+                    })}
+                  >
+                    批量删除
+                  </Button>
+                </SpecMarker>
+                
                 <Button icon={<ReloadOutlined />} onClick={() => setObjects(mockObjects)}>重置列表数据</Button>
               </Space>
             </div>

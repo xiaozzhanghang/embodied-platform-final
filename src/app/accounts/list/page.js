@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Select, Popconfirm, App } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, LockOutlined, KeyOutlined, MinusCircleFilled, PlusCircleFilled } from '@ant-design/icons';
+import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import SpecMarker from '@/components/SpecMarker';
 
 const { Title } = Typography;
 
@@ -53,16 +55,32 @@ export default function AccountListPage() {
             <MainLayout>
                 <div className="page-header"><h3 className="page-header-title">用户管理</h3></div>
                 <Card className="search-form" style={{ marginBottom: 16 }}>
-                    <Form layout="inline">
-                        <Form.Item label="用户名"><Input placeholder="请输入用户名" allowClear style={{ width: 200 }} /></Form.Item>
-                        <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
-                    </Form>
+                    <QueryFilter
+                        submitter={{
+                            submitButtonProps: { icon: <SearchOutlined /> },
+                            resetButtonProps: { icon: <ReloadOutlined /> },
+                        }}
+                    >
+                        <ProFormText name="username" label="用户名" placeholder="请输入用户名" />
+                    </QueryFilter>
                 </Card>
 
                 <Card>
                     <div className="table-toolbar">
                         <span className="table-toolbar-title">用户列表</span>
-                        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>添加用户</Button>
+                        <SpecMarker
+                          id="accounts-rbac"
+                          number={1}
+                          title="基于角色的访问控制权限 (RBAC)"
+                          rules={[
+                            "系统支持多级组织结构与细粒度权限，包括管理员（全功能可见）、质检员（仅质检、标注与审核可见）及采集员（仅数采与设备状态可见）。",
+                            "账号创建及分配时，可绑定多个“数采中心 - 角色”映射。后端基于该映射关系对数据包（Episode）、设备列表和质检任务进行数据域（Data Scope）强隔离。",
+                            "权限或角色在管理员端变更后，关联用户的在线 JWT 令牌 Session 会在 60 秒内通过 Redis 心跳同步检测失效，触发前端重定向至登录页。"
+                          ]}
+                          remark="企业级高安全隔离架构，实现从前端可见性到后端数据包接口层面的完整三层权限防护。"
+                        >
+                          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>添加用户</Button>
+                        </SpecMarker>
                     </div>
                     <Table columns={columns} dataSource={mockData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>

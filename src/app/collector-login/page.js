@@ -1,326 +1,466 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Checkbox, App, ConfigProvider, theme } from 'antd';
-import { 
-  UserOutlined, 
-  LockOutlined, 
-  ThunderboltOutlined, 
-  ApiOutlined, 
-  HddOutlined, 
-  GlobalOutlined,
-  CheckCircleOutlined
+import React, { useEffect, useState } from 'react';
+import { App, Button, Checkbox, ConfigProvider, Form, Input, Tag, theme } from 'antd';
+import {
+  ApiOutlined,
+  ArrowRightOutlined,
+  CheckCircleOutlined,
+  CloudSyncOutlined,
+  HddOutlined,
+  LockOutlined,
+  SafetyCertificateOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import collectorHero from '../../assets/collector_login_hero.png';
+import collectorHero from '../../assets/collector_login_hero_16_9.png';
+import logoImg from '../../assets/tq_logo.svg';
+
+const stationStats = [
+  { label: '设备链路', value: '已连接', icon: <ApiOutlined /> },
+  { label: '任务同步', value: '登录后同步', icon: <CloudSyncOutlined /> },
+  { label: '本地缓存', value: '105GB', icon: <HddOutlined /> },
+];
 
 export default function CollectorLoginPage() {
   const { message } = App.useApp();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [ping, setPing] = useState('1ms');
 
   useEffect(() => {
     setMounted(true);
-    const interval = setInterval(() => {
-      setPing(`${Math.floor(Math.random() * 2) + 1}ms`);
-    }, 3000);
-    return () => clearInterval(interval);
   }, []);
 
   if (!mounted) return null;
 
-  const onFinish = (values) => {
+  const onFinish = () => {
     setLoading(true);
     localStorage.setItem('userRole', 'COLLECTOR');
     setTimeout(() => {
-      message.success('采集站会话凭证下发成功，正在启动底层驱动并进入工作台...');
+      message.success('采集员身份验证通过，正在同步采集任务...');
       setTimeout(() => {
         router.push('/collection/collect');
-      }, 800);
-    }, 1200);
+      }, 700);
+    }, 900);
   };
 
-  const bgImgUrl = collectorHero.src || collectorHero;
+  const heroUrl = collectorHero.src || collectorHero;
+  const logoUrl = logoImg.src || logoImg;
 
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme.darkAlgorithm,
+        algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#faad14',
+          colorPrimary: '#3157f6',
           borderRadius: 8,
-          colorBgContainer: 'rgba(11, 16, 31, 0.75)',
-          colorBorder: 'rgba(255,255,255,0.06)'
+          fontFamily:
+            '"Avenir Next", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif',
         },
       }}
     >
-      <div className="login-root-container" style={{
-        backgroundImage: `radial-gradient(circle at center, rgba(4, 7, 17, 0.8) 0%, rgba(4, 7, 17, 0.95) 100%), url(${bgImgUrl})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}>
-        {/* Global Styles */}
+      <main className="collector-login-page">
         <style jsx global>{`
-          @keyframes glowDrift {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(-3%, 3%) scale(1.08); }
-            100% { transform: translate(0, 0) scale(1); }
-          }
-          @keyframes borderPulse {
-            0% { border-color: rgba(250, 173, 20, 0.2); }
-            50% { border-color: rgba(250, 173, 20, 0.5); }
-            100% { border-color: rgba(250, 173, 20, 0.2); }
-          }
-          .login-root-container {
+          .collector-login-page {
             min-height: 100vh;
-            color: #f8fafc;
-            font-family: 'Inter', -apple-system, sans-serif;
+            display: grid;
+            place-items: center;
             position: relative;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 36px 24px;
+            background:
+              radial-gradient(circle at 16% 8%, rgba(105, 171, 255, 0.34), transparent 30%),
+              radial-gradient(circle at 86% 38%, rgba(107, 118, 255, 0.2), transparent 32%),
+              radial-gradient(circle at 48% 98%, rgba(38, 216, 220, 0.34), transparent 36%),
+              #f4f9ff;
           }
-          .cyber-grid {
+
+          .collector-login-stage {
+            width: min(1180px, 100%);
+            min-height: 660px;
+            position: relative;
+            border-radius: 34px;
+            overflow: hidden;
+            background-image:
+              linear-gradient(90deg, rgba(15, 54, 106, 0.34) 0%, rgba(20, 76, 141, 0.14) 43%, rgba(255, 255, 255, 0.78) 78%, rgba(255, 255, 255, 0.9) 100%),
+              url(${heroUrl});
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 32px 88px rgba(63, 97, 139, 0.22);
+          }
+
+          .collector-login-stage::before {
+            content: '';
             position: absolute;
             inset: 0;
-            background-image: 
-              linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-            background-size: 60px 60px;
-            background-position: center;
-            z-index: 2;
+            background:
+              linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 34%),
+              radial-gradient(circle at 42% 34%, rgba(107, 188, 255, 0.26), transparent 28%);
             pointer-events: none;
           }
-          .tech-login-panel {
-            background: rgba(8, 12, 20, 0.65);
-            border: 1px solid rgba(250, 173, 20, 0.25);
-            border-radius: 20px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
-            z-index: 10;
-            position: relative;
-            animation: borderPulse 5s infinite ease-in-out;
+
+          .collector-brand {
+            position: absolute;
+            z-index: 1;
+            top: 44px;
+            left: 52px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
           }
-          .tech-input .ant-input-affix-wrapper {
-            background: rgba(255, 255, 255, 0.02) !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            border-radius: 8px !important;
-            padding: 12px 16px !important;
-            transition: all 0.3s ease;
+
+          .collector-brand img {
+            width: 46px;
+            height: 46px;
+            object-fit: contain;
           }
-          .tech-input .ant-input-affix-wrapper-focused,
-          .tech-input .ant-input-affix-wrapper:focus,
-          .tech-input .ant-input-affix-wrapper:hover {
-            border-color: #faad14 !important;
-            box-shadow: 0 0 12px rgba(250, 173, 20, 0.25) !important;
+
+          .collector-brand strong,
+          .collector-brand span {
+            display: block;
           }
-          .tech-input input {
-            color: #fff !important;
+
+          .collector-brand strong {
+            font-size: 22px;
+            line-height: 1;
+            letter-spacing: 0;
+            text-shadow: 0 8px 20px rgba(3, 28, 62, 0.32);
           }
-          .custom-button {
-            height: 52px;
+
+          .collector-brand span {
+            margin-top: 4px;
+            font-size: 10px;
+            letter-spacing: 1.8px;
+            opacity: 0.86;
+          }
+
+          .collector-hero-copy {
+            position: absolute;
+            z-index: 1;
+            left: 52px;
+            bottom: 72px;
+            max-width: 430px;
+            color: #fff;
+          }
+
+          .collector-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+            padding: 8px 15px;
+            border-radius: 22px;
+            background: rgba(57, 132, 226, 0.58);
+            color: #ddf3ff;
+            font-size: 14px;
+            backdrop-filter: blur(12px);
+          }
+
+          .collector-pill i {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #bff6ff;
+            box-shadow: 0 0 12px #bff6ff;
+          }
+
+          .collector-hero-copy h1 {
+            margin: 0;
+            font-size: 42px;
+            line-height: 1.18;
+            font-weight: 850;
+            letter-spacing: 0;
+            text-shadow: 0 12px 28px rgba(0, 35, 78, 0.38);
+          }
+
+          .collector-hero-copy h1 span {
+            display: block;
+            color: #7bd9ff;
+          }
+
+          .collector-hero-copy p {
+            margin: 22px 0 0;
+            max-width: 390px;
+            color: rgba(255, 255, 255, 0.88);
             font-size: 15px;
-            font-weight: 700;
-            border: none;
-            background: linear-gradient(135deg, #faad14, #d89614);
-            color: #040711;
-            box-shadow: 0 8px 24px rgba(250, 173, 20, 0.25);
-            transition: all 0.3s ease;
+            line-height: 1.85;
           }
-          .custom-button:hover {
-            opacity: 0.95;
+
+          .collector-login-card {
+            position: absolute;
+            z-index: 2;
+            top: 50%;
+            right: 58px;
+            width: 420px;
+            transform: translateY(-50%);
+            padding: 46px 42px 34px;
+            border: 1px solid rgba(255, 255, 255, 0.86);
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.86);
+            box-shadow: 0 26px 70px rgba(35, 76, 132, 0.2);
+            backdrop-filter: blur(22px);
+          }
+
+          .collector-login-head {
+            margin-bottom: 34px;
+          }
+
+          .collector-login-head h2 {
+            margin: 0 0 10px;
+            color: #08162d;
+            font-size: 32px;
+            line-height: 1.15;
+            font-weight: 850;
+            letter-spacing: 0;
+          }
+
+          .collector-login-head p {
+            margin: 0;
+            color: #66768b;
+            font-size: 15px;
+          }
+
+          .collector-login-form .ant-input-affix-wrapper {
+            height: 58px;
+            padding: 0 18px;
+            border-radius: 13px;
+            border-color: #d9e3ef;
+            background: #f8fbff;
+            box-shadow: none;
+          }
+
+          .collector-login-form .ant-input-affix-wrapper:hover,
+          .collector-login-form .ant-input-affix-wrapper-focused {
+            border-color: #3157f6 !important;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(49, 87, 246, 0.08) !important;
+          }
+
+          .collector-login-form input {
+            color: #1c2a3d !important;
+            font-size: 16px;
+          }
+
+          .collector-login-form input::placeholder {
+            color: #9aa9bc !important;
+          }
+
+          .collector-login-tools {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 4px 0 28px;
+          }
+
+          .collector-login-tools .ant-checkbox-wrapper {
+            color: #536579;
+            font-size: 14px;
+          }
+
+          .collector-submit {
+            height: 62px;
+            border: 0;
+            border-radius: 13px;
+            background: linear-gradient(90deg, #2f68ff, #5739e6);
+            color: #fff;
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            box-shadow: 0 18px 36px rgba(57, 86, 236, 0.28);
+          }
+
+          .collector-submit:hover {
+            color: #fff !important;
+            background: linear-gradient(90deg, #245cf3, #4a2dd4) !important;
             transform: translateY(-1px);
-            box-shadow: 0 12px 30px rgba(250, 173, 20, 0.4);
           }
-          .metric-badge {
-            background: rgba(8, 12, 20, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 14px 20px;
-            backdrop-filter: blur(10px);
+
+          .collector-stats {
+            margin-top: 26px;
+            display: grid;
+            gap: 10px;
+          }
+
+          .collector-stat {
+            display: grid;
+            grid-template-columns: 34px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            min-height: 48px;
+            padding: 8px 10px;
+            border: 1px solid #e4ebf3;
+            border-radius: 8px;
+            background: rgba(248, 251, 255, 0.88);
+          }
+
+          .collector-stat-icon {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            color: #3157f6;
+            background: #eaf1ff;
+          }
+
+          .collector-stat span {
+            color: #6b7c91;
+            font-size: 12px;
+          }
+
+          .collector-stat strong {
+            color: #17253a;
+            font-size: 13px;
+          }
+
+          .collector-footer-note {
+            position: absolute;
+            z-index: 2;
+            right: 58px;
+            bottom: 26px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #63748a;
+            font-size: 12px;
+          }
+
+          .collector-footer-note svg {
+            color: #3157f6;
+          }
+
+          @media (max-width: 980px) {
+            .collector-login-stage {
+              min-height: auto;
+              padding: 34px;
+              display: grid;
+              gap: 28px;
+            }
+
+            .collector-brand,
+            .collector-hero-copy,
+            .collector-login-card,
+            .collector-footer-note {
+              position: relative;
+              inset: auto;
+              transform: none;
+            }
+
+            .collector-login-card {
+              width: 100%;
+              max-width: 460px;
+              justify-self: end;
+            }
+
+            .collector-footer-note {
+              justify-self: end;
+            }
+          }
+
+          @media (max-width: 640px) {
+            .collector-login-page {
+              padding: 16px;
+            }
+
+            .collector-login-stage {
+              border-radius: 22px;
+              padding: 24px;
+            }
+
+            .collector-login-card {
+              padding: 32px 22px 24px;
+              border-radius: 18px;
+            }
+
+            .collector-hero-copy h1 {
+              font-size: 30px;
+            }
+
+            .collector-login-head h2 {
+              font-size: 27px;
+            }
           }
         `}</style>
 
-        <div className="cyber-grid" />
-
-        {/* Branding header */}
-        <div style={{ position: 'absolute', top: 40, left: 40, zIndex: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 38, height: 38, borderRadius: 8,
-            background: 'linear-gradient(135deg, #faad14, #d89614)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(250, 173, 20, 0.3)'
-          }}>
-            <ThunderboltOutlined style={{ color: '#040711', fontSize: 18 }} />
+        <section className="collector-login-stage">
+          <div className="collector-brand">
+            <img src={logoUrl} alt="天奇股份" />
+            <div>
+              <strong>天奇股份</strong>
+              <span>MIRACLE AUTOMATION</span>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 0.5, color: '#fff' }}>SKYNET EDGE</div>
-            <div style={{ fontSize: 10, color: 'rgba(255, 255, 255, 0.35)', letterSpacing: 1.5 }}>天奇具身智能边缘采集站</div>
-          </div>
-        </div>
 
-        {/* Main Content split */}
-        <div style={{
-          width: '100%',
-          maxWidth: 1200,
-          padding: '0 40px',
-          zIndex: 10,
-          display: 'grid',
-          gridTemplateColumns: '1.2fr 1fr',
-          gap: 80,
-          alignItems: 'center'
-        }}>
-          
-          {/* Left Panel: Metrics and Title */}
-          <div>
-            <div style={{
-              display: 'inline-block',
-              padding: '6px 12px',
-              borderRadius: 4,
-              border: '1px solid rgba(250, 173, 20, 0.3)',
-              background: 'rgba(250, 173, 20, 0.08)',
-              color: '#faad14',
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 2,
-              marginBottom: 24,
-              textTransform: 'uppercase'
-            }}>
-              EDGE WORKSTATION / 边缘采集端
+          <div className="collector-hero-copy">
+            <div className="collector-pill">
+              <i />
+              数据采集站管理系统
+            </div>
+            <h1>
+              开启机器人
+              <span>现场采集任务</span>
+            </h1>
+            <p>登录后接收任务、连接设备、执行采集，并将本地数据包上传入库。</p>
+          </div>
+
+          <div className="collector-login-card">
+            <div className="collector-login-head">
+              <h2>欢迎登录</h2>
+              <p>请输入您的采集员账号与密码</p>
             </div>
 
-            <h1 style={{
-              fontSize: '44px',
-              fontWeight: 900,
-              lineHeight: 1.15,
-              color: '#fff',
-              marginBottom: 16,
-              letterSpacing: '-0.5px'
-            }}>
-              高精度数据采集与<br />
-              <span style={{ color: '#faad14' }}>现场传感器融合</span>
-            </h1>
+            <Form onFinish={onFinish} size="large" className="collector-login-form">
+              <Form.Item name="username" rules={[{ required: true, message: '请输入采集员账号' }]}>
+                <Input
+                  prefix={<UserOutlined style={{ color: '#9aa9bc', fontSize: 18 }} />}
+                  placeholder="请输入账号"
+                />
+              </Form.Item>
 
-            <p style={{
-              fontSize: '15px',
-              color: 'rgba(255, 255, 255, 0.55)',
-              lineHeight: 1.6,
-              marginBottom: 48,
-              maxWidth: 500
-            }}>
-              面向现场作业专家优化的微秒级采集工作站。支持多相机流式对齐、机械臂示教轨迹以及传感器数据硬件加速写入。
-            </p>
+              <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]}>
+                <Input.Password
+                  prefix={<LockOutlined style={{ color: '#9aa9bc', fontSize: 18 }} />}
+                  placeholder="请输入密码"
+                />
+              </Form.Item>
 
-            {/* Diagnostics checklist */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-              {[
-                { label: '机器人连接', value: 'FRANKA FR3', icon: <ApiOutlined style={{ color: '#faad14' }} /> },
-                { label: '边缘缓存空间', value: '105GB FREE', icon: <HddOutlined style={{ color: '#52c41a' }} /> },
-                { label: '内网实时延迟', value: ping, icon: <GlobalOutlined style={{ color: '#1677ff' }} /> }
-              ].map((item, idx) => (
-                <div className="metric-badge" key={idx}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.4)', fontSize: 11, marginBottom: 8 }}>
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{item.value}</div>
+              <div className="collector-login-tools">
+                <Checkbox>记住密码</Checkbox>
+                <Tag color="processing" variant="filled">
+                  WORKSTATION
+                </Tag>
+              </div>
+
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                loading={loading}
+                className="collector-submit"
+              >
+                登 录 <ArrowRightOutlined />
+              </Button>
+            </Form>
+
+            <div className="collector-stats">
+              {stationStats.map((item) => (
+                <div className="collector-stat" key={item.label}>
+                  <div className="collector-stat-icon">{item.icon}</div>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right Panel: Clean login card */}
-          <div className="tech-login-panel" style={{ padding: '54px 44px' }}>
-            <div style={{ marginBottom: 32 }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', marginBottom: 6 }}>现场采集员登录</h2>
-              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>
-                请输入您的指派采集工程师 ID 以同步本日任务队列
-              </p>
-            </div>
-
-            <Form 
-              onFinish={onFinish} 
-              size="large" 
-              layout="vertical"
-              className="tech-input"
-            >
-              <Form.Item name="username" rules={[{ required: true, message: '请输入采集员账号' }]}>
-                <Input
-                  prefix={<UserOutlined style={{ color: 'rgba(255,255,255,0.2)' }} />}
-                  placeholder="请输入您的采集站账号"
-                />
-              </Form.Item>
-              
-              <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]} style={{ marginBottom: 16 }}>
-                <Input.Password
-                  prefix={<LockOutlined style={{ color: 'rgba(255,255,255,0.2)' }} />}
-                  placeholder="请输入访问防误触密码"
-                />
-              </Form.Item>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-                <Checkbox style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12 }}>保持此设备登录</Checkbox>
-                <Button type="link" style={{ padding: 0, fontSize: 12, color: '#faad14' }}>
-                  设备故障报备?
-                </Button>
-              </div>
-
-              <Form.Item style={{ marginBottom: 0 }}>
-                <Button 
-                  type="primary" 
-                  htmlType="submit" 
-                  block 
-                  loading={loading}
-                  className="custom-button"
-                >
-                  解锁并登入物理工作站
-                </Button>
-              </Form.Item>
-            </Form>
-
-            <div style={{
-              marginTop: 24,
-              padding: '12px 16px',
-              borderRadius: 8,
-              background: 'rgba(255,255,255,0.01)',
-              border: '1px solid rgba(255,255,255,0.03)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8
-            }}>
-              <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 13 }} />
-              <span style={{ fontSize: 11, color: 'rgba(255, 255, 255, 0.35)' }}>
-                RT-Kernel 与物理紧急停机控制器链路已成功载入
-              </span>
-            </div>
+          <div className="collector-footer-note">
+            <SafetyCertificateOutlined />
+            <span>本机采集站登录后自动同步可执行任务列表</span>
           </div>
-        </div>
-
-        {/* Footer info */}
-        <div style={{
-          position: 'absolute',
-          bottom: 30,
-          left: 40,
-          right: 40,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          color: 'rgba(255, 255, 255, 0.2)',
-          fontSize: 11,
-          zIndex: 5
-        }}>
-          <div>© 2026 天奇股份 · 具身智能事业部</div>
-          <div style={{ display: 'flex', gap: 20 }}>
-            <span>设备编码: MAC-FR3-WORKSTATION-001</span>
-            <span>系统版本: v1.2.0</span>
-          </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </ConfigProvider>
   );
 }

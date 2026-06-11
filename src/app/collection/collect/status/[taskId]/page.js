@@ -30,7 +30,23 @@ export default function DeviceStatusPage() {
   const [isErrorMode, setIsErrorMode] = useState(false); // Healthy state initially for smooth demo flow
 
   const taskId = params?.taskId || 'CT-20250301001';
-  const isLumos = taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos');
+  const isGalbot116 = taskId?.includes('1.16') || taskId?.includes('GB116') || taskId?.includes('GB105') || taskId === 'CT-20260605001';
+  const isLumos = !isGalbot116 && (taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos'));
+
+  // Logs for Galbot 1.16
+  const galbotStatusLogs = [
+    { time: '14:20:11', msg: '系统自检完成: 发现 1 个硬件模块异常 (XCU 控制器通信超时)', type: 'error' },
+    { time: '14:20:10', msg: 'HPU 算力板: 发现 192.168.1.88 节点正常响应 (延迟: 0.9ms)', type: 'success' },
+    { time: '14:20:09', msg: 'XCU 控制器: 警告！通信连通超时，请检查控制箱网口或 SSH 配置。', type: 'error' },
+    { time: '14:20:05', msg: '时钟环境: 双端 PTP (IEEE 1588) 时钟同步精度正常 (时滞 <= 0.12ms)', type: 'success' },
+  ];
+
+  const galbotHealthyLogs = [
+    { time: '14:20:15', msg: '系统自检完成: 所有核心硬件已就绪，可以安全进入数据采集工作台。', type: 'success' },
+    { time: '14:20:10', msg: 'HPU 算力板: 运行状态良好 (CPU: 24% | GPU: 82% 显存就绪)', type: 'success' },
+    { time: '14:20:08', msg: 'XCU 控制器: 物理通信握手成功 (192.168.1.66)，控制箱服务运行正常', type: 'success' },
+    { time: '14:20:05', msg: '网口环境: 双物理端网口直连通路及 WiFi 5G 信号连通良好', type: 'success' },
+  ];
 
   // Logs for Lumos
   const lumosStatusLogs = [
@@ -324,6 +340,257 @@ export default function DeviceStatusPage() {
     </Row>
   );
 
+  // ==================== GALBOT 1.16 RENDERERS ====================
+  const renderXcuStatus = () => (
+    <Row gutter={24}>
+      <Col span={14}>
+        <div style={{ 
+          background: isErrorMode ? '#fff1f0' : '#f8f9fa', 
+          borderRadius: 8, 
+          height: 520, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          position: 'relative',
+          border: isErrorMode ? '1px solid #ffa39e' : '1px solid #f0f0f0',
+          overflow: 'hidden'
+        }}>
+          <div style={{ position: 'relative', width: '80%', height: '80%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ 
+              width: 200, height: 260, border: isErrorMode ? '4px solid #f5222d' : '4px solid #1677ff', borderRadius: 24, background: isErrorMode ? '#fff1f0' : '#e6f4ff', 
+              position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-around',
+              boxShadow: '0 8px 24px rgba(22, 119, 255, 0.15)'
+            }}>
+              <div style={{ width: 120, height: 16, background: '#faad14', borderRadius: 4, textAlign: 'center', fontSize: 9, color: '#fff', fontWeight: 'bold' }}>
+                XCU CONTROLLER
+              </div>
+              <div style={{ width: 100, height: 80, border: isErrorMode ? '2px solid #ff4d4f' : '2px solid #52c41a', borderRadius: 8, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, textAlign: 'center', whiteSpace: 'pre-line' }}>
+                {isErrorMode ? '连接超时\n(Ping Timeout)' : '底座控制器\n(Active)'}
+              </div>
+              <div style={{ width: 120, height: 30, background: isErrorMode ? '#ff4d4f' : '#1677ff', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 'bold' }}>
+                {isErrorMode ? '通信异常' : '以太网直连 (OK)'}
+              </div>
+            </div>
+          </div>
+          <div style={{ position: 'absolute', top: 24, left: 24 }}>
+            <Title level={5} style={{ color: isErrorMode ? '#cf1322' : 'inherit' }}>| XCU 控制底座拓扑图 {isErrorMode && '(异常)'}</Title>
+          </div>
+        </div>
+      </Col>
+      <Col span={10}>
+        <Space direction="vertical" size={24} style={{ width: '100%' }}>
+          <div>
+            <Title level={5}>| 基本信息</Title>
+            <div style={{ padding: '0 12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text type="secondary">控制器类别</Text>
+                <Text strong>XCU 底层运动控制箱</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text type="secondary">XCU 内网 IP</Text>
+                <Text strong style={{ color: isErrorMode ? '#ff4d4f' : '#1677ff' }}>192.168.1.66</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text type="secondary">SSH 状态</Text>
+                <Tag color={isErrorMode ? 'error' : 'success'}>{isErrorMode ? '连接失败' : '成功连通'}</Tag>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text type="secondary">系统服务</Text>
+                <Text>{isErrorMode ? '—' : 'remote_ctrl_record.target (Active)'}</Text>
+              </div>
+            </div>
+          </div>
+          <Divider style={{ margin: '8px 0' }} />
+          <div>
+            <Title level={5}>| 自检诊断建议</Title>
+            {isErrorMode ? (
+              <div style={{ padding: '0 12px' }}>
+                <Alert
+                  message="XCU 控制器未响应"
+                  description="请确认 XCU 底座是否已加电开机。检查笔记本与控制箱的物理网口连接，或者检查网段是否配置为 192.168.1.x。"
+                  type="error"
+                  showIcon
+                />
+                <Button type="primary" danger block style={{ marginTop: 16 }} icon={<SyncOutlined />} onClick={() => setIsErrorMode(false)}>
+                  尝试重新扫描硬件并对齐
+                </Button>
+              </div>
+            ) : (
+              <Text type="secondary" style={{ padding: '0 12px' }}>XCU 物理网络连通率 100%，IAP 关节零点校验已通过，控制层心跳包正常。</Text>
+            )}
+          </div>
+        </Space>
+      </Col>
+    </Row>
+  );
+
+  const renderHpuStatus = () => (
+    <Row gutter={24}>
+      <Col span={14}>
+        <div style={{ 
+          background: '#f8f9fa', 
+          borderRadius: 8, 
+          height: 520, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          position: 'relative',
+          border: '1px solid #f0f0f0',
+          overflow: 'hidden'
+        }}>
+          <div style={{ position: 'relative', width: '80%', height: '80%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ 
+              width: 200, height: 260, border: '4px solid #52c41a', borderRadius: 24, background: '#f6ffed', 
+              position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-around',
+              boxShadow: '0 8px 24px rgba(82, 196, 26, 0.15)'
+            }}>
+              <div style={{ width: 120, height: 16, background: '#faad14', borderRadius: 4, textAlign: 'center', fontSize: 9, color: '#fff', fontWeight: 'bold' }}>
+                HPU ORIN UNIT
+              </div>
+              <div style={{ width: 100, height: 80, border: '2px solid #1677ff', borderRadius: 8, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, textAlign: 'center' }}>
+                上位机算力单元<br/>(Ubuntu 22.04)
+              </div>
+              <div style={{ width: 120, height: 30, background: '#52c41a', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 'bold' }}>
+                Supervisor (Active)
+              </div>
+            </div>
+          </div>
+          <div style={{ position: 'absolute', top: 24, left: 24 }}>
+            <Title level={5}>| HPU 上位机算力拓扑图</Title>
+          </div>
+        </div>
+      </Col>
+      <Col span={10}>
+        <Space direction="vertical" size={24} style={{ width: '100%' }}>
+          <div>
+            <Title level={5}>| 基本信息</Title>
+            <div style={{ padding: '0 12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text type="secondary">算力板型号</Text>
+                <Text strong>Nvidia Jetson Orin (HPU)</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text type="secondary">HPU 内网 IP</Text>
+                <Text strong style={{ color: '#52c41a' }}>192.168.1.88</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text type="secondary">VLA 镜像</Text>
+                <Text>release-VLA-CAPSULE-GBS_1.16.0.2</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text type="secondary">WiFi 网络</Text>
+                <Tag color="success">miracle-office-5g (已连接)</Tag>
+              </div>
+            </div>
+          </div>
+          <Divider style={{ margin: '8px 0' }} />
+          <div>
+            <Title level={5}>| 状态与性能指标</Title>
+            <Row gutter={[16, 16]} style={{ padding: '0 12px' }}>
+              <Col span={12}>
+                <div style={{ background: '#f5f5f5', padding: 12, borderRadius: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 11 }}>CPU 利用率</Text>
+                  <div style={{ fontSize: 15, fontWeight: 'bold', color: '#1677ff' }}>24% (12 Cores)</div>
+                </div>
+              </Col>
+              <Col span={12}>
+                <div style={{ background: '#f5f5f5', padding: 12, borderRadius: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 11 }}>GPU 算力负载</Text>
+                  <div style={{ fontSize: 15, fontWeight: 'bold', color: '#52c41a' }}>82% (VLA Inference)</div>
+                </div>
+              </Col>
+              <Col span={12}>
+                <Badge status="success" text="Supervisor 进程守护在线" />
+              </Col>
+              <Col span={12}>
+                <Badge status="success" text="galbot_upper_bridge 正常" />
+              </Col>
+            </Row>
+          </div>
+        </Space>
+      </Col>
+    </Row>
+  );
+
+  const renderGalbot116Cameras = () => (
+    <Row gutter={24}>
+      <Col span={14}>
+        <div style={{ 
+          background: '#f8f9fa', 
+          borderRadius: 8, 
+          height: 520, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          position: 'relative',
+          border: '1px solid #f0f0f0',
+          overflow: 'hidden'
+        }}>
+          <div style={{ position: 'relative', width: '90%', height: '90%', display: 'flex', justifyContent: 'space-around', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ width: '45%', border: '1px solid #d9d9d9', borderRadius: 4, background: '#000', height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <span style={{ color: '#fff', fontSize: 11 }}>[HEAD_L] 头部左目相机流就绪</span>
+              <div style={{ position: 'absolute', bottom: 8, right: 8, color: '#52c41a', fontSize: 9 }}>30fps | 1080p</div>
+            </div>
+            <div style={{ width: '45%', border: '1px solid #d9d9d9', borderRadius: 4, background: '#000', height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <span style={{ color: '#fff', fontSize: 11 }}>[HEAD_R] 头部右目相机流就绪</span>
+              <div style={{ position: 'absolute', bottom: 8, right: 8, color: '#52c41a', fontSize: 9 }}>30fps | 1080p</div>
+            </div>
+            <div style={{ width: '45%', border: '1px solid #d9d9d9', borderRadius: 4, background: '#000', height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <span style={{ color: '#fff', fontSize: 11 }}>[HAND_L] 左臂相机流就绪</span>
+              <div style={{ position: 'absolute', bottom: 8, right: 8, color: '#52c41a', fontSize: 9 }}>30fps | 720p</div>
+            </div>
+            <div style={{ width: '45%', border: '1px solid #d9d9d9', borderRadius: 4, background: '#000', height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <span style={{ color: '#fff', fontSize: 11 }}>[HAND_R] 右臂相机流就绪</span>
+              <div style={{ position: 'absolute', bottom: 8, right: 8, color: '#52c41a', fontSize: 9 }}>30fps | 720p</div>
+            </div>
+          </div>
+          <div style={{ position: 'absolute', top: 24, left: 24 }}>
+            <Title level={5}>| 多目传感器帧率及 PTP 同步状态</Title>
+          </div>
+        </div>
+      </Col>
+      <Col span={10}>
+        <Space direction="vertical" size={24} style={{ width: '100%' }}>
+          <div>
+            <Title level={5}>| 基本信息</Title>
+            <div style={{ padding: '0 12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text type="secondary">摄像头配置</Text>
+                <Text strong>4路 RGB 多目 + 1路 雷达深度 (PTP同步)</Text>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Text type="secondary">IEEE 1588 时钟偏差</Text>
+                <Tag color="success">时钟时滞差 &lt; 0.2ms</Tag>
+              </div>
+            </div>
+          </div>
+          <div>
+            <Title level={5}>| ROS Topic 列表</Title>
+            <List
+              size="small"
+              dataSource={[
+                { name: '头部左相机 (/head_cam_left/image_raw)', status: 'Active (30fps)' },
+                { name: '头部右相机 (/head_cam_right/image_raw)', status: 'Active (30fps)' },
+                { name: '左臂手部相机 (/hand_cam_left/image_raw)', status: 'Active (30fps)' },
+                { name: '右臂手部相机 (/hand_cam_right/image_raw)', status: 'Active (30fps)' },
+                { name: '激光扫描点云 (/lidar/points)', status: 'Active (15fps)' },
+              ]}
+              renderItem={item => (
+                <List.Item style={{ padding: '8px 12px' }}>
+                  <Space>
+                    <CheckCircleFilled style={{ color: '#52c41a' }} />
+                    <span style={{ fontSize: 12 }}>{item.name}</span>
+                  </Space>
+                  <Text type="success">{item.status}</Text>
+                </List.Item>
+              )}
+            />
+          </div>
+        </Space>
+      </Col>
+    </Row>
+  );
+
   // ==================== HUMANOID RENDERERS ====================
   const renderMasterSlave = () => (
     <Row gutter={24}>
@@ -585,7 +852,36 @@ export default function DeviceStatusPage() {
         </div>
 
         <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8, overflow: 'hidden' }}>
-          {isLumos ? (
+          {isGalbot116 ? (
+            <Tabs
+              activeKey={activeKey}
+              onChange={setActiveKey}
+              type="line"
+              size="large"
+              style={{ padding: '0 24px' }}
+              items={[
+                {
+                  key: '1',
+                  label: <Space>
+                    <ThunderboltOutlined style={{ color: isErrorMode ? '#ff4d4f' : 'inherit' }} />
+                    <span style={{ color: isErrorMode ? '#ff4d4f' : 'inherit' }}>XCU 控制器</span>
+                    {isErrorMode && <Badge dot color="#ff4d4f" />}
+                  </Space>,
+                  children: <div style={{ padding: 24 }}>{renderXcuStatus()}</div>,
+                },
+                {
+                  key: '2',
+                  label: <Space><RobotOutlined />HPU 算力板</Space>,
+                  children: <div style={{ padding: 24 }}>{renderHpuStatus()}</div>,
+                },
+                {
+                  key: '3',
+                  label: <Space><VideoCameraOutlined />多目相机</Space>,
+                  children: <div style={{ padding: 24 }}>{renderGalbot116Cameras()}</div>,
+                },
+              ]}
+            />
+          ) : isLumos ? (
             <Tabs
               activeKey={activeKey}
               onChange={setActiveKey}
@@ -662,7 +958,14 @@ export default function DeviceStatusPage() {
             extra={<Button type="link" size="small">清空</Button>}
           >
             <div style={{ height: 180, overflowY: 'auto', fontSize: 12 }}>
-              {isLumos ? (
+              {isGalbot116 ? (
+                (isErrorMode ? galbotStatusLogs : galbotHealthyLogs).map((log, i) => (
+                  <div key={i} style={{ marginBottom: 6 }}>
+                    <Text type="secondary" style={{ fontSize: 11 }}>[{log.time}]</Text>{' '}
+                    <Text type={log.type === 'error' ? 'danger' : log.type === 'success' ? 'success' : 'default'}>{log.msg}</Text>
+                  </div>
+                ))
+              ) : isLumos ? (
                 (isErrorMode ? lumosStatusLogs : lumosHealthyLogs).map((log, i) => (
                   <div key={i} style={{ marginBottom: 6 }}>
                     <Text type="secondary" style={{ fontSize: 11 }}>[{log.time}]</Text>{' '}
@@ -679,7 +982,7 @@ export default function DeviceStatusPage() {
               )}
             </div>
             <div style={{ marginTop: 8, borderTop: '1px solid #f0f0f0', paddingTop: 8, fontSize: 11 }}>
-              <Text type="secondary">当前硬件配置: <Text strong>{isLumos ? 'Lumos FastUMI Go 离线版' : '通用具身智能平台 (G1/VR)'}</Text></Text>
+              <Text type="secondary">当前硬件配置: <Text strong>{isGalbot116 ? 'Galbot 1.16 双端 (XCU/HPU)' : isLumos ? 'Lumos FastUMI Go 离线版' : '通用具身智能平台 (G1/VR)'}</Text></Text>
             </div>
           </Card>
         </div>

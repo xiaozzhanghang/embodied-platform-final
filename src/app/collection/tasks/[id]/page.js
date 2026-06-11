@@ -229,9 +229,9 @@ export default function TaskInstancePage() {
 
         <div style={{ background: '#fff', borderRadius: 8, padding: '16px 20px', border: '1px solid #f0f0f0', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space size={16} align="bottom">
-            <Form.Item label="实例任务id" style={{ marginBottom: 0 }}><Input placeholder="实例任务id" style={{ width: 140 }} /></Form.Item>
-            <Form.Item label="操作物体" style={{ marginBottom: 0 }}><Select placeholder="操作物体" style={{ width: 140 }} /></Form.Item>
-            <Form.Item label="采集人员" style={{ marginBottom: 0 }}><Select placeholder="采集人员" style={{ width: 140 }} /></Form.Item>
+            <Form.Item label="实例任务id" style={{ marginBottom: 0 }}><Input placeholder="实例任务id" style={{ width: 160 }} /></Form.Item>
+            <Form.Item label="操作物体" style={{ marginBottom: 0 }}><Select placeholder="操作物体" style={{ width: 160 }} /></Form.Item>
+            <Form.Item label="采集人员" style={{ marginBottom: 0 }}><Select placeholder="采集人员" style={{ width: 160 }} /></Form.Item>
             <Form.Item style={{ marginBottom: 0 }}><Button type="primary" icon={<SearchOutlined />}>搜索</Button></Form.Item>
           </Space>
             <Space size={12}>

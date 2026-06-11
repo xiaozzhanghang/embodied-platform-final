@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Progress, App, Badge, Row, Col, Tabs, Tooltip, Divider, Radio, Select } from 'antd';
-import { SearchOutlined, ReloadOutlined, PlayCircleOutlined, EyeOutlined, CheckCircleOutlined, LeftOutlined, RightOutlined, SaveOutlined, SendOutlined, ToolOutlined, ScissorOutlined, BorderOutlined, AimOutlined, HistoryOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, PlayCircleOutlined, EyeOutlined, CheckCircleOutlined, LeftOutlined, RightOutlined, SaveOutlined, SendOutlined, ToolOutlined, ScissorOutlined, BorderOutlined, AimOutlined, HistoryOutlined, DeleteOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -18,6 +19,15 @@ export default function AnswerPage() {
     const { message } = App.useApp();
     const [workspaceVisible, setWorkspaceVisible] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
+    const [filters, setFilters] = useState({});
+
+    const filteredData = React.useMemo(() => {
+        return mockProjects.filter(item => {
+            const nameMatch = !filters.projectName || item.name.toLowerCase().includes(filters.projectName.toLowerCase()) || item.projectId.toLowerCase().includes(filters.projectName.toLowerCase());
+            const typeMatch = !filters.type || item.type === filters.type;
+            return nameMatch && typeMatch;
+        });
+    }, [filters]);
 
     const openWorkspace = (record) => {
         setSelectedProject(record);
@@ -53,17 +63,25 @@ export default function AnswerPage() {
             </div>
 
             <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
-                <Form layout="inline">
-                    <Form.Item label="项目名称"><Input placeholder="搜索项目" prefix={<SearchOutlined />} allowClear style={{ width: 200 }} /></Form.Item>
-                    <Form.Item label="任务类型">
-                        <Select placeholder="全部" allowClear style={{ width: 140 }} options={[{ value: '点标注' }, { value: '框标注' }, { value: '范围标注' }, { value: '范围&框标注' }]} />
-                    </Form.Item>
-                    <Form.Item><Space><Button type="primary">查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
-                </Form>
+                <QueryFilter
+                    submitter={{
+                        submitButtonProps: { icon: <SearchOutlined /> },
+                        resetButtonProps: { icon: <ReloadOutlined /> },
+                    }}
+                    onFinish={async (values) => {
+                        setFilters(values);
+                    }}
+                    onReset={() => {
+                        setFilters({});
+                    }}
+                >
+                    <ProFormText name="projectName" label="项目名称" placeholder="搜索项目" />
+                    <ProFormSelect name="type" label="任务类型" placeholder="全部" options={[{ value: '点标注', label: '点标注' }, { value: '框标注', label: '框标注' }, { value: '范围标注', label: '范围标注' }, { value: '范围&框标注', label: '范围&框标注' }]} />
+                </QueryFilter>
             </Card>
 
             <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
-                <Table columns={columns} dataSource={mockProjects} style={{ padding: '0 24px 24px' }} pagination={{ pageSize: 10 }} />
+                <Table columns={columns} dataSource={filteredData} style={{ padding: '0 24px 24px' }} pagination={{ pageSize: 10 }} />
             </Card>
 
             {/* Immersive Annotation Workspace */}

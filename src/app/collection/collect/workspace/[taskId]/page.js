@@ -45,7 +45,11 @@ import {
   AudioMutedOutlined,
   AudioOutlined,
   EditOutlined,
-  SaveOutlined
+  SaveOutlined,
+  ArrowLeftOutlined,
+  MessageOutlined,
+  DeploymentUnitOutlined,
+  HistoryOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -272,12 +276,47 @@ function HumanoidWorkspace({ taskId, router, params }) {
             {(!fullscreenId || fullscreenId === 'cam4') && (
               <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
                 <PanelHeader id="cam4" title="joints_digital_twin.json" />
-                <div style={{ flex: 1, background: '#1f1f1f', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ flex: 1, background: '#f8fafc', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {/* 3D Mockup Background Grid */}
-                  <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px', transform: 'perspective(500px) rotateX(60deg) scale(2)', transformOrigin: 'center 100%' }}></div>
-                  <div style={{ position: 'absolute', bottom: '20%', left: '50%', transform: 'translateX(-50%)', width: 40, height: 120, background: '#fff', borderRadius: 4, boxShadow: '0 0 20px rgba(255,255,255,0.5)' }}></div>
-                  <div style={{ position: 'absolute', top: 8, left: 8, color: '#fff', fontSize: 12 }}>120 FPS (Real-time Twin)</div>
-                  <div style={{ position: 'absolute', top: 8, left: 160, width: 80, height: 12, background: '#1677ff' }}></div>
+                  <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px)', backgroundSize: '20px 20px', transform: 'perspective(500px) rotateX(60deg) scale(2)', transformOrigin: 'center 100%' }}></div>
+                  
+                  {/* Elegant single robotic arm twin representation */}
+                  <svg width="220" height="220" viewBox="0 0 120 120" style={{ zIndex: 1, position: 'relative', top: -10 }}>
+                    {/* Base */}
+                    <rect x="52" y="90" width="16" height="15" rx="2" fill="#475569" />
+                    <line x1="60" y1="90" x2="60" y2="70" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
+                    <circle cx="60" cy="70" r="5" fill="#1e3a8a" />
+                    
+                    {/* Link 1 & Link 2 with animation during recording */}
+                    <g style={{ 
+                      transform: isRecording ? 'rotate(15deg)' : 'none',
+                      transformOrigin: '60px 70px',
+                      transition: 'transform 0.5s ease-in-out'
+                    }}>
+                      <line x1="60" y1="70" x2="40" y2="45" stroke="#3b82f6" strokeWidth="5" strokeLinecap="round" />
+                      <circle cx="40" cy="45" r="4" fill="#1e3a8a" />
+                      
+                      <g style={{
+                        transform: isRecording ? 'rotate(-30deg)' : 'none',
+                        transformOrigin: '40px 45px',
+                        transition: 'transform 0.5s ease-in-out'
+                      }}>
+                        <line x1="40" y1="45" x2="70" y2="30" stroke="#10b981" strokeWidth="4" strokeLinecap="round" />
+                        <circle cx="70" cy="30" r="3" fill="#1e3a8a" />
+                        
+                        {/* Hand gripper */}
+                        <path d="M 70 30 L 80 25 M 70 30 L 78 35" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
+                      </g>
+                    </g>
+                  </svg>
+                  
+                  <div style={{ position: 'absolute', top: 8, left: 8, color: '#0f172a', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#10b981', animation: isRecording ? 'blink-dot 1s infinite' : 'none' }}></span>
+                    120 FPS (Real-time Twin)
+                  </div>
+                  <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
+                    <Tag color="processing" style={{ fontSize: 9, margin: 0 }}>FRANKA-FR3 TWIN</Tag>
+                  </div>
                 </div>
               </div>
             )}
@@ -695,8 +734,8 @@ function LumosWorkspace({ taskId, router, params }) {
   return (
     <div style={{ 
       height: '100vh', 
-      background: '#040711', 
-      color: '#f8fafc',
+      background: '#f8fafc', 
+      color: '#0f172a',
       fontFamily: 'SFMono-Regular, Consolas, Courier New, monospace',
       display: 'flex', 
       flexDirection: 'column',
@@ -706,8 +745,8 @@ function LumosWorkspace({ taskId, router, params }) {
       {/* 1. TOP HEADER - DIAGNOSTICS */}
       <div style={{ 
         height: 48, 
-        borderBottom: '1px solid rgba(255,255,255,0.08)', 
-        background: 'rgba(9, 13, 31, 0.95)',
+        borderBottom: '1px solid #e2e8f0', 
+        background: '#ffffff',
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
@@ -717,37 +756,37 @@ function LumosWorkspace({ taskId, router, params }) {
         <Space size="large">
           <Space size="small">
             <ThunderboltOutlined style={{ color: '#faad14' }} />
-            <span style={{ color: '#f8fafc', fontWeight: 600 }}>Lumos FastUMI Go</span>
+            <span style={{ color: '#0f172a', fontWeight: 600 }}>Lumos FastUMI Go</span>
             <Tag color="warning" style={{ fontSize: 10, margin: 0 }}>OFFLINE CLIENT</Tag>
           </Space>
 
-          <Space size="small" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
             <span>静态IP:</span>
             <span style={{ color: '#10b981', fontWeight: 'bold' }}>192.168.54.53</span>
           </Space>
           
-          <Space size="small" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
             <span>背包主机:</span>
             <span style={{ color: '#10b981', fontWeight: 'bold' }}>192.168.54.110</span>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
           </Space>
 
-          <Space size="small" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
             <span>耳机监听:</span>
             <span style={{ color: '#10b981' }}>已连接</span>
           </Space>
 
-          <Space size="small" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
             <span>HDMI模拟器:</span>
             <span style={{ color: '#10b981', fontWeight: 'bold' }}>ACTIVE</span>
           </Space>
 
-          <Space size="small" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
             <span>边缘存储:</span>
-            <span style={{ color: '#eab308' }}>105GB可用</span>
+            <span style={{ color: '#ea580c' }}>105GB可用</span>
           </Space>
           
-          <span style={{ color: 'rgba(255,255,255,0.3)' }}>按住模拟: L (左夹爪) | R (右夹爪) | Space (采集暂停)</span>
+          <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>按住模拟: L (左夹爪) | R (右夹爪) | Space (采集暂停)</span>
         </Space>
 
         <Space size="middle">
@@ -771,56 +810,56 @@ function LumosWorkspace({ taskId, router, params }) {
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         
         {/* Left: 4-Grid Camera View */}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 12, padding: 16, background: '#070a16', overflow: 'hidden' }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 12, padding: 16, background: '#f1f5f9', overflow: 'hidden' }}>
           
           {/* Top Left: Left Wrist Camera */}
-          <div style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0e1224', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 11, fontWeight: 'bold', color: '#faad14' }}>
+          <div style={{ border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 'bold', color: '#1e293b' }}>
               | 左手-腕部视角 [WRIST_CAM_L]
             </div>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
               <img src="/assets/images/left_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: lumosState === 'SERVICE_STOPPED' ? 0.2 : 0.95 }} alt="left arm" onError={(e) => { e.target.src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=400"; }} />
-              {lumosState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>设备尚未配对联通</span>}
+              {lumosState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>设备尚未配对联通</span>}
             </div>
-            <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+            <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(0,0,0,0.6)', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: 4 }}>
               ● 640x360 | 30 FPS
             </div>
           </div>
 
           {/* Top Right: Right Wrist Camera */}
-          <div style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0e1224', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 11, fontWeight: 'bold', color: '#faad14' }}>
+          <div style={{ border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 'bold', color: '#1e293b' }}>
               | 右手-腕部视角 [WRIST_CAM_R]
             </div>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
               <img src="/assets/images/right_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: lumosState === 'SERVICE_STOPPED' ? 0.2 : 0.95 }} alt="right arm" onError={(e) => { e.target.src="https://images.unsplash.com/photo-1546776310-eef45dd6d63c?auto=format&fit=crop&q=80&w=400"; }} />
-              {lumosState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>设备尚未配对联通</span>}
+              {lumosState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>设备尚未配对联通</span>}
             </div>
-            <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+            <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(0,0,0,0.6)', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: 4 }}>
               ● 640x360 | 30 FPS
             </div>
           </div>
 
           {/* Bottom Left: Head Left Camera */}
-          <div style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0e1224', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 11, fontWeight: 'bold', color: '#faad14' }}>
+          <div style={{ border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 'bold', color: '#1e293b' }}>
               | 头部左目视角 [HEAD_LEFT_EYE]
             </div>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
               <img src="/assets/images/main_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: lumosState === 'SERVICE_STOPPED' ? 0.2 : 0.95 }} alt="head camera" onError={(e) => { e.target.src="https://images.unsplash.com/photo-1531746790731-6c087fecd05a?auto=format&fit=crop&q=80&w=400"; }} />
-              {lumosState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>设备尚未配对联通</span>}
+              {lumosState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>设备尚未配对联通</span>}
             </div>
-            <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+            <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(0,0,0,0.6)', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: 4 }}>
               ● 640x480 | 30 FPS
             </div>
           </div>
 
           {/* Bottom Right: Real-time Joint Twin schematic */}
-          <div style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#0e1224', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.3)', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: 11, fontWeight: 'bold', color: '#faad14' }}>
+          <div style={{ border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 'bold', color: '#1e293b' }}>
               | 三维关节真值实时孪生 [joints_telemetry.json]
             </div>
-            <div style={{ flex: 1, background: '#060913', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            <div style={{ flex: 1, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
               {/* Draw a stylized humanoid twin arm schematic */}
               <svg width="220" height="220" viewBox="0 0 100 100" style={{ zIndex: 1, opacity: lumosState === 'SERVICE_STOPPED' ? 0.2 : 1 }}>
                 <line x1="50" y1="90" x2="50" y2="40" stroke="#475569" strokeWidth="2" />
@@ -839,11 +878,11 @@ function LumosWorkspace({ taskId, router, params }) {
                 <circle cx="80" cy="15" r="3.5" fill="#06b6d4" />
                 <circle cx="50" cy="90" r="3" fill="#475569" />
               </svg>
-              {lumosState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>设备尚未配对联通</span>}
+              {lumosState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>设备尚未配对联通</span>}
               <div style={{ position: 'absolute', bottom: 12, right: 12 }}>
                 <Tag color="cyan" style={{ fontSize: 9, margin: 0, fontFamily: 'monospace' }}>IMMEDIATE EVALUATION ON</Tag>
               </div>
-              <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+              <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(0,0,0,0.6)', fontFamily: 'monospace' }}>
                 JOINT_0: 12.4° / JOINT_1: -45.1° / JOINT_2: 98.8°
               </div>
             </div>
@@ -852,18 +891,18 @@ function LumosWorkspace({ taskId, router, params }) {
         </div>
 
         {/* Center: Main Controller Simulation & Voice Log */}
-        <div style={{ width: 440, borderLeft: '1px solid rgba(255,255,255,0.08)', background: '#090d1f', display: 'flex', flexDirection: 'column', padding: 20, gap: 20 }}>
+        <div style={{ width: 440, borderLeft: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', flexDirection: 'column', padding: 20, gap: 20 }}>
           
           {/* Audio Synthesizer sound waves logs */}
           <Card 
             title={
-              <div style={{ fontSize: 13, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontSize: 13, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }}></span>
                 Lumos 语音导引助理
               </div>
             }
             size="small"
-            style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+            style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}
             styles={{ body: { padding: 12 } }}
             extra={
               <div style={{ display: 'flex', gap: 3, alignItems: 'center', height: 16 }}>
@@ -874,23 +913,23 @@ function LumosWorkspace({ taskId, router, params }) {
               </div>
             }
           >
-            <div style={{ background: '#020617', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 6, padding: '10px 12px', minHeight: 70, marginBottom: 12 }}>
+            <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '10px 12px', minHeight: 70, marginBottom: 12 }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
                 <span style={{ fontSize: 14 }}>🔊</span>
                 <div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 2 }}>语音广播:</div>
-                  <div style={{ fontSize: 12, color: '#e2e8f0', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 10, color: 'rgba(15, 23, 42, 0.45)', textTransform: 'uppercase', marginBottom: 2 }}>语音广播:</div>
+                  <div style={{ fontSize: 12, color: '#0f172a', lineHeight: 1.5 }}>
                     {voiceLogs[0]?.text || '待机中...'}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 6 }}>广播历史日志 (近5条)</div>
-            <div style={{ height: 90, overflowY: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+            <div style={{ fontSize: 10, color: 'rgba(15, 23, 42, 0.45)', marginBottom: 6 }}>广播历史日志 (近5条)</div>
+            <div style={{ height: 90, overflowY: 'auto', fontSize: 11, color: 'rgba(15, 23, 42, 0.6)' }}>
               {voiceLogs.slice(1, 6).map((log, idx) => (
                 <div key={idx} style={{ marginBottom: 4 }}>
-                  <span style={{ color: 'rgba(255,255,255,0.2)' }}>[{log.time}]</span> {log.text}
+                  <span style={{ color: 'rgba(15, 23, 42, 0.3)' }}>[{log.time}]</span> {log.text}
                 </div>
               ))}
             </div>
@@ -898,16 +937,16 @@ function LumosWorkspace({ taskId, router, params }) {
 
           {/* Physical Device Controller Simulator */}
           <Card
-            title={<span style={{ fontSize: 13, color: '#f8fafc' }}>离线物理终端设备模拟</span>}
+            title={<span style={{ fontSize: 13, color: '#0f172a' }}>离线物理终端设备模拟</span>}
             size="small"
-            style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+            style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}
             styles={{ body: { padding: 16 } }}
-            extra={<Badge status={lumosState === 'SERVICE_STOPPED' ? 'default' : 'success'} text={<span style={{ color: '#fff', fontSize: 11 }}>{lumosState === 'SERVICE_STOPPED' ? '未启动' : '已就绪'}</span>} />}
+            extra={<Badge status={lumosState === 'SERVICE_STOPPED' ? 'default' : 'success'} text={<span style={{ color: '#0f172a', fontSize: 11 }}>{lumosState === 'SERVICE_STOPPED' ? '未启动' : '已就绪'}</span>} />}
           >
-            <div style={{ background: 'rgba(2, 6, 23, 0.8)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: 12, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, padding: 12, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: 12, color: '#f8fafc', fontWeight: 'bold' }}>数采背包物理启动键 (蓝光按键)</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>单击启动/关闭系统后台服务</div>
+                <div style={{ fontSize: 12, color: '#0f172a', fontWeight: 'bold' }}>数采背包物理启动键 (蓝光按键)</div>
+                <div style={{ fontSize: 10, color: 'rgba(15, 23, 42, 0.45)', marginTop: 2 }}>单击启动/关闭系统后台服务</div>
               </div>
               <Button 
                 type="primary"
@@ -925,7 +964,7 @@ function LumosWorkspace({ taskId, router, params }) {
 
             <div style={{ background: 'rgba(255, 173, 20, 0.05)', border: '1px solid rgba(255, 173, 20, 0.15)', padding: 12, borderRadius: 6, marginBottom: 16 }}>
               <div style={{ fontSize: 11, color: '#faad14', fontWeight: 'bold' }}>当前流程状态指示:</div>
-              <div style={{ fontSize: 12, color: '#e2e8f0', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: 12, color: '#0f172a', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span>🔌</span>
                 <span>
                   {lumosState === 'SERVICE_STOPPED' && '请按物理启动按钮开启服务'}
@@ -941,9 +980,9 @@ function LumosWorkspace({ taskId, router, params }) {
 
             {/* Grippers triggers */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', padding: 12, borderRadius: 6, textAlign: 'center' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: 12, borderRadius: 6, textAlign: 'center' }}>
                 <div style={{ fontSize: 11, fontWeight: 'bold', color: '#10b981' }}>左夹爪 (标定/启动/保存)</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(255,255,255,0.4)', margin: '8px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(15, 23, 42, 0.45)', margin: '8px 0' }}>
                   <span>手势状态:</span>
                   <span>{leftHoldActive ? '闭合' : '松开'}</span>
                 </div>
@@ -957,9 +996,9 @@ function LumosWorkspace({ taskId, router, params }) {
                 </Button>
               </div>
 
-              <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', padding: 12, borderRadius: 6, textAlign: 'center' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: 12, borderRadius: 6, textAlign: 'center' }}>
                 <div style={{ fontSize: 11, fontWeight: 'bold', color: '#ef4444' }}>右夹爪 (隔离/退出)</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(255,255,255,0.4)', margin: '8px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(15, 23, 42, 0.45)', margin: '8px 0' }}>
                   <span>手势状态:</span>
                   <span>{rightHoldActive ? '闭合' : '松开'}</span>
                 </div>
@@ -979,10 +1018,10 @@ function LumosWorkspace({ taskId, router, params }) {
         </div>
 
         {/* Right Sidebar: Configs json + Completed lists */}
-        <div style={{ width: 380, borderLeft: '1px solid rgba(255,255,255,0.08)', background: '#090d1f', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ width: 380, borderLeft: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', flexDirection: 'column' }}>
           
           {/* Header config selector */}
-          <div style={{ padding: 16, borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: 16, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 12, fontWeight: 'bold', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: 6 }}>
               ⚙️ 本地任务配置 tasks_config.json
             </span>
@@ -991,44 +1030,44 @@ function LumosWorkspace({ taskId, router, params }) {
 
           <div style={{ padding: 16, flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Visual configuration details */}
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: 12 }}>
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 11 }}>
-                <span style={{ color: 'rgba(255,255,255,0.45)' }}>任务ID (task_id):</span>
-                <span style={{ color: '#fff' }}>{taskId}</span>
+                <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>任务ID (task_id):</span>
+                <span style={{ color: '#0f172a' }}>{taskId}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 11 }}>
-                <span style={{ color: 'rgba(255,255,255,0.45)' }}>中文描述:</span>
-                <span style={{ color: '#fff' }}>Lumos 双手整理筷子与勺子</span>
+                <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>中文描述:</span>
+                <span style={{ color: '#0f172a' }}>Lumos 双手整理筷子与勺子</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 11 }}>
-                <span style={{ color: 'rgba(255,255,255,0.45)' }}>单段限制 (帧数):</span>
+                <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>单段限制 (帧数):</span>
                 <span style={{ color: '#faad14', fontWeight: 'bold' }}>{tasksConfig.rgb_frame_number} 帧 ({(tasksConfig.rgb_frame_number / 30).toFixed(1)}s)</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 11 }}>
-                <span style={{ color: 'rgba(255,255,255,0.45)' }}>目标段数 (total_count):</span>
-                <span style={{ color: '#fff' }}>{tasksConfig.total_count}</span>
+                <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>目标段数 (total_count):</span>
+                <span style={{ color: '#0f172a' }}>{tasksConfig.total_count}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                <span style={{ color: 'rgba(255,255,255,0.45)' }}>即时质检评估 (if_quality_check):</span>
+                <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>即时质检评估 (if_quality_check):</span>
                 <span style={{ color: tasksConfig.if_quality_check ? '#10b981' : '#ef4444' }}>{tasksConfig.if_quality_check ? '已开启' : '已关闭'}</span>
               </div>
             </div>
 
             {/* List of episodes */}
             <div>
-              <div style={{ fontSize: 12, fontWeight: 'bold', color: '#f8fafc', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 12, fontWeight: 'bold', color: '#0f172a', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
                 <span>当前批次已采记录 ({recordedCount} / {tasksConfig.total_count})</span>
                 <span style={{ color: '#10b981', fontSize: 10 }}>成功率: {Math.floor((completedEpisodes.filter(e => e.status === '已保存').length / Math.max(1, completedEpisodes.length)) * 100)}%</span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, height: 280, overflowY: 'auto' }}>
                 {completedEpisodes.map((ep, idx) => (
-                  <div key={idx} style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, padding: 12 }}>
+                  <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 'bold', color: '#3b82f6' }}>{ep.id}</span>
                       <Tag color={ep.status === '已保存' ? 'success' : 'error'} style={{ fontSize: 9, margin: 0 }}>{ep.status}</Tag>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(15, 23, 42, 0.45)' }}>
                       <span>时长: {ep.time}s</span>
                       <span>总帧数: {ep.frames}</span>
                     </div>
@@ -1044,10 +1083,10 @@ function LumosWorkspace({ taskId, router, params }) {
       </div>
 
       {/* 3. FOOTER TIMELINE & REALTIME STATE */}
-      <div style={{ height: 60, borderTop: '1px solid rgba(255,255,255,0.08)', background: '#090d1f', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
-          单段采集耗时: <span style={{ color: '#fff', fontWeight: 'bold', fontSize: 13 }}>{collectionTime}s</span> / 15.0s &nbsp;|&nbsp;
-          采集数据帧率: <span style={{ color: '#fff', fontWeight: 'bold' }}>30 FPS</span> &nbsp;|&nbsp;
+      <div style={{ height: 60, borderTop: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 11, color: 'rgba(15, 23, 42, 0.45)' }}>
+          单段采集耗时: <span style={{ color: '#0f172a', fontWeight: 'bold', fontSize: 13 }}>{collectionTime}s</span> / 15.0s &nbsp;|&nbsp;
+          采集数据帧率: <span style={{ color: '#0f172a', fontWeight: 'bold' }}>30 FPS</span> &nbsp;|&nbsp;
           当前帧计数: <span style={{ color: '#faad14', fontWeight: 'bold', fontSize: 13 }}>{collectionFrameCount}帧</span> / 450帧
         </div>
 
@@ -1059,13 +1098,13 @@ function LumosWorkspace({ taskId, router, params }) {
               '0%': '#10b981',
               '100%': '#3b82f6',
             }}
-            trailColor="rgba(255,255,255,0.05)"
+            trailColor="rgba(0,0,0,0.05)"
             status={lumosState === 'COLLECTING' ? 'active' : 'normal'}
             showInfo={false}
           />
         </div>
 
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+        <div style={{ fontSize: 11, color: 'rgba(15, 23, 42, 0.45)' }}>
           {lumosState === 'SERVICE_STOPPED' && '服务尚未启动'}
           {lumosState === 'SELF_CHECKING' && '设备自检通信中...'}
           {lumosState === 'READY' && <span style={{ color: '#10b981' }}>● 系统空闲就绪</span>}
@@ -1077,14 +1116,14 @@ function LumosWorkspace({ taskId, router, params }) {
       </div>
 
       {/* JSON CONFIG DRAWER / MODAL */}
-      <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+      <ConfigProvider>
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, 
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, 
           display: configEditorOpen ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center', padding: 24
         }}>
           <Card 
             title="编辑本地 tasks_config.json 配置文件" 
-            style={{ width: 600, background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)' }}
+            style={{ width: 600, background: '#ffffff', border: '1px solid #e2e8f0' }}
             extra={
               <Space>
                 <Button size="small" onClick={() => setConfigEditorOpen(false)}>取消</Button>
@@ -1092,14 +1131,14 @@ function LumosWorkspace({ taskId, router, params }) {
               </Space>
             }
           >
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: 'rgba(15, 23, 42, 0.45)', marginBottom: 8 }}>
               系统已检测到宿主机配置文件路径: `/home/lumos/FastUMI_Data_Collection-Data_Collection_evaluation/config/tasks_config.json`
             </div>
             <Input.TextArea 
               rows={12} 
               value={configJsonStr} 
               onChange={(e) => setConfigJsonStr(e.target.value)}
-              style={{ fontFamily: 'monospace', fontSize: 12, background: '#020617', color: '#10b981', border: '1px solid rgba(255,255,255,0.08)' }} 
+              style={{ fontFamily: 'monospace', fontSize: 12, background: '#f8fafc', color: '#0f172a', border: '1px solid #e2e8f0' }} 
             />
           </Card>
         </div>
@@ -1120,17 +1159,619 @@ function LumosWorkspace({ taskId, router, params }) {
   );
 }
 
+// ==================== GALBOT 1.16 WORKSPACE (HIGH-FIDELITY DUAL-CORE) ====================
+const defaultGalbotTasksConfig = {
+  task_id: "GB-20260605001",
+  task_name: "Galbot 1.16 双臂精细整理作业",
+  rgb_frame_number: 450,
+  depth_frame_number: 225,
+  save_path: "/userdata/user_config/data_collection/data/",
+  if_quality_check: true,
+  camera_sync_alignment: true,
+  ptp_sync_limit_ms: 0.2,
+  total_count: 50,
+  audio_volume: 8,
+};
+
+const defaultGalbotEpisodes = [
+  { id: 'EP_001', time: '15.0', frames: 450, status: '已保存' },
+  { id: 'EP_002', time: '14.8', frames: 444, status: '已保存' },
+];
+
+function Galbot116Workspace({ taskId, router, params }) {
+  const { message } = App.useApp();
+  const [galbotState, setGalbotState] = useState('SERVICE_STOPPED'); // SERVICE_STOPPED, BOOTING, READY, COLLECTING, COMPLETE
+  const [voiceLogs, setVoiceLogs] = useState([
+    { time: '17:33:00', text: '双端硬件连通，服务未开启。请点击右侧［一键启动双端服务］以拉起底座控制与上位机桥接。' }
+  ]);
+  const [isMuted, setIsMuted] = useState(false);
+  const [tasksConfig, setTasksConfig] = useState(defaultGalbotTasksConfig);
+  const [configEditorOpen, setConfigEditorOpen] = useState(false);
+  const [configJsonStr, setConfigJsonStr] = useState(JSON.stringify(defaultGalbotTasksConfig, null, 2));
+
+  const [collectionFrameCount, setCollectionFrameCount] = useState(0);
+  const [collectionTime, setCollectionTime] = useState(0.0);
+  const [ptpDeviation, setPtpDeviation] = useState(0.0);
+  const [angleOffset, setAngleOffset] = useState(0);
+  const [completedEpisodes, setCompletedEpisodes] = useState(defaultGalbotEpisodes);
+  const [recordedCount, setRecordedCount] = useState(2);
+
+  const [bootLogs, setBootLogs] = useState([]);
+
+  const speakText = (text) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString();
+    setVoiceLogs(prev => [{ time: timeStr, text }, ...prev.slice(0, 19)]);
+
+    if (isMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 1.05;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Simulated system daemon boots
+  const startBooting = () => {
+    if (galbotState !== 'SERVICE_STOPPED') return;
+    setGalbotState('BOOTING');
+    setBootLogs([]);
+    speakText('正在建立 SSH 连接，尝试拉起 XCU 底座运动控制服务和 HPU 守护进程...');
+
+    const simulatedTerminalSteps = [
+      { t: 0, log: 'Connecting to root@192.168.1.66...' },
+      { t: 300, log: '[XCU] SSH Authenticated (Password: 12345678)' },
+      { t: 600, log: '[XCU] Executing: systemctl start remote_ctrl_record.target' },
+      { t: 900, log: '[XCU] Service remote_ctrl_record.target loaded successfully.' },
+      { t: 1200, log: 'Connecting to galbot@192.168.1.88...' },
+      { t: 1500, log: '[HPU] SSH Authenticated (Password: gb@2023)' },
+      { t: 1800, log: '[HPU] Executing: systemctl start supervisor' },
+      { t: 2100, log: '[HPU] supervisor.service started. Spawning subprocesses...' },
+      { t: 2400, log: '[HPU] [supervisor] galbot_upper_bridge active (PID: 18442, log: /userdata/log/data-gather-upper/galbot-upper)' },
+      { t: 2700, log: '[SYS] Commencing PTP clock synchronization (IEEE 1588)...' },
+      { t: 3000, log: '[SYS] Clock lock: DELTA=0.08ms (<= 0.2ms benchmark). PTP synchronized.' },
+      { t: 3300, log: '[SYS] 4-camera GMSL2 streams verified. Frame sync initialized.' },
+      { t: 3600, log: '● System status: READY. Dual-core datastream running.' }
+    ];
+
+    simulatedTerminalSteps.forEach(step => {
+      setTimeout(() => {
+        setBootLogs(prev => [...prev, { time: new Date().toLocaleTimeString(), text: step.log }]);
+      }, step.t);
+    });
+
+    setTimeout(() => {
+      setGalbotState('READY');
+      setPtpDeviation(0.08);
+      speakText('自检及双端进程全部就绪！网关时钟已同步，按 Space 键或点击开始录制。');
+    }, 3700);
+  };
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (galbotState === 'READY') {
+          setGalbotState('COLLECTING');
+          setCollectionFrameCount(0);
+          setCollectionTime(0.0);
+          speakText('录制开启。系统正在实时捕捉 XCU 轨迹和 HPU 视频帧，请开始作业。');
+        } else if (galbotState === 'COLLECTING') {
+          setGalbotState('READY');
+          speakText('录制已暂停。');
+        }
+      } else if (e.code === 'Enter') {
+        e.preventDefault();
+        if (galbotState === 'COMPLETE') {
+          saveCurrentEpisode();
+        }
+      } else if (e.code === 'KeyR' || e.code === 'Backspace') {
+        if (galbotState === 'COMPLETE') {
+          e.preventDefault();
+          discardCurrentEpisode();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [galbotState, collectionTime]);
+
+  // Frame ticking logic
+  useEffect(() => {
+    let collectInterval;
+    if (galbotState === 'COLLECTING') {
+      collectInterval = setInterval(() => {
+        setCollectionFrameCount(prev => {
+          const next = prev + 3; // 3 frames per 100ms
+          const maxFrames = tasksConfig.rgb_frame_number;
+
+          if (next === Math.floor(maxFrames * 0.5)) {
+            speakText('采集进度百分之五十，左右臂轨迹写入正常。');
+          }
+          if (next === Math.floor(maxFrames * 0.8)) {
+            speakText('已采集百分之八十，请稳定末端夹爪。');
+          }
+
+          if (next >= maxFrames) {
+            clearInterval(collectInterval);
+            setGalbotState('COMPLETE');
+            speakText('采集段落满额。按 Enter 键保存数据，按 R 键作废重录。');
+            return maxFrames;
+          }
+          return next;
+        });
+
+        setCollectionTime(t => parseFloat((t + 0.1).toFixed(1)));
+        setAngleOffset(a => (a + 8) % 360);
+        setPtpDeviation(parseFloat((0.07 + Math.random() * 0.08).toFixed(3)));
+      }, 100);
+    }
+    return () => clearInterval(collectInterval);
+  }, [galbotState, tasksConfig.rgb_frame_number]);
+
+  const saveCurrentEpisode = () => {
+    const duration = collectionTime.toFixed(1);
+    const newEp = {
+      id: `EP_${String(completedEpisodes.length + 1).padStart(3, '0')}`,
+      time: duration,
+      frames: tasksConfig.rgb_frame_number,
+      status: '已保存'
+    };
+    setCompletedEpisodes(prev => [newEp, ...prev]);
+    setRecordedCount(prev => prev + 1);
+    setGalbotState('READY');
+    speakText(`第 ${completedEpisodes.length + 1} 段数据保存成功。请继续下一轮作业。`);
+  };
+
+  const discardCurrentEpisode = () => {
+    setGalbotState('READY');
+    speakText('当前段落数据已作废丢弃。');
+    message.warning('数据已丢弃，请重新开始采集');
+  };
+
+  const handleSaveConfig = () => {
+    try {
+      const parsed = JSON.parse(configJsonStr);
+      setTasksConfig(parsed);
+      setConfigEditorOpen(false);
+      message.success('本地数采配置文件 tasks_config.json 保存成功，已动态重载参数！');
+      speakText('任务目标参数已刷新。');
+    } catch(e) {
+      message.error('JSON 格式有误，请检查语法！');
+    }
+  };
+
+  return (
+    <div style={{ 
+      height: '100vh', 
+      background: '#f8fafc', 
+      color: '#0f172a',
+      fontFamily: 'SFMono-Regular, Consolas, Courier New, monospace',
+      display: 'flex', 
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
+      
+      {/* 1. TOP DIAGNOSTICS BAR */}
+      <div style={{ 
+        height: 48, 
+        borderBottom: '1px solid #e2e8f0', 
+        background: '#ffffff',
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        padding: '0 16px',
+        fontSize: 12
+      }}>
+        <Space size="large">
+          <Space size="small">
+            <ThunderboltOutlined style={{ color: '#faad14' }} />
+            <span style={{ color: '#0f172a', fontWeight: 600 }}>Galbot 1.16 Workspace</span>
+            <Tag color="processing" style={{ fontSize: 10, margin: 0 }}>XCU/HPU DUAL-CORE</Tag>
+          </Space>
+
+          <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
+            <span>XCU 控制底座:</span>
+            <span style={{ color: galbotState === 'SERVICE_STOPPED' ? '#94a3b8' : '#10b981', fontWeight: 'bold' }}>192.168.1.66</span>
+          </Space>
+          
+          <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
+            <span>HPU 算力板:</span>
+            <span style={{ color: galbotState === 'SERVICE_STOPPED' ? '#94a3b8' : '#10b981', fontWeight: 'bold' }}>192.168.1.88</span>
+          </Space>
+
+          <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
+            <span>Wi-Fi SSID:</span>
+            <span style={{ color: '#10b981' }}>miracle-office-5g</span>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: galbotState === 'SERVICE_STOPPED' ? '#94a3b8' : '#10b981', display: 'inline-block' }}></span>
+          </Space>
+
+          <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
+            <span>PTP 偏差:</span>
+            <span style={{ color: ptpDeviation > 0.2 ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
+              {galbotState === 'SERVICE_STOPPED' ? '—' : `${ptpDeviation.toFixed(3)}ms`}
+            </span>
+          </Space>
+        </Space>
+
+        <Space size="middle">
+          <Button 
+            size="small" 
+            type={isMuted ? "default" : "primary"} 
+            danger={!isMuted}
+            icon={isMuted ? <AudioMutedOutlined /> : <AudioOutlined />}
+            onClick={() => {
+              setIsMuted(!isMuted);
+              message.info(isMuted ? '语音助理开启' : '语音助理已静音');
+            }}
+          >
+            语音: {isMuted ? 'OFF' : 'ON'}
+          </Button>
+          <Button size="small" type="primary" danger ghost icon={<CloseCircleOutlined />} onClick={() => window.close()}>退出工作台</Button>
+        </Space>
+      </div>
+
+      {/* 2. MAIN GRID LAYOUT */}
+      <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+        
+        {/* Left: 4-Grid Camera View */}
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 12, padding: 16, background: '#f1f5f9', overflow: 'hidden' }}>
+          
+          {/* Top Left: HEAD_L Camera */}
+          <div style={{ border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 'bold', color: '#1e293b', display: 'flex', justifyContent: 'space-between' }}>
+              <span>| 头部左相机视角 [HEAD_L]</span>
+              {galbotState === 'COLLECTING' && <span style={{ color: '#ef4444', animation: 'blink-dot 1s infinite' }}>● REC</span>}
+            </div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <img src="/assets/images/main_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: galbotState === 'SERVICE_STOPPED' ? 0.2 : 0.95 }} alt="head camera left" onError={(e) => { e.target.src="https://images.unsplash.com/photo-1531746790731-6c087fecd05a?auto=format&fit=crop&q=80&w=400"; }} />
+              {galbotState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>双端服务离线 (待启动)</span>}
+            </div>
+            <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(0,0,0,0.6)', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: 4 }}>
+              1080p | 30 FPS | PTP Sync: OK
+            </div>
+          </div>
+
+          {/* Top Right: HEAD_R Camera */}
+          <div style={{ border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 'bold', color: '#1e293b', display: 'flex', justifyContent: 'space-between' }}>
+              <span>| 头部右相机视角 [HEAD_R]</span>
+              {galbotState === 'COLLECTING' && <span style={{ color: '#ef4444', animation: 'blink-dot 1s infinite' }}>● REC</span>}
+            </div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <img src="/assets/images/main_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: galbotState === 'SERVICE_STOPPED' ? 0.2 : 0.95 }} alt="head camera right" onError={(e) => { e.target.src="https://images.unsplash.com/photo-1546776310-eef45dd6d63c?auto=format&fit=crop&q=80&w=400"; }} />
+              {galbotState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>双端服务离线 (待启动)</span>}
+            </div>
+            <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(0,0,0,0.6)', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: 4 }}>
+              1080p | 30 FPS | PTP Sync: OK
+            </div>
+          </div>
+
+          {/* Bottom Left: HAND_L Camera */}
+          <div style={{ border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 'bold', color: '#1e293b', display: 'flex', justifyContent: 'space-between' }}>
+              <span>| 左手-腕部视角 [HAND_L]</span>
+              {galbotState === 'COLLECTING' && <span style={{ color: '#ef4444', animation: 'blink-dot 1s infinite' }}>● REC</span>}
+            </div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <img src="/assets/images/left_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: galbotState === 'SERVICE_STOPPED' ? 0.2 : 0.95 }} alt="left wrist camera" onError={(e) => { e.target.src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=400"; }} />
+              {galbotState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>双端服务离线 (待启动)</span>}
+            </div>
+            <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(0,0,0,0.6)', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: 4 }}>
+              720p | 30 FPS | PTP Sync: OK
+            </div>
+          </div>
+
+          {/* Bottom Right: HAND_R Camera */}
+          <div style={{ border: '1px solid #e2e8f0', background: '#ffffff', borderRadius: 8, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 'bold', color: '#1e293b', display: 'flex', justifyContent: 'space-between' }}>
+              <span>| 右手-腕部视角 [HAND_R]</span>
+              {galbotState === 'COLLECTING' && <span style={{ color: '#ef4444', animation: 'blink-dot 1s infinite' }}>● REC</span>}
+            </div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <img src="/assets/images/right_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: galbotState === 'SERVICE_STOPPED' ? 0.2 : 0.95 }} alt="right wrist camera" onError={(e) => { e.target.src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=400"; }} />
+              {galbotState === 'SERVICE_STOPPED' && <span style={{ position: 'absolute', color: 'rgba(0,0,0,0.45)', fontSize: 13 }}>双端服务离线 (待启动)</span>}
+            </div>
+            <div style={{ position: 'absolute', top: 40, left: 12, fontSize: 10, color: 'rgba(0,0,0,0.6)', background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: 4 }}>
+              720p | 30 FPS | PTP Sync: OK
+            </div>
+          </div>
+
+        </div>
+
+        {/* Center: Daemon logs & Joint Twin */}
+        <div style={{ width: 420, borderLeft: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', flexDirection: 'column', padding: 16, gap: 16, overflowY: 'auto' }}>
+          
+          {/* Boot Control & Daemons Panel */}
+          <Card 
+            title={
+              <div style={{ fontSize: 12, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <DeploymentUnitOutlined style={{ color: '#3b82f6' }} />
+                双端系统服务管理器
+              </div>
+            }
+            size="small"
+            style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '8px 12px', borderRadius: 6 }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 'bold' }}>XCU 控制箱底座守护:</div>
+                  <div style={{ fontSize: 9, color: 'rgba(15, 23, 42, 0.45)' }}>`remote_ctrl_record.target`</div>
+                </div>
+                <Badge status={galbotState === 'SERVICE_STOPPED' ? 'default' : galbotState === 'BOOTING' ? 'processing' : 'success'} text={<span style={{ color: '#0f172a', fontSize: 10 }}>{galbotState === 'SERVICE_STOPPED' ? '已停止' : '已就绪'}</span>} />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '8px 12px', borderRadius: 6 }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 'bold' }}>HPU 上位机守护:</div>
+                  <div style={{ fontSize: 9, color: 'rgba(15, 23, 42, 0.45)' }}>`supervisor` -&gt; `galbot_upper_bridge`</div>
+                </div>
+                <Badge status={galbotState === 'SERVICE_STOPPED' ? 'default' : galbotState === 'BOOTING' ? 'processing' : 'success'} text={<span style={{ color: '#0f172a', fontSize: 10 }}>{galbotState === 'SERVICE_STOPPED' ? '已停止' : '已就绪'}</span>} />
+              </div>
+
+              {galbotState === 'SERVICE_STOPPED' ? (
+                <Button type="primary" block icon={<SyncOutlined spin={false} />} onClick={startBooting} style={{ background: '#1e3a8a', borderColor: '#3b82f6' }}>
+                  一键启动双端服务
+                </Button>
+              ) : (
+                <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: 8, height: 120, overflowY: 'auto', fontSize: 9, fontFamily: 'monospace', color: '#0f172a' }}>
+                  {bootLogs.map((log, idx) => (
+                    <div key={idx} style={{ marginBottom: 2 }}>
+                      <span style={{ color: 'rgba(15, 23, 42, 0.3)' }}>[{log.time}]</span> {log.text}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* 3D Kinematic Twin SVG */}
+          <Card 
+            title={
+              <div style={{ fontSize: 12, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <RobotOutlined style={{ color: '#10b981' }} />
+                三维关节真值实时孪生 (14 DoF)
+              </div>
+            }
+            size="small"
+            style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}
+          >
+            <div style={{ background: '#f8fafc', borderRadius: 6, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+              <svg width="180" height="180" viewBox="0 0 100 100" style={{ opacity: galbotState === 'SERVICE_STOPPED' ? 0.2 : 1 }}>
+                {/* Robot body base */}
+                <rect x="44" y="65" width="12" height="25" rx="3" fill="#334155" />
+                <line x1="50" y1="65" x2="50" y2="35" stroke="#475569" strokeWidth="2.5" />
+                <circle cx="50" cy="35" r="5" fill="#f59e0b" /> {/* Head */}
+
+                {/* Left Arm (Kinematic calculations using angleOffset) */}
+                <g transform={`rotate(${Math.sin(angleOffset * Math.PI / 180) * 18}, 44, 42)`}>
+                  <line x1="44" y1="42" x2="28" y2="46" stroke="#3b82f6" strokeWidth="3" />
+                  <circle cx="28" cy="46" r="3" fill="#3b82f6" />
+                  <g transform={`rotate(${Math.cos((angleOffset + 90) * Math.PI / 180) * 25}, 28, 46)`}>
+                    <line x1="28" y1="46" x2="16" y2="38" stroke="#10b981" strokeWidth="2" />
+                    <circle cx="16" cy="38" r="2" fill="#10b981" />
+                    {/* Gripper */}
+                    <path d="M 16 38 L 12 36 M 16 38 L 12 40" stroke="#f59e0b" strokeWidth="1.5" />
+                  </g>
+                </g>
+
+                {/* Right Arm */}
+                <g transform={`rotate(${Math.cos(angleOffset * Math.PI / 180) * 18}, 56, 42)`}>
+                  <line x1="56" y1="42" x2="72" y2="46" stroke="#3b82f6" strokeWidth="3" />
+                  <circle cx="72" cy="46" r="3" fill="#3b82f6" />
+                  <g transform={`rotate(${Math.sin((angleOffset + 45) * Math.PI / 180) * 25}, 72, 46)`}>
+                    <line x1="72" y1="46" x2="84" y2="38" stroke="#10b981" strokeWidth="2" />
+                    <circle cx="84" cy="38" r="2" fill="#10b981" />
+                    {/* Gripper */}
+                    <path d="M 84 38 L 88 36 M 84 38 L 88 40" stroke="#f59e0b" strokeWidth="1.5" />
+                  </g>
+                </g>
+              </svg>
+
+              {galbotState === 'SERVICE_STOPPED' && (
+                <div style={{ position: 'absolute', color: 'rgba(0,0,0,0.45)', fontSize: 11 }}>
+                  等待双端服务启动...
+                </div>
+              )}
+
+              <div style={{ position: 'absolute', bottom: 8, left: 10, fontSize: 8, color: 'rgba(0,0,0,0.3)', fontFamily: 'monospace' }}>
+                {galbotState === 'SERVICE_STOPPED' ? 'TELEMETRY: OFFLINE' : `PTP OFFSET: ${ptpDeviation.toFixed(4)}ms`}
+              </div>
+            </div>
+          </Card>
+
+          {/* Voice logs */}
+          <Card 
+            title={
+              <div style={{ fontSize: 11, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+                语音助手广播流
+              </div>
+            }
+            size="small"
+            style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}
+          >
+            <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px 10px', minHeight: 50, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: '#0f172a', lineHeight: 1.4 }}>
+                🎙️ {voiceLogs[0]?.text || '就绪...'}
+              </div>
+            </div>
+            <div style={{ height: 60, overflowY: 'auto', fontSize: 9, color: 'rgba(15, 23, 42, 0.45)' }}>
+              {voiceLogs.slice(1, 4).map((log, idx) => (
+                <div key={idx} style={{ marginBottom: 2 }}>
+                  <span style={{ color: 'rgba(15, 23, 42, 0.3)' }}>[{log.time}]</span> {log.text}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+        </div>
+
+        {/* Right Sidebar: Config & Record details */}
+        <div style={{ width: 380, borderLeft: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', flexDirection: 'column' }}>
+          
+          <div style={{ padding: 16, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 12, fontWeight: 'bold', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: 6 }}>
+              ⚙️ 边缘数采任务配置 (HPU)
+            </span>
+            <Button size="small" type="link" icon={<EditOutlined />} onClick={() => setConfigEditorOpen(true)}>编辑 JSON</Button>
+          </div>
+
+          <div style={{ padding: 16, flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Visual configuration details */}
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 11 }}>
+                <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>任务标识 ID:</span>
+                <span style={{ color: '#0f172a' }}>{taskId}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 11 }}>
+                <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>作业名称:</span>
+                <span style={{ color: '#0f172a' }}>{tasksConfig.task_name}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 11 }}>
+                <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>保存路径 (HPU):</span>
+                <span style={{ color: 'rgba(15, 23, 42, 0.7)', fontSize: 9 }}>{tasksConfig.save_path}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 11 }}>
+                <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>录制上限:</span>
+                <span style={{ color: '#faad14', fontWeight: 'bold' }}>{tasksConfig.rgb_frame_number} 帧 (15.0s)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                <span style={{ color: 'rgba(15, 23, 42, 0.45)' }}>PTP 同步阀值:</span>
+                <span style={{ color: '#10b981' }}>&lt;= {tasksConfig.ptp_sync_limit_ms}ms</span>
+              </div>
+            </div>
+
+            {/* List of episodes */}
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 200 }}>
+              <div style={{ fontSize: 12, fontWeight: 'bold', color: '#0f172a', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
+                <span>已保存 Episode 段落 ({recordedCount} / {tasksConfig.total_count})</span>
+                <span style={{ color: '#10b981', fontSize: 10 }}>上传通路: OK</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto', maxHeight: 220 }}>
+                {completedEpisodes.map((ep, idx) => (
+                  <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 12, fontWeight: 'bold', color: '#3b82f6' }}>{ep.id}</span>
+                      <Tag color="success" style={{ fontSize: 9, margin: 0 }}>{ep.status}</Tag>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(15, 23, 42, 0.45)' }}>
+                      <span>时长: {ep.time}s</span>
+                      <span>总帧数: {ep.frames}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* 3. FOOTER CONTROL BAR */}
+      <div style={{ height: 64, borderTop: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 11, color: 'rgba(15, 23, 42, 0.45)' }}>
+          作业时间: <span style={{ color: '#0f172a', fontWeight: 'bold', fontSize: 13 }}>{collectionTime.toFixed(1)}s</span> / 15.0s &nbsp;|&nbsp;
+          时序帧率: <span style={{ color: '#0f172a', fontWeight: 'bold' }}>30 FPS</span> &nbsp;|&nbsp;
+          帧数采集: <span style={{ color: '#faad14', fontWeight: 'bold', fontSize: 13 }}>{collectionFrameCount}帧</span> / 450帧
+        </div>
+
+        {/* Play/Pause controls */}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          {galbotState === 'SERVICE_STOPPED' || galbotState === 'BOOTING' ? (
+            <Button type="primary" disabled style={{ width: 180, fontWeight: 'bold' }}>等待双端服务启动...</Button>
+          ) : galbotState === 'READY' ? (
+            <Button type="primary" danger shape="round" icon={<PlayCircleOutlined />} size="large" onClick={() => {
+              setGalbotState('COLLECTING');
+              setCollectionFrameCount(0);
+              setCollectionTime(0.0);
+              speakText('数据录制已开启。');
+            }} style={{ width: 180, fontWeight: 'bold' }}>
+              开始录制 (Space)
+            </Button>
+          ) : galbotState === 'COLLECTING' ? (
+            <Button shape="round" icon={<PauseCircleOutlined />} size="large" onClick={() => {
+              setGalbotState('READY');
+              speakText('录制已暂停。');
+            }} style={{ width: 180, fontWeight: 'bold', background: '#f5f5f5', color: '#000' }}>
+              暂停录制 (Space)
+            </Button>
+          ) : galbotState === 'COMPLETE' ? (
+            <Space size="middle">
+              <Button type="primary" style={{ background: '#10b981', borderColor: '#10b981', fontWeight: 'bold' }} onClick={saveCurrentEpisode}>
+                保存本段 (Enter)
+              </Button>
+              <Button danger onClick={discardCurrentEpisode}>
+                作废重录 (Backspace)
+              </Button>
+            </Space>
+          ) : null}
+        </div>
+
+        <div style={{ fontSize: 11, color: 'rgba(15, 23, 42, 0.45)' }}>
+          {galbotState === 'SERVICE_STOPPED' && <span style={{ color: '#94a3b8' }}>● 双端控制器离线</span>}
+          {galbotState === 'BOOTING' && <span style={{ color: '#3b82f6' }}>● 正在连接 XCU / HPU 并对齐时钟...</span>}
+          {galbotState === 'READY' && <span style={{ color: '#10b981' }}>● 网关时钟同步就绪</span>}
+          {galbotState === 'COLLECTING' && <span style={{ color: '#ef4444', animation: 'blink-dot 1s infinite' }}>● 正在捕捉 ROS 双端轨迹与视频帧...</span>}
+          {galbotState === 'COMPLETE' && <span style={{ color: '#faad14' }}>● 数据捕获满额，待保存</span>}
+        </div>
+      </div>
+
+      {/* JSON CONFIG DRAWER / MODAL */}
+      <ConfigProvider>
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, 
+          display: configEditorOpen ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center', padding: 24
+        }}>
+          <Card 
+            title="编辑本地 tasks_config.json 配置文件 (HPU)" 
+            style={{ width: 600, background: '#ffffff', border: '1px solid #e2e8f0' }}
+            extra={
+              <Space>
+                <Button size="small" onClick={() => setConfigEditorOpen(false)}>取消</Button>
+                <Button size="small" type="primary" icon={<SaveOutlined />} onClick={handleSaveConfig}>保存修改</Button>
+              </Space>
+            }
+          >
+            <div style={{ fontSize: 11, color: 'rgba(15, 23, 42, 0.45)', marginBottom: 8 }}>
+              HPU 本地任务配置文件路径: `/userdata/user_config/data_collection/tasks_config.json`
+            </div>
+            <Input.TextArea 
+              rows={12} 
+              value={configJsonStr} 
+              onChange={(e) => setConfigJsonStr(e.target.value)}
+              style={{ fontFamily: 'monospace', fontSize: 12, background: '#f8fafc', color: '#0f172a', border: '1px solid #e2e8f0' }} 
+            />
+          </Card>
+        </div>
+      </ConfigProvider>
+
+    </div>
+  );
+}
+
 // ==================== WORKSPACE ENTRY SWITCHER ====================
 export default function WorkspacePage() {
   const params = useParams();
   const router = useRouter();
 
   const taskId = params?.taskId || 'CT-20250301001';
-  const isLumos = taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos');
+  const isGalbot116 = taskId?.includes('1.16') || taskId?.includes('GB116') || taskId?.includes('GB105') || taskId === 'CT-20260605001';
+  const isLumos = !isGalbot116 && (taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos'));
 
   return (
     <App>
-      {isLumos ? (
+      {isGalbot116 ? (
+        <Galbot116Workspace taskId={taskId} router={router} params={params} />
+      ) : isLumos ? (
         <LumosWorkspace taskId={taskId} router={router} params={params} />
       ) : (
         <HumanoidWorkspace taskId={taskId} router={router} params={params} />

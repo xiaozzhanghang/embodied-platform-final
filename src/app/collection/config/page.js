@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Typography, Breadcrumb, Button, Input, App, Modal, Tag, Space, Tooltip, Form, Select, InputNumber, Radio, Row, Col } from 'antd';
 import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import SpecMarker from '@/components/SpecMarker';
 
 const { Text } = Typography;
 
@@ -220,14 +221,26 @@ export default function TaskLabelsPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text strong style={{ fontSize: 14 }}>标签分类</Text>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Button
-                type="text"
-                icon={<PlusOutlined />}
-                size="small"
-                onClick={() => setCreateCatOpen(true)}
-                style={{ color: '#1890ff', padding: '0 4px' }}
-                title="创建分类"
-              />
+              <SpecMarker
+                id="config-cat-create"
+                number={1}
+                title="新增标签分类"
+                rules={[
+                  "点击 '+' 按钮，弹出创建标签分类弹窗。",
+                  "表单字段包含：所属分组、分类名称、英文名称、唯一标识、可添加多级、排序值、描述。",
+                  "所属分组、分类名称、英文名称、唯一标识均为必填项。"
+                ]}
+                remark="新建分类保存后，会在左侧树状目录相应分组下即时新增节点并选中。"
+              >
+                <Button
+                  type="text"
+                  icon={<PlusOutlined />}
+                  size="small"
+                  onClick={() => setCreateCatOpen(true)}
+                  style={{ color: '#1890ff', padding: '0 4px' }}
+                  title="创建分类"
+                />
+              </SpecMarker>
               <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
             </div>
           </div>
@@ -325,21 +338,33 @@ export default function TaskLabelsPage() {
                 <span style={{ fontWeight: 500 }}>{tag.name}</span>
                 {tag.desc && <span style={{ color: '#ff7875', fontSize: 11 }}>({tag.desc})</span>}
 
-                <Tooltip title={`管理二级标签 (${tag.count})`}>
-                  <span
-                    onClick={() => openSubModal(tag)}
-                    style={{
-                      background: '#ff4d4f', color: '#fff',
-                      borderRadius: '50%', width: 20, height: 20,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 10, fontWeight: 600, flexShrink: 0,
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 4px rgba(255,77,79,0.3)',
-                    }}
-                  >
-                    {tag.count}
-                  </span>
-                </Tooltip>
+                <SpecMarker
+                  id="config-subtag-manage"
+                  number={4}
+                  title="二级标签层级绑定"
+                  rules={[
+                    "仅在分类被配置为‘可添加多级：是’时，一级标签方可展示并维护二级列表数字徽标。",
+                    "点击数字徽标弹出‘二级标签管理’弹窗。",
+                    "弹窗内支持追加二级子标签，并实时累加计数；支持点击‘x’物理移除关联。"
+                  ]}
+                  remark="对应数据标注中的多级树拓扑结构。二级标签在删除时，需要对已被数据包占用的字段进行强一致性安全提示。"
+                >
+                  <Tooltip title={`管理二级标签 (${tag.count})`}>
+                    <span
+                      onClick={() => openSubModal(tag)}
+                      style={{
+                        background: '#ff4d4f', color: '#fff',
+                        borderRadius: '50%', width: 20, height: 20,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 10, fontWeight: 600, flexShrink: 0,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(255,77,79,0.3)',
+                      }}
+                    >
+                      {tag.count}
+                    </span>
+                  </Tooltip>
+                </SpecMarker>
 
                 <CloseOutlined
                   onClick={() => removeTag(tag.id)}
@@ -357,13 +382,25 @@ export default function TaskLabelsPage() {
                 placeholder="输入标签名称"
               />
             ) : (
-              <Button
-                type="dashed" size="small" icon={<PlusOutlined />}
-                onClick={() => setAdding(true)}
-                style={{ borderRadius: 20, color: '#8c8c8c', borderColor: '#d9d9d9' }}
+              <SpecMarker
+                id="config-tag-create"
+                number={3}
+                title="添加一级标签"
+                rules={[
+                  "点击‘添加一级标签’，按钮切换为 Input 输入框以供输入名称。",
+                  "输入名称按下回车或失去焦点（onBlur）时保存标签，若为空则取消创建。",
+                  "新增的标签默认关联二级计数为 0，英文代码自动生成或在详情中编辑。"
+                ]}
+                remark="新增的一级标签会存入对应分类 of tagsMap 中并重新渲染局部组件。"
               >
-                添加一级标签
-              </Button>
+                <Button
+                  type="dashed" size="small" icon={<PlusOutlined />}
+                  onClick={() => setAdding(true)}
+                  style={{ borderRadius: 20, color: '#8c8c8c', borderColor: '#d9d9d9' }}
+                >
+                  添加一级标签
+                </Button>
+              </SpecMarker>
             )}
           </div>
         </div>
@@ -492,7 +529,19 @@ export default function TaskLabelsPage() {
             </Col>
           </Row>
           <Form.Item label="唯一标识" name="identifier" required rules={[{ required: true, message: '请输入唯一标识' }]}>
-            <Input placeholder="请输入唯一标识，如 scene_type" />
+            <SpecMarker
+              id="config-cat-identifier"
+              number={2}
+              title="唯一标识校验"
+              rules={[
+                "唯一标识必须在系统全局唯一，不得与已有的分类 key 冲突。",
+                "字符格式限制：仅允许小写英文字母与下划线组成的标识（如 scene_type）。",
+                "在分类编辑模式下，唯一标识字段应设为只读（disabled），防止历史关联损坏。"
+              ]}
+              remark="后台在进行数据写入前需对该字段进行重复性与合规性（正则表达式）强校验。"
+            >
+              <Input placeholder="请输入唯一标识，如 scene_type" />
+            </SpecMarker>
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>

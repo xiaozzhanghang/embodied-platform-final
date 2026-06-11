@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Layout, Menu, Avatar, Dropdown, Breadcrumb, Badge, Space, Typography, Tag, App } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Breadcrumb, Badge, Space, Typography, Tag, App, Switch, Drawer, Divider, List } from 'antd';
 import logoImg from '../assets/tq_logo.svg';
+import { SpecProvider, useSpec } from './SpecContext';
 import {
   DashboardOutlined,
   TagsOutlined,
@@ -26,7 +27,8 @@ import {
   AuditOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  LockOutlined
+  LockOutlined,
+  InfoCircleOutlined
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -77,13 +79,14 @@ const menuItems = [
     ],
   },
   {
-    key: 'data_app',
-    icon: <AppstoreOutlined />,
-    label: '数据应用',
-    roles: [ROLES.ADMIN],
+    key: 'data_assets',
+    icon: <DatabaseOutlined />,
+    label: '数据资产',
+    roles: [ROLES.ADMIN, ROLES.QA, ROLES.COLLECTOR],
     children: [
-      { key: '/data/raw', label: '原始数据' },
-      { key: '/data/datasets', label: '数据集管理' },
+      { key: '/data/catalog', label: '数据资产目录' },
+      { key: '/data/datasets', label: '高质量数据集' },
+      { key: '/data/reports', label: '数据资产报表' },
     ],
   },
   {
@@ -103,7 +106,7 @@ const breadcrumbMap = {
   '/collection/config': ['基础数据', '任务标签'],
   '/collection/objects': ['基础数据', '物体库'],
   '/collection/object-labels': ['基础数据', '物体标签'],
-  '/collection/devices': ['设备管理', '机器人设备'],
+  '/collection/devices': ['设备管理', '设备列表'],
   '/collection/device-types': ['设备管理', '设备类型'],
   '/collection/tasks': ['数据采集', '任务派发'],
   '/collection/collect': ['数据采集', '采集工作台'],
@@ -111,15 +114,19 @@ const breadcrumbMap = {
   '/annotation/audit': ['数据采集', '标注审核'],
   '/collection/templates': ['数据采集', '任务模板'],
   '/collection/taskbooks': ['数据采集', '任务书'],
-  '/data/raw': ['数据应用', '原始数据'],
-  '/data/datasets': ['数据应用', '数据集管理'],
+  '/data/raw': ['数据资产', '原始数据'],
+  '/data/catalog': ['数据资产', '数据资产目录'],
+  '/data/datasets': ['数据资产', '高质量数据集'],
+  '/data/reports': ['数据资产', '数据资产报表'],
   '/data/download': ['下载中心'],
   '/accounts/list': ['权限设置', '用户管理'],
 };
 
-export default function MainLayout({ children }) {
+function MainLayoutContent({ children }) {
+  const { specMode, toggleSpecMode, activeSpec, setActiveSpec } = useSpec();
   const [collapsed, setCollapsed] = useState(false);
   const [userRole, setUserRole] = useState(ROLES.ADMIN);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { message } = App.useApp();
@@ -129,6 +136,15 @@ export default function MainLayout({ children }) {
     if (savedRole && ROLES[savedRole]) {
       setUserRole(savedRole);
     }
+  }, []);
+
+  useEffect(() => {
+    const updateViewport = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
   }, []);
 
   const handleRoleChange = (role) => {
@@ -167,6 +183,9 @@ export default function MainLayout({ children }) {
   };
 
   const filteredItems = filterMenuItems(menuItems);
+  const effectiveCollapsed = collapsed || isMobile;
+  const siderWidth = isMobile ? 64 : 240;
+  const collapsedWidth = isMobile ? 64 : 80;
 
   const getOpenKeys = () => {
     const parentMap = {};
@@ -222,9 +241,10 @@ export default function MainLayout({ children }) {
     <Layout className="main-layout" style={{ minHeight: '100vh' }}>
       <Sider
         collapsible
-        collapsed={collapsed}
+        collapsed={effectiveCollapsed}
         onCollapse={setCollapsed}
-        width={240}
+        width={siderWidth}
+        collapsedWidth={collapsedWidth}
         trigger={null}
         style={{
           background: '#001529',
@@ -241,7 +261,7 @@ export default function MainLayout({ children }) {
           <div className="logo-square" style={{ background: 'transparent' }}>
             <img src={logoImg?.src || logoImg} alt="logo" style={{ width: 28, height: 28, objectFit: 'contain' }} />
           </div>
-          {!collapsed && <span className="logo-text" style={{ fontSize: 18, fontWeight: 600 }}>天奇股份</span>}
+          {!effectiveCollapsed && <span className="logo-text" style={{ fontSize: 18, fontWeight: 600 }}>天奇股份</span>}
         </div>
         <Menu
           theme="dark"
@@ -262,19 +282,42 @@ export default function MainLayout({ children }) {
           style={{ borderRight: 0 }}
         />
       </Sider>
-      <Layout style={{ marginLeft: collapsed ? 80 : 240, transition: 'margin-left 0.2s' }}>
+      <Layout style={{ marginLeft: effectiveCollapsed ? collapsedWidth : siderWidth, transition: 'margin-left 0.2s' }}>
         <Header className="header-bar" style={{ position: 'sticky', top: 0, zIndex: 90 }}>
           <div className="header-left">
-            {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
+            {React.createElement(effectiveCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
               onClick: () => setCollapsed(!collapsed),
               style: { fontSize: 18, cursor: 'pointer', color: '#001529' },
             })}
-            <div style={{ marginLeft: 16, fontSize: 15, fontWeight: 500, color: '#595959', letterSpacing: '0.5px' }}>
+            <div style={{ marginLeft: 16, fontSize: 15, fontWeight: 500, color: '#595959', letterSpacing: '0.5px', display: isMobile ? 'none' : 'block' }}>
               欢迎进入具身智能数据采集管理系统
             </div>
           </div>
           <div className="header-right">
             <Space size="large">
+              {/* Spec mode switch */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 8, 
+                background: specMode ? '#fffbe6' : '#f5f5f5', 
+                padding: '4px 12px', 
+                borderRadius: 20,
+                border: specMode ? '1px solid #ffe58f' : '1px solid #d9d9d9',
+                transition: 'all 0.3s'
+              }}>
+                <Text style={{ fontSize: 12, fontWeight: specMode ? 600 : 400, color: specMode ? '#d46b08' : '#595959', margin: 0 }}>
+                  📖 需求标注
+                </Text>
+                <Switch 
+                  checked={specMode} 
+                  onChange={toggleSpecMode} 
+                  size="small"
+                  checkedChildren="开" 
+                  unCheckedChildren="关"
+                />
+              </div>
+
               <Badge count={5} size="small">
                 <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
               </Badge>
@@ -297,6 +340,54 @@ export default function MainLayout({ children }) {
         </Content>
       </Layout>
 
+      {/* Spec details drawer */}
+      <Drawer
+        title={activeSpec ? `需求逻辑明细 #${activeSpec.number || ''}` : '需求逻辑明细'}
+        placement="right"
+        width={420}
+        onClose={() => setActiveSpec(null)}
+        open={!!activeSpec}
+        styles={{ body: { padding: '24px' } }}
+      >
+        {activeSpec && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f', margin: 0 }}>
+              {activeSpec.title}
+            </h3>
+            
+            <Divider style={{ margin: '12px 0' }} />
+            
+            <div style={{ fontWeight: 600, color: '#595959', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <SolutionOutlined style={{ color: '#1677ff' }} /> 交互与业务逻辑:
+            </div>
+            <List
+              dataSource={activeSpec.rules}
+              split={false}
+              renderItem={(rule, index) => (
+                <List.Item style={{ padding: '6px 0', alignItems: 'flex-start', border: 'none' }}>
+                  <span style={{ color: '#1677ff', fontWeight: 'bold', marginRight: 8 }}>{index + 1}.</span>
+                  <span style={{ color: 'rgba(0, 0, 0, 0.85)', fontSize: 13, lineHeight: '1.6' }}>{rule}</span>
+                </List.Item>
+              )}
+            />
+
+            {activeSpec.remark && (
+              <>
+                <Divider style={{ margin: '12px 0' }} />
+                <div style={{ background: '#fafafa', padding: '16px', borderRadius: 8, border: '1px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 600, color: '#fa8c16', fontSize: 12, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <InfoCircleOutlined /> 开发备注 / 校验细则
+                  </div>
+                  <div style={{ color: 'rgba(0,0,0,0.65)', fontSize: 12, lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                    {activeSpec.remark}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </Drawer>
+
       <style jsx global>{`
         .user-dropdown-hover:hover {
           background: rgba(0,0,0,0.04);
@@ -305,7 +396,25 @@ export default function MainLayout({ children }) {
           background-color: #1890ff !important;
           color: #fff !important;
         }
+        .spec-badge-trigger:hover {
+          transform: scale(1.15);
+        }
+        .spec-badge-trigger.selected {
+          animation: specBadgePulse 2s infinite alternate;
+        }
+        @keyframes specBadgePulse {
+          0% { box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.3), 0 2px 4px rgba(0,0,0,0.2); }
+          100% { box-shadow: 0 0 0 8px rgba(82, 196, 26, 0.5), 0 4px 8px rgba(0,0,0,0.3); }
+        }
       `}</style>
     </Layout>
+  );
+}
+
+export default function MainLayout({ children }) {
+  return (
+    <SpecProvider>
+      <MainLayoutContent>{children}</MainLayoutContent>
+    </SpecProvider>
   );
 }

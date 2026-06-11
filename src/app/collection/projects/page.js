@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Typography, Breadcrumb, Button, Input, App, Tooltip, Modal, Form, Select, InputNumber, Radio, Row, Col, Space } from 'antd';
 import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import SpecMarker from '@/components/SpecMarker';
 
 const { Text, Title } = Typography;
 
@@ -171,15 +172,39 @@ export default function ProjectManagementPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text strong style={{ fontSize: 14 }}>标签分类</Text>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Button
-                type="text"
-                icon={<PlusOutlined />}
-                size="small"
-                onClick={() => { setEditingCatKey(null); createCatForm.resetFields(); setCreateCatOpen(true); }}
-                style={{ color: '#1890ff', padding: '0 4px' }}
-                title="创建分类"
-              />
-              <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
+              <SpecMarker 
+                id="projects-create" 
+                number={3} 
+                title="新增分类/项目" 
+                rules={[
+                  "从列表或工具栏的 '+' 按钮进入新增/创建入口。",
+                  "表单字段与需求描述一致：所属分组、分类名称、英文名称、唯一标识均需输入。",
+                  "校验逻辑：唯一标识在前端及后端均需要进行重复校验，防止冲突。"
+                ]}
+                remark="复用分类维护表单结构，提交时对唯一性标识做数据库排重校验。"
+              >
+                <Button
+                  type="text"
+                  icon={<PlusOutlined />}
+                  size="small"
+                  onClick={() => { setEditingCatKey(null); createCatForm.resetFields(); setCreateCatOpen(true); }}
+                  style={{ color: '#1890ff', padding: '0 4px' }}
+                  title="创建分类"
+                />
+              </SpecMarker>
+              
+              <SpecMarker 
+                id="projects-query" 
+                number={1} 
+                title="分类查询筛选" 
+                rules={[
+                  "支持按分类名称、英文标识等条件对基础数据分类进行模糊搜索。",
+                  "页面显示全部筛选字段，默认包含占位符提示，且各输入框均具备可一键清空状态。"
+                ]}
+                remark="对应表格任务的‘查询筛选’节点，接当前原型项目管理页进行搜索条件整理。"
+              >
+                <SearchOutlined style={{ color: '#bfbfbf', cursor: 'pointer' }} />
+              </SpecMarker>
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -223,19 +248,44 @@ export default function ProjectManagementPage() {
                       {item.label}
                     </span>
                     {hoveredCat === item.key && (
-                      <div style={{ display: 'flex', gap: 0, flexShrink: 0, marginLeft: 4 }} onClick={e => e.stopPropagation()}>
-                        <Button
-                          type="text" size="small"
-                          icon={<EditOutlined style={{ fontSize: 11 }} />}
-                          onClick={(e) => handleEditCategory(item, e)}
-                          style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : '#595959', padding: '0 3px', height: 20, minWidth: 0 }}
-                        />
-                        <Button
-                          type="text" size="small"
-                          icon={<DeleteOutlined style={{ fontSize: 11 }} />}
-                          onClick={(e) => handleDeleteCategory(item.key, e)}
-                          style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : '#ff4d4f', padding: '0 3px', height: 20, minWidth: 0 }}
-                        />
+                      <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 4 }} onClick={e => e.stopPropagation()}>
+                        <SpecMarker 
+                          id="projects-edit" 
+                          number={4} 
+                          title="编辑分类/项目" 
+                          rules={[
+                            "支持从项目列表/分类项悬浮的编辑入口进入编辑。",
+                            "编辑弹窗中，需回显已有的项目/分类数据（所属分组、分类名称、英文名称、唯一标识、是否多级、描述等）。",
+                            "唯一标识在编辑状态下为只读/禁用（disabled），不允许修改，以防止破坏已有数据的关联引用。"
+                          ]}
+                          remark="注意唯一标识在编辑模式下为禁用输入状态。更新后同步刷新分类树。"
+                        >
+                          <Button
+                            type="text" size="small"
+                            icon={<EditOutlined style={{ fontSize: 11 }} />}
+                            onClick={(e) => handleEditCategory(item, e)}
+                            style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : '#595959', padding: '0 3px', height: 20, minWidth: 0 }}
+                          />
+                        </SpecMarker>
+                        
+                        <SpecMarker 
+                          id="projects-delete" 
+                          number={5} 
+                          title="删除分类/项目" 
+                          rules={[
+                            "支持单条删除项目分类，删除操作触发前必须进行‘二次确认弹窗’。",
+                            "引用校验拦截：需校验该分类下是否已绑定/引用了任何数据采集任务、物体、或采集标签项。",
+                            "如果已被引用，二次确认弹窗需呈现阻断状态（或直接拦截），不允许删除并给出清晰的报错提示；如果未被引用，方可删除。"
+                          ]}
+                          remark="删除操作需保留确认弹窗。必须先检测关联引用数据，若存在引用则拦截删除动作。"
+                        >
+                          <Button
+                            type="text" size="small"
+                            icon={<DeleteOutlined style={{ fontSize: 11 }} />}
+                            onClick={(e) => handleDeleteCategory(item.key, e)}
+                            style={{ color: isSelected ? 'rgba(255,255,255,0.9)' : '#ff4d4f', padding: '0 3px', height: 20, minWidth: 0 }}
+                          />
+                        </SpecMarker>
                       </div>
                     )}
                   </div>
@@ -251,7 +301,20 @@ export default function ProjectManagementPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 4, height: 16, background: '#ff4d4f', borderRadius: 2 }} />
-              <Text strong style={{ fontSize: 15 }}>自定义标签</Text>
+              <SpecMarker
+                id="projects-list"
+                number={2}
+                title="自定义标签与列表展示"
+                rules={[
+                  "列表/卡片形式展示当前分类下的全部自定义标签核心字段（名称、英文标识、关联数、描述）。",
+                  "字段排版布局：英文名称加粗，括号包裹中文描述，右侧红色徽标数字显示下属的二级标签个数。",
+                  "二级管理联动：点击红色计数徽标，唤起‘二级标签管理’弹窗。",
+                  "空值与溢出：若标签描述为空，隐藏括号；长文本时自动换行，不导致标签容器变形。"
+                ]}
+                remark="列表展示需要与左侧分类高亮状态联动。以原型页面及基础数据管理逻辑为准。"
+              >
+                <Text strong style={{ fontSize: 15 }}>自定义标签</Text>
+              </SpecMarker>
               <Tooltip title="点击标签右侧数字可进入二级标签管理"><InfoCircleOutlined style={{ color: '#bfbfbf', fontSize: 13 }} /></Tooltip>
             </div>
             <Text type="secondary" style={{ fontSize: 13 }}>{total}/500</Text>

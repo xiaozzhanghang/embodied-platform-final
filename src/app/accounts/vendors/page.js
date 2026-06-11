@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Popconfirm, App, Row, Col } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, KeyOutlined, DeleteOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title } = Typography;
@@ -40,23 +41,14 @@ export default function VendorPage() {
             <MainLayout>
                 <div className="page-header"><h3 className="page-header-title">服务商</h3></div>
                 <Card className="search-form" style={{ marginBottom: 16 }}>
-                    <Form layout="vertical">
-                        <Row gutter={24} align="bottom">
-                            <Col>
-                                <Form.Item label="服务商名称" style={{ marginBottom: 0 }}>
-                                    <Input placeholder="请输入服务商名称" allowClear style={{ width: 220 }} />
-                                </Form.Item>
-                            </Col>
-                            <Col>
-                                <Form.Item style={{ marginBottom: 0 }}>
-                                    <Space>
-                                        <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                                        <Button icon={<ReloadOutlined />}>重置</Button>
-                                    </Space>
-                                </Form.Item>
-                            </Col>
-                        </Row>
-                    </Form>
+                    <QueryFilter
+                        submitter={{
+                            submitButtonProps: { icon: <SearchOutlined /> },
+                            resetButtonProps: { icon: <ReloadOutlined /> },
+                        }}
+                    >
+                        <ProFormText name="vendorName" label="服务商名称" placeholder="请输入服务商名称" />
+                    </QueryFilter>
                 </Card>
 
                 <Card>

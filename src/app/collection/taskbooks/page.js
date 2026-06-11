@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Breadcrumb, Select, Form, Tooltip, Row, Col, Modal, App } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined, ColumnHeightOutlined, SettingOutlined, RobotOutlined, DownOutlined, UpOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -11,7 +12,6 @@ const { Title, Text } = Typography;
 export default function TaskbooksPage() {
   const router = useRouter();
   const { message } = App.useApp();
-  const [expand, setExpand] = useState(false);
 
   const mockData = [
     { key: '1', id: 'TB-2025001', name: '桌面抓取SOP规范', scene: '桌面场景', version: 'V1.0', status: '已发布', createTime: '2025-01-10 10:00:00', updateTime: '2025-01-12 14:30:00' },
@@ -62,59 +62,20 @@ export default function TaskbooksPage() {
 
       <Card 
         style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-        styles={{ body: { padding: '24px 24px 0' } }}
+        styles={{ body: { padding: '24px 24px 16px' } }}
       >
-        <Form layout="horizontal" labelCol={{ flex: '80px' }}>
-          <Row gutter={24}>
-            <Col span={6}>
-              <Form.Item label="任务书名称"><Input placeholder="请输入" allowClear /></Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item label="适用场景"><Select placeholder="请选择" /></Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item label="状态"><Select placeholder="全部" /></Form.Item>
-            </Col>
-            {!expand && (
-              <Col span={6} style={{ textAlign: 'right' }}>
-                <Space>
-                  <Button icon={<ReloadOutlined />}>重置</Button>
-                  <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                  <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                    展开 <DownOutlined />
-                  </a>
-                </Space>
-              </Col>
-            )}
-          </Row>
-          {expand && (
-            <>
-              <Row gutter={24}>
-                <Col span={6}>
-                  <Form.Item label="创建时间">
-                    <Input placeholder="请选择范围" allowClear />
-                  </Form.Item>
-                </Col>
-                <Col span={6}>
-                  <Form.Item label="版本号">
-                    <Input placeholder="请输入版本" allowClear />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row gutter={24}>
-                <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
-                  <Space>
-                    <Button icon={<ReloadOutlined />}>重置</Button>
-                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                    <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                      收起 <UpOutlined />
-                    </a>
-                  </Space>
-                </Col>
-              </Row>
-            </>
-          )}
-        </Form>
+        <QueryFilter
+            submitter={{
+                submitButtonProps: { icon: <SearchOutlined /> },
+                resetButtonProps: { icon: <ReloadOutlined /> },
+            }}
+        >
+            <ProFormText name="name" label="任务书名称" placeholder="请输入" />
+            <ProFormSelect name="scene" label="适用场景" placeholder="请选择" />
+            <ProFormSelect name="status" label="状态" placeholder="全部" />
+            <ProFormText name="createTime" label="创建时间" placeholder="请选择范围" />
+            <ProFormText name="version" label="版本号" placeholder="请输入版本" />
+        </QueryFilter>
       </Card>
 
       <Card styles={{ body: { padding: '24px' } }} style={{ borderRadius: 8 }}>

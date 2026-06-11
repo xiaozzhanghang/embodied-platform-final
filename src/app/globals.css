@@ -222,6 +222,36 @@ body {
   min-height: calc(100vh - 56px);
 }
 
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 12px;
+    overflow-x: hidden;
+  }
+
+  .header-bar {
+    padding: 0 12px;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+
+  .ant-card,
+  .ant-table-wrapper {
+    max-width: 100%;
+  }
+
+  .ant-table-wrapper {
+    overflow-x: auto;
+  }
+}
+
 /* ========================================
    PAGE HEADER (replaces inline <Title>)
    ======================================== */

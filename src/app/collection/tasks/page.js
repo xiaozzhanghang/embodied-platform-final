@@ -8,31 +8,20 @@ import {
   Row, Col, Dropdown, Divider, Switch 
 } from 'antd';
 import { 
-  PlusOutlined, 
-  SearchOutlined, 
-  ReloadOutlined, 
-  DownOutlined, 
-  UpOutlined,
-  SettingOutlined, 
-  ColumnHeightOutlined, 
-  CopyOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
-  EyeOutlined,
-  UsergroupAddOutlined,
-  TagsOutlined,
-  NodeIndexOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined
+  PlusOutlined, SearchOutlined, ReloadOutlined, DownOutlined, UpOutlined,
+  SettingOutlined, ColumnHeightOutlined, CopyOutlined, EditOutlined, 
+  DeleteOutlined, EyeOutlined, UsergroupAddOutlined, TagsOutlined, 
+  NodeIndexOutlined, CheckCircleOutlined, ExclamationCircleOutlined
 } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import SpecMarker from '@/components/SpecMarker';
 
 const { Title, Text } = Typography;
 
 export default function TaskCenterPage() {
   const router = useRouter();
   const { message } = App.useApp();
-  const [expand, setExpand] = useState(false);
 
   const [activeTab, setActiveTab] = useState('all');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -79,6 +68,42 @@ export default function TaskCenterPage() {
       qaProgress: '0%',
       status: '进行中', 
     },
+    { 
+      key: '3', 
+      instanceId: 'INS-GB116-001',
+      taskId: 'CT-Galbot-1.16', 
+      name: 'Galbot-1.16-双臂精细整理作业-001', 
+      project: 'InternalCommercial',
+      isShelfTask: '否',
+      shelfPosition: '-',
+      annoType: '双端数采',
+      collectedCount: 2,
+      plannedCount: 50,
+      collector: '赵六',
+      startTime: '-',
+      endTime: '-',
+      collectProgress: '4%',
+      qaProgress: '0%',
+      status: '进行中', 
+    },
+    { 
+      key: '4', 
+      instanceId: 'INS-LUMOS-001',
+      taskId: 'CT-20260414001', 
+      name: 'Lumos-双手筷子与勺子整理-001', 
+      project: 'InternalCommercial',
+      isShelfTask: '否',
+      shelfPosition: '-',
+      annoType: '离线数采',
+      collectedCount: 0,
+      plannedCount: 50,
+      collector: '王小二',
+      startTime: '-',
+      endTime: '-',
+      collectProgress: '0%',
+      qaProgress: '0%',
+      status: '进行中', 
+    },
   ];
 
   const columns = [
@@ -115,7 +140,19 @@ export default function TaskCenterPage() {
         <Space separator={<Divider type="vertical" />} size={0}>
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/tasks/${record.taskId}`)} style={{ padding: '0 4px' }}>查看详情</Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
-          <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
+          <SpecMarker
+            id="tasks-copy"
+            number={4}
+            title="模板复制与参数克隆"
+            rules={[
+              "点击‘复制’按钮，路由携带 `?mode=copy&taskId=[id]` 跳转到新建任务表单页。",
+              "表单需自动复刻并回显源任务的所有采集参数（动作模板、自检规则、传感器时空配置等）。",
+              "为防止冲突，复制后的‘任务名称’需清空或自动加上‘_copy’后缀，‘实例ID’重新自动生成。"
+            ]}
+            remark="提供便捷的采集任务模板化复制功能，避免重复性人工参数输入。"
+          >
+            <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
+          </SpecMarker>
           <Button type="link" size="small" icon={<DeleteOutlined />} danger style={{ padding: '0 4px' }} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>删除</Button>
         </Space>
       )
@@ -132,61 +169,37 @@ export default function TaskCenterPage() {
         </div>
       </div>
 
-      <Card 
-        style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-        styles={{ body: { padding: '24px 24px 0' } }}
+      <SpecMarker
+        id="tasks-query"
+        number={1}
+        title="所属项目与条件联合检索"
+        rules={[
+          "支持按所属项目（下拉精确匹配）、任务书、实例 ID、任务名称（模糊）、采集员及运行状态过滤任务实例。",
+          "所有筛选项输入框应包含 placeholder 占位说明，且均需支持可一键清空状态（allowClear）。",
+          "重置操作需同时清空所有输入并刷新表格为无过滤初始态。"
+        ]}
+        remark="该查询对应系统底层采集任务实例的大盘过滤，支持按状态实时检索。"
+        style={{ width: '100%' }}
       >
-        <Form layout="horizontal" labelCol={{ flex: '80px' }}>
-          <Row gutter={24}>
-            <Col span={6}>
-              <Form.Item label="所属项目"><Select placeholder="请选择项目" allowClear /></Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item label="任务书"><Select placeholder="请选择任务书" allowClear /></Form.Item>
-            </Col>
-            <Col span={6}>
-              <Form.Item label="实例ID"><Input placeholder="请输入实例ID" allowClear /></Form.Item>
-            </Col>
-            {!expand && (
-              <Col span={6} style={{ textAlign: 'right' }}>
-                <Space>
-                  <Button icon={<ReloadOutlined />}>重置</Button>
-                  <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                  <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                    展开 <DownOutlined />
-                  </a>
-                </Space>
-              </Col>
-            )}
-          </Row>
-          {expand && (
-            <>
-              <Row gutter={24}>
-                <Col span={6}>
-                  <Form.Item label="任务名称"><Input placeholder="请输入任务名称" allowClear /></Form.Item>
-                </Col>
-                <Col span={6}>
-                  <Form.Item label="采集员"><Input placeholder="请输入采集员" allowClear /></Form.Item>
-                </Col>
-                <Col span={6}>
-                  <Form.Item label="状态"><Select placeholder="请选择状态" allowClear options={[{label:'进行中', value:'active'}, {label:'已完成', value:'completed'}]} /></Form.Item>
-                </Col>
-              </Row>
-              <Row gutter={24}>
-                <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
-                  <Space>
-                    <Button icon={<ReloadOutlined />}>重置</Button>
-                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                    <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                      收起 <UpOutlined />
-                    </a>
-                  </Space>
-                </Col>
-              </Row>
-            </>
-          )}
-        </Form>
-      </Card>
+        <Card 
+          style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
+          styles={{ body: { padding: '24px 24px 16px' } }}
+        >
+          <QueryFilter
+              submitter={{
+                  submitButtonProps: { icon: <SearchOutlined /> },
+                  resetButtonProps: { icon: <ReloadOutlined /> },
+              }}
+          >
+              <ProFormSelect name="project" label="所属项目" placeholder="请选择项目" />
+              <ProFormSelect name="taskbook" label="任务书" placeholder="请选择任务书" />
+              <ProFormText name="instanceId" label="实例ID" placeholder="请输入实例ID" />
+              <ProFormText name="taskName" label="任务名称" placeholder="请输入任务名称" />
+              <ProFormText name="collector" label="采集员" placeholder="请输入采集员" />
+              <ProFormSelect name="status" label="状态" placeholder="请选择状态" options={[{label:'进行中', value:'active'}, {label:'已完成', value:'completed'}]} />
+          </QueryFilter>
+        </Card>
+      </SpecMarker>
 
       <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
         <Tabs 
@@ -196,47 +209,71 @@ export default function TaskCenterPage() {
           tabBarExtraContent={
             <Space style={{ paddingBottom: 12 }}>
               <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/tasks/create')}>模板创建</Button>
-              <Button 
-                icon={<NodeIndexOutlined />} 
-                disabled={selectedRowKeys.length === 0}
-                onClick={() => setIsAssignModalVisible(true)}
-                style={{ 
-                  backgroundColor: selectedRowKeys.length > 0 ? '#fff' : '#f5f5f5',
-                  borderColor: selectedRowKeys.length > 0 ? '#1677ff' : '#d9d9d9',
-                  color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf'
-                }}
+              <SpecMarker
+                id="tasks-assign"
+                number={2}
+                title="任务分配与标注流绑定"
+                rules={[
+                  "仅在表格中有勾选项（selectedRowKeys.length > 0）时该按钮激活。",
+                  "点击‘批量添加标注’弹出分配弹窗，支持选择点标注、范围标注、框标注及混合类型。",
+                  "勾选对应标注类别后，表单会动态渲染出对应模块的审核员、标注员与自动生成数据集配置开关。"
+                ]}
+                remark="不同的标注类型会动态决定该 Episode 数据包在标注中心的流转审批规则。"
               >
-                ≡ 批量添加标注
-              </Button>
-              <Button 
-                icon={<CheckCircleOutlined />} 
-                disabled={selectedRowKeys.length === 0}
-                onClick={() => {
-                  const selectedIds = mockData
-                    .filter(item => selectedRowKeys.includes(item.key))
-                    .map(item => item.instanceId);
-                  
-                  Modal.confirm({
-                    title: '完成',
-                    icon: <ExclamationCircleOutlined style={{ color: '#faad14' }} />,
-                    content: `确定要完成选中的 ${selectedIds.join(', ')} 任务吗？`,
-                    okText: '确认',
-                    cancelText: '关闭',
-                    okButtonProps: { type: 'primary' },
-                    onOk: () => {
-                      message.success('选中的任务已全部标记为完成');
-                      setSelectedRowKeys([]);
-                    }
-                  });
-                }}
-                style={{ 
-                  backgroundColor: selectedRowKeys.length > 0 ? '#fff' : '#f5f5f5',
-                  borderColor: selectedRowKeys.length > 0 ? '#52c41a' : '#d9d9d9',
-                  color: selectedRowKeys.length > 0 ? '#52c41a' : '#bfbfbf'
-                }}
+                <Button 
+                  icon={<NodeIndexOutlined />} 
+                  disabled={selectedRowKeys.length === 0}
+                  onClick={() => setIsAssignModalVisible(true)}
+                  style={{ 
+                    backgroundColor: selectedRowKeys.length > 0 ? '#fff' : '#f5f5f5',
+                    borderColor: selectedRowKeys.length > 0 ? '#1677ff' : '#d9d9d9',
+                    color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf'
+                  }}
+                >
+                  ≡ 批量添加标注
+                </Button>
+              </SpecMarker>
+              <SpecMarker
+                id="tasks-complete"
+                number={3}
+                title="批量完成与状态变更校验"
+                rules={[
+                  "仅在表格中有选中行时激活。",
+                  "点击弹出二次确认对话框，模态窗中需明确展示所选的任务实例 ID 列表以供核对。",
+                  "前置逻辑校验：若选中的任务实例中存在‘实际采集量低于计划采集量’且‘未填写未完成补充备注’的情况，需阻断并提示错误，直至补全备注。"
+                ]}
+                remark="确认完成后，后端同步将该任务下所有 Episode 数据流转为待机检/待标注状态。"
               >
-                批量完成
-              </Button>
+                <Button 
+                  icon={<CheckCircleOutlined />} 
+                  disabled={selectedRowKeys.length === 0}
+                  onClick={() => {
+                    const selectedIds = mockData
+                      .filter(item => selectedRowKeys.includes(item.key))
+                      .map(item => item.instanceId);
+                    
+                    Modal.confirm({
+                      title: '完成',
+                      icon: <ExclamationCircleOutlined style={{ color: '#faad14' }} />,
+                      content: `确定要完成选中的 ${selectedIds.join(', ')} 任务吗？`,
+                      okText: '确认',
+                      cancelText: '关闭',
+                      okButtonProps: { type: 'primary' },
+                      onOk: () => {
+                        message.success('选中的任务已全部标记为完成');
+                        setSelectedRowKeys([]);
+                      }
+                    });
+                  }}
+                  style={{ 
+                    backgroundColor: selectedRowKeys.length > 0 ? '#fff' : '#f5f5f5',
+                    borderColor: selectedRowKeys.length > 0 ? '#52c41a' : '#d9d9d9',
+                    color: selectedRowKeys.length > 0 ? '#52c41a' : '#bfbfbf'
+                  }}
+                >
+                  批量完成
+                </Button>
+              </SpecMarker>
               <Tooltip title="刷新"><Button icon={<ReloadOutlined />} type="text" /></Tooltip>
               <Tooltip title="密度"><Button icon={<ColumnHeightOutlined />} type="text" /></Tooltip>
               <Tooltip title="列设置"><Button icon={<SettingOutlined />} type="text" /></Tooltip>

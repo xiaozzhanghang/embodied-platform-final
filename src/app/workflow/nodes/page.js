@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Input, Form, Card, Typography, Tabs, Modal, Row, Col, Switch, Popconfirm, Tree, App, Descriptions } from 'antd';
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -73,28 +74,16 @@ function NodeTable({ data, isCustom }) {
     return (
         <>
             <div style={{ padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <Form layout="vertical">
-                    <Row gutter={16} align="bottom">
-                        <Col>
-                            <Form.Item label="节点名称" style={{ marginBottom: 0 }}>
-                                <Input placeholder="请输入节点名称" allowClear style={{ width: 180 }} />
-                            </Form.Item>
-                        </Col>
-                        <Col>
-                            <Form.Item label="创建人" style={{ marginBottom: 0 }}>
-                                <Input placeholder="请输入创建人" allowClear style={{ width: 120 }} />
-                            </Form.Item>
-                        </Col>
-                        <Col>
-                            <Form.Item style={{ marginBottom: 0 }}>
-                                <Space>
-                                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                                    <Button icon={<ReloadOutlined />}>重置</Button>
-                                </Space>
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                </Form>
+                <QueryFilter
+                    submitter={{
+                        submitButtonProps: { icon: <SearchOutlined /> },
+                        resetButtonProps: { icon: <ReloadOutlined /> },
+                    }}
+                    style={{ padding: 0 }}
+                >
+                    <ProFormText name="name" label="节点名称" placeholder="请输入节点名称" />
+                    <ProFormText name="creator" label="创建人" placeholder="请输入创建人" />
+                </QueryFilter>
                 {isCustom && <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增工具</Button>}
             </div>
             <Table columns={columns} dataSource={data} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />

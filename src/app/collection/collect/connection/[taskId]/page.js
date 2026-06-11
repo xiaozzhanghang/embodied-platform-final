@@ -61,6 +61,32 @@ const lumosLogs = [
   { time: '16:20:11', msg: '自检完成: 背包系统已就绪。', type: 'done' },
 ];
 
+// Galbot 1.16 Steps and Logs
+const galbot116Steps = [
+  { title: '物理网络', icon: <GlobalOutlined />, desc: 'XCU & HPU 双端心跳检测' },
+  { title: 'Supervisor 网桥', icon: <RobotOutlined />, desc: '守护服务 galbot_upper_bridge 运行' },
+  { title: 'WiFi 场景参数', icon: <HddOutlined />, desc: 'miracle-office-5g & 场景 JSON' },
+  { title: '感知自检', icon: <VideoCameraOutlined />, desc: '4路多目相机与雷达深度流' },
+];
+
+const galbot116Logs = [
+  { time: '14:20:01', msg: '启动 Galbot 1.16 双端物理数采环境自检程序...', type: 'info' },
+  { time: '14:20:02', msg: '正在 Ping 控制底座 XCU 节点 (192.168.1.66)...', type: 'info' },
+  { time: '14:20:03', msg: '发现 XCU 节点响应正常 (延迟: 0.4ms)，SSH 验证通过，系统版本: OS v1.16.0.2', type: 'success' },
+  { time: '14:20:04', msg: '正在 Ping 计算单元 HPU 节点 (192.168.1.88)...', type: 'info' },
+  { time: '14:20:05', msg: '发现 HPU (Nvidia Orin) 响应正常 (延迟: 0.9ms)，SSH 授权通过，系统版本: Ubuntu 22.04', type: 'success' },
+  { time: '14:20:06', msg: '正在查询 HPU Supervisor 网桥进程守护状态...', type: 'info' },
+  { time: '14:20:07', msg: 'Supervisor 服务激活：galbot_upper_bridge 处于 RUNNING 状态，PID: 4820', type: 'success' },
+  { time: '14:20:08', msg: '正在拉取 XCU 本地服务 remote_ctrl_record.target 状态...', type: 'info' },
+  { time: '14:20:09', msg: '数采记录服务已就绪 (ACTIVE)，正向标定矩阵同步成功。', type: 'success' },
+  { time: '14:20:10', msg: '正在校验局域网 WiFi miracle-office-5g 连接与上报场景 JSON...', type: 'info' },
+  { time: '14:20:11', msg: '无线网已接入 (IP: 192.168.76.57)，场景参数加载成功。', type: 'success' },
+  { time: '14:20:12', msg: '执行 sys_tool SN 码比对检查：GALBOT-116-GB105，鉴权验证成功。', type: 'success' },
+  { time: '14:20:13', msg: '正在开启 4 路多目感知流与 1 路雷达深度流帧率校验...', type: 'info' },
+  { time: '14:20:14', msg: '相机流正常激活 [Head_L, Head_R, Hand_L, Hand_R] @ 30fps，PTP 时钟偏差 <= 0.2ms', type: 'success' },
+  { time: '14:20:15', msg: '自检 100% 通过：Galbot 1.16 双物理核心环境全部就绪。', type: 'done' },
+];
+
 export default function DeviceConnectionPage() {
   const router = useRouter();
   const params = useParams();
@@ -71,10 +97,11 @@ export default function DeviceConnectionPage() {
   const logEndRef = useRef(null);
 
   const taskId = params?.taskId || 'CT-20250301001';
-  const isLumos = taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos');
+  const isGalbot116 = taskId?.includes('1.16') || taskId?.includes('GB116') || taskId?.includes('GB105') || taskId === 'CT-20260605001';
+  const isLumos = !isGalbot116 && (taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos'));
 
-  const steps = isLumos ? lumosSteps : humanoidSteps;
-  const logMsgs = isLumos ? lumosLogs : humanoidLogs;
+  const steps = isGalbot116 ? galbot116Steps : (isLumos ? lumosSteps : humanoidSteps);
+  const logMsgs = isGalbot116 ? galbot116Logs : (isLumos ? lumosLogs : humanoidLogs);
 
   useEffect(() => {
     if (step < steps.length) {
@@ -93,6 +120,7 @@ export default function DeviceConnectionPage() {
 
   useEffect(() => {
     let logIdx = 0;
+    const intervalTime = isGalbot116 ? 500 : 1000;
     const logInterval = setInterval(() => {
       if (logIdx < logMsgs.length) {
         setLogs(prev => [...prev, logMsgs[logIdx]]);
@@ -100,9 +128,9 @@ export default function DeviceConnectionPage() {
       } else {
         clearInterval(logInterval);
       }
-    }, 1000);
+    }, intervalTime);
     return () => clearInterval(logInterval);
-  }, [logMsgs]);
+  }, [logMsgs, isGalbot116]);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -159,7 +187,7 @@ export default function DeviceConnectionPage() {
               <Title level={4} style={{ color: '#fff', margin: 0 }}>设备自检与握手中心</Title>
               <Tag color="processing" style={{ marginLeft: 8 }}>Task ID: {taskId}</Tag>
             </div>
-            <Text style={{ color: 'rgba(255,255,255,0.45)' }}>正在检测边缘端硬件环境的稳定性 ({isLumos ? 'Lumos FastUMI Go 模式' : '通用人形机器人模式'})...</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.45)' }}>正在检测边缘端硬件环境的稳定性 ({isGalbot116 ? 'Galbot 1.16 双端部署模式' : isLumos ? 'Lumos FastUMI Go 模式' : '通用人形机器人模式'})...</Text>
           </div>
         </Space>
       </div>
@@ -204,13 +232,13 @@ export default function DeviceConnectionPage() {
 
               {/* Hardware Points */}
               <div style={{ position: 'absolute', top: '20%', left: '30%' }}>
-                <Badge status={step > 1 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isLumos ? 'LUMOS BACKPACK' : 'ROBOT CONTROL BOX'}</span>} />
+                <Badge status={step > 1 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isGalbot116 ? 'XCU NODE (192.168.1.66)' : isLumos ? 'LUMOS BACKPACK' : 'ROBOT CONTROL BOX'}</span>} />
               </div>
               <div style={{ position: 'absolute', top: '40%', right: '25%' }}>
-                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isLumos ? 'LEFT GRIPPER' : 'CAM_01 (FRONT)'}</span>} />
+                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isGalbot116 ? 'HPU NODE (192.168.1.88)' : isLumos ? 'LEFT GRIPPER' : 'CAM_01 (FRONT)'}</span>} />
               </div>
               <div style={{ position: 'absolute', bottom: '30%', left: '45%' }}>
-                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isLumos ? 'RIGHT GRIPPER' : 'CAM_02 (WRIST)'}</span>} />
+                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isGalbot116 ? 'SUPERVISOR GATEWAY (ACTIVE)' : isLumos ? 'RIGHT GRIPPER' : 'CAM_02 (WRIST)'}</span>} />
               </div>
 
               {/* Center Icon */}
@@ -273,15 +301,15 @@ export default function DeviceConnectionPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12 }}>
-                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>{isLumos ? 'Lumos Heartbeat' : 'ROS2 Heartbeat'}</span>
-                  <span style={{ color: '#52c41a' }}>STABLE</span>
+                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>{isGalbot116 ? 'Galbot Time Sync' : isLumos ? 'Lumos Heartbeat' : 'ROS2 Heartbeat'}</span>
+                  <span style={{ color: '#52c41a' }}>{isGalbot116 ? 'PTP SYNCED' : 'STABLE'}</span>
                 </div>
-                <Progress percent={98} size="small" strokeColor="#1677ff" showInfo={false} />
+                <Progress percent={isGalbot116 ? 100 : 98} size="small" strokeColor="#1677ff" showInfo={false} />
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12 }}>
-                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>{isLumos ? 'Telemetry Latency' : 'Camera Sync Lag'}</span>
-                  <span style={{ color: '#faad14' }}>{isLumos ? '1.2ms' : '2ms'}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>{isGalbot116 ? 'XCU / HPU Latency' : isLumos ? 'Telemetry Latency' : 'Camera Sync Lag'}</span>
+                  <span style={{ color: '#faad14' }}>{isGalbot116 ? '0.4ms / 0.9ms' : isLumos ? '1.2ms' : '2ms'}</span>
                 </div>
                 <Progress percent={15} size="small" strokeColor="#faad14" showInfo={false} />
               </div>
@@ -303,7 +331,7 @@ export default function DeviceConnectionPage() {
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f56' }} />
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#27c93f' }} />
-              <span style={{ marginLeft: 8, fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Terminal - {isLumos ? 'lumos_collector.log' : 'collector_v1.log'}</span>
+              <span style={{ marginLeft: 8, fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Terminal - {isGalbot116 ? 'galbot116_deploy_status.log' : isLumos ? 'lumos_collector.log' : 'collector_v1.log'}</span>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {logs.map((log, i) => (

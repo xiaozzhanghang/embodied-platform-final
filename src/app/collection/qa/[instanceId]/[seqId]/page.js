@@ -14,6 +14,7 @@ import {
   InputNumber,
   Badge
 } from 'antd';
+import SpecMarker from '@/components/SpecMarker';
 import { 
   ArrowLeftOutlined,
   CloseOutlined,
@@ -235,76 +236,89 @@ export default function QaReviewPage({ params }) {
 
         {/* Right: SOP Steps Panel */}
         <div style={{ width: 280, borderLeft: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', backgroundColor: '#fff', overflowY: 'auto' }}>
-          <div style={{ padding: '8px', flexGrow: 1 }}>
-            {sopSteps.map((step) => {
-              const isActive = activeStepId === step.id;
-              return (
-                <div key={step.id} style={{ 
-                  marginBottom: 12, 
-                  backgroundColor: isActive ? '#f5f5f5' : '#fff',
-                  borderRadius: 4,
-                  padding: '4px'
-                }}>
-                  {/* Step Title Row */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <div style={{ 
-                      width: 8, height: 8, borderRadius: '50%', 
-                      backgroundColor: step.color, 
-                      marginTop: 6, marginRight: 8, flexShrink: 0
-                    }} />
-                    <div style={{ flex: 1, fontSize: 12, fontWeight: isActive ? 600 : 400, color: '#333', lineHeight: 1.5, position: 'relative' }}>
-                      {step.id} {step.title}
-                      
-                      {/* Floating Icons for QA Status */}
-                      {step.hasQaError && (
-                        <div style={{ position: 'absolute', right: 0, top: -4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <div style={{ border: '1px solid #ff4d4f', color: '#ff4d4f', borderRadius: 2, padding: '0 2px', fontSize: 10, display: 'flex', alignItems: 'center' }}>
-                            QA
+          <SpecMarker
+            id="qa-auto-rules"
+            number={1}
+            title="自动化机检与异常特征标定"
+            rules={[
+              "系统在数据包上传后自动读取并匹配后端生成的 `quality_report.json` 模型检测结果文件。",
+              "根据关节角速度变化率、末端执行器加速度偏差等物理学边界限制规则，检测出 Episode 物理异常突变点。",
+              "针对异常帧所在的时序区间段，系统将直接在右侧 SOP 段落上标记红色的 QA 质检异常警告，提示质检员重点关注该段视频与动作重放。"
+            ]}
+            remark="通过后端时序分析机检直接标定物理异常点，大幅节省质检员的逐帧全检耗时。"
+            style={{ width: '100%' }}
+          >
+            <div style={{ padding: '8px', flexGrow: 1 }}>
+              {sopSteps.map((step) => {
+                const isActive = activeStepId === step.id;
+                return (
+                  <div key={step.id} style={{ 
+                    marginBottom: 12, 
+                    backgroundColor: isActive ? '#f5f5f5' : '#fff',
+                    borderRadius: 4,
+                    padding: '4px'
+                  }}>
+                    {/* Step Title Row */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 8 }}>
+                      <div style={{ 
+                        width: 8, height: 8, borderRadius: '50%', 
+                        backgroundColor: step.color, 
+                        marginTop: 6, marginRight: 8, flexShrink: 0
+                      }} />
+                      <div style={{ flex: 1, fontSize: 12, fontWeight: isActive ? 600 : 400, color: '#333', lineHeight: 1.5, position: 'relative' }}>
+                        {step.id} {step.title}
+                        
+                        {/* Floating Icons for QA Status */}
+                        {step.hasQaError && (
+                          <div style={{ position: 'absolute', right: 0, top: -4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <div style={{ border: '1px solid #ff4d4f', color: '#ff4d4f', borderRadius: 2, padding: '0 2px', fontSize: 10, display: 'flex', alignItems: 'center' }}>
+                              QA
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {step.hasAlert && (
-                        <div style={{ position: 'absolute', right: -6, top: -4 }}>
-                          <ExclamationCircleFilled style={{ color: '#ff4d4f', fontSize: 14 }} />
-                        </div>
-                      )}
+                        )}
+                        {step.hasAlert && (
+                          <div style={{ position: 'absolute', right: -6, top: -4 }}>
+                            <ExclamationCircleFilled style={{ color: '#ff4d4f', fontSize: 14 }} />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Frame Inputs Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 16 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <Text style={{ fontSize: 10, color: '#8c8c8c', marginBottom: 2 }}>开始帧</Text>
-                      <InputNumber 
-                        size="small" 
-                        value={step.start} 
-                        controls 
-                        style={{ width: 60, fontSize: 11 }} 
-                      />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <Text style={{ fontSize: 10, color: '#8c8c8c', marginBottom: 2 }}>结束帧</Text>
-                      <InputNumber 
-                        size="small" 
-                        value={step.end} 
-                        controls 
-                        style={{ width: 60, fontSize: 11 }} 
-                      />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <Text style={{ fontSize: 10, color: '#8c8c8c', marginBottom: 2 }}>总共</Text>
-                      <InputNumber 
-                        size="small" 
-                        value={step.total} 
-                        controls 
-                        style={{ width: 60, fontSize: 11 }} 
-                      />
+                    {/* Frame Inputs Row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: 16 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 10, color: '#8c8c8c', marginBottom: 2 }}>开始帧</Text>
+                        <InputNumber 
+                          size="small" 
+                          value={step.start} 
+                          controls 
+                          style={{ width: 60, fontSize: 11 }} 
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 10, color: '#8c8c8c', marginBottom: 2 }}>结束帧</Text>
+                        <InputNumber 
+                          size="small" 
+                          value={step.end} 
+                          controls 
+                          style={{ width: 60, fontSize: 11 }} 
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 10, color: '#8c8c8c', marginBottom: 2 }}>总共</Text>
+                        <InputNumber 
+                          size="small" 
+                          value={step.total} 
+                          controls 
+                          style={{ width: 60, fontSize: 11 }} 
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </SpecMarker>
 
           <Divider style={{ margin: 0 }} />
           
@@ -317,107 +331,120 @@ export default function QaReviewPage({ params }) {
       </div>
 
       {/* Bottom Timeline & Controls */}
-      <div style={{ height: 80, borderTop: '1px solid #d9d9d9', display: 'flex', flexDirection: 'column', backgroundColor: '#f5f5f5' }}>
-        
-        {/* Timeline Bar Area */}
-        <div style={{ position: 'relative', height: 24, paddingTop: 4 }}>
-          {/* Segmented Timeline */}
-          <div style={{ position: 'absolute', top: 4, left: 0, right: 0, height: 12, display: 'flex', padding: '0 16px' }}>
-            {sopSteps.map((step) => (
-              <div 
-                key={step.id} 
-                style={{ 
-                  width: `${(step.total / totalFrames) * 100}%`, 
-                  height: '100%', 
-                  backgroundColor: step.color
-                }} 
-              />
-            ))}
-          </div>
-
-          {/* Keyframe Dots */}
-          <div style={{ position: 'absolute', top: 18, left: 0, right: 0, padding: '0 16px' }}>
-            {sopSteps.map((step) => (
-              <div 
-                key={step.id} 
-                style={{ 
-                  position: 'absolute', 
-                  left: `calc(16px + ${(step.start / totalFrames) * 100}% - 4px)`, 
-                  width: 8, height: 8, 
-                  borderRadius: '50%', 
-                  backgroundColor: '#52c41a' 
-                }} 
-              />
-            ))}
-          </div>
+      <SpecMarker
+        id="qa-static-exemption"
+        number={2}
+        title="起止姿态静止豁免规则"
+        rules={[
+          "在机器人开始动作前的初始化起势阶段（一般为前 1~2 秒，即 0 ~ 60 帧区间），以及动作结束后的自动复位阶段，豁免对关节电机电流与重力补偿偏差的自检报警。",
+          "在此豁免帧数区间内，任何非指令性微小物理位移、关节重力漂移都不计入‘质检异常跃变比率’计算中。",
+          "质检员可通过时序滑块自由拖拽校验起止动作切片，校验豁免期内系统姿态的正确性。"
+        ]}
+        remark="避免由于机器人开机自检标定、以及机械臂回零动作引发的非实质性质检报错，提升真实有效动作的质检通过率。"
+        style={{ width: '100%' }}
+      >
+        <div style={{ height: 80, borderTop: '1px solid #d9d9d9', display: 'flex', flexDirection: 'column', backgroundColor: '#f5f5f5' }}>
           
-          {/* Invisible Slider for interaction */}
-          <Slider 
-            min={0} max={totalFrames} value={currentFrame} 
-            onChange={setCurrentFrame} 
-            tooltip={{ open: false }}
-            style={{ position: 'absolute', top: -14, left: 16, right: 16, zIndex: 10, margin: 0, padding: '20px 0' }}
-            styles={{ track: { backgroundColor: 'transparent' }, rail: { backgroundColor: 'transparent' }, handle: { backgroundColor: '#fff', border: '2px solid #595959', width: 4, height: 20, borderRadius: 2, transform: 'translateY(-2px)' } }}
-          />
-        </div>
-
-        {/* Controls Row */}
-        <div style={{ display: 'flex', alignItems: 'center', padding: '4px 16px', flexGrow: 1 }}>
-          <div style={{ width: 200, display: 'flex', gap: 12, alignItems: 'center' }}>
-            <Text style={{ fontSize: 12, fontFamily: 'monospace' }}>Time: {formatTime(currentFrame)}</Text>
-            <Text style={{ fontSize: 12, fontFamily: 'monospace' }}>Frame: {currentFrame}</Text>
-          </div>
-          
-          <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-            <ArrowLeftOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => seekTo(0)} />
-            <FastBackwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => seekTo(currentFrame - 10)} />
-            <StepBackwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#595959' }} onClick={() => seekTo(currentFrame - 1)} />
-            <div 
-              onClick={() => setIsPlaying(!isPlaying)} 
-              style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid #d9d9d9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: '#fff' }}
-            >
-              {isPlaying ? <PauseOutlined style={{ fontSize: 16, color: '#595959' }} /> : <CaretRightOutlined style={{ fontSize: 16, color: '#595959', marginLeft: 2 }} />}
+          {/* Timeline Bar Area */}
+          <div style={{ position: 'relative', height: 24, paddingTop: 4 }}>
+            {/* Segmented Timeline */}
+            <div style={{ position: 'absolute', top: 4, left: 0, right: 0, height: 12, display: 'flex', padding: '0 16px' }}>
+              {sopSteps.map((step) => (
+                <div 
+                  key={step.id} 
+                  style={{ 
+                    width: `${(step.total / totalFrames) * 100}%`, 
+                    height: '100%', 
+                    backgroundColor: step.color
+                  }} 
+                />
+              ))}
             </div>
-            <StepForwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#595959' }} onClick={() => seekTo(currentFrame + 1)} />
-            <FastForwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => seekTo(currentFrame + 10)} />
-            <ArrowLeftOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c', transform: 'rotate(180deg)' }} onClick={() => seekTo(totalFrames)} />
+
+            {/* Keyframe Dots */}
+            <div style={{ position: 'absolute', top: 18, left: 0, right: 0, padding: '0 16px' }}>
+              {sopSteps.map((step) => (
+                <div 
+                  key={step.id} 
+                  style={{ 
+                    position: 'absolute', 
+                    left: `calc(16px + ${(step.start / totalFrames) * 100}% - 4px)`, 
+                    width: 8, height: 8, 
+                    borderRadius: '50%', 
+                    backgroundColor: '#52c41a' 
+                  }} 
+                />
+              ))}
+            </div>
+            
+            {/* Invisible Slider for interaction */}
+            <Slider 
+              min={0} max={totalFrames} value={currentFrame} 
+              onChange={setCurrentFrame} 
+              tooltip={{ open: false }}
+              style={{ position: 'absolute', top: -14, left: 16, right: 16, zIndex: 10, margin: 0, padding: '20px 0' }}
+              styles={{ track: { backgroundColor: 'transparent' }, rail: { backgroundColor: 'transparent' }, handle: { backgroundColor: '#fff', border: '2px solid #595959', width: 4, height: 20, borderRadius: 2, transform: 'translateY(-2px)' } }}
+            />
           </div>
 
-          <div style={{ width: 400, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
-            <Button 
-              type="primary" 
-              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', borderRadius: 20, padding: '0 24px', height: 32 }}
-              onClick={() => handleFinish('优秀')}
-            >
-              优秀
-            </Button>
-            <Button 
-              type="primary" 
-              style={{ backgroundColor: '#b48846', borderColor: '#b48846', borderRadius: 20, padding: '0 24px', height: 32 }}
-              onClick={() => handleFinish('良好')}
-            >
-              良好
-            </Button>
-            <Button 
-              type="primary" 
-              style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f', borderRadius: 20, padding: '0 24px', height: 32 }}
-              onClick={() => handleFinish('不合格')}
-            >
-              不合格
-            </Button>
+          {/* Controls Row */}
+          <div style={{ display: 'flex', alignItems: 'center', padding: '4px 16px', flexGrow: 1 }}>
+            <div style={{ width: 200, display: 'flex', gap: 12, alignItems: 'center' }}>
+              <Text style={{ fontSize: 12, fontFamily: 'monospace' }}>Time: {formatTime(currentFrame)}</Text>
+              <Text style={{ fontSize: 12, fontFamily: 'monospace' }}>Frame: {currentFrame}</Text>
+            </div>
             
-            <Divider type="vertical" />
-            
-            <SyncOutlined style={{ cursor: 'pointer', color: '#8c8c8c' }} />
-            
-            <Dropdown menu={speedMenu} trigger={['click']}>
-              <Space style={{ cursor: 'pointer', fontSize: 12, color: '#595959' }}>
-                {playbackSpeed}x <DownOutlined style={{ fontSize: 10 }} />
-              </Space>
-            </Dropdown>
+            <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
+              <ArrowLeftOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => seekTo(0)} />
+              <FastBackwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => seekTo(currentFrame - 10)} />
+              <StepBackwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#595959' }} onClick={() => seekTo(currentFrame - 1)} />
+              <div 
+                onClick={() => setIsPlaying(!isPlaying)} 
+                style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid #d9d9d9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: '#fff' }}
+              >
+                {isPlaying ? <PauseOutlined style={{ fontSize: 16, color: '#595959' }} /> : <CaretRightOutlined style={{ fontSize: 16, color: '#595959', marginLeft: 2 }} />}
+              </div>
+              <StepForwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#595959' }} onClick={() => seekTo(currentFrame + 1)} />
+              <FastForwardOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c' }} onClick={() => seekTo(currentFrame + 10)} />
+              <ArrowLeftOutlined style={{ fontSize: 16, cursor: 'pointer', color: '#8c8c8c', transform: 'rotate(180deg)' }} onClick={() => seekTo(totalFrames)} />
+            </div>
+
+            <div style={{ width: 400, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+              <Button 
+                type="primary" 
+                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', borderRadius: 20, padding: '0 24px', height: 32 }}
+                onClick={() => handleFinish('优秀')}
+              >
+                优秀
+              </Button>
+              <Button 
+                type="primary" 
+                style={{ backgroundColor: '#b48846', borderColor: '#b48846', borderRadius: 20, padding: '0 24px', height: 32 }}
+                onClick={() => handleFinish('良好')}
+              >
+                良好
+              </Button>
+              <Button 
+                type="primary" 
+                style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f', borderRadius: 20, padding: '0 24px', height: 32 }}
+                onClick={() => handleFinish('不合格')}
+              >
+                不合格
+              </Button>
+              
+              <Divider type="vertical" />
+              
+              <SyncOutlined style={{ cursor: 'pointer', color: '#8c8c8c' }} />
+              
+              <Dropdown menu={speedMenu} trigger={['click']}>
+                <Space style={{ cursor: 'pointer', fontSize: 12, color: '#595959' }}>
+                  {playbackSpeed}x <DownOutlined style={{ fontSize: 10 }} />
+                </Space>
+              </Dropdown>
+            </div>
           </div>
         </div>
-      </div>
+      </SpecMarker>
       
     </div>
   );

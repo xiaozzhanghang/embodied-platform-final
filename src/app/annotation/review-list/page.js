@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Modal, Progress, App, Row, Col } from 'antd';
 import { SearchOutlined, ReloadOutlined, PlayCircleOutlined, CheckOutlined, CloseOutlined, EyeOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title } = Typography;
@@ -22,6 +23,16 @@ export default function ReviewPage() {
   const { message } = App.useApp();
     const [packOpen, setPackOpen] = useState(false);
     const [reviewOpen, setReviewOpen] = useState(false);
+    const [filters, setFilters] = useState({});
+
+    const filteredData = React.useMemo(() => {
+        return mockData.filter(item => {
+            const idMatch = !filters.projectId || item.projectId.toLowerCase().includes(filters.projectId.toLowerCase());
+            const nameMatch = !filters.name || item.name.toLowerCase().includes(filters.name.toLowerCase());
+            const sceneMatch = !filters.scene || item.scene === filters.scene;
+            return idMatch && nameMatch && sceneMatch;
+        });
+    }, [filters]);
 
     const columns = [
         { title: '项目ID', dataIndex: 'projectId', width: 100 },
@@ -40,26 +51,27 @@ export default function ReviewPage() {
             <MainLayout>
                 <div className="page-header"><h3 className="page-header-title">审核管理</h3></div>
                 <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
-                    <Form layout="vertical">
-                        <Row gutter={24} align="bottom">
-                            <Col><Form.Item label="项目ID" style={{ marginBottom: 0 }}><Input placeholder="请输入" allowClear style={{ width: 140 }} /></Form.Item></Col>
-                            <Col><Form.Item label="项目名称" style={{ marginBottom: 0 }}><Input placeholder="请输入" allowClear style={{ width: 200 }} /></Form.Item></Col>
-                            <Col><Form.Item label="标注场景" style={{ marginBottom: 0 }}><Select placeholder="全部" allowClear style={{ width: 200 }} options={[{ value: '二维框选标注' }, { value: 'VLA标注' }, { value: '视频质检' }]} /></Form.Item></Col>
-                            <Col>
-                                <Form.Item style={{ marginBottom: 0 }}>
-                                    <Space>
-                                        <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                                        <Button icon={<ReloadOutlined />}>重置</Button>
-                                    </Space>
-                                </Form.Item>
-                            </Col>
-                        </Row>
-                    </Form>
+                    <QueryFilter
+                        submitter={{
+                            submitButtonProps: { icon: <SearchOutlined /> },
+                            resetButtonProps: { icon: <ReloadOutlined /> },
+                        }}
+                        onFinish={async (values) => {
+                            setFilters(values);
+                        }}
+                        onReset={() => {
+                            setFilters({});
+                        }}
+                    >
+                        <ProFormText name="projectId" label="项目ID" placeholder="请输入" />
+                        <ProFormText name="name" label="项目名称" placeholder="请输入" />
+                        <ProFormSelect name="scene" label="标注场景" placeholder="全部" options={[{ value: '二维框选标注', label: '二维框选标注' }, { value: 'VLA标注', label: 'VLA标注' }, { value: '视频质检', label: '视频质检' }]} />
+                    </QueryFilter>
                 </Card>
-
+ 
                 <Card>
                     <div className="table-toolbar"><span className="table-toolbar-title">审核管理列表</span></div>
-                    <Table columns={columns} dataSource={mockData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
+                    <Table columns={columns} dataSource={filteredData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>
 
                 <Modal title="题包列表" open={packOpen} onCancel={() => setPackOpen(false)} footer={null} width={700}>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Modal, Progress, Statistic, Row, Col, DatePicker, App, Badge, Descriptions, Tooltip, Divider, Alert } from 'antd';
 import { SearchOutlined, ReloadOutlined, CheckOutlined, CloseOutlined, EyeOutlined, DownloadOutlined, ExportOutlined, CheckCircleOutlined, InfoCircleOutlined, AuditOutlined, CloudUploadOutlined, TeamOutlined, HistoryOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -45,6 +46,16 @@ export default function AcceptancePage() {
     const [acceptVisible, setAcceptVisible] = useState(false);
     const [detailVisible, setDetailVisible] = useState(false);
     const [detailRecord, setDetailRecord] = useState(null);
+    const [filters, setFilters] = useState({});
+
+    const filteredData = React.useMemo(() => {
+        return mockProjects.filter(item => {
+            const nameMatch = !filters.name || item.name.toLowerCase().includes(filters.name.toLowerCase());
+            const typeMatch = !filters.type || item.type === filters.type;
+            const statusMatch = !filters.status || (filters.status === '已完成' ? item.progress === 100 : item.progress < 100);
+            return nameMatch && typeMatch && statusMatch;
+        });
+    }, [filters]);
 
     const handleBatchPass = () => {
         message.success('选中题包已全部验收通过，数据已进入就绪库');
@@ -97,25 +108,26 @@ export default function AcceptancePage() {
             </Row>
 
             <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
-                <Form layout="vertical">
-                    <Row gutter={24} align="bottom">
-                        <Col><Form.Item label="项目名称" style={{ marginBottom: 0 }}><Input placeholder="请输入" allowClear style={{ width: 200 }} /></Form.Item></Col>
-                        <Col><Form.Item label="标注场景" style={{ marginBottom: 0 }}><Select placeholder="全部" allowClear style={{ width: 200 }} options={[{ value: '二维框选' }, { value: 'VLA动作' }, { value: '关键点' }]} /></Form.Item></Col>
-                        <Col><Form.Item label="状态" style={{ marginBottom: 0 }}><Select placeholder="全部" allowClear style={{ width: 140 }} options={[{ value: '进行中' }, { value: '已完成' }]} /></Form.Item></Col>
-                        <Col>
-                            <Form.Item style={{ marginBottom: 0 }}>
-                                <Space>
-                                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                                    <Button icon={<ReloadOutlined />}>重置</Button>
-                                </Space>
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                </Form>
+                <QueryFilter
+                    submitter={{
+                        submitButtonProps: { icon: <SearchOutlined /> },
+                        resetButtonProps: { icon: <ReloadOutlined /> },
+                    }}
+                    onFinish={async (values) => {
+                        setFilters(values);
+                    }}
+                    onReset={() => {
+                        setFilters({});
+                    }}
+                >
+                    <ProFormText name="name" label="项目名称" placeholder="请输入" />
+                    <ProFormSelect name="type" label="标注场景" placeholder="全部" options={[{ value: '框标注', label: '框标注' }, { value: '范围&框标注', label: '范围&框标注' }]} />
+                    <ProFormSelect name="status" label="状态" placeholder="全部" options={[{ value: '进行中', label: '进行中' }, { value: '已完成', label: '已完成' }]} />
+                </QueryFilter>
             </Card>
 
             <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
-                <Table columns={columns} dataSource={mockProjects} scroll={{ x: 1400 }} style={{ padding: '0 24px 24px' }} pagination={{ pageSize: 10 }} />
+                <Table columns={columns} dataSource={filteredData} scroll={{ x: 1400 }} style={{ padding: '0 24px 24px' }} pagination={{ pageSize: 10 }} />
             </Card>
 
             {/* Batch Processing Modal */}

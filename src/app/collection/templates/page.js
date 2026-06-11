@@ -12,6 +12,7 @@ import {
   SkinOutlined, ExperimentOutlined, DeleteOutlined,
   EditOutlined, PlayCircleOutlined, ReloadOutlined, DownOutlined, UpOutlined
 } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -19,7 +20,6 @@ const { Title, Text } = Typography;
 export default function TaskTemplatesPage() {
   const router = useRouter();
   const { message, modal } = App.useApp();
-  const [expand, setExpand] = useState(false);
 
   const mockTemplates = [
     {
@@ -101,60 +101,19 @@ export default function TaskTemplatesPage() {
 
       <Card 
         style={{ marginBottom: 24, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-        styles={{ body: { padding: '24px 24px 0' } }}
+        styles={{ body: { padding: '24px 24px 16px' } }}
       >
-        <Form layout="horizontal" labelCol={{ flex: '80px' }}>
-          <Row gutter={24}>
-            <Col span={8}>
-              <Form.Item label="模板名称">
-                <Input placeholder="搜索模板名称..." prefix={<SearchOutlined />} allowClear />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item label="模板类型">
-                <Select placeholder="全部类型" allowClear options={[{label:'服务数据', value:'service'}, {label:'工业数据', value:'industry'}]} />
-              </Form.Item>
-            </Col>
-            {!expand && (
-              <Col span={8} style={{ textAlign: 'right' }}>
-                <Space>
-                  <Button icon={<ReloadOutlined />}>重置</Button>
-                  <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                  <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                    展开 <DownOutlined />
-                  </a>
-                </Space>
-              </Col>
-            )}
-          </Row>
-          {expand && (
-            <>
-              <Row gutter={24}>
-                <Col span={8}>
-                  <Form.Item label="创建人">
-                    <Input placeholder="请输入创建人" allowClear />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item label="更新时间">
-                    <Input placeholder="请选择时间范围" allowClear />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row gutter={24}>
-                <Col span={24} style={{ textAlign: 'right', marginBottom: 24 }}>
-                  <Space>
-                    <Button icon={<ReloadOutlined />}>重置</Button>
-                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                    <a style={{ fontSize: 12 }} onClick={() => setExpand(!expand)}>
-                      收起 <UpOutlined />
-                    </a>
-                  </Space>
-                </Col>
-              </Row>
-            </>
-          )}
-        </Form>
+        <QueryFilter
+            submitter={{
+                submitButtonProps: { icon: <SearchOutlined /> },
+                resetButtonProps: { icon: <ReloadOutlined /> },
+            }}
+        >
+            <ProFormText name="name" label="模板名称" placeholder="搜索模板名称..." />
+            <ProFormSelect name="type" label="模板类型" placeholder="全部类型" options={[{label:'服务数据', value:'service'}, {label:'工业数据', value:'industry'}]} />
+            <ProFormText name="creator" label="创建人" placeholder="请输入创建人" />
+            <ProFormText name="updateTime" label="更新时间" placeholder="请选择时间范围" />
+        </QueryFilter>
       </Card>
 
       <Row gutter={[24, 24]}>

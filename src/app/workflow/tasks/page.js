@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Descriptions, Popconfirm, App } from 'antd';
 import { SearchOutlined, ReloadOutlined, EyeOutlined, DeleteOutlined, StopOutlined, RedoOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -58,13 +59,17 @@ export default function WorkflowTaskPage() {
         <MainLayout>
             <div className="page-header"><h3 className="page-header-title">预设工具</h3></div>
             <Card className="search-form" style={{ marginBottom: 16 }}>
-                <Form layout="inline">
-                    <Form.Item label="工作流ID"><Input placeholder="请输入" allowClear style={{ width: 120 }} /></Form.Item>
-                    <Form.Item label="任务名称"><Input placeholder="请输入" allowClear style={{ width: 180 }} /></Form.Item>
-                    <Form.Item label="任务ID"><Input placeholder="请输入" allowClear style={{ width: 120 }} /></Form.Item>
-                    <Form.Item label="创建人"><Input placeholder="请输入" allowClear style={{ width: 120 }} /></Form.Item>
-                    <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
-                </Form>
+                <QueryFilter
+                    submitter={{
+                        submitButtonProps: { icon: <SearchOutlined /> },
+                        resetButtonProps: { icon: <ReloadOutlined /> },
+                    }}
+                >
+                    <ProFormText name="workflowId" label="工作流ID" placeholder="请输入" />
+                    <ProFormText name="taskName" label="任务名称" placeholder="请输入" />
+                    <ProFormText name="taskId" label="任务ID" placeholder="请输入" />
+                    <ProFormText name="creator" label="创建人" placeholder="请输入" />
+                </QueryFilter>
             </Card>
 
             <Card>

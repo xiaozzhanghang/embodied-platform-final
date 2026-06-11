@@ -36,6 +36,36 @@ export default function CollectTaskDataPage() {
   const [episodes, setEpisodes] = useState([]);
   const [selectedEpisode, setSelectedEpisode] = useState(null);
 
+  const [realReport, setRealReport] = useState(null);
+  const [leftTrajectory, setLeftTrajectory] = useState([]);
+  const [rightTrajectory, setRightTrajectory] = useState([]);
+  const [loadingRealData, setLoadingRealData] = useState(false);
+  const [activeVideoHand, setActiveVideoHand] = useState('left');
+
+  useEffect(() => {
+    if (selectedEpisode?.episodeId === 'session_028') {
+      setLoadingRealData(true);
+      Promise.all([
+        fetch('/api/luming?type=report').then(res => res.json()),
+        fetch('/api/luming?type=trajectory&hand=left').then(res => res.json()),
+        fetch('/api/luming?type=trajectory&hand=right').then(res => res.json())
+      ]).then(([report, leftTraj, rightTraj]) => {
+        if (report && !report.error) setRealReport(report);
+        if (Array.isArray(leftTraj)) setLeftTrajectory(leftTraj);
+        if (Array.isArray(rightTraj)) setRightTrajectory(rightTraj);
+      }).catch(err => {
+        console.error('Error fetching real luming data:', err);
+      }).finally(() => {
+        setLoadingRealData(false);
+      });
+    } else {
+      setRealReport(null);
+      setLeftTrajectory([]);
+      setRightTrajectory([]);
+    }
+  }, [selectedEpisode]);
+
+
   useEffect(() => {
     // Check if task has uploaded Luming data
     const stored = localStorage.getItem('luming_uploaded_tasks');
@@ -72,8 +102,209 @@ export default function CollectTaskDataPage() {
     }
   }, [taskId, isLumos]);
 
+  const getSvgPath = (traj, color, isLeft) => {
+    if (!traj || traj.length === 0) {
+      return isLeft ? "M 50 55 Q 85 10 120 40 T 160 30" : "M 100 48 L 101 48";
+    }
+
+    const xCoords = traj.map(p => p.x);
+    const zCoords = traj.map(p => p.z);
+    const minX = Math.min(...xCoords);
+    const maxX = Math.max(...xCoords);
+    const minZ = Math.min(...zCoords);
+    const maxZ = Math.max(...zCoords);
+
+    const spanX = maxX - minX || 1;
+    const spanZ = maxZ - minZ || 1;
+
+    return traj.map((p, idx) => {
+      const sx = 20 + ((p.x - minX) / spanX) * 160;
+      const sy = 65 - ((p.z - minZ) / spanZ) * 50; 
+      return `${idx === 0 ? 'M' : 'L'} ${sx.toFixed(1)} ${sy.toFixed(1)}`;
+    }).join(' ');
+  };
+
+  const getSpeedPath = (traj, maxLimit) => {
+    if (!traj || traj.length === 0) return "";
+    
+    return traj.map((p, idx) => {
+      const sx = 10 + (idx / (traj.length - 1)) * 180;
+      const sy = 52 - Math.min(1, p.speed / maxLimit) * 45;
+      return `${idx === 0 ? 'M' : 'L'} ${sx.toFixed(1)} ${sy.toFixed(1)}`;
+    }).join(' ');
+  };
+
+  const getKinematicsData = () => {
+    if (!realReport) {
+      return [
+        {
+          key: '1',
+          metric: '最大速度 (speed_max)',
+          threshold: '≤ 0.450 m/s',
+          leftValue: '1.0998 m/s',
+          leftStatus: 'pass',
+          leftDetail: '超限点: 110/14879 (0.74%)',
+          rightValue: '0.0074 m/s',
+          rightStatus: 'pass',
+          rightDetail: '无超限'
+        },
+        {
+          key: '2',
+          metric: '最大加速度 (accel_max)',
+          threshold: '≤ 5.000 m/s²',
+          leftValue: '54.5634 m/s²',
+          leftStatus: 'pass',
+          leftDetail: '超限点: 188/14879 (1.26%)',
+          rightValue: '0.3651 m/s²',
+          rightStatus: 'pass',
+          rightDetail: '无超限'
+        },
+        {
+          key: '3',
+          metric: '最大加加速度 (jerk_max)',
+          threshold: '≤ 2200.73 m/s³',
+          leftValue: '17185.06 m/s³',
+          leftStatus: 'pass',
+          leftDetail: '超限点: 112/14879 (0.75%)',
+          rightValue: '113.36 m/s³',
+          rightStatus: 'pass',
+          rightDetail: '无超限'
+        },
+        {
+          key: '4',
+          metric: '最大角速度 (angular_speed_max)',
+          threshold: '≤ 2.500 rad/s',
+          leftValue: '2.3233 rad/s',
+          leftStatus: 'pass',
+          leftDetail: '无超限 (-7.1%)',
+          rightValue: '0.8461 rad/s',
+          rightStatus: 'pass',
+          rightDetail: '无超限'
+        },
+        {
+          key: '5',
+          metric: '最大角加速度 (angular_accel_max)',
+          threshold: '≤ 23.00 rad/s²',
+          leftValue: '37.76 rad/s²',
+          leftStatus: 'pass',
+          leftDetail: '超限点: 14/14879 (0.09%)',
+          rightValue: '14.24 rad/s²',
+          rightStatus: 'pass',
+          rightDetail: '无超限'
+        },
+        {
+          key: '6',
+          metric: '最大角加加速度 (angular_jerk_max)',
+          threshold: '≤ 4000.41 rad/s³',
+          leftValue: '14330.67 rad/s³',
+          leftStatus: 'pass',
+          leftDetail: '超限点: 27/14879 (0.18%)',
+          rightValue: '5841.86 rad/s³',
+          rightStatus: 'pass',
+          rightDetail: '超标占比 0.0%'
+        },
+        {
+          key: '7',
+          metric: '空间起始位移距离 (max_pos_dist)',
+          threshold: '> 0.050 m',
+          leftValue: '0.2839 m',
+          leftStatus: 'pass',
+          leftDetail: '符合规范',
+          rightValue: '0.0024 m',
+          rightStatus: 'warning',
+          rightDetail: '判定失败，但因右臂静止率100%免除豁免'
+        }
+      ];
+    }
+
+    const left = realReport.trajectory_analysis.find(a => a.arm_name === 'left');
+    const right = realReport.trajectory_analysis.find(a => a.arm_name === 'right');
+    const th = realReport.thresholds;
+
+    return [
+      {
+        key: '1',
+        metric: '最大速度 (speed_max)',
+        threshold: `≤ ${th?.max_speed_mps || 0.45} m/s`,
+        leftValue: `${left?.kinematics?.speed_max_mps?.toFixed(4) || '—'} m/s`,
+        leftStatus: left?.checks?.speed ? 'pass' : 'error',
+        leftDetail: left?.checks?.speed ? '符合自适应判定规范' : '超标',
+        rightValue: `${right?.kinematics?.speed_max_mps?.toFixed(4) || '—'} m/s`,
+        rightStatus: right?.checks?.speed ? 'pass' : 'error',
+        rightDetail: right?.checks?.speed ? '符合规范' : '超标'
+      },
+      {
+        key: '2',
+        metric: '最大加速度 (accel_max)',
+        threshold: `≤ ${th?.max_accel_mps2 || 5.0} m/s²`,
+        leftValue: `${left?.kinematics?.accel_max_mps2?.toFixed(4) || '—'} m/s²`,
+        leftStatus: left?.checks?.accel ? 'pass' : 'error',
+        leftDetail: left?.checks?.accel ? '符合自适应判定规范' : '超标',
+        rightValue: `${right?.kinematics?.accel_max_mps2?.toFixed(4) || '—'} m/s²`,
+        rightStatus: right?.checks?.accel ? 'pass' : 'error',
+        rightDetail: right?.checks?.accel ? '符合规范' : '超标'
+      },
+      {
+        key: '3',
+        metric: '最大加加速度 (jerk_max)',
+        threshold: `≤ ${th?.max_jerk_mps3?.toFixed(2) || 2200.73} m/s³`,
+        leftValue: `${left?.kinematics?.jerk_max_mps3?.toFixed(2) || '—'} m/s³`,
+        leftStatus: left?.checks?.jerk ? 'pass' : 'error',
+        leftDetail: left?.checks?.jerk ? '符合自适应判定规范' : '超标',
+        rightValue: `${right?.kinematics?.jerk_max_mps3?.toFixed(2) || '—'} m/s³`,
+        rightStatus: right?.checks?.jerk ? 'pass' : 'error',
+        rightDetail: right?.checks?.jerk ? '符合规范' : '超标'
+      },
+      {
+        key: '4',
+        metric: '最大角速度 (angular_speed_max)',
+        threshold: `≤ ${th?.max_angular_speed_rps || 2.5} rad/s`,
+        leftValue: `${left?.kinematics?.angular_speed_max_rps?.toFixed(4) || '—'} rad/s`,
+        leftStatus: left?.checks?.angular_speed ? 'pass' : 'error',
+        leftDetail: left?.checks?.angular_speed ? '无超限' : '超标',
+        rightValue: `${right?.kinematics?.angular_speed_max_rps?.toFixed(4) || '—'} rad/s`,
+        rightStatus: right?.checks?.angular_speed ? 'pass' : 'error',
+        rightDetail: right?.checks?.angular_speed ? '无超限' : '超标'
+      },
+      {
+        key: '5',
+        metric: '最大角加速度 (angular_accel_max)',
+        threshold: `≤ ${th?.max_angular_accel_rps2 || 23.0} rad/s²`,
+        leftValue: `${left?.kinematics?.angular_accel_max_rps2?.toFixed(2) || '—'} rad/s²`,
+        leftStatus: left?.checks?.angular_accel ? 'pass' : 'error',
+        leftDetail: left?.checks?.angular_accel ? '符合自适应判定规范' : '超标',
+        rightValue: `${right?.kinematics?.angular_accel_max_rps2?.toFixed(2) || '—'} rad/s²`,
+        rightStatus: right?.checks?.angular_accel ? 'pass' : 'error',
+        rightDetail: right?.checks?.angular_accel ? '无超限' : '超标'
+      },
+      {
+        key: '6',
+        metric: '最大角加加速度 (angular_jerk_max)',
+        threshold: `≤ ${th?.max_angular_jerk_rps3?.toFixed(2) || 4000.41} rad/s³`,
+        leftValue: `${left?.kinematics?.angular_jerk_max_rps3?.toFixed(2) || '—'} rad/s³`,
+        leftStatus: left?.checks?.angular_jerk ? 'pass' : 'error',
+        leftDetail: left?.checks?.angular_jerk ? '符合自适应判定规范' : '超标',
+        rightValue: `${right?.kinematics?.angular_jerk_max_rps3?.toFixed(2) || '—'} rad/s³`,
+        rightStatus: right?.checks?.angular_jerk ? 'pass' : 'error',
+        rightDetail: right?.checks?.angular_jerk ? '无超限' : '超标'
+      },
+      {
+        key: '7',
+        metric: '空间起始位移距离 (max_pos_dist)',
+        threshold: '> 0.050 m',
+        leftValue: `${left?.position?.max_distance_from_start_m?.toFixed(4) || '—'} m`,
+        leftStatus: left?.checks?.max_pos_dist ? 'pass' : 'error',
+        leftDetail: left?.checks?.max_pos_dist ? '符合规范' : '位移过小',
+        rightValue: `${right?.position?.max_distance_from_start_m?.toFixed(4) || '—'} m`,
+        rightStatus: right?.checks?.max_pos_dist ? 'pass' : 'warning',
+        rightDetail: right?.checks?.max_pos_dist ? '判定通过' : '判定失败，但因静止侧免除豁免'
+      }
+    ];
+  };
+
   // Task metadata
   const taskName = isLumos ? 'Lumos-双手筷子与勺子整理-001' : (taskId === 'CT-20250301002' ? 'FRANKA-FR3-放置蓝色圆柱-002' : 'FRANKA-FR3-抓取红色方块-001');
+
 
   return (
     <MainLayout>
@@ -186,84 +417,123 @@ export default function CollectTaskDataPage() {
                 {/* 4-Camera Video Grid Simulator */}
                 <Col span={14}>
                   <Card 
-                    title={selectedEpisode.episodeId === 'session_028' ? "多视角相机流监视 (Luming Multi-Cam)" : (isLumos ? "多视角相机流监视 (Lumos Multi-Cam)" : "多视角相机监视 (Camera CCTV)")} 
+                    title={selectedEpisode.episodeId === 'session_028' ? "实际数据监控 - 双手臂相机画面" : (isLumos ? "多视角相机流监视 (Lumos Multi-Cam)" : "多视角相机监视 (Camera CCTV)")} 
                     bordered={false} 
                     styles={{ body: { padding: 8 } }} 
                     style={{ background: '#141414', color: '#fff', borderRadius: 8, overflow: 'hidden' }}
                   >
-                    <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', background: '#000', borderRadius: 4, overflow: 'hidden' }}>
-                      <svg viewBox="0 0 400 225" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                        <rect width="400" height="225" fill="#18181c" />
-                        <line x1="200" y1="0" x2="200" y2="225" stroke="#2a2a30" strokeWidth="1" strokeDasharray="5,5" />
-                        <line x1="0" y1="112" x2="400" y2="112" stroke="#2a2a30" strokeWidth="1" strokeDasharray="5,5" />
-                        
-                        {/* Cam 1: Left view / Wrist L */}
-                        <text x="10" y="20" fill="#888" fontSize="10" fontFamily="monospace">
-                          {selectedEpisode.episodeId === 'session_028' ? 'CAM-01: WRIST_CAM_L (左手腕)' : (isLumos ? 'CAM-01: WRIST_CAM_L' : 'CAM-01: FRONT')}
-                        </text>
-                        <circle cx="100" cy="56" r="30" fill="none" stroke="#52c41a" strokeWidth="1" />
-                        <line x1="100" y1="26" x2="100" y2="86" stroke="#52c41a" strokeWidth="0.5" />
-                        <line x1="70" y1="56" x2="130" y2="56" stroke="#52c41a" strokeWidth="0.5" />
-                        <rect x="90" y="46" width="20" height="20" rx="3" fill="#1677ff" opacity="0.8" />
-                        <text x="94" y="59" fill="#fff" fontSize="8" fontWeight="bold">
-                          {selectedEpisode.episodeId === 'session_028' ? 'CUP' : (isLumos ? 'BOX' : 'CUBE')}
-                        </text>
-                        
-                        {/* Cam 2: Right view / Wrist R */}
-                        <text x="210" y="20" fill="#888" fontSize="10" fontFamily="monospace">
-                          {selectedEpisode.episodeId === 'session_028' ? 'CAM-02: WRIST_CAM_R (右手腕)' : (isLumos ? 'CAM-02: WRIST_CAM_R' : 'CAM-02: GRIPPER EYE')}
-                        </text>
-                        <path d="M 280 40 L 320 40 L 300 80 Z" fill="none" stroke="#1677ff" strokeWidth="1" />
-                        <circle cx="300" cy="50" r="10" fill="red" opacity="0.6" />
-                        {selectedEpisode.episodeId === 'session_028' && (
-                          <text x="282" y="32" fill="#ff4d4f" fontSize="8">[STATIC STATE]</text>
-                        )}
-                        
-                        {/* Cam 3: Head left eye */}
-                        <text x="10" y="132" fill="#888" fontSize="10" fontFamily="monospace">
-                          {selectedEpisode.episodeId === 'session_028' ? 'CAM-03: HEAD_LEFT_EYE (主视角)' : (isLumos ? 'CAM-03: HEAD_LEFT_EYE' : 'CAM-03: 3D MODEL')}
-                        </text>
-                        <path d="M 50 180 L 100 150 L 150 180 L 100 210 Z" fill="none" stroke="#2e2e38" strokeWidth="1" />
-                        <path d="M 100 150 L 100 120" stroke="#2e2e38" strokeWidth="1" />
-                        <path d="M 50 180 L 50 150" stroke="#2e2e38" strokeWidth="1" />
-                        <path d="M 150 180 L 150 150" stroke="#2e2e38" strokeWidth="1" />
-                        <path d="M 100 210 L 100 180 L 80 150 L 90 130" fill="none" stroke="#1890ff" strokeWidth="3" strokeLinecap="round" />
-                        
-                        {/* Cam 4: LIDAR DEPTH */}
-                        <text x="210" y="132" fill="#888" fontSize="10" fontFamily="monospace">
-                          {selectedEpisode.episodeId === 'session_028' ? 'CAM-04: LIDAR DEPTH (雷达深度图)' : (isLumos ? 'CAM-04: LIDAR DEPTH' : 'CAM-04: DEPTH MAP')}
-                        </text>
-                        <circle cx="300" cy="168" r="25" fill="#3f1285" opacity="0.7" />
-                        <circle cx="300" cy="168" r="15" fill="#722ed1" opacity="0.8" />
-                        <circle cx="300" cy="168" r="5" fill="#a868ff" />
-                        {selectedEpisode.episodeId === 'session_028' && (
-                          <rect x="235" y="195" width="55" height="12" rx="2" fill="rgba(24, 144, 255, 0.2)" />
-                        )}
-                        {selectedEpisode.episodeId === 'session_028' && (
-                          <text x="238" y="204" fill="#1890ff" fontSize="7" fontWeight="bold">TOF: OFF</text>
-                        )}
-
-                        <rect x="330" y="200" width="60" height="15" rx="3" fill="rgba(82, 196, 26, 0.2)" />
-                        <text x="335" y="211" fill="#52c41a" fontSize="8" fontWeight="bold">STREAMING</text>
-                      </svg>
-                      
-                      {/* Video Player controls bar */}
-                      <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 32, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', padding: '0 10px', justifyContent: 'space-between' }}>
-                        <Space size="small">
-                          <PlayCircleOutlined style={{ color: '#fff', fontSize: 16 }} />
-                          <span style={{ fontSize: 11, color: '#aaa', fontFamily: 'monospace' }}>{selectedEpisode.episodeId === 'session_028' ? '00:18' : (isLumos ? '00:08' : '00:45')} / {selectedEpisode.duration}</span>
-                        </Space>
-                        <Space size="middle">
-                          <span style={{ fontSize: 10, color: '#52c41a', border: '1px solid #52c41a', padding: '1px 4px', borderRadius: 2 }}>
-                            {selectedEpisode.episodeId === 'session_028' ? 'LUMING-SYNC' : (isLumos ? 'LUMOS-SYNC' : 'AUTO-ALIGN')}
-                          </span>
-                          <ApiOutlined style={{ color: '#fff' }} />
-                        </Space>
+                    {selectedEpisode.episodeId === 'session_028' ? (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 12px', background: '#1f1f1f', marginBottom: 8, borderRadius: 4 }}>
+                          <span style={{ fontSize: 12, color: '#d9d9d9' }}>切换相机视频流:</span>
+                          <Space>
+                            <Button 
+                              type={activeVideoHand === 'left' ? 'primary' : 'default'} 
+                              size="small" 
+                              onClick={() => setActiveVideoHand('left')}
+                              style={{ fontSize: 11 }}
+                            >
+                              左手腕相机 (left_hand_250801DR48FP26003296)
+                            </Button>
+                            <Button 
+                              type={activeVideoHand === 'right' ? 'primary' : 'default'} 
+                              size="small" 
+                              onClick={() => setActiveVideoHand('right')}
+                              style={{ fontSize: 11 }}
+                            >
+                              右手腕相机 (right_hand_250801DR48FP26003349)
+                            </Button>
+                          </Space>
+                        </div>
+                        <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', background: '#000', borderRadius: 4, overflow: 'hidden' }}>
+                            <video 
+                              key={activeVideoHand} // force reload on toggle
+                              src={activeVideoHand === 'left'
+                                ? `/session_028/left_hand_250801DR48FP26003296/RGB_Images/video.mp4`
+                                : `/session_028/right_hand_250801DR48FP26003349/RGB_Images/video.mp4`}
+                              controls
+                              autoPlay
+                              loop
+                              muted
+                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', background: '#000', borderRadius: 4, overflow: 'hidden' }}>
+                        <svg viewBox="0 0 400 225" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+                          <rect width="400" height="225" fill="#18181c" />
+                          <line x1="200" y1="0" x2="200" y2="225" stroke="#2a2a30" strokeWidth="1" strokeDasharray="5,5" />
+                          <line x1="0" y1="112" x2="400" y2="112" stroke="#2a2a30" strokeWidth="1" strokeDasharray="5,5" />
+                          
+                          {/* Cam 1: Left view / Wrist L */}
+                          <text x="10" y="20" fill="#888" fontSize="10" fontFamily="monospace">
+                            {selectedEpisode.episodeId === 'session_028' ? 'CAM-01: WRIST_CAM_L (左手腕)' : (isLumos ? 'CAM-01: WRIST_CAM_L' : 'CAM-01: FRONT')}
+                          </text>
+                          <circle cx="100" cy="56" r="30" fill="none" stroke="#52c41a" strokeWidth="1" />
+                          <line x1="100" y1="26" x2="100" y2="86" stroke="#52c41a" strokeWidth="0.5" />
+                          <line x1="70" y1="56" x2="130" y2="56" stroke="#52c41a" strokeWidth="0.5" />
+                          <rect x="90" y="46" width="20" height="20" rx="3" fill="#1677ff" opacity="0.8" />
+                          <text x="94" y="59" fill="#fff" fontSize="8" fontWeight="bold">
+                            {selectedEpisode.episodeId === 'session_028' ? 'CUP' : (isLumos ? 'BOX' : 'CUBE')}
+                          </text>
+                          
+                          {/* Cam 2: Right view / Wrist R */}
+                          <text x="210" y="20" fill="#888" fontSize="10" fontFamily="monospace">
+                            {selectedEpisode.episodeId === 'session_028' ? 'CAM-02: WRIST_CAM_R (右手腕)' : (isLumos ? 'CAM-02: WRIST_CAM_R' : 'CAM-02: GRIPPER EYE')}
+                          </text>
+                          <path d="M 280 40 L 320 40 L 300 80 Z" fill="none" stroke="#1677ff" strokeWidth="1" />
+                          <circle cx="300" cy="50" r="10" fill="red" opacity="0.6" />
+                          {selectedEpisode.episodeId === 'session_028' && (
+                            <text x="282" y="32" fill="#ff4d4f" fontSize="8">[STATIC STATE]</text>
+                          )}
+                          
+                          {/* Cam 3: Head left eye */}
+                          <text x="10" y="132" fill="#888" fontSize="10" fontFamily="monospace">
+                            {selectedEpisode.episodeId === 'session_028' ? 'CAM-03: HEAD_LEFT_EYE (主视角)' : (isLumos ? 'CAM-03: HEAD_LEFT_EYE' : 'CAM-03: 3D MODEL')}
+                          </text>
+                          <path d="M 50 180 L 100 150 L 150 180 L 100 210 Z" fill="none" stroke="#2e2e38" strokeWidth="1" />
+                          <path d="M 100 150 L 100 120" stroke="#2e2e38" strokeWidth="1" />
+                          <path d="M 50 180 L 50 150" stroke="#2e2e38" strokeWidth="1" />
+                          <path d="M 150 180 L 150 150" stroke="#2e2e38" strokeWidth="1" />
+                          <path d="M 100 210 L 100 180 L 80 150 L 90 130" fill="none" stroke="#1890ff" strokeWidth="3" strokeLinecap="round" />
+                          
+                          {/* Cam 4: LIDAR DEPTH */}
+                          <text x="210" y="132" fill="#888" fontSize="10" fontFamily="monospace">
+                            {selectedEpisode.episodeId === 'session_028' ? 'CAM-04: LIDAR DEPTH (雷达深度图)' : (isLumos ? 'CAM-04: LIDAR DEPTH' : 'CAM-04: DEPTH MAP')}
+                          </text>
+                          <circle cx="300" cy="168" r="25" fill="#3f1285" opacity="0.7" />
+                          <circle cx="300" cy="168" r="15" fill="#722ed1" opacity="0.8" />
+                          <circle cx="300" cy="168" r="5" fill="#a868ff" />
+                          {selectedEpisode.episodeId === 'session_028' && (
+                            <rect x="235" y="195" width="55" height="12" rx="2" fill="rgba(24, 144, 255, 0.2)" />
+                          )}
+                          {selectedEpisode.episodeId === 'session_028' && (
+                            <text x="238" y="204" fill="#1890ff" fontSize="7" fontWeight="bold">TOF: OFF</text>
+                          )}
+  
+                          <rect x="330" y="200" width="60" height="15" rx="3" fill="rgba(82, 196, 26, 0.2)" />
+                          <text x="335" y="211" fill="#52c41a" fontSize="8" fontWeight="bold">STREAMING</text>
+                        </svg>
+                        
+                        {/* Video Player controls bar */}
+                        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: 32, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', padding: '0 10px', justifyContent: 'space-between' }}>
+                          <Space size="small">
+                            <PlayCircleOutlined style={{ color: '#fff', fontSize: 16 }} />
+                            <span style={{ fontSize: 11, color: '#aaa', fontFamily: 'monospace' }}>{selectedEpisode.episodeId === 'session_028' ? '00:18' : (isLumos ? '00:08' : '00:45')} / {selectedEpisode.duration}</span>
+                          </Space>
+                          <Space size="middle">
+                            <span style={{ fontSize: 10, color: '#52c41a', border: '1px solid #52c41a', padding: '1px 4px', borderRadius: 2 }}>
+                              {selectedEpisode.episodeId === 'session_028' ? 'LUMING-SYNC' : (isLumos ? 'LUMOS-SYNC' : 'AUTO-ALIGN')}
+                            </span>
+                            <ApiOutlined style={{ color: '#fff' }} />
+                          </Space>
+                        </div>
+                      </div>
+                    )}
                   </Card>
                 </Col>
-
+ 
                 {/* Trajectory plot and joint sensor charts */}
                 <Col span={10}>
                   <Card title="运动轨迹与力矩监视 (Telemetry)" bordered={false} styles={{ body: { padding: 12 } }} style={{ height: '100%', borderRadius: 8 }}>
@@ -277,17 +547,38 @@ export default function CollectTaskDataPage() {
                             <path d="M 170 60 L 170 20 L 100 10" fill="none" stroke="#d9d9d9" strokeWidth="0.5" />
                             
                             {/* Left arm: highly active */}
-                            <path d="M 50 55 Q 85 10 120 40 T 160 30" fill="none" stroke="#1677ff" strokeWidth="2" strokeDasharray="3,1" />
-                            <circle cx="50" cy="55" r="2" fill="#1677ff" />
-                            <circle cx="160" cy="30" r="2" fill="#52c41a" />
+                            <path d={getSvgPath(leftTrajectory, '#1677ff', true)} fill="none" stroke="#1677ff" strokeWidth="2" />
+                            {leftTrajectory.length > 0 && (
+                              <>
+                                <circle 
+                                  cx={(20 + ((leftTrajectory[0].x - Math.min(...leftTrajectory.map(p => p.x))) / (Math.max(...leftTrajectory.map(p => p.x)) - Math.min(...leftTrajectory.map(p => p.x)) || 1)) * 160).toFixed(1)} 
+                                  cy={(65 - ((leftTrajectory[0].z - Math.min(...leftTrajectory.map(p => p.z))) / (Math.max(...leftTrajectory.map(p => p.z)) - Math.min(...leftTrajectory.map(p => p.z)) || 1)) * 50).toFixed(1)} 
+                                  r="2" 
+                                  fill="#1677ff" 
+                                />
+                                <circle 
+                                  cx={(20 + ((leftTrajectory[leftTrajectory.length - 1].x - Math.min(...leftTrajectory.map(p => p.x))) / (Math.max(...leftTrajectory.map(p => p.x)) - Math.min(...leftTrajectory.map(p => p.x)) || 1)) * 160).toFixed(1)} 
+                                  cy={(65 - ((leftTrajectory[leftTrajectory.length - 1].z - Math.min(...leftTrajectory.map(p => p.z))) / (Math.max(...leftTrajectory.map(p => p.z)) - Math.min(...leftTrajectory.map(p => p.z)) || 1)) * 50).toFixed(1)} 
+                                  r="2" 
+                                  fill="#52c41a" 
+                                />
+                              </>
+                            )}
                             
-                            {/* Right arm: stationary at start */}
-                            <path d="M 100 48 L 101 48 L 100 49 L 100 48" fill="none" stroke="#722ed1" strokeWidth="2.5" />
-                            <circle cx="100" cy="48" r="2.5" fill="#722ed1" />
+                            {/* Right arm: stationary */}
+                            <path d={getSvgPath(rightTrajectory, '#722ed1', false)} fill="none" stroke="#722ed1" strokeWidth="2" />
+                            {rightTrajectory.length > 0 && (
+                              <circle 
+                                cx={(20 + ((rightTrajectory[0].x - Math.min(...rightTrajectory.map(p => p.x))) / (Math.max(...rightTrajectory.map(p => p.x)) - Math.min(...rightTrajectory.map(p => p.x)) || 1)) * 160).toFixed(1)} 
+                                cy={(65 - ((rightTrajectory[0].z - Math.min(...rightTrajectory.map(p => p.z))) / (Math.max(...rightTrajectory.map(p => p.z)) - Math.min(...rightTrajectory.map(p => p.z)) || 1)) * 50).toFixed(1)} 
+                                r="2.5" 
+                                fill="#722ed1" 
+                              />
+                            )}
                           </svg>
                           <div style={{ position: 'absolute', bottom: 4, right: 8, display: 'flex', gap: 8, fontSize: 9 }}>
-                            <span style={{ color: '#1677ff' }}>● 左臂(活动)</span>
-                            <span style={{ color: '#722ed1' }}>● 右臂(静止)</span>
+                            <span style={{ color: '#1677ff' }}>● 左臂轨迹 (起:蓝 终:绿)</span>
+                            <span style={{ color: '#722ed1' }}>● 右臂轨迹 (静止)</span>
                           </div>
                         </>
                       ) : (
@@ -303,19 +594,19 @@ export default function CollectTaskDataPage() {
                     </div>
                     
                     <div style={{ background: '#f5f5f5', borderRadius: 4, height: 100, padding: 8, position: 'relative' }}>
-                      <span style={{ fontSize: 11, fontWeight: 'bold', color: '#888', display: 'block' }}>Torque Feedback / Joint Speed</span>
+                      <span style={{ fontSize: 11, fontWeight: 'bold', color: '#888', display: 'block' }}>Velocity Profile / Speed (m/s)</span>
                       {selectedEpisode.episodeId === 'session_028' ? (
                         <>
                           <svg viewBox="0 0 200 60" style={{ width: '100%', height: 65 }}>
-                            {/* Left Hand: Speed showing sharp peaks matching kinematics speed_max = 1.0998 m/s */}
-                            <path d="M 10 45 Q 25 10 40 40 T 70 48 T 100 12 T 130 38 T 160 42 T 190 28" fill="none" stroke="#1677ff" strokeWidth="1.2" />
-                            {/* Right Hand: Extremely static speed max = 0.0074 m/s */}
-                            <line x1="10" y1="52" x2="190" y2="52" stroke="#722ed1" strokeWidth="1.5" />
+                            {/* Left Hand: Speed showing real velocity profile */}
+                            <path d={getSpeedPath(leftTrajectory, 1.2)} fill="none" stroke="#1677ff" strokeWidth="1.2" />
+                            {/* Right Hand: Real velocity profile (flat close to zero) */}
+                            <path d={getSpeedPath(rightTrajectory, 1.2)} fill="none" stroke="#722ed1" strokeWidth="1.2" />
                             <line x1="10" y1="30" x2="190" y2="30" stroke="#bfbfbf" strokeWidth="0.5" strokeDasharray="4,4" />
                           </svg>
                           <div style={{ position: 'absolute', bottom: 4, right: 8, display: 'flex', gap: 8, fontSize: 9 }}>
-                            <span style={{ color: '#1677ff' }}>● 左臂速度</span>
-                            <span style={{ color: '#722ed1' }}>● 右臂速度</span>
+                            <span style={{ color: '#1677ff' }}>● 左臂运动速度</span>
+                            <span style={{ color: '#722ed1' }}>● 右臂运动速度</span>
                           </div>
                         </>
                       ) : (
@@ -379,85 +670,7 @@ export default function CollectTaskDataPage() {
                           <Table
                             size="small"
                             pagination={false}
-                            dataSource={[
-                              {
-                                key: '1',
-                                metric: '最大速度 (speed_max)',
-                                threshold: '≤ 0.450 m/s',
-                                leftValue: '1.0998 m/s',
-                                leftStatus: 'pass',
-                                leftDetail: '超限点: 110/14879 (0.74%)',
-                                rightValue: '0.0074 m/s',
-                                rightStatus: 'pass',
-                                rightDetail: '无超限'
-                              },
-                              {
-                                key: '2',
-                                metric: '最大加速度 (accel_max)',
-                                threshold: '≤ 5.000 m/s²',
-                                leftValue: '54.5634 m/s²',
-                                leftStatus: 'pass',
-                                leftDetail: '超限点: 188/14879 (1.26%)',
-                                rightValue: '0.3651 m/s²',
-                                rightStatus: 'pass',
-                                rightDetail: '无超限'
-                              },
-                              {
-                                key: '3',
-                                metric: '最大加加速度 (jerk_max)',
-                                threshold: '≤ 2200.73 m/s³',
-                                leftValue: '17185.06 m/s³',
-                                leftStatus: 'pass',
-                                leftDetail: '超限点: 112/14879 (0.75%)',
-                                rightValue: '113.36 m/s³',
-                                rightStatus: 'pass',
-                                rightDetail: '无超限'
-                              },
-                              {
-                                key: '4',
-                                metric: '最大角速度 (angular_speed_max)',
-                                threshold: '≤ 2.500 rad/s',
-                                leftValue: '2.3233 rad/s',
-                                leftStatus: 'pass',
-                                leftDetail: '无超限 (-7.1%)',
-                                rightValue: '0.8461 rad/s',
-                                rightStatus: 'pass',
-                                rightDetail: '无超限'
-                              },
-                              {
-                                key: '5',
-                                metric: '最大角加速度 (angular_accel_max)',
-                                threshold: '≤ 23.00 rad/s²',
-                                leftValue: '37.76 rad/s²',
-                                leftStatus: 'pass',
-                                leftDetail: '超限点: 14/14879 (0.09%)',
-                                rightValue: '14.24 rad/s²',
-                                rightStatus: 'pass',
-                                rightDetail: '无超限'
-                              },
-                              {
-                                key: '6',
-                                metric: '最大角加加速度 (angular_jerk_max)',
-                                threshold: '≤ 4000.41 rad/s³',
-                                leftValue: '14330.67 rad/s³',
-                                leftStatus: 'pass',
-                                leftDetail: '超限点: 27/14879 (0.18%)',
-                                rightValue: '5841.86 rad/s³',
-                                rightStatus: 'pass',
-                                rightDetail: '超标占比 0.0%'
-                              },
-                              {
-                                key: '7',
-                                metric: '起始位移距离 (max_pos_dist)',
-                                threshold: '> 0.050 m',
-                                leftValue: '0.2839 m',
-                                leftStatus: 'pass',
-                                leftDetail: '符合规范',
-                                rightValue: '0.0024 m',
-                                rightStatus: 'warning',
-                                rightDetail: '判定失败，但因右臂静止率100%免除豁免'
-                              }
-                            ]}
+                            dataSource={getKinematicsData()}
                             columns={[
                               { title: '运动学检查项', dataIndex: 'metric', key: 'metric', width: 220 },
                               { title: '判定阈值', dataIndex: 'threshold', key: 'threshold', width: 120 },

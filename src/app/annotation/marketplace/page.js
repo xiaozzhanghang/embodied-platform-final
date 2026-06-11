@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Input, Form, Card, Typography, Tabs, Modal, App } from 'antd';
 import { SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title } = Typography;
@@ -22,6 +23,15 @@ const claimedTaskData = [
 export default function MarketplacePage() {
     const { message } = App.useApp();
     const [detailOpen, setDetailOpen] = useState(false);
+    const [filters, setFilters] = useState({});
+
+    const filteredTasks = React.useMemo(() => {
+        return taskListData.filter(item => {
+            const nameMatch = !filters.name || item.name.toLowerCase().includes(filters.name.toLowerCase()) || item.taskId.toLowerCase().includes(filters.name.toLowerCase());
+            const sceneMatch = !filters.scene || item.scene.toLowerCase().includes(filters.scene.toLowerCase());
+            return nameMatch && sceneMatch;
+        });
+    }, [filters]);
 
     const taskColumns = [
         { title: '任务ID', dataIndex: 'taskId', width: 100 },
@@ -72,14 +82,25 @@ export default function MarketplacePage() {
                     items={[
                         {
                             key: 'list', label: '任务列表',
-                            children: (
+                             children: (
                                 <>
-                                    <Form layout="inline" style={{ marginBottom: 16 }}>
-                                        <Form.Item label="任务名称"><Input placeholder="请输入" allowClear style={{ width: 180 }} /></Form.Item>
-                                        <Form.Item label="标注场景"><Input placeholder="请输入" allowClear style={{ width: 140 }} /></Form.Item>
-                                        <Form.Item><Space><Button type="primary" icon={<SearchOutlined />}>查询</Button><Button icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
-                                    </Form>
-                                    <Table columns={taskColumns} dataSource={taskListData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
+                                    <QueryFilter
+                                        submitter={{
+                                            submitButtonProps: { icon: <SearchOutlined /> },
+                                            resetButtonProps: { icon: <ReloadOutlined /> },
+                                        }}
+                                        onFinish={async (values) => {
+                                            setFilters(values);
+                                        }}
+                                        onReset={() => {
+                                            setFilters({});
+                                        }}
+                                        style={{ marginBottom: 16 }}
+                                    >
+                                        <ProFormText name="name" label="任务名称" placeholder="请输入" />
+                                        <ProFormText name="scene" label="标注场景" placeholder="请输入" />
+                                    </QueryFilter>
+                                    <Table columns={taskColumns} dataSource={filteredTasks} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                                 </>
                             ),
                         },
