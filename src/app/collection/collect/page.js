@@ -571,7 +571,7 @@ export default function CollectTaskPage() {
             width: 100,
         },
         {
-            title: '采集列表',
+            title: '操作',
             key: 'collectList',
             width: 90,
             render: (_, record) => (
