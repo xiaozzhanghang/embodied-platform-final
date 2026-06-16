@@ -28,7 +28,15 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LockOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  TranslationOutlined,
+  FullscreenOutlined,
+  CloudOutlined,
+  SunOutlined,
+  CheckCircleOutlined,
+  ReloadOutlined,
+  GlobalOutlined,
+  HomeOutlined
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -71,7 +79,7 @@ const menuItems = [
     roles: [ROLES.ADMIN, ROLES.QA, ROLES.COLLECTOR],
     children: [
       { key: '/collection/tasks', icon: <SolutionOutlined />, label: '任务派发', roles: [ROLES.ADMIN] },
-      { key: '/collection/collect', icon: <VideoCameraOutlined />, label: '采集工作台', roles: [ROLES.ADMIN, ROLES.COLLECTOR] },
+      { key: '/collection/collect', icon: <VideoCameraOutlined />, label: '任务中心（采集端）', roles: [ROLES.ADMIN, ROLES.COLLECTOR] },
       { key: '/collection/qa', icon: <FileSearchOutlined />, label: '数据质检', roles: [ROLES.ADMIN, ROLES.QA] },
       { key: '/annotation/audit', icon: <EyeOutlined />, label: '标注审核', roles: [ROLES.ADMIN, ROLES.QA] },
       { key: '/collection/templates', icon: <LayoutOutlined />, label: '任务模板', roles: [ROLES.ADMIN] },
@@ -109,7 +117,8 @@ const breadcrumbMap = {
   '/collection/devices': ['设备管理', '设备列表'],
   '/collection/device-types': ['设备管理', '设备类型'],
   '/collection/tasks': ['数据采集', '任务派发'],
-  '/collection/collect': ['数据采集', '采集工作台'],
+  '/collection/collect': ['数据采集', '任务中心（采集端）'],
+  '/collection/collect-home': ['首页'],
   '/collection/qa': ['数据采集', '数据质检'],
   '/annotation/audit': ['数据采集', '标注审核'],
   '/collection/templates': ['数据采集', '任务模板'],
@@ -183,6 +192,16 @@ function MainLayoutContent({ children }) {
   };
 
   const filteredItems = filterMenuItems(menuItems);
+  const getMenuItems = () => {
+    if (userRole === ROLES.COLLECTOR) {
+      return [
+        { key: '/collection/collect-home', icon: <HomeOutlined />, label: '首页' },
+        { key: '/collection/collect', icon: <SolutionOutlined />, label: '任务中心（采集端）' },
+        { key: '/collection/devices', icon: <RobotOutlined />, label: '设备管理' },
+      ];
+    }
+    return filteredItems;
+  };
   const effectiveCollapsed = collapsed || isMobile;
   const siderWidth = isMobile ? 64 : 240;
   const collapsedWidth = isMobile ? 64 : 80;
@@ -247,7 +266,7 @@ function MainLayoutContent({ children }) {
         collapsedWidth={collapsedWidth}
         trigger={null}
         style={{
-          background: '#001529',
+          background: userRole === ROLES.COLLECTOR ? '#fff' : '#001529',
           overflow: 'auto',
           height: '100vh',
           position: 'fixed',
@@ -255,25 +274,43 @@ function MainLayoutContent({ children }) {
           top: 0,
           bottom: 0,
           zIndex: 100,
+          borderRight: userRole === ROLES.COLLECTOR ? '1px solid #f0f0f0' : 'none',
         }}
       >
-        <div className="sidebar-logo">
+        <div className="sidebar-logo" style={{
+          background: userRole === ROLES.COLLECTOR ? '#fff' : '#001529',
+          borderBottom: userRole === ROLES.COLLECTOR ? '1px solid #f0f0f0' : 'none',
+          height: 64,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 24px',
+        }}>
           <div className="logo-square" style={{ background: 'transparent' }}>
             <img src={logoImg?.src || logoImg} alt="logo" style={{ width: 28, height: 28, objectFit: 'contain' }} />
           </div>
-          {!effectiveCollapsed && <span className="logo-text" style={{ fontSize: 18, fontWeight: 600 }}>天奇股份</span>}
+          {!effectiveCollapsed && (
+            <span className="logo-text" style={{ 
+              fontSize: 18, 
+              fontWeight: 600,
+              color: userRole === ROLES.COLLECTOR ? '#001529' : '#fff',
+              marginLeft: 12
+            }}>
+              {userRole === ROLES.COLLECTOR ? '数据系统' : '天奇股份'}
+            </span>
+          )}
         </div>
         <Menu
-          theme="dark"
+          theme={userRole === ROLES.COLLECTOR ? 'light' : 'dark'}
           mode="inline"
           selectedKeys={[
+            pathname === '/collection/collect-home' ? '/collection/collect-home' :
             pathname.includes('/collection/collect') ? '/collection/collect' : 
             pathname.includes('/collection/tasks') ? '/collection/tasks' : 
             pathname.includes('/collection/qa') ? '/collection/qa' : 
             pathname
           ]}
           defaultOpenKeys={getOpenKeys()}
-          items={filteredItems}
+          items={getMenuItems()}
           onClick={({ key }) => {
             if (key.startsWith('/')) {
               router.push(key);
@@ -283,55 +320,157 @@ function MainLayoutContent({ children }) {
         />
       </Sider>
       <Layout style={{ marginLeft: effectiveCollapsed ? collapsedWidth : siderWidth, transition: 'margin-left 0.2s' }}>
-        <Header className="header-bar" style={{ position: 'sticky', top: 0, zIndex: 90 }}>
-          <div className="header-left">
-            {React.createElement(effectiveCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
-              onClick: () => setCollapsed(!collapsed),
-              style: { fontSize: 18, cursor: 'pointer', color: '#001529' },
-            })}
-            <div style={{ marginLeft: 16, fontSize: 15, fontWeight: 500, color: '#595959', letterSpacing: '0.5px', display: isMobile ? 'none' : 'block' }}>
-              欢迎进入具身智能数据采集管理系统
-            </div>
-          </div>
-          <div className="header-right">
-            <Space size="large">
-              {/* Spec mode switch */}
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 8, 
-                background: specMode ? '#fffbe6' : '#f5f5f5', 
-                padding: '4px 12px', 
-                borderRadius: 20,
-                border: specMode ? '1px solid #ffe58f' : '1px solid #d9d9d9',
-                transition: 'all 0.3s'
-              }}>
-                <Text style={{ fontSize: 12, fontWeight: specMode ? 600 : 400, color: specMode ? '#d46b08' : '#595959', margin: 0 }}>
-                  📖 需求标注
-                </Text>
-                <Switch 
-                  checked={specMode} 
-                  onChange={toggleSpecMode} 
-                  size="small"
-                  checkedChildren="开" 
-                  unCheckedChildren="关"
-                />
+        <Header className="header-bar" style={{ 
+          position: 'sticky', 
+          top: 0, 
+          zIndex: 90,
+          background: '#fff',
+          borderBottom: '1px solid #f0f0f0',
+          padding: '0 24px',
+          height: 64,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          {userRole === ROLES.COLLECTOR ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                {React.createElement(effectiveCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
+                  onClick: () => setCollapsed(!collapsed),
+                  style: { fontSize: 18, cursor: 'pointer', color: '#001529' },
+                })}
+                
+                {/* Breadcrumb */}
+                <div style={{ fontSize: 14, color: '#595959', fontWeight: 500 }}>
+                  {pathname === '/collection/collect-home' ? '首页' : 
+                   pathname.includes('/collection/collect') ? '任务中心（采集端）' : 
+                   pathname.includes('/collection/devices') ? '设备管理' : '数据采集'}
+                </div>
+
+                <Divider type="vertical" style={{ height: 20, borderColor: '#d9d9d9', margin: '0 8px' }} />
+
+                {/* Mode Badge */}
+                <div style={{
+                  padding: '2px 12px',
+                  borderRadius: '16px',
+                  border: '1px solid #d9d9d9',
+                  background: '#fafafa',
+                  fontSize: '12px',
+                  color: '#1f1f1f',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#1890ff' }}></span>
+                  当前模式：数采模式
+                </div>
+
+                <Divider type="vertical" style={{ height: 20, borderColor: '#d9d9d9', margin: '0 8px' }} />
+
+                {/* Run Info */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: '12px',
+                  color: '#595959'
+                }}>
+                  <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 14 }} />
+                  <span>运行信息</span>
+                  <Button 
+                    size="small" 
+                    type="text" 
+                    icon={<ReloadOutlined style={{ fontSize: 10 }} />} 
+                    onClick={() => message.success('数据已清空并重新同步')}
+                    style={{ 
+                      fontSize: '11px', 
+                      padding: '2px 6px', 
+                      height: 'auto',
+                      lineHeight: 1.2,
+                      background: '#f5f5f5',
+                      borderRadius: 4,
+                      marginLeft: 4
+                    }}
+                  >
+                    清空数据
+                  </Button>
+                </div>
               </div>
 
-              <Badge count={5} size="small">
-                <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
-              </Badge>
-              <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
-                <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 4, transition: 'all 0.3s' }} className="user-dropdown-hover">
-                  <Avatar size="small" style={{ backgroundColor: userRole === ROLES.ADMIN ? '#faad14' : '#1677ff' }} icon={<UserOutlined />} />
-                  <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-                    <Text strong style={{ fontSize: 13 }}>Admin User</Text>
-                    {getRoleBadge()}
+              {/* Right Menu Icons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <SunOutlined style={{ fontSize: 18, cursor: 'pointer', color: '#595959' }} onClick={() => message.info('主题切换暂不可用')} />
+                <GlobalOutlined style={{ fontSize: 18, cursor: 'pointer', color: '#595959' }} onClick={() => message.info('语言切换暂不可用')} />
+                <FullscreenOutlined style={{ fontSize: 18, cursor: 'pointer', color: '#595959' }} onClick={() => message.info('全屏模式暂不可用')} />
+                <SettingOutlined style={{ fontSize: 18, cursor: 'pointer', color: '#595959' }} onClick={() => message.info('设置暂不可用')} />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#595959', fontSize: 13 }}>
+                  <CloudOutlined style={{ fontSize: 16, color: '#1890ff' }} />
+                  <span>天奇数据中心</span>
+                </div>
+
+                <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
+                  <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 4 }} className="user-dropdown-hover">
+                    <Avatar size="small" style={{ backgroundColor: '#1890ff' }} icon={<UserOutlined />} />
+                    <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                      <Text strong style={{ fontSize: 13 }}>cy00831</Text>
+                      <Tag color="blue" style={{ margin: 0, fontSize: 10, padding: '0 4px', lineHeight: 1.5 }}>采集员</Tag>
+                    </div>
+                  </Space>
+                </Dropdown>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="header-left">
+                {React.createElement(effectiveCollapsed ? MenuUnfoldOutlined : MenuFoldOutlined, {
+                  onClick: () => setCollapsed(!collapsed),
+                  style: { fontSize: 18, cursor: 'pointer', color: '#001529' },
+                })}
+                <div style={{ marginLeft: 16, fontSize: 15, fontWeight: 500, color: '#595959', letterSpacing: '0.5px', display: isMobile ? 'none' : 'block' }}>
+                  欢迎进入具身智能数据采集管理系统
+                </div>
+              </div>
+              <div className="header-right">
+                <Space size="large">
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 8, 
+                    background: specMode ? '#fffbe6' : '#f5f5f5', 
+                    padding: '4px 12px', 
+                    borderRadius: 20,
+                    border: specMode ? '1px solid #ffe58f' : '1px solid #d9d9d9',
+                    transition: 'all 0.3s'
+                  }}>
+                    <Text style={{ fontSize: 12, fontWeight: specMode ? 600 : 400, color: specMode ? '#d46b08' : '#595959', margin: 0 }}>
+                      📖 需求标注
+                    </Text>
+                    <Switch 
+                      checked={specMode} 
+                      onChange={toggleSpecMode} 
+                      size="small"
+                      checkedChildren="开" 
+                      unCheckedChildren="关"
+                    />
                   </div>
+
+                  <Badge count={5} size="small">
+                    <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
+                  </Badge>
+                  <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
+                    <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 4, transition: 'all 0.3s' }} className="user-dropdown-hover">
+                      <Avatar size="small" style={{ backgroundColor: userRole === ROLES.ADMIN ? '#faad14' : '#1677ff' }} icon={<UserOutlined />} />
+                      <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                        <Text strong style={{ fontSize: 13 }}>Admin User</Text>
+                        {getRoleBadge()}
+                      </div>
+                    </Space>
+                  </Dropdown>
                 </Space>
-              </Dropdown>
-            </Space>
-          </div>
+              </div>
+            </>
+          )}
         </Header>
         <Content style={{ background: '#f0f2f5' }}>
           <div className="content-wrapper fade-in-up">
