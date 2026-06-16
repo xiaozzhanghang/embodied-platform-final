@@ -480,7 +480,7 @@ export default function CollectTaskPage() {
                       ]}
                       remark="数据采集前置物理校验，防止因传感器损坏、线缆松动或时钟失准导致采集到不可用的废包。"
                     >
-                      <Button type="primary" onClick={() => window.open('/collection/collect/connection/CT-20260414001', '_blank')}>Lumos 设备自检</Button>
+                      <Button type="primary" onClick={() => window.open('/collection/collect/workspace/CT-20260414001', '_blank')}>直接进入采集工作台</Button>
                     </SpecMarker>
                 </div>
                 <Row gutter={16} style={{ marginBottom: 16 }}>
