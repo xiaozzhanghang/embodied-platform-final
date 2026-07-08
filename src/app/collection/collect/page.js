@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Drawer, Descriptions, Badge, Progress, Statistic, Row, Col, Steps, Modal, App, DatePicker } from 'antd';
-import { SearchOutlined, ReloadOutlined, EyeOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ApiOutlined, DashboardOutlined, HddOutlined, CheckCircleFilled, WarningFilled, DownOutlined, UpOutlined, CloudUploadOutlined, FolderOpenOutlined, InboxOutlined, LoadingOutlined, PauseOutlined, CaretRightOutlined, WarningOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Drawer, Descriptions, Badge, Progress, Statistic, Row, Col, Steps, Modal, App, DatePicker, Dropdown } from 'antd';
+import { SearchOutlined, ReloadOutlined, EyeOutlined, PlayCircleOutlined, PauseCircleOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, ApiOutlined, DashboardOutlined, HddOutlined, CheckCircleFilled, WarningFilled, DownOutlined, UpOutlined, CloudUploadOutlined, FolderOpenOutlined, InboxOutlined, LoadingOutlined, PauseOutlined, CaretRightOutlined, WarningOutlined, SettingOutlined, MoreOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
@@ -11,11 +11,174 @@ import SpecMarker from '@/components/SpecMarker';
 const { Title, Text } = Typography;
 
 const mockData = [
-    { key: '1', name: 'CarTrunkStorage_job', taskId: '42729', purpose: 'OperationalCollection', sceneCategory: 'Industry(工业)', subSceneCategory: 'Workshop(车厂)', collectMode: 'WholeBody(全身)', connectionType: 'Master-slaveArm', deviceInfo: '—', collector: '采集员00831', status: '已采集', progress: '40/40', qaPassRate: '100%' },
-    { key: '2', name: 'CarTrunkStorage_job', taskId: '35676', purpose: 'OperationalCollection', sceneCategory: 'Industry(工业)', subSceneCategory: 'Workshop(车厂)', collectMode: 'WholeBody(全身)', connectionType: 'Master-slaveArm', deviceInfo: '—', collector: '采集员00831', status: '采集中', progress: '13/100', qaPassRate: '67%' },
-    { key: '3', name: '颜色分类_job', taskId: '29313', purpose: 'OperationalCollection', sceneCategory: 'Household(家庭)', subSceneCategory: '—', collectMode: 'WholeBody(全身)', connectionType: 'Master-slaveArm', deviceInfo: '—', collector: '采集员00831', status: '采集中', progress: '2740/4000', qaPassRate: '96%' },
-    { key: '4', name: '药品检索_job', taskId: '19871', purpose: 'OperationalCollection', sceneCategory: 'Household(家庭)', subSceneCategory: '—', collectMode: 'WholeBody(全身)', connectionType: 'Master-slaveArm', deviceInfo: '—', collector: '采集员00831', status: '已采集', progress: '1224/2000', qaPassRate: '98%' },
-    { key: '5', name: '线缆整理_job', taskId: '16516', purpose: 'OperationalCollection', sceneCategory: 'Industry(工业)', subSceneCategory: 'Electronic Assembly', collectMode: 'WholeBody(全身)', connectionType: 'Master-slaveArm', deviceInfo: '—', collector: '采集员00831', status: '已采集', progress: '1394/1500', qaPassRate: '96%' }
+    { 
+        key: '1', 
+        name: '桌面日常整理_01', 
+        taskId: '42729', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '真机', 
+        scene: '真实数据-UMI', 
+        collector: '李四', 
+        status: '采集完成', 
+        dataStatus: '待质检', 
+        createTime: '2026-06-17 10:43:54',
+        progress: '40/40',
+        qaPassRate: '100%'
+    },
+    { 
+        key: '2', 
+        name: '垃圾清扫分类_01', 
+        taskId: '35676', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '真机', 
+        scene: '真实数据-UMI', 
+        collector: '李四', 
+        status: '采集完成', 
+        dataStatus: '待质检', 
+        createTime: '2026-06-17 10:43:54',
+        progress: '13/100',
+        qaPassRate: '67%'
+    },
+    { 
+        key: '3', 
+        name: '抽屉整理与放置_01', 
+        taskId: '29313', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '真机', 
+        scene: '真实数据-UMI', 
+        collector: '李四', 
+        status: '采集完成', 
+        dataStatus: '待质检', 
+        createTime: '2026-06-17 10:43:54',
+        progress: '2740/4000',
+        qaPassRate: '96%'
+    },
+    { 
+        key: '4', 
+        name: '餐具清洗归位_01', 
+        taskId: '19871', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '真机', 
+        scene: '真实数据-UMI', 
+        collector: '李四', 
+        status: '采集完成', 
+        dataStatus: '待质检', 
+        createTime: '2026-06-17 10:43:54',
+        progress: '1224/2000',
+        qaPassRate: '98%'
+    },
+    { 
+        key: '5', 
+        name: '冰箱食物冷藏_01', 
+        taskId: '16516', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '真机', 
+        scene: '真实数据-UMI', 
+        collector: '李四', 
+        status: '采集完成', 
+        dataStatus: '待质检', 
+        createTime: '2026-06-17 10:43:54',
+        progress: '1394/1500',
+        qaPassRate: '96%'
+    },
+    { 
+        key: '6', 
+        name: '快递拆封取出_01', 
+        taskId: '10001', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '真机', 
+        scene: '真实数据-UMI', 
+        collector: '李四', 
+        status: '采集完成', 
+        dataStatus: '待质检', 
+        createTime: '2026-06-17 10:43:54',
+        progress: '20/20',
+        qaPassRate: '100%'
+    },
+    { 
+        key: '7', 
+        name: '零部件装配_01', 
+        taskId: '10002', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '真机', 
+        scene: '真实数据-UMI', 
+        collector: '李四', 
+        status: '采集完成', 
+        dataStatus: '待质检', 
+        createTime: '2026-06-17 10:43:54',
+        progress: '50/50',
+        qaPassRate: '98%'
+    },
+    { 
+        key: '8', 
+        name: '货架包裹分拣_01', 
+        taskId: '10003', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '真机', 
+        scene: '真实数据-UMI', 
+        collector: '李四', 
+        status: '采集完成', 
+        dataStatus: '待质检', 
+        createTime: '2026-06-17 10:43:43',
+        progress: '80/80',
+        qaPassRate: '95%'
+    },
+    { 
+        key: '9', 
+        name: '机舱盖封装-05280627', 
+        taskId: '10004', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '默认设备', 
+        scene: 'Industry(工业)', 
+        collector: '李四', 
+        status: '采集完成', 
+        dataStatus: '待质检', 
+        createTime: '2026-05-29 17:47:27',
+        progress: '10/10',
+        qaPassRate: '100%'
+    },
+    { 
+        key: '10', 
+        name: '机舱盖封装-05280627', 
+        taskId: '10005', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '默认设备', 
+        scene: 'Industry(工业)', 
+        collector: '李四', 
+        status: '采集完成', 
+        dataStatus: '待质检', 
+        createTime: '2026-05-28 15:10:00',
+        progress: '15/15',
+        qaPassRate: '93%'
+    },
+    { 
+        key: '11', 
+        name: '颜色分类_job_02', 
+        taskId: '10006', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '真机', 
+        scene: '真实数据-UMI', 
+        collector: '李四', 
+        status: '采集中', 
+        dataStatus: '-', 
+        createTime: '2026-06-17 11:20:00',
+        progress: '5/20',
+        qaPassRate: '—'
+    },
+    { 
+        key: '12', 
+        name: '药品检索_job_02', 
+        taskId: '10007', 
+        purpose: 'OfficialCollection(正式采集)', 
+        robot: '真机', 
+        scene: '真实数据-UMI', 
+        collector: '李四', 
+        status: '待采集', 
+        dataStatus: '-', 
+        createTime: '2026-06-17 11:30:00',
+        progress: '0/30',
+        qaPassRate: '—'
+    }
 ];
 
 const collectStatusMap = { '采集中': 'processing', '采集完成': 'success', '待采集': 'default' };
@@ -48,6 +211,7 @@ export default function CollectTaskPage() {
     const [isMinimized, setIsMinimized] = useState(false);
     const [cliSuggested, setCliSuggested] = useState(false);
     const [filters, setFilters] = useState({});
+    const [currentPage, setCurrentPage] = useState(1);
 
     // Drag-and-drop states
     const [dragActive, setDragActive] = useState(false);
@@ -240,18 +404,18 @@ export default function CollectTaskPage() {
 
     const filteredData = useMemo(() => {
         return mockData.filter(item => {
-            const idMatch = !filters.taskId || item.taskId.includes(filters.taskId);
             const nameMatch = !filters.taskName || item.name.includes(filters.taskName);
+            const robotMatch = !filters.robot || item.robot === filters.robot;
             const statusMatch = !filters.status || item.status === filters.status;
-            return idMatch && nameMatch && statusMatch;
+            return nameMatch && robotMatch && statusMatch;
         });
     }, [filters]);
 
     const summaryStats = useMemo(() => {
         const uploadedCount = mockData.filter(item => uploadedTasks[item.taskId]).length;
-        const collectingCount = mockData.filter(item => item.collectStatus === '采集中').length;
-        const pendingCount = mockData.filter(item => item.collectStatus === '待采集').length;
-        const completedCount = mockData.filter(item => item.collectStatus === '采集完成').length + uploadedCount;
+        const collectingCount = mockData.filter(item => item.status === '采集中').length;
+        const pendingCount = mockData.filter(item => item.status === '待采集').length;
+        const completedCount = mockData.filter(item => item.status === '采集完成').length + uploadedCount;
         const uploadingCount = uploadQueue.filter(item => item.status === 'uploading').length;
         return [
             { title: '待采集任务', value: pendingCount, color: '#8c8c8c', icon: <ClockCircleOutlined /> },
@@ -440,154 +604,144 @@ export default function CollectTaskPage() {
     const uploadedBytes = uploadQueue.reduce((acc, q) => acc + (q.size * q.progress / 100), 0);
     const overallProgressPercent = Math.round(uploadedBytes / totalQueueSize * 100);
 
-    const columns = [
-        {
-            title: '序号',
-            dataIndex: 'key',
-            key: 'key',
-            width: 70,
-            align: 'center',
-        },
+    const columns = useMemo(() => [
         {
             title: '任务名称',
             dataIndex: 'name',
             key: 'name',
-            width: 180,
+            width: 200,
         },
         {
-            title: '任务ID',
-            dataIndex: 'taskId',
-            key: 'taskId',
-            width: 100,
-        },
-        {
-            title: '任务用途',
+            title: '任务指述',
             dataIndex: 'purpose',
             key: 'purpose',
-            width: 160,
-            ellipsis: true,
+            width: 240,
         },
         {
-            title: '场景分类',
-            dataIndex: 'sceneCategory',
-            key: 'sceneCategory',
-            width: 140,
-        },
-        {
-            title: '子场景分类',
-            dataIndex: 'subSceneCategory',
-            key: 'subSceneCategory',
-            width: 160,
-            ellipsis: true,
-        },
-        {
-            title: '采集模式',
-            dataIndex: 'collectMode',
-            key: 'collectMode',
+            title: '采集机器人',
+            dataIndex: 'robot',
+            key: 'robot',
             width: 120,
         },
         {
-            title: '连接类型',
-            dataIndex: 'connectionType',
-            key: 'connectionType',
-            width: 140,
+            title: '采集场景',
+            dataIndex: 'scene',
+            key: 'scene',
+            width: 180,
             ellipsis: true,
         },
         {
-            title: '设备信息',
-            dataIndex: 'deviceInfo',
-            key: 'deviceInfo',
-            width: 100,
-        },
-        {
-            title: '采集员',
+            title: '采集人员',
             dataIndex: 'collector',
             key: 'collector',
-            width: 120,
-        },
-        {
-            title: '进入采集',
-            key: 'enterCollect',
             width: 100,
-            render: (_, record) => (
-                <Button 
-                    type="link" 
-                    onClick={() => window.open(`/collection/collect/workspace/${record.taskId}`, '_blank')}
-                    style={{ padding: 0 }}
-                >
-                    开始采集
-                </Button>
-            )
         },
         {
-            title: '手动上传',
-            key: 'manualUpload',
-            width: 100,
-            render: (_, record) => (
-                <Button 
-                    type="link" 
-                    onClick={() => {
-                        setUploadingTask(record);
-                        setIsUploadModalOpen(true);
-                        setIsUploading(false);
-                        setFilesDropped(false);
-                        setUploadQueue([]);
-                        setActiveQueueIndex(null);
-                        setIsMinimized(false);
-                        setCliSuggested(false);
-                    }}
-                    style={{ padding: 0 }}
-                >
-                    手动上传
-                </Button>
-            )
-        },
-        {
-            title: '任务状态',
+            title: '采集状态',
+            dataIndex: 'status',
             key: 'status',
-            width: 220,
-            render: (_, record) => {
-                const total = parseInt(record.progress.split('/')[1]) || 100;
-                const current = parseInt(record.progress.split('/')[0]) || 0;
-                const percent = Math.min(100, Math.round((current / total) * 100));
-                
-                return (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-                        <Tag color={record.status === '已采集' ? 'success' : 'processing'} style={{ margin: 0 }}>
-                            {record.status}
-                        </Tag>
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Progress percent={percent} showInfo={false} size="small" strokeColor="#1890ff" style={{ margin: 0 }} />
-                            <span style={{ fontSize: '11px', color: '#595959', whiteSpace: 'nowrap' }}>{record.progress}</span>
-                        </div>
-                    </div>
-                );
+            width: 120,
+            render: (status) => {
+                let color = 'default';
+                if (status === '采集完成') color = 'success';
+                if (status === '采集中') color = 'processing';
+                return <Tag color={color} style={{ margin: 0 }}>{status}</Tag>;
             }
         },
         {
-            title: '质检合格率',
-            dataIndex: 'qaPassRate',
-            key: 'qaPassRate',
+            title: '数据状态',
+            dataIndex: 'dataStatus',
+            key: 'dataStatus',
             width: 100,
+            render: (status) => {
+                let color = 'default';
+                if (status === '待质检') color = 'warning';
+                return <Tag color={color} style={{ margin: 0 }}>{status}</Tag>;
+            }
+        },
+        {
+            title: '创建时间',
+            dataIndex: 'createTime',
+            key: 'createTime',
+            width: 180,
         },
         {
             title: '操作',
             key: 'collectList',
-            width: 90,
-            render: (_, record) => (
-                <Button 
-                    type="link" 
-                    onClick={() => router.push(`/collection/collect/detail/${record.taskId}`)}
-                    style={{ padding: 0 }}
-                >
-                    查看
-                </Button>
-            )
+            width: 400,
+            fixed: 'right',
+            render: (_, record) => {
+                const isCompleted = record.status === '采集完成';
+                const isCollecting = record.status === '采集中';
+                const isPending = record.status === '待采集';
+
+                return (
+                    <Space size={0}>
+                        <Button
+                            type="link"
+                            size="small"
+                            icon={<EyeOutlined />}
+                            onClick={() => router.push(`/collection/collect/detail/${record.taskId}`)}
+                            style={{ padding: '0 6px', display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                        >
+                            查看
+                        </Button>
+                        <span style={{ color: '#e8e8e8' }}>|</span>
+                        <Button
+                            type="link"
+                            size="small"
+                            icon={<PlayCircleOutlined />}
+                            onClick={() => window.open(`/collection/collect/workspace/${record.taskId}`, '_blank')}
+                            style={{ padding: '0 6px', display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                        >
+                            开始采集
+                        </Button>
+                        {(isCompleted || isCollecting) && (
+                            <>
+                                <span style={{ color: '#e8e8e8' }}>|</span>
+                                <Button
+                                    type="link"
+                                    size="small"
+                                    icon={<CloudUploadOutlined />}
+                                    onClick={() => {
+                                        setUploadingTask(record);
+                                        setIsUploadModalOpen(true);
+                                        setIsUploading(false);
+                                        setFilesDropped(false);
+                                        setUploadQueue([]);
+                                        setActiveQueueIndex(null);
+                                        setIsMinimized(false);
+                                        setCliSuggested(false);
+                                    }}
+                                    style={{ padding: '0 6px', display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                                >
+                                    上传数据
+                                </Button>
+                            </>
+                        )}
+                        {!isPending && (
+                            <>
+                                <span style={{ color: '#e8e8e8' }}>|</span>
+                                <Button
+                                    type="link"
+                                    size="small"
+                                    icon={<CheckCircleOutlined />}
+                                    onClick={() => message.success(`任务 ${record.name} 已成功完成！`)}
+                                    style={{ padding: '0 6px', color: '#52c41a', display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                                >
+                                    完成任务
+                                </Button>
+                            </>
+                        )}
+                    </Space>
+                );
+            }
         }
-    ];
+    ], []);
 
     return (
             <MainLayout>
+                <div style={{ width: '100%' }}>
 
 
                 <Card 
@@ -601,35 +755,23 @@ export default function CollectTaskPage() {
                             setFilters(allValues);
                         }}
                     >
-                        <Row gutter={16}>
-                            <Col span={8}>
-                                <Form.Item name="taskId" style={{ marginBottom: 12 }}>
-                                    <Input placeholder="实例任务ID" allowClear />
+                        <Row gutter={16} align="middle">
+                            <Col span={6}>
+                                <Form.Item name="taskName" label="任务名称" style={{ marginBottom: 0 }}>
+                                    <Input placeholder="请输入任务名称" allowClear />
                                 </Form.Item>
                             </Col>
-                            <Col span={8}>
-                                <Form.Item name="taskName" style={{ marginBottom: 12 }}>
-                                    <Input placeholder="实例任务名称" allowClear />
+                            <Col span={6}>
+                                <Form.Item name="robot" label="采集机器人" style={{ marginBottom: 0 }}>
+                                    <Select placeholder="请选择采集机器人" allowClear options={[{ label: '真机', value: '真机' }, { label: '默认设备', value: '默认设备' }]} />
                                 </Form.Item>
                             </Col>
-                            <Col span={8}>
-                                <Form.Item name="status" style={{ marginBottom: 12 }}>
-                                    <Select placeholder="请选择任务状态" allowClear options={[{ label: '已采集', value: '已采集' }, { label: '采集中', value: '采集中' }]} />
+                            <Col span={6}>
+                                <Form.Item name="status" label="采集状态" style={{ marginBottom: 0 }}>
+                                    <Select placeholder="请选择采集状态" allowClear options={[{ label: '采集完成', value: '采集完成' }, { label: '采集中', value: '采集中' }, { label: '待采集', value: '待采集' }]} />
                                 </Form.Item>
                             </Col>
-                        </Row>
-                        <Row gutter={16}>
-                            <Col span={16}>
-                                <Form.Item name="dateRange" style={{ marginBottom: 0 }}>
-                                    <DatePicker.RangePicker 
-                                        separator="至" 
-                                        placeholder={['开始时间', '结束时间']} 
-                                        style={{ width: '100%' }} 
-                                        allowClear 
-                                    />
-                                </Form.Item>
-                            </Col>
-                            <Col span={8} style={{ display: 'flex', gap: 8, justifyContent: 'flex-start', alignItems: 'center' }}>
+                            <Col span={6} style={{ display: 'flex', gap: 8, justifyContent: 'flex-start', alignItems: 'center' }}>
                                 <Button 
                                     type="primary" 
                                     icon={<SearchOutlined />} 
@@ -637,8 +779,9 @@ export default function CollectTaskPage() {
                                         const values = form.getFieldsValue();
                                         setFilters(values);
                                     }}
+                                    style={{ background: '#1677ff' }}
                                 >
-                                    搜索
+                                    查询
                                 </Button>
                                 <Button 
                                     icon={<ReloadOutlined />} 
@@ -648,6 +791,9 @@ export default function CollectTaskPage() {
                                     }}
                                 >
                                     重置
+                                </Button>
+                                <Button type="link" style={{ padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    展开 <DownOutlined style={{ fontSize: 10 }} />
                                 </Button>
                             </Col>
                         </Row>
@@ -664,21 +810,39 @@ export default function CollectTaskPage() {
                     "通过自检后生成的自检报告（包含 PTP 时钟同步延迟、重投影误差等）将作为元数据绑定到采集 Episode 中。"
                   ]}
                   remark="数据采集前置物理校验，防止因传感器损坏、线缆松动或时钟失准导致采集到不可用的废包。"
+                  style={{ width: '100%' }}
                 >
-                    <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
+                    <Card styles={{ body: { padding: '24px' } }} style={{ borderRadius: 8 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <div style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f' }}>
+                                采集任务
+                            </div>
+                            <Space size="middle" style={{ fontSize: 16, color: '#595959' }}>
+                                <ReloadOutlined style={{ cursor: 'pointer' }} onClick={() => message.success('数据已刷新')} />
+                                <span style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
+                                    <svg viewBox="64 64 896 896" focusable="false" data-icon="column-height" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M840 836H184c-4.4 0-8 3.6-8 8v32c0 4.4 3.6 8 8 8h656c4.4 0 8-3.6 8-8v-32c0-4.4-3.6-8-8-8zm0-704H184c-4.4 0-8 3.6-8 8v32c0 4.4 3.6 8 8 8h656c4.4 0 8-3.6 8-8v-32c0-4.4-3.6-8-8-8zM544 260h-64c-4.4 0-8 3.6-8 8v348c0 4.4 3.6 8 8 8h64c4.4 0 8-3.6 8-8V268c0-4.4-3.6-8-8-8z"></path></svg>
+                                </span>
+                                <SettingOutlined style={{ cursor: 'pointer' }} onClick={() => message.info('列设置暂不可用')} />
+                                <svg viewBox="64 64 896 896" focusable="false" data-icon="fullscreen" width="1em" height="1em" fill="currentColor" aria-hidden="true" style={{ cursor: 'pointer' }} onClick={() => message.info('全屏模式暂不可用')}><path d="M290 398a8 8 0 008-8V222h168c4.4 0 8-3.6 8-8v-48c0-4.4-3.6-8-8-8H222v238c0 4.4 3.6 8 8 8h60zm444-168v168a8 8 0 008 8h60c4.4 0 8-3.6 8-8V158H642c-4.4 0-8 3.6-8 8v48c0 4.4 3.6 8 8 8h168zM222 866h238c4.4 0 8-3.6 8-8v-48c0-4.4-3.6-8-8-8H290v-168a8 8 0 00-8-8h-60c-4.4 0-8 3.6-8 8v238zm588-238a8 8 0 00-8 8v168H642c-4.4 0-8 3.6-8 8v48c0 4.4 3.6 8 8 8h238V628c0-4.4-3.6-8-8-8h-60z"></path></svg>
+                            </Space>
+                        </div>
                         <Table 
                             columns={columns} 
                             dataSource={filteredData} 
-                            scroll={{ x: 1500 }} 
+                            scroll={{ x: 1440 }}
                             pagination={{ 
+                                current: currentPage,
+                                onChange: (page) => setCurrentPage(page),
                                 pageSize: 10, 
-                                showTotal: (t) => `共 ${t} 条`,
+                                total: filteredData.length,
+                                showTotal: (t) => `共 ${t} 条数据`,
                                 showSizeChanger: true,
                                 pageSizeOptions: ['10', '20', '50', '100'],
                             }} 
                         />
                     </Card>
                 </SpecMarker>
+                </div>
 
                 {/* Upload Data Modal */}
                 <Modal

@@ -266,7 +266,7 @@ function MainLayoutContent({ children }) {
         collapsedWidth={collapsedWidth}
         trigger={null}
         style={{
-          background: userRole === ROLES.COLLECTOR ? '#fff' : '#001529',
+          background: '#001529',
           overflow: 'auto',
           height: '100vh',
           position: 'fixed',
@@ -274,12 +274,12 @@ function MainLayoutContent({ children }) {
           top: 0,
           bottom: 0,
           zIndex: 100,
-          borderRight: userRole === ROLES.COLLECTOR ? '1px solid #f0f0f0' : 'none',
+          borderRight: 'none',
         }}
       >
         <div className="sidebar-logo" style={{
-          background: userRole === ROLES.COLLECTOR ? '#fff' : '#001529',
-          borderBottom: userRole === ROLES.COLLECTOR ? '1px solid #f0f0f0' : 'none',
+          background: '#001529',
+          borderBottom: 'none',
           height: 64,
           display: 'flex',
           alignItems: 'center',
@@ -292,7 +292,7 @@ function MainLayoutContent({ children }) {
             <span className="logo-text" style={{ 
               fontSize: 18, 
               fontWeight: 600,
-              color: userRole === ROLES.COLLECTOR ? '#001529' : '#fff',
+              color: '#fff',
               marginLeft: 12
             }}>
               {userRole === ROLES.COLLECTOR ? '数据系统' : '天奇股份'}
@@ -300,7 +300,7 @@ function MainLayoutContent({ children }) {
           )}
         </div>
         <Menu
-          theme={userRole === ROLES.COLLECTOR ? 'light' : 'dark'}
+          theme="dark"
           mode="inline"
           selectedKeys={[
             pathname === '/collection/collect-home' ? '/collection/collect-home' :
@@ -347,7 +347,7 @@ function MainLayoutContent({ children }) {
                    pathname.includes('/collection/devices') ? '设备管理' : '数据采集'}
                 </div>
 
-                <Divider type="vertical" style={{ height: 20, borderColor: '#d9d9d9', margin: '0 8px' }} />
+                <Divider orientation="vertical" style={{ height: 20, borderColor: '#d9d9d9', margin: '0 8px' }} />
 
                 {/* Mode Badge */}
                 <div style={{
@@ -365,7 +365,7 @@ function MainLayoutContent({ children }) {
                   当前模式：数采模式
                 </div>
 
-                <Divider type="vertical" style={{ height: 20, borderColor: '#d9d9d9', margin: '0 8px' }} />
+                <Divider orientation="vertical" style={{ height: 20, borderColor: '#d9d9d9', margin: '0 8px' }} />
 
                 {/* Run Info */}
                 <div style={{

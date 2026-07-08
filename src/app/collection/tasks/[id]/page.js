@@ -86,7 +86,7 @@ export default function TaskInstancePage() {
   const getStatusActions = (record) => {
     if (record.status === '已完成') {
       return (
-        <Space separator={<Divider type="vertical" />} size={0}>
+        <Space separator={<Divider orientation="vertical" />} size={0}>
           <Button type="link" size="small" icon={<DownloadOutlined />} style={{ padding: '0 4px' }}>下载</Button>
           <Button type="link" size="small" icon={<FileSearchOutlined />} style={{ padding: '0 4px', color: '#52c41a' }}>质检详情</Button>
           <Button type="link" size="small" icon={<CloudUploadOutlined />} style={{ padding: '0 4px', color: '#722ed1' }}>手动上传</Button>
@@ -95,14 +95,14 @@ export default function TaskInstancePage() {
     }
     if (record.status === '待分配') {
       return (
-        <Space separator={<Divider type="vertical" />} size={0}>
+        <Space separator={<Divider orientation="vertical" />} size={0}>
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: '0 4px' }} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>删除</Button>
         </Space>
       );
     }
     return (
-      <Space separator={<Divider type="vertical" />} size={0}>
+      <Space separator={<Divider orientation="vertical" />} size={0}>
         <Button type="link" size="small" icon={<PauseCircleOutlined />} style={{ padding: '0 4px', color: '#faad14' }} onClick={() => handlePausePack(record)}>暂停</Button>
         <Button type="link" size="small" icon={<CheckCircleOutlined />} style={{ padding: '0 4px', color: '#52c41a' }} onClick={() => handleCompletePack(record)}>完成</Button>
       </Space>

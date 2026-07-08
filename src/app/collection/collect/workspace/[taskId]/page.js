@@ -60,17 +60,54 @@ function HumanoidWorkspace({ taskId, router, params }) {
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [activeStep, setActiveStep] = useState(0);
+  const [expandedStep, setExpandedStep] = useState(null);
   const [stepRecords, setStepRecords] = useState({});
   const [completedEpisodes, setCompletedEpisodes] = useState([]);
   const elapsedRef = useRef(0);
 
   const steps = [
-    { title: '右手拿起桌面上的筷子' },
-    { title: '右手将筷子放置在厨具盒中' },
-    { title: '左手拿起桌面上的餐叉' },
-    { title: '左手将餐叉放置在厨具盒中' },
-    { title: '右手拿起桌面上的勺子' },
-    { title: '右手将勺子放置在厨具盒中' },
+    {
+      title: '右手拿起桌面上的筷子',
+      description: '右手拿起桌面上的筷子',
+      actionGoal: '用右手拇指、食指和中指捏住一根筷子，从桌面垂直拿起，离开桌面约 5cm。',
+      precautions: ['不要触碰其他餐具', '筷子保持水平', '动作轻稳，避免抖动'],
+      referenceImage: '/assets/chopsticks-reference.png',
+    },
+    {
+      title: '右手将筷子放置在厨具盒中',
+      description: '右手将筷子放置在厨具盒中',
+      actionGoal: '保持筷子垂直，将筷子放入厨具盒的指定槽位中。',
+      precautions: ['轻放避免碰撞', '确认筷子已放稳'],
+      referenceImage: '/assets/chopsticks-reference.png',
+    },
+    {
+      title: '左手拿起桌面上的餐叉',
+      description: '左手拿起桌面上的餐叉',
+      actionGoal: '用左手拇指、食指和中指捏住餐叉，从桌面拿起。',
+      precautions: ['餐叉齿部朝上', '避免戳到其他餐具'],
+      referenceImage: '/assets/chopsticks-reference.png',
+    },
+    {
+      title: '左手将餐叉放置在厨具盒中',
+      description: '左手将餐叉放置在厨具盒中',
+      actionGoal: '将餐叉放入厨具盒的指定槽位。',
+      precautions: ['确认餐叉已放稳'],
+      referenceImage: '/assets/chopsticks-reference.png',
+    },
+    {
+      title: '右手拿起桌面上的勺子',
+      description: '右手拿起桌面上的勺子',
+      actionGoal: '用右手捏住勺子柄部，从桌面拿起。',
+      precautions: ['勺子凹面朝上', '避免溅出残留物'],
+      referenceImage: '/assets/chopsticks-reference.png',
+    },
+    {
+      title: '右手将勺子放置在厨具盒中',
+      description: '右手将勺子放置在厨具盒中',
+      actionGoal: '将勺子放入厨具盒的指定槽位。',
+      precautions: ['轻放避免碰撞'],
+      referenceImage: '/assets/chopsticks-reference.png',
+    },
   ];
 
   useEffect(() => {
@@ -142,6 +179,7 @@ function HumanoidWorkspace({ taskId, router, params }) {
   ];
 
   const [fullscreenId, setFullscreenId] = useState(null);
+  const [videoLayout, setVideoLayout] = useState('focus'); // 'focus' | 'equal' | 'stack'
   const toggleFullscreen = (id) => {
     setFullscreenId(prev => prev === id ? null : id);
   };
@@ -196,7 +234,13 @@ function HumanoidWorkspace({ taskId, router, params }) {
         </Space>
         
         <Space size="middle" style={{ color: '#8c8c8c' }}>
-          <span><kbd style={{ padding: '0 4px', border: '1px solid #d9d9d9', borderRadius: 2 }}>Space</kbd> 录制/暂停</span>
+          <span style={{ marginRight: 8, color: '#8c8c8c' }}>视频布局:</span>
+          <Button.Group size="small">
+            <Button type={videoLayout === 'focus' ? 'primary' : 'default'} onClick={() => setVideoLayout('focus')}>主视角</Button>
+            <Button type={videoLayout === 'equal' ? 'primary' : 'default'} onClick={() => setVideoLayout('equal')}>三栏等分</Button>
+            <Button type={videoLayout === 'stack' ? 'primary' : 'default'} onClick={() => setVideoLayout('stack')}>品字堆叠</Button>
+          </Button.Group>
+          <span style={{ marginLeft: 8, borderLeft: '1px solid #d9d9d9', paddingLeft: 8 }}><kbd style={{ padding: '0 4px', border: '1px solid #d9d9d9', borderRadius: 2 }}>Space</kbd> 录制/暂停</span>
           <span><kbd style={{ padding: '0 4px', border: '1px solid #d9d9d9', borderRadius: 2 }}>R</kbd> 作废当前</span>
           <span><kbd style={{ padding: '0 4px', border: '1px solid #d9d9d9', borderRadius: 2 }}>Enter</kbd> 提交并下一段</span>
           <Button size="small" type="primary" danger ghost icon={<CloseCircleOutlined />} onClick={() => window.close()}>退出工作台</Button>
@@ -218,105 +262,423 @@ function HumanoidWorkspace({ taskId, router, params }) {
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', backgroundColor: '#fff', padding: '16px', overflow: 'hidden', minHeight: 0, minWidth: 0 }}>
           
           {/* Full height/width grid */}
-          <div style={{ 
-            width: '100%', 
+          <div style={{
+            width: '100%',
             height: '100%',
-            display: fullscreenId ? 'block' : 'grid', 
-            gridTemplateColumns: '1fr 1fr', 
-            gridTemplateRows: '1fr 1fr', 
-            gap: '8px' 
+            display: fullscreenId ? 'block' : 'grid',
+            gridTemplateColumns: videoLayout === 'equal' ? 'repeat(3, 1fr)' : '2fr 1fr',
+            gridTemplateRows: videoLayout === 'equal' ? '1fr auto' : '1fr 1fr',
+            gap: '12px',
+            alignItems: 'stretch',
           }}>
 
-            {/* Top Left Video */}
-            {(!fullscreenId || fullscreenId === 'cam1') && (
-              <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
-                <PanelHeader id="cam1" title="左手-腕部视角" />
-                <div style={{ flex: 1, background: '#e6e8eb', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                  <img src="/assets/images/left_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="left hand cam" onError={(e) => { e.target.src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=400"; }} />
-                  <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
-                    <div>Fps: 30</div>
-                    <div>Resolution: 640*360</div>
-                    <div>Live Stream</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Top Right Video */}
+            {/* 头部视角 - 左侧大屏 (主视角) / 第一个 (三等分) */}
             {(!fullscreenId || fullscreenId === 'cam3') && (
-              <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid #e8e8e8',
+                backgroundColor: '#fff',
+                gridColumn: videoLayout === 'equal' ? '1' : '1',
+                gridRow: videoLayout === 'equal' ? '1' : '1 / 3',
+                height: '100%',
+              }}>
                 <PanelHeader id="cam3" title="头部左目视角" />
-                <div style={{ flex: 1, background: '#e6e8eb', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                  <img src="/assets/images/main_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="main head cam" onError={(e) => { e.target.src="https://images.unsplash.com/photo-1531746790731-6c087fecd05a?auto=format&fit=crop&q=80&w=400"; }} />
-                  <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
+                <div style={{
+                  flex: 1,
+                  minHeight: 0,
+                  background: '#1a1a1a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}>
+                  <video src="/assets/videos/left_hand.mp4" autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
-                    <div>Resolution: 640*480</div>
+                    <div>Resolution: 848*480</div>
                     <div>Live Stream</div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Bottom Left Video */}
+            {/* 左手-腕部视角 - 右上 (主视角) / 第二个 (三等分) */}
+            {(!fullscreenId || fullscreenId === 'cam1') && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid #e8e8e8',
+                backgroundColor: '#fff',
+                gridColumn: videoLayout === 'equal' ? '2' : '2',
+                gridRow: videoLayout === 'equal' ? '1' : '1',
+                height: '100%',
+              }}>
+                <PanelHeader id="cam1" title="左手-腕部视角" />
+                <div style={{
+                  flex: 1,
+                  minHeight: 0,
+                  background: '#1a1a1a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}>
+                  <video src="/assets/videos/left_hand.mp4" autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
+                    <div>Fps: 30</div>
+                    <div>Resolution: 848*480</div>
+                    <div>Live Stream</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 右手-腕部视角 - 右下 (主视角) / 第三个 (三等分) */}
             {(!fullscreenId || fullscreenId === 'cam2') && (
-              <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid #e8e8e8',
+                backgroundColor: '#fff',
+                gridColumn: videoLayout === 'equal' ? '3' : '2',
+                gridRow: videoLayout === 'equal' ? '1' : '2',
+                height: '100%',
+              }}>
                 <PanelHeader id="cam2" title="右手-腕部视角" />
-                <div style={{ flex: 1, background: '#e6e8eb', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                  <img src="/assets/images/right_cam.png" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="right hand cam" onError={(e) => { e.target.src="https://images.unsplash.com/photo-1546776310-eef45dd6d63c?auto=format&fit=crop&q=80&w=400"; }} />
-                  <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.5)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
+                <div style={{
+                  flex: 1,
+                  minHeight: 0,
+                  background: '#1a1a1a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}>
+                  <video src="/assets/videos/right_hand.mp4" autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
-                    <div>Resolution: 640*360</div>
+                    <div>Resolution: 848*480</div>
                     <div>Live Stream</div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Bottom Right 3D Area */}
-            {(!fullscreenId || fullscreenId === 'cam4') && (
-              <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #e8e8e8', backgroundColor: '#fff', minHeight: 0 }}>
-                <PanelHeader id="cam4" title="joints_digital_twin.json" />
-                <div style={{ flex: 1, background: '#f8fafc', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {/* 3D Mockup Background Grid */}
-                  <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px)', backgroundSize: '20px 20px', transform: 'perspective(500px) rotateX(60deg) scale(2)', transformOrigin: 'center 100%' }}></div>
-                  
-                  {/* Elegant single robotic arm twin representation */}
-                  <svg width="220" height="220" viewBox="0 0 120 120" style={{ zIndex: 1, position: 'relative', top: -10 }}>
-                    {/* Base */}
-                    <rect x="52" y="90" width="16" height="15" rx="2" fill="#475569" />
-                    <line x1="60" y1="90" x2="60" y2="70" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
-                    <circle cx="60" cy="70" r="5" fill="#1e3a8a" />
-                    
-                    {/* Link 1 & Link 2 with animation during recording */}
-                    <g style={{ 
-                      transform: isRecording ? 'rotate(15deg)' : 'none',
-                      transformOrigin: '60px 70px',
-                      transition: 'transform 0.5s ease-in-out'
-                    }}>
-                      <line x1="60" y1="70" x2="40" y2="45" stroke="#3b82f6" strokeWidth="5" strokeLinecap="round" />
-                      <circle cx="40" cy="45" r="4" fill="#1e3a8a" />
-                      
-                      <g style={{
-                        transform: isRecording ? 'rotate(-30deg)' : 'none',
-                        transformOrigin: '40px 45px',
-                        transition: 'transform 0.5s ease-in-out'
-                      }}>
-                        <line x1="40" y1="45" x2="70" y2="30" stroke="#10b981" strokeWidth="4" strokeLinecap="round" />
-                        <circle cx="70" cy="30" r="3" fill="#1e3a8a" />
-                        
-                        {/* Hand gripper */}
-                        <path d="M 70 30 L 80 25 M 70 30 L 78 35" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" />
-                      </g>
-                    </g>
+            {/* Bottom Right 采集进度 Panel - 非三等分模式时显示 */}
+            {(!fullscreenId || fullscreenId === 'cam4') && videoLayout !== 'equal' && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid #e8e8e8',
+                backgroundColor: '#fff',
+                gridColumn: '1',
+                gridRow: '1',
+                padding: '16px',
+                overflow: 'hidden'
+              }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', fontWeight: 500, fontSize: 14, color: '#333' }}>
+                    <div style={{ width: 4, height: 14, background: '#1677ff', marginRight: 8, borderRadius: 2 }}></div>
+                    数据采集控制台
+                  </div>
+                  <span style={{ fontSize: 12, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#52c41a', display: 'inline-block' }}></span>
+                    空闲就绪
+                  </span>
+                </div>
+
+                {/* Progress Block */}
+                <div style={{ background: '#f6f5f1', borderRadius: 10, padding: 14, display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                  {/* Ring Progress */}
+                  <svg width="56" height="56" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="#e8e8e8" strokeWidth="5"/>
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="#1677ff" strokeWidth="5"
+                      strokeDasharray={`${(completedEpisodes.length / 50) * 151} 151`}
+                      strokeLinecap="round"
+                      transform="rotate(-90 28 28)"
+                      style={{ transition: 'stroke-dasharray 0.3s ease' }}
+                    />
+                    <text x="28" y="32" textAnchor="middle" fontSize="15" fontWeight="500" fill="#333">{completedEpisodes.length}</text>
                   </svg>
-                  
-                  <div style={{ position: 'absolute', top: 8, left: 8, color: '#0f172a', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#10b981', animation: isRecording ? 'blink-dot 1s infinite' : 'none' }}></span>
-                    120 FPS (Real-time Twin)
+
+                  {/* Progress Info */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 7 }}>当前批次采集进度</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 500, color: '#333' }}>{completedEpisodes.length} / 50</span>
+                      <span style={{ fontSize: 13.5, color: '#1677ff', fontWeight: 500 }}>{Math.round((completedEpisodes.length / 50) * 100)}%</span>
+                    </div>
+                    <div style={{ height: 5, background: '#e8e8e8', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${(completedEpisodes.length / 50) * 100}%`, background: '#1677ff', borderRadius: 3, transition: 'width 0.3s ease' }}></div>
+                    </div>
                   </div>
-                  <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
-                    <Tag color="processing" style={{ fontSize: 9, margin: 0 }}>FRANKA-FR3 TWIN</Tag>
-                  </div>
+                </div>
+
+                {/* Episode List Preview */}
+                <div style={{ flex: 1, overflow: 'auto' }}>
+                  <div style={{ fontSize: 11, color: '#8c8c8c', marginBottom: 9, letterSpacing: 0.3 }}>最近采集记录</div>
+                  {completedEpisodes.length === 0 ? (
+                    <div style={{ textAlign: 'center', color: '#bfbfbf', padding: 20 }}>暂无已完成的采集记录</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {completedEpisodes.slice(0, 3).map((ep, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: '#fafafa', borderRadius: 6, border: '1px solid #e8e8e8' }}>
+                          <span style={{ fontSize: 12, fontWeight: 500, color: '#1677ff' }}>{ep.id}</span>
+                          <span style={{ fontSize: 11, color: '#8c8c8c' }}>{ep.time}s · {ep.frames}帧</span>
+                          <span style={{ fontSize: 11, color: '#52c41a' }}>{ep.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 任务步骤面板 - 只在三栏等分模式显示，占满整行 */}
+            {videoLayout === 'equal' && (
+              <div style={{
+                gridColumn: '1 / 4',
+                gridRow: '2',
+                display: 'flex',
+                flexDirection: 'column',
+                border: '1px solid #ddd8cc',
+                borderRadius: 12,
+                background: '#fff',
+                overflow: 'hidden',
+                boxShadow: 'inset 0 0 0 5px #f5f2eb',
+              }}>
+                {/* 标题行 */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 22px',
+                  height: 54,
+                  borderBottom: '1px solid #ddd8cc',
+                }}>
+                  <span style={{ fontSize: 16, fontWeight: 650 }}>采集步骤</span>
+                  <span style={{ color: '#949ca7', fontFamily: 'monospace', fontSize: 10, letterSpacing: '0.08em' }}>当前步骤 {activeStep + 1}/{steps.length}</span>
+                </div>
+
+                {/* 步骤列表 - 三栏卡片排列 */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: 12,
+                  padding: 16,
+                }}>
+                  {steps.map((step, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      borderRadius: 8,
+                      border: idx === activeStep ? '2px solid #e7531b' : '1px solid #e8e8e8',
+                      background: '#fff',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                    }}>
+                      {/* 卡片头部 */}
+                      <div style={{
+                        padding: '8px 12px',
+                        background: idx === activeStep ? '#fff7f5' : '#fafafa',
+                        borderBottom: '1px solid #e8e8e8',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}>
+                        <span style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: idx === activeStep ? '#e7531b' : '#333',
+                        }}>
+                          Image #{idx + 1}
+                        </span>
+                        <span style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          border: idx === activeStep ? '2px solid #e7531b' : '1px solid #e8e8e8',
+                          color: idx === activeStep ? '#e7531b' : '#999',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 10,
+                          fontWeight: 700,
+                        }}>
+                          {idx + 1}
+                        </span>
+                      </div>
+                      {/* 视频画面占位 */}
+                      <div style={{
+                        height: 100,
+                        background: '#1a1a1a',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative',
+                      }}>
+                        <img
+                          src={step.referenceImage}
+                          alt={step.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }}
+                        />
+                      </div>
+                      {/* 步骤描述 + 可折叠详情 */}
+                      <div style={{
+                        background: '#fff',
+                      }}>
+                        <div style={{
+                          padding: '10px 12px',
+                          borderBottom: expandedStep === idx ? '1px solid #e8e8e8' : 'none',
+                        }}>
+                          <div style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: '#333',
+                            marginBottom: 4,
+                          }}>
+                            {step.title}
+                          </div>
+                          <div style={{
+                            fontSize: 11,
+                            color: '#7a7469',
+                            lineHeight: 1.4,
+                          }}>
+                            {step.description}
+                          </div>
+                        </div>
+
+                        {/* 可折叠详情区域 */}
+                        <div
+                          style={{
+                            borderTop: '1px solid #e8e8e8',
+                            background: '#fafafa',
+                          }}
+                        >
+                          {/* 折叠时的可点击标题 */}
+                          <div
+                            onClick={() => setExpandedStep(expandedStep === idx ? null : idx)}
+                            style={{
+                              padding: '8px 12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              cursor: 'pointer',
+                              color: '#1677ff',
+                              fontSize: 11,
+                              fontWeight: 500,
+                            }}
+                          >
+                            <span>查看详细操作说明</span>
+                            <span style={{
+                              transition: 'transform 0.2s',
+                              transform: expandedStep === idx ? 'rotate(180deg)' : 'rotate(0deg)',
+                            }}>
+                              ▼
+                            </span>
+                          </div>
+
+                          {/* 展开时的详情内容 */}
+                          {expandedStep === idx && (
+                            <div style={{ padding: '0 12px 12px' }}>
+                              {/* 动作目标 */}
+                              <div style={{ marginBottom: 10 }}>
+                                <div style={{
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: '#30363d',
+                                  marginBottom: 4,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                }}>
+                                  <i className="ti ti-target-arrow" style={{ fontSize: 13 }}></i>
+                                  动作目标
+                                </div>
+                                <div style={{
+                                  fontSize: 11,
+                                  color: '#6b6f73',
+                                  lineHeight: 1.5,
+                                }}>
+                                  {step.actionGoal}
+                                </div>
+                              </div>
+
+                              {/* 注意事项 */}
+                              <div style={{ marginBottom: 10 }}>
+                                <div style={{
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: '#b36e19',
+                                  marginBottom: 4,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                }}>
+                                  <i className="ti ti-alert-triangle" style={{ fontSize: 13 }}></i>
+                                  注意事项
+                                </div>
+                                <ul style={{
+                                  margin: 0,
+                                  paddingLeft: 16,
+                                  fontSize: 11,
+                                  color: '#6b6f73',
+                                  lineHeight: 1.6,
+                                }}>
+                                  {step.precautions?.map((p, i) => (
+                                    <li key={i}>{p}</li>
+                                  ))}
+                                </ul>
+                              </div>
+
+                              {/* 参考图 */}
+                              <div>
+                                <div style={{
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: '#30363d',
+                                  marginBottom: 6,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                }}>
+                                  <i className="ti ti-photo" style={{ fontSize: 13 }}></i>
+                                  参考示意
+                                </div>
+                                <div style={{
+                                  height: 60,
+                                  borderRadius: 6,
+                                  overflow: 'hidden',
+                                  background: '#eee8dd',
+                                }}>
+                                  <img
+                                    src={step.referenceImage}
+                                    alt="参考示意"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 底部提示 */}
+                <div style={{
+                  padding: '8px 22px',
+                  borderTop: '1px solid #ddd8cc',
+                  fontSize: 11,
+                  color: '#949ca7',
+                }}>
+                  点击步骤可切换至该步骤
                 </div>
               </div>
             )}
@@ -326,22 +688,44 @@ function HumanoidWorkspace({ taskId, router, params }) {
         {/* Right Sidebar - 1 part */}
         <div style={{ flex: 1, minWidth: 300, maxWidth: 400, display: 'flex', flexDirection: 'column', background: '#fafafa', borderLeft: '1px solid #e8e8e8', minHeight: 0 }}>
            
-           {/* 3D View and Upload Section (Fixed at top) */}
-           <div style={{ padding: '16px 16px 0 16px' }}>
+           {/* 数据采集控制台 Section (Fixed at top) */}
+           <div style={{ padding: 16, background: '#fff', borderBottom: '1px solid #e8e8e8' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                  <div style={{ display: 'flex', alignItems: 'center', fontWeight: 'bold', fontSize: 14, color: '#333' }}>
                     <div style={{ width: 4, height: 14, background: '#1677ff', marginRight: 8, borderRadius: 2 }}></div>
-                    三维视图
+                    数据采集控制台
                  </div>
-                 <Switch defaultChecked />
+                 <span style={{ fontSize: 12, color: '#52c41a', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#52c41a', display: 'inline-block' }}></span>
+                    空闲就绪
+                 </span>
               </div>
-              <div style={{ marginBottom: 16 }}>
-                 <Upload.Dragger name="files" action="/upload.do" multiple>
-                    <p className="ant-upload-drag-icon">
-                       <PlusOutlined style={{ fontSize: 24, color: '#1677ff' }} />
-                    </p>
-                    <p className="ant-upload-text" style={{ fontSize: 14 }}>点击或拖拽上传</p>
-                 </Upload.Dragger>
+
+              {/* Progress Block */}
+              <div style={{ background: '#f6f5f1', borderRadius: 10, padding: 14, display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                {/* Ring Progress */}
+                <svg width="56" height="56" viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="#e8e8e8" strokeWidth="5"/>
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="#1677ff" strokeWidth="5"
+                    strokeDasharray={`${(completedEpisodes.length / 50) * 151} 151`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 28 28)"
+                    style={{ transition: 'stroke-dasharray 0.3s ease' }}
+                  />
+                  <text x="28" y="32" textAnchor="middle" fontSize="15" fontWeight="500" fill="#333">{completedEpisodes.length}</text>
+                </svg>
+
+                {/* Progress Info */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 7 }}>当前批次采集进度</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 500, color: '#333' }}>{completedEpisodes.length} / 50</span>
+                    <span style={{ fontSize: 13.5, color: '#1677ff', fontWeight: 500 }}>{Math.round((completedEpisodes.length / 50) * 100)}%</span>
+                  </div>
+                  <div style={{ height: 5, background: '#e8e8e8', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${(completedEpisodes.length / 50) * 100}%`, background: '#1677ff', borderRadius: 3, transition: 'width 0.3s ease' }}></div>
+                  </div>
+                </div>
               </div>
            </div>
 
@@ -372,6 +756,19 @@ function HumanoidWorkspace({ taskId, router, params }) {
                                  </div>
                                </div>
                             ))}
+
+                            {/* 开始采集按钮 */}
+                            <div style={{ marginTop: 16 }}>
+                              {!isRecording ? (
+                                <Button type="primary" danger shape="round" icon={<PlayCircleOutlined />} onClick={() => setIsRecording(true)} style={{ width: '100%', fontWeight: 'bold' }}>
+                                  开始采集
+                                </Button>
+                              ) : (
+                                <Button shape="round" icon={<PauseCircleOutlined />} onClick={() => setIsRecording(false)} style={{ width: '100%', fontWeight: 'bold', background: '#f5f5f5' }}>
+                                  停止采集
+                                </Button>
+                              )}
+                            </div>
                          </div>
                       </div>
                    )
@@ -405,38 +802,6 @@ function HumanoidWorkspace({ taskId, router, params }) {
         </div>
       </div>
 
-      {/* Timeline & Controls Bar */}
-      <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid #e8e8e8', background: '#fff' }}>
-         {/* Timeline Bar Mock */}
-         <div style={{ height: 24, padding: '4px 16px', background: '#fff', position: 'relative' }}>
-             <div style={{ width: '100%', height: 8, background: '#f0f0f0', borderRadius: 4, position: 'relative', overflow: 'hidden' }}>
-                {isRecording && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${Math.min(100, elapsed / 2)}%`, background: '#ff4d4f', transition: 'width 0.1s linear' }}></div>}
-             </div>
-             {isRecording && <div style={{ position: 'absolute', right: 16, top: 2, fontSize: 10, color: '#ff4d4f', fontWeight: 'bold', animation: 'blink-text 1s infinite' }}>REC BUFFERING...</div>}
-         </div>
-
-         {/* Controls */}
-         <div style={{ height: 50, display: 'flex', alignItems: 'center', padding: '0 24px' }}>
-            <div style={{ width: 200, fontSize: 12, color: '#595959' }}>
-               Time: <span style={{ fontFamily: 'monospace' }}>{(elapsed / 10).toFixed(3)}</span> &nbsp; Frame: <span style={{ fontFamily: 'monospace' }}>{elapsed * 3}</span>
-            </div>
-            
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 24, alignItems: 'center' }}>
-               {!isRecording ? (
-                 <Button type="primary" danger shape="round" icon={<PlayCircleOutlined />} size="large" onClick={() => setIsRecording(true)} style={{ width: 160, fontWeight: 'bold' }}>开始录制 (Space)</Button>
-               ) : (
-                 <Button shape="round" icon={<PauseCircleOutlined />} size="large" onClick={() => setIsRecording(false)} style={{ width: 160, fontWeight: 'bold', background: '#f5f5f5' }}>停止采集 (Space)</Button>
-               )}
-            </div>
-            
-            <div style={{ width: 350, display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center' }}>
-               <Button type="primary" style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 500 }}>保存本段数据</Button>
-               <Button danger type="text" style={{ fontWeight: 500 }}>作废重录</Button>
-               <div style={{ borderLeft: '1px solid #e8e8e8', height: 20, margin: '0 4px' }}></div>
-               <span style={{ fontSize: 12, color: '#595959' }}>录制帧率: 30fps</span>
-            </div>
-         </div>
-      </div>
       <style jsx global>{`
         @keyframes blink-text {
           0% { opacity: 1; }

@@ -137,7 +137,7 @@ export default function TaskCenterPage() {
     {
       title: '操作', key: 'action', width: 350, fixed: 'right',
       render: (_, record) => (
-        <Space separator={<Divider type="vertical" />} size={0}>
+        <Space separator={<Divider orientation="vertical" />} size={0}>
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/tasks/${record.taskId}`)} style={{ padding: '0 4px' }}>查看详情</Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
           <SpecMarker

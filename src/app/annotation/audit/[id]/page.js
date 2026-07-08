@@ -2,65 +2,366 @@
 
 import React, { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Descriptions, Divider, Select, Row, Col, Form } from 'antd';
-import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Radio, Progress, List } from 'antd';
+import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
+
+const ANNO_TYPES = ['语义标注', '框标注', '点标注', '范围标注', '范围&框标注'];
+
+const annoTypeColors = {
+  '语义标注': 'blue',
+  '框标注': 'green',
+  '点标注': 'cyan',
+  '范围标注': 'purple',
+  '范围&框标注': 'magenta',
+};
+
+const annoStatusConfig = {
+  '已标注': { color: 'success', icon: <CheckCircleOutlined /> },
+  '未标注': { color: 'default', icon: null },
+  '标注中': { color: 'processing', icon: <ClockCircleOutlined /> },
+  '自动标注处理中': { color: 'warning', icon: <ClockCircleOutlined /> },
+};
+
+const auditStatusConfig = {
+  '未审核': { color: 'default' },
+  '审核中': { color: 'processing' },
+  '通过': { color: 'success' },
+  '不通过': { color: 'error' },
+};
 
 export default function AnnotationAuditEpisodeListPage() {
   const router = useRouter();
   const params = useParams();
   const instanceId = params.id;
+  const { message } = App.useApp();
 
-  const episodeMockData = Array.from({ length: 15 }).map((_, i) => ({
-    key: i,
-    id: 744101 + i,
-    taskName: '调试任务',
-    instance: '调试实例...',
-    annoTaskName: '调试任务_jo...',
-    annoType: '框标注',
-    manualTime: i === 0 ? '2026-02-13 09:20:22' : i === 7 ? '2026-03-25 13:36:06' : '',
-    modelTime: '',
-    parseStatus: '解析完成',
-    annoStatus: i === 0 ? '自动标注处理中' : '未标注',
-    auditStatus: '未审核',
-  }));
+  const [filterAnnoStatus, setFilterAnnoStatus] = useState(null);
+  const [filterAuditStatus, setFilterAuditStatus] = useState(null);
+  const [filterId, setFilterId] = useState('');
+  const [filterError, setFilterError] = useState(null);
+
+  // Stateful list of episodes for dynamic updates
+  const [episodes, setEpisodes] = useState(() => {
+    return Array.from({ length: 20 }).map((_, i) => {
+      const annoType = ANNO_TYPES[i % 5];
+      const annoStatuses = ['已标注', '未标注', '标注中', '自动标注处理中'];
+      const auditStatuses = ['未审核', '审核中', '通过', '不通过'];
+      const annoStatus = i < 8 ? '已标注' : i < 13 ? annoStatuses[i % 4] : '未标注';
+      const auditStatus = annoStatus === '已标注' ? auditStatuses[i % 4] : '未审核';
+      const totalFrames = 120 + (i * 12);
+
+      return {
+        key: i,
+        id: 744101 + i,
+        taskName: ['抓取猕猴桃', '放置水果', '移动杯子', '擦拭桌面', '扭动阀门'][i % 5],
+        instance: `实例_${instanceId}_${String(i + 1).padStart(3, '0')}`,
+        annoTaskName: `标注任务_${['张三', '李四', '王五', '赵六'][i % 4]}_${String(i + 1).padStart(2, '0')}`,
+        annoType,
+        totalFrames,
+        manualTime: annoStatus === '已标注' ? `2026-07-08 09:12:16` : '',
+        modelTime: i % 5 === 0 ? `2026-07-08 08:00:00` : '',
+        parseStatus: '解析完成',
+        annoStatus,
+        auditStatus,
+        hasError: i === 3 || i === 11,
+        segments: annoStatus === '已标注' ? [
+          { start: Math.round(totalFrames * 0.15), end: Math.round(totalFrames * 0.45), text: 'pick {Kiwi} from {desktop}', color: '#2563eb' },
+          { start: Math.round(totalFrames * 0.55), end: Math.round(totalFrames * 0.85), text: 'place {Kiwi} on {Fruit Bowl}', color: '#16a34a' }
+        ] : []
+      };
+    });
+  });
+
+  // Table Row Selection States
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [selectedRows, setSelectedRows] = useState([]);
+
+  // Batch Annotation Configurations
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [batchTemplateId, setBatchTemplateId] = useState(null);
+  const [batchStrategy, setBatchStrategy] = useState('proportional');
+  const [isCopying, setIsCopying] = useState(false);
+  const [copyProgress, setCopyProgress] = useState(0);
+
+  // Define a preset template as a fallback
+  const defaultSystemTemplate = {
+    id: 'SYSTEM_PRESET',
+    taskName: '系统预设示范场景',
+    totalFrames: 120,
+    segments: [
+      { start: 18, end: 54, text: 'pick {Kiwi} from {desktop}', color: '#2563eb' },
+      { start: 66, end: 102, text: 'place {Kiwi} on {Fruit Bowl}', color: '#16a34a' }
+    ]
+  };
+
+  const annotatedTemplates = episodes.filter(ep => ep.annoStatus === '已标注' && ep.segments && ep.segments.length > 0);
+
+  const getSelectedTemplate = () => {
+    if (batchTemplateId === 'SYSTEM_PRESET') return defaultSystemTemplate;
+    return episodes.find(ep => ep.id === batchTemplateId) || defaultSystemTemplate;
+  };
+
+  const handleOpenBatchModal = () => {
+    const firstTemplate = annotatedTemplates[0];
+    setBatchTemplateId(firstTemplate ? firstTemplate.id : 'SYSTEM_PRESET');
+    setBatchStrategy('proportional');
+    setCopyProgress(0);
+    setIsCopying(false);
+    setIsBatchModalOpen(true);
+  };
+
+  const applyStrategy = (segments, strategy, templateTotal, targetTotal) => {
+    if (!segments || segments.length === 0) return [];
+    if (strategy === 'proportional') {
+      return segments.map(seg => {
+        const startRatio = seg.start / templateTotal;
+        const endRatio = seg.end / templateTotal;
+        return {
+          ...seg,
+          start: Math.round(startRatio * targetTotal),
+          end: Math.round(endRatio * targetTotal)
+        };
+      });
+    } else if (strategy === 'fixed') {
+      return segments.map(seg => {
+        return {
+          ...seg,
+          start: Math.min(seg.start, targetTotal),
+          end: Math.min(seg.end, targetTotal)
+        };
+      });
+    } else if (strategy === 'full') {
+      const n = segments.length;
+      return segments.map((seg, i) => {
+        return {
+          ...seg,
+          start: Math.round((i / n) * targetTotal),
+          end: Math.round(((i + 1) / n) * targetTotal)
+        };
+      });
+    }
+    return segments;
+  };
+
+  const handleStartBatchCopy = () => {
+    setIsCopying(true);
+    setCopyProgress(0);
+
+    const interval = setInterval(() => {
+      setCopyProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          const template = getSelectedTemplate();
+
+          setEpisodes(prevEpisodes => {
+            return prevEpisodes.map(ep => {
+              if (selectedRowKeys.includes(ep.key) && ep.id !== template.id) {
+                const adjustedSegments = applyStrategy(
+                  template.segments,
+                  batchStrategy,
+                  template.totalFrames,
+                  ep.totalFrames
+                );
+                return {
+                  ...ep,
+                  annoStatus: '已标注',
+                  manualTime: new Date().toISOString().replace('T', ' ').substring(0, 19),
+                  segments: adjustedSegments
+                };
+              }
+              return ep;
+            });
+          });
+
+          setTimeout(() => {
+            setIsCopying(false);
+            setIsBatchModalOpen(false);
+            setSelectedRowKeys([]);
+            setSelectedRows([]);
+            message.success('时序适配批量复制已成功完成！');
+          }, 300);
+
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 100);
+  };
+
+  const handleBatchReset = () => {
+    Modal.confirm({
+      title: '确认清除标注？',
+      content: `确定要清除选中的 ${selectedRowKeys.length} 个实例的标注数据吗？清除后不可恢复。`,
+      okText: '确定',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk() {
+        setEpisodes(prev => prev.map(ep => {
+          if (selectedRowKeys.includes(ep.key)) {
+            return {
+              ...ep,
+              annoStatus: '未标注',
+              auditStatus: '未审核',
+              manualTime: '',
+              segments: []
+            };
+          }
+          return ep;
+        }));
+        setSelectedRowKeys([]);
+        setSelectedRows([]);
+        message.success('已批量清除选中实例的标注数据！');
+      }
+    });
+  };
+
+  const filteredData = React.useMemo(() => {
+    const list = episodes.filter(item => {
+      const idMatch = !filterId || String(item.id).includes(filterId);
+      const annoMatch = !filterAnnoStatus || item.annoStatus === filterAnnoStatus;
+      const auditMatch = !filterAuditStatus || item.auditStatus === filterAuditStatus;
+      const errorMatch = filterError === null || filterError === undefined || (filterError === '是' ? item.hasError : !item.hasError);
+      return idMatch && annoMatch && auditMatch && errorMatch;
+    });
+
+    // Sort: '可标注' (annoStatus !== '已标注') at the top, '已标注' at the bottom
+    return [...list].sort((a, b) => {
+      const aIsFinished = a.annoStatus === '已标注';
+      const bIsFinished = b.annoStatus === '已标注';
+      if (!aIsFinished && bIsFinished) return -1;
+      if (aIsFinished && !bIsFinished) return 1;
+      return a.id - b.id;
+    });
+  }, [episodes, filterId, filterAnnoStatus, filterAuditStatus, filterError]);
+
+  // Stats
+  const totalCount = episodes.length;
+  const annoCount = episodes.filter(d => d.annoStatus === '已标注').length;
+  const auditPassCount = episodes.filter(d => d.auditStatus === '通过').length;
+  const auditRejectCount = episodes.filter(d => d.auditStatus === '不通过').length;
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', key: 'id', width: 90 },
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 90, render: (t) => <Text style={{ fontFamily: 'monospace', color: '#1677ff' }}>{t}</Text> },
     { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 120 },
-    { title: '实例', dataIndex: 'instance', key: 'instance', width: 100, ellipsis: true },
-    { title: '标注任务名', dataIndex: 'annoTaskName', width: 140, ellipsis: true },
-    { title: '标注类型', dataIndex: 'annoType', width: 100 },
-    { title: '人工标注时间', dataIndex: 'manualTime', width: 160 },
-    { title: '模型标注时间', dataIndex: 'modelTime', width: 120 },
+    { title: '实例', dataIndex: 'instance', key: 'instance', width: 160, ellipsis: true },
+    { title: '标注任务名', dataIndex: 'annoTaskName', width: 180, ellipsis: true },
+    {
+      title: '标注类型', dataIndex: 'annoType', width: 110, align: 'center',
+      render: (t) => <Tag color={annoTypeColors[t]} style={{ margin: 0 }}>{t}</Tag>
+    },
+    { title: '数据帧数', dataIndex: 'totalFrames', width: 100, align: 'right', render: (t) => <strong>{t} f</strong> },
+    { title: '人工标注时间', dataIndex: 'manualTime', width: 160, render: (t) => t || <Text type="secondary">-</Text> },
+    { title: '模型标注时间', dataIndex: 'modelTime', width: 160, render: (t) => t || <Text type="secondary">-</Text> },
     { 
       title: '解析状态', 
       dataIndex: 'parseStatus', 
       width: 100, 
-      render: (s) => <Tag color="success" style={{ background: '#52c41a', color: '#fff', border: 'none', borderRadius: 2 }}>{s}</Tag> 
+      align: 'center',
+      render: (s) => <Tag color="success" style={{ background: '#f6ffed', color: '#52c41a', border: '1px solid #b7eb8f', borderRadius: 4 }}>{s}</Tag> 
     },
     { 
       title: '标注状态', 
       dataIndex: 'annoStatus', 
-      width: 130, 
-      render: (s) => (
-        s === '自动标注处理中' 
-        ? <Space><Tag color="orange" style={{ borderRadius: 2 }}>{s}</Tag><Button size="tiny" type="text" style={{ fontSize: 10 }}>重试</Button></Space>
-        : <Tag color="default" style={{ borderRadius: 2 }}>{s}</Tag>
-      )
+      width: 150, 
+      align: 'center',
+      render: (s, r) => {
+        const config = annoStatusConfig[s] || { color: 'default' };
+        if (s === '自动标注处理中') {
+          return (
+            <Space size={4}>
+              <Tag color="orange" style={{ borderRadius: 4, margin: 0 }}>{s}</Tag>
+              <Button size="small" type="text" style={{ fontSize: 10, padding: '0 4px', height: 20 }} onClick={() => message.loading('正在重试...')}>重试</Button>
+            </Space>
+          );
+        }
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Badge status={config.color} text={s} />
+            {s === '已标注' && r.segments && (
+              <span style={{ fontSize: 10, color: '#8c8c8c', marginTop: 2 }}>
+                ({r.segments.length}段时序标注)
+              </span>
+            )}
+          </div>
+        );
+      }
     },
-    { title: '审核状态', dataIndex: 'auditStatus', width: 100, render: (s) => <Tag color="default" style={{ borderRadius: 2 }}>{s}</Tag> },
+    { 
+      title: '审核状态', 
+      dataIndex: 'auditStatus', 
+      width: 100, 
+      align: 'center',
+      render: (s) => {
+        const config = auditStatusConfig[s] || { color: 'default' };
+        return <Badge status={config.color} text={s} />;
+      }
+    },
     {
-      title: '操作', key: 'action', width: 180, fixed: 'right',
-      render: (_, r) => (
-        <Space size="small">
-          <Button type="link" size="small" onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}`)}>标注</Button>
-          <Button type="link" size="small" onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}`)}>审核</Button>
-          <Button type="link" size="small">重置</Button>
-        </Space>
-      )
+      title: '操作', key: 'action', width: 220, fixed: 'right',
+      render: (_, r) => {
+        const typeParam = encodeURIComponent(r.annoType);
+        return (
+          <Space size={4}>
+            <Button 
+              type="link" 
+              size="small" 
+              icon={<EditOutlined />}
+              style={{ padding: '0 4px' }}
+              disabled={r.annoStatus === '已标注'}
+              onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=annotate`)}
+            >
+              标注
+            </Button>
+            <Button 
+              type="link" 
+              size="small" 
+              icon={<AuditOutlined />}
+              style={{ padding: '0 4px', color: r.annoStatus === '已标注' ? '#722ed1' : undefined }}
+              disabled={r.annoStatus !== '已标注'}
+              onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=audit`)}
+            >
+              审核
+            </Button>
+            <Button 
+              type="link" 
+              size="small" 
+              icon={<EyeOutlined />}
+              style={{ padding: '0 4px' }}
+              onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=view`)}
+            >
+              查看
+            </Button>
+            <Button 
+              type="link" 
+              size="small" 
+              icon={<UndoOutlined />}
+              style={{ padding: '0 4px' }}
+              danger
+              onClick={() => {
+                setEpisodes(prev => prev.map(ep => {
+                  if (ep.id === r.id) {
+                    return {
+                      ...ep,
+                      annoStatus: '未标注',
+                      auditStatus: '未审核',
+                      manualTime: '',
+                      segments: []
+                    };
+                  }
+                  return ep;
+                }));
+                message.success(`已重置 ${r.id} 的标注状态`);
+              }}
+            >
+              重置
+            </Button>
+          </Space>
+        );
+      }
     }
   ];
 
@@ -68,37 +369,150 @@ export default function AnnotationAuditEpisodeListPage() {
     <MainLayout>
       <div style={{ backgroundColor: '#fff', minHeight: '100vh' }}>
         {/* Header Bar */}
-        <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0' }}>
-           <Text strong style={{ fontSize: '14px' }}>标注</Text>
+        <div style={{ padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
+           <Space size={12}>
+             <Button type="text" icon={<LeftOutlined />} onClick={() => router.push('/annotation/audit')} style={{ fontWeight: 500 }}>返回列表</Button>
+             <Divider orientation="vertical" />
+             <Text strong style={{ fontSize: '14px' }}>标注审核 — 实例 #{instanceId}</Text>
+           </Space>
            <Space>
-             <Button type="primary" size="small">审核全部数据</Button>
+             <Button type="primary" size="small" icon={<AuditOutlined />} onClick={() => message.success('审核全部数据')}>审核全部数据</Button>
              <Button type="text" icon={<CloseOutlined />} onClick={() => router.push('/annotation/audit')} />
            </Space>
         </div>
 
-        <div style={{ padding: '24px' }}>
+        {/* Stats Row */}
+        <div style={{ padding: '16px 24px', display: 'flex', gap: 24, borderBottom: '1px solid #f5f5f5' }}>
+          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#f6ffed', border: '1px solid #b7eb8f' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
+            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#52c41a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CheckCircleOutlined style={{ color: '#fff', fontSize: 20 }} />
+            </div>
+            <div>
+              <Text type="secondary" style={{ fontSize: 12 }}>总数据量</Text>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#1f1f1f' }}>{totalCount}</div>
+            </div>
+          </Card>
+          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#e6f4ff', border: '1px solid #91caff' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
+            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <EditOutlined style={{ color: '#fff', fontSize: 20 }} />
+            </div>
+            <div>
+              <Text type="secondary" style={{ fontSize: 12 }}>已标注</Text>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#1f1f1f' }}>{annoCount} <Text type="secondary" style={{ fontSize: 12 }}>/ {totalCount}</Text></div>
+            </div>
+          </Card>
+          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#f9f0ff', border: '1px solid #d3adf7' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
+            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#722ed1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AuditOutlined style={{ color: '#fff', fontSize: 20 }} />
+            </div>
+            <div>
+              <Text type="secondary" style={{ fontSize: 12 }}>审核通过</Text>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#1f1f1f' }}>{auditPassCount} <Text type="secondary" style={{ fontSize: 12 }}>/ {annoCount}</Text></div>
+            </div>
+          </Card>
+          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fff2f0', border: '1px solid #ffccc7' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
+            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#ff4d4f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ExclamationCircleOutlined style={{ color: '#fff', fontSize: 20 }} />
+            </div>
+            <div>
+              <Text type="secondary" style={{ fontSize: 12 }}>审核驳回</Text>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#1f1f1f' }}>{auditRejectCount}</div>
+            </div>
+          </Card>
+        </div>
+
+        <div style={{ padding: '16px 24px' }}>
           {/* Filters */}
           <div style={{ marginBottom: 16 }}>
             <Form layout="inline">
               <Row gutter={[12, 12]} style={{ width: '100%' }}>
-                <Col><Input placeholder="ID" style={{ width: 160 }} /></Col>
-                <Col><Select placeholder="标注状态" style={{ width: 160 }} /></Col>
-                <Col><Select placeholder="审核状态" style={{ width: 160 }} /></Col>
-                <Col><Select placeholder="是否报错" style={{ width: 160 }} /></Col>
+                <Col><Input placeholder="ID" style={{ width: 140 }} value={filterId} onChange={e => setFilterId(e.target.value)} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear /></Col>
+                <Col>
+                  <Select placeholder="标注状态" style={{ width: 160 }} allowClear value={filterAnnoStatus} onChange={setFilterAnnoStatus}
+                    options={['已标注', '未标注', '标注中', '自动标注处理中'].map(s => ({ label: s, value: s }))}
+                  />
+                </Col>
+                <Col>
+                  <Select placeholder="审核状态" style={{ width: 160 }} allowClear value={filterAuditStatus} onChange={setFilterAuditStatus}
+                    options={['未审核', '审核中', '通过', '不通过'].map(s => ({ label: s, value: s }))}
+                  />
+                </Col>
+                <Col>
+                  <Select placeholder="是否报错" style={{ width: 120 }} allowClear value={filterError} onChange={setFilterError}
+                    options={[{ label: '是', value: '是' }, { label: '否', value: '否' }]}
+                  />
+                </Col>
                 <Col>
                   <Space>
                     <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                    <Button icon={<ReloadOutlined />}>重置</Button>
+                    <Button icon={<ReloadOutlined />} onClick={() => { setFilterId(''); setFilterAnnoStatus(null); setFilterAuditStatus(null); setFilterError(null); }}>重置</Button>
                   </Space>
                 </Col>
               </Row>
             </Form>
           </div>
 
+          {/* Interactive Floating Selection alert bar */}
+          {selectedRowKeys.length > 0 && (
+            <div style={{
+              background: '#e6f4ff',
+              border: '1px solid #91caff',
+              padding: '12px 18px',
+              borderRadius: 8,
+              marginBottom: 16,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+            }}>
+              <Space size={12}>
+                <span style={{ fontSize: 13, color: '#0958d9', fontWeight: 600 }}>
+                  已选中 {selectedRowKeys.length} 个实例数据
+                </span>
+                <span style={{ fontSize: 12, color: '#4b5563' }}>
+                  (其中已标注: {selectedRows.filter(r => r.annoStatus === '已标注').length} 个，未标注: {selectedRows.filter(r => r.annoStatus !== '已标注').length} 个)
+                </span>
+              </Space>
+              <Space>
+                <Button 
+                  type="primary" 
+                  size="middle" 
+                  icon={<CopyOutlined />} 
+                  style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
+                  onClick={handleOpenBatchModal}
+                >
+                  批量时序适配标注
+                </Button>
+                <Button 
+                  size="middle" 
+                  danger
+                  icon={<UndoOutlined />}
+                  onClick={handleBatchReset}
+                >
+                  批量清除标注
+                </Button>
+                <Button 
+                  size="middle"
+                  type="text"
+                  onClick={() => { setSelectedRowKeys([]); setSelectedRows([]); }}
+                >
+                  取消选择
+                </Button>
+              </Space>
+            </div>
+          )}
+
           {/* Table */}
           <Table 
+            rowSelection={{
+              selectedRowKeys,
+              onChange: (keys, rows) => {
+                setSelectedRowKeys(keys);
+                setSelectedRows(rows);
+              }
+            }}
             columns={columns} 
-            dataSource={episodeMockData} 
+            dataSource={filteredData} 
             pagination={{ 
               pageSize: 20, 
               showTotal: (t) => `共 ${t} 条`,
@@ -107,10 +521,159 @@ export default function AnnotationAuditEpisodeListPage() {
             }}
             size="small"
             bordered
-            scroll={{ x: 1400 }}
+            scroll={{ x: 1600 }}
           />
         </div>
       </div>
+
+      {/* ----------------------------------------------------
+          POPUP MODAL: 批量时序适配标注配置 
+          ---------------------------------------------------- */}
+      <Modal
+        title={
+          <span style={{ fontSize: '15px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <CopyOutlined style={{ color: '#1677ff' }} /> 批量时序适配标注
+          </span>
+        }
+        open={isBatchModalOpen}
+        onCancel={() => !isCopying && setIsBatchModalOpen(false)}
+        footer={null}
+        width={750}
+        maskClosable={!isCopying}
+        bodyStyle={{ padding: '12px 16px' }}
+      >
+        {isCopying ? (
+          <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+            <LoadingOutlined style={{ fontSize: 32, color: '#1677ff', marginBottom: 16 }} spin />
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1e293b', marginBottom: 12 }}>
+              正在批量适配复制中，请稍候... ({copyProgress}%)
+            </div>
+            <Progress percent={copyProgress} strokeColor="#1677ff" status="active" style={{ maxWidth: 400, margin: '0 auto' }} />
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            
+            {/* 1. Select Template */}
+            <Card size="small" title={<span style={{ fontSize: 12, fontWeight: 'bold' }}>1. 选择标注模版 (Template Source)</span>} style={{ background: '#f8fafc' }}>
+              <div style={{ display: 'flex', gap: 12, flexDirection: 'column' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 12, color: '#475569', width: 90 }}>选择模版:</span>
+                  <Select 
+                    style={{ flex: 1 }} 
+                    value={batchTemplateId} 
+                    onChange={setBatchTemplateId}
+                  >
+                    {annotatedTemplates.map(t => (
+                      <Option key={t.id} value={t.id}>
+                        实例 #{t.id} - {t.taskName} ({t.totalFrames}帧, 已含 {t.segments.length}段标注)
+                      </Option>
+                    ))}
+                    <Option value="SYSTEM_PRESET">
+                      【系统预设示范模板】抓取及放置场景 (120帧, 2段标注段)
+                    </Option>
+                  </Select>
+                </div>
+                <div style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: 6, fontSize: 11, color: '#1e40af' }}>
+                  <strong>模版标注段预览：</strong>
+                  <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {getSelectedTemplate().segments.map((seg, idx) => (
+                      <div key={idx}>
+                        • 区间 <strong>{seg.start}f - {seg.end}f</strong>: <code style={{ background: '#fff', padding: '1px 4px', border: '1px solid #bfdbfe', borderRadius: 3 }}>{seg.text}</code>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* 2. Choose Strategy */}
+            <Card size="small" title={<span style={{ fontSize: 12, fontWeight: 'bold' }}>2. 选择时间段适配策略 (Temporal Strategy)</span>}>
+              <Radio.Group 
+                value={batchStrategy} 
+                onChange={(e) => setBatchStrategy(e.target.value)}
+                style={{ width: '100%' }}
+              >
+                <Row gutter={[16, 16]}>
+                  <Col span={8}>
+                    <Radio value="proportional" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <strong style={{ fontSize: 12 }}>按比例适配 (Proportional)</strong>
+                      <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginTop: 4 }}>
+                        按目标帧长等比拉伸。若模板动作处于15%-45%区间，目标实例亦调整为同样的百分比区间。
+                      </span>
+                    </Radio>
+                  </Col>
+                  <Col span={8}>
+                    <Radio value="fixed" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <strong style={{ fontSize: 12 }}>固定帧数适配 (Fixed Frame)</strong>
+                      <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginTop: 4 }}>
+                        严格保持模板的帧数值。如模板是 18f-54f，目标不管总帧数多长均对应 18f-54f。
+                      </span>
+                    </Radio>
+                  </Col>
+                  <Col span={8}>
+                    <Radio value="full" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <strong style={{ fontSize: 12 }}>全程适配 (Full Duration)</strong>
+                      <span style={{ fontSize: 10, color: '#64748b', display: 'block', marginTop: 4 }}>
+                        平分整个视频。若模板含两段动作，则目标实例自动均分为前50%与后50%两段。
+                      </span>
+                    </Radio>
+                  </Col>
+                </Row>
+              </Radio.Group>
+            </Card>
+
+            {/* 3. Targets Adaptation Preview */}
+            <Card size="small" title={<span style={{ fontSize: 12, fontWeight: 'bold' }}>3. 目标实例自适应预览 (Adaptation Preview)</span>}>
+              <div style={{ maxHeight: 150, overflowY: 'auto' }}>
+                <List
+                  size="small"
+                  dataSource={selectedRows.filter(r => r.id !== getSelectedTemplate().id)}
+                  renderItem={item => {
+                    const template = getSelectedTemplate();
+                    const adapted = applyStrategy(template.segments, batchStrategy, template.totalFrames, item.totalFrames);
+                    return (
+                      <List.Item style={{ fontSize: 11, padding: '4px 8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                          <span>
+                            实例 <strong>#{item.id}</strong> ({item.taskName}, 总长 <strong>{item.totalFrames}帧</strong>)
+                          </span>
+                          <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
+                            {adapted.length > 0 
+                              ? adapted.map(a => `[${a.start}-${a.end}f]`).join(' + ')
+                              : '无标注段'}
+                          </span>
+                        </div>
+                      </List.Item>
+                    );
+                  }}
+                />
+                {selectedRows.filter(r => r.id !== getSelectedTemplate().id).length === 0 && (
+                  <div style={{ textAlign: 'center', color: '#8c8c8c', padding: 8, fontSize: 11 }}>
+                    请选择除模板实例之外的其它目标实例进行批量复制
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Footer Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 4 }}>
+              <Button onClick={() => setIsBatchModalOpen(false)}>
+                取消
+              </Button>
+              <Button 
+                type="primary" 
+                disabled={selectedRows.filter(r => r.id !== getSelectedTemplate().id).length === 0}
+                onClick={handleStartBatchCopy}
+                style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
+              >
+                开始批量时序适配
+              </Button>
+            </div>
+            
+          </div>
+        )}
+      </Modal>
+
     </MainLayout>
   );
 }

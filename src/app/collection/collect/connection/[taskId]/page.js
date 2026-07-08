@@ -111,9 +111,9 @@ export default function DeviceConnectionPage() {
       return () => clearTimeout(timer);
     } else {
       setScanning(false);
-      message.success('所有硬件已就绪，正在跳转至状态看板...');
+      message.success('所有硬件已就绪，正在进入采集工作台...');
       setTimeout(() => {
-        router.push(`/collection/collect/status/${taskId}`);
+        router.push(`/collection/collect/workspace/${taskId}`);
       }, 1500);
     }
   }, [step, taskId, router, steps.length, message]);

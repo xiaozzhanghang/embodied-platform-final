@@ -432,7 +432,7 @@ export default function QaReviewPage({ params }) {
                 不合格
               </Button>
               
-              <Divider type="vertical" />
+              <Divider orientation="vertical" />
               
               <SyncOutlined style={{ cursor: 'pointer', color: '#8c8c8c' }} />
               
