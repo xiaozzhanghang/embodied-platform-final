@@ -106,6 +106,7 @@ export default function AnnotationAuditWorkspacePage() {
   const [activeTabKey, setActiveTabKey] = useState('1'); 
   const timelineRef = useRef(null);
   const [draggingHandle, setDraggingHandle] = useState(null); 
+  const [showDevNotes, setShowDevNotes] = useState(false);
 
   // 4. Grid Cameras active switches mapping (Used for both Range mode and Semantic 2x2 mode)
   const [gridCameras, setGridCameras] = useState({
@@ -543,6 +544,17 @@ export default function AnnotationAuditWorkspacePage() {
             20241023_office_ManIdentifyDualArm_162519 (语义标注工作台)
           </div>
           <Space size={16}>
+            <Space size={4}>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>开发说明:</span>
+              <Switch 
+                checked={showDevNotes} 
+                onChange={setShowDevNotes} 
+                size="small" 
+                checkedChildren="显" 
+                unCheckedChildren="隐" 
+              />
+            </Space>
+            <Divider orientation="vertical" style={{ height: 16, margin: 0 }} />
             <Tooltip title="快捷键帮助">
               <BulbOutlined style={{ color: '#eab308', cursor: 'pointer' }} />
             </Tooltip>
@@ -898,6 +910,28 @@ export default function AnnotationAuditWorkspacePage() {
                 </div>
               )}
 
+              {/* Developer Design Notes for Semantic mode */}
+              {showDevNotes && (
+                <div style={{ 
+                  marginTop: 14, 
+                  background: '#f8fafc', 
+                  border: '1px dashed #cbd5e1', 
+                  borderRadius: 6, 
+                  padding: '10px',
+                  fontSize: '10px'
+                }}>
+                  <div style={{ fontWeight: 'bold', color: '#1e293b', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    📖 语义标注开发说明
+                  </div>
+                  <ul style={{ paddingLeft: 12, margin: 0, color: '#64748b', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <li><strong>双栏布局调整</strong>: 主视区 2x2 网格居左（75%），控制面板居右（25%），契合主流工作流。</li>
+                    <li><strong>时序轴高亮与跳转</strong>: 标注列表中显示每段已标区间，点击「跳转定位」可以直接更新主进度轴。</li>
+                    <li><strong>快速词典预填</strong>: 标签页支持点击常用「技能/物体/目标」卡片，秒级拉起添加标注 Modal 并自动预选字段。</li>
+                    <li><strong>时序覆盖率</strong>: 统计面板下根据各区间自动累加并渲染覆盖率 Progress 进度条。</li>
+                  </ul>
+                </div>
+              )}
+
             </div>
           </div>
           </div>
@@ -1192,6 +1226,17 @@ export default function AnnotationAuditWorkspacePage() {
 
           {/* Quick switches */}
           <Space>
+            <Space size={4}>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>开发说明:</span>
+              <Switch 
+                checked={showDevNotes} 
+                onChange={setShowDevNotes} 
+                size="small" 
+                checkedChildren="显" 
+                unCheckedChildren="隐" 
+              />
+            </Space>
+            <Divider orientation="vertical" style={{ height: 16, margin: 0 }} />
             <Radio.Group size="small" value={annoType} onChange={(e) => setAnnoType(e.target.value)} buttonStyle="solid">
               <Radio.Button value="框标注">框标注</Radio.Button>
               <Radio.Button value="点标注">点标注</Radio.Button>
@@ -1481,7 +1526,12 @@ export default function AnnotationAuditWorkspacePage() {
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, color: '#64748b' }}>动作步骤 ({steps.length})</span>
+                  <Space>
+                    <span style={{ fontSize: 12, color: '#64748b' }}>动作步骤 ({steps.length})</span>
+                    {showDevNotes && (
+                      <Badge count="交互 ①" style={{ backgroundColor: '#1677ff', fontSize: 9, transform: 'scale(0.8)', margin: 0 }} />
+                    )}
+                  </Space>
                   <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={handleAddRecordedRange} style={{ fontSize: 10 }}>增加步骤</Button>
                 </div>
 
@@ -1592,6 +1642,11 @@ export default function AnnotationAuditWorkspacePage() {
                 {/* Drag handles for selected step */}
                 {isSelected && (
                   <>
+                    {showDevNotes && (
+                      <div style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', background: '#1677ff', color: '#fff', fontSize: 8, padding: '1px 4px', borderRadius: 3, whiteSpace: 'nowrap', zIndex: 100, fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                        交互 ②
+                      </div>
+                    )}
                     {/* Left Handle (Start Frame) */}
                     <div 
                       onMouseDown={(e) => {
