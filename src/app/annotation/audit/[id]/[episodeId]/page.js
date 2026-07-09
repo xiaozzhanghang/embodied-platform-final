@@ -1568,6 +1568,11 @@ export default function AnnotationAuditWorkspacePage() {
             return (
               <div 
                 key={step.id} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStepSelect(step.id);
+                  setCurrentFrame(step.startFrame);
+                }}
                 style={{
                   position: 'absolute',
                   left: `${(step.startFrame / totalFrames) * 100}%`,
@@ -1580,7 +1585,8 @@ export default function AnnotationAuditWorkspacePage() {
                   border: isSelected ? '1.5px solid #1677ff' : 'none',
                   boxShadow: isSelected ? '0 0 10px rgba(22, 119, 255, 0.7)' : 'none',
                   zIndex: isSelected ? 10 : 2,
-                  transition: 'all 0.15s ease'
+                  transition: 'all 0.15s ease',
+                  cursor: 'pointer'
                 }}
               >
                 {/* Drag handles for selected step */}
