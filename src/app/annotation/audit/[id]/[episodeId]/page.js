@@ -1493,15 +1493,20 @@ export default function AnnotationAuditWorkspacePage() {
                         key={step.id} 
                         onClick={() => handleStepSelect(step.id)}
                         style={{ 
-                          border: isSelected ? '2px solid #1677ff' : '1px solid #e2e8f0', 
+                          border: isSelected ? '1px solid #1677ff' : '1px solid #e2e8f0', 
+                          borderLeft: isSelected ? '5px solid #1677ff' : '1px solid #e2e8f0', 
                           borderRadius: 6, 
-                          background: isSelected ? '#f0f9ff' : '#fafafa',
-                          padding: 12,
-                          cursor: 'pointer'
+                          background: isSelected ? 'linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%)' : '#fafafa',
+                          padding: isSelected ? '12px 12px 12px 8px' : '12px',
+                          cursor: 'pointer',
+                          boxShadow: isSelected ? '0 4px 12px rgba(22, 119, 255, 0.15)' : 'none',
+                          transition: 'all 0.2s'
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600 }}>{step.id}. {step.text}</span>
+                          <span style={{ fontSize: 12, fontWeight: isSelected ? 700 : 600, color: isSelected ? '#0958d9' : '#1f2937' }}>
+                            {step.id}. {step.text}
+                          </span>
                           <Tag color="success">正确</Tag>
                         </div>
                         <Row gutter={8} style={{ fontSize: 11 }} onClick={(e) => e.stopPropagation()}>
@@ -1521,6 +1526,25 @@ export default function AnnotationAuditWorkspacePage() {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* 交互开发说明 (Developer Design Notes) */}
+                <div style={{ 
+                  marginTop: 20, 
+                  background: '#f8fafc', 
+                  border: '1px dashed #cbd5e1', 
+                  borderRadius: 6, 
+                  padding: '12px' 
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 'bold', color: '#1e293b', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    📖 交互设计开发说明
+                  </div>
+                  <ul style={{ paddingLeft: 16, margin: 0, fontSize: 10, color: '#64748b', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <li><strong>选中态增强</strong>: 右侧选中卡片带有蓝色厚边与浅蓝渐变；播放轴对应动作块自动浮起并带有外发光。</li>
+                    <li><strong>时序轴双滑块微调</strong>: 选中步骤后，播放条两端生成蓝色垂直微调手柄，支持鼠标/手势按住直接拖动。</li>
+                    <li><strong>键盘流支持</strong>: 支持空格播放/暂停，左右键单帧微调，结合 Alt/Shift 键可变速跳转。</li>
+                    <li><strong>双向数据绑定</strong>: 修改右侧「开始帧/结束帧」输入框后，底部播放轴滑块坐标实时计算重绘，反之亦然。</li>
+                  </ul>
                 </div>
               </div>
             )}
@@ -1548,10 +1572,15 @@ export default function AnnotationAuditWorkspacePage() {
                   position: 'absolute',
                   left: `${(step.startFrame / totalFrames) * 100}%`,
                   width: `${((step.endFrame - step.startFrame) / totalFrames) * 100}%`,
-                  height: '100%',
+                  height: isSelected ? '26px' : '100%',
+                  top: isSelected ? -3 : 0,
                   background: step.color,
-                  opacity: isSelected ? 0.95 : 0.4,
-                  borderRadius: '2px'
+                  opacity: isSelected ? 1 : 0.4,
+                  borderRadius: '2px',
+                  border: isSelected ? '1.5px solid #1677ff' : 'none',
+                  boxShadow: isSelected ? '0 0 10px rgba(22, 119, 255, 0.7)' : 'none',
+                  zIndex: isSelected ? 10 : 2,
+                  transition: 'all 0.15s ease'
                 }}
               >
                 {/* Drag handles for selected step */}
