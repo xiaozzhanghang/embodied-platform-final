@@ -19,6 +19,7 @@ const annoTypeColors = {
 const annoStatusConfig = {
   '已标注': { color: 'success', icon: <CheckCircleOutlined /> },
   '未标注': { color: 'default', icon: null },
+  '待校验': { color: 'warning', icon: <ClockCircleOutlined /> },
   '标注中': { color: 'processing', icon: <ClockCircleOutlined /> },
   '自动标注处理中': { color: 'warning', icon: <ClockCircleOutlined /> },
 };
@@ -178,6 +179,7 @@ export default function AnnotationAuditEpisodeListPage() {
   const handleStartBatchCopy = () => {
     setIsCopying(true);
     setCopyProgress(0);
+    const activeBatchType = getActiveBatchType();
 
     const interval = setInterval(() => {
       setCopyProgress(prev => {
@@ -187,16 +189,17 @@ export default function AnnotationAuditEpisodeListPage() {
 
           setEpisodes(prevEpisodes => {
             return prevEpisodes.map(ep => {
-              if (selectedRowKeys.includes(ep.key) && ep.id !== template.id && ep.annoType === activeType) {
+              if (selectedRowKeys.includes(ep.key) && ep.id !== template.id && ep.annoType === activeBatchType) {
                 const adjustedSegments = applyStrategy(
                   template.segments,
                   batchStrategy,
                   template.totalFrames,
                   ep.totalFrames
                 );
+                const nextStatus = ep.annoStatus === '未标注' ? '待校验' : '已标注';
                 return {
                   ...ep,
-                  annoStatus: '已标注',
+                  annoStatus: nextStatus,
                   manualTime: new Date().toISOString().replace('T', ' ').substring(0, 19),
                   segments: adjustedSegments
                 };
@@ -210,7 +213,7 @@ export default function AnnotationAuditEpisodeListPage() {
             setIsBatchModalOpen(false);
             setSelectedRowKeys([]);
             setSelectedRows([]);
-            message.success(`已批量适配复制 ${activeType} 标注数据！`);
+            message.success(`已批量适配复制 ${activeBatchType} 标注数据！`);
           }, 300);
 
           return 100;
@@ -256,10 +259,10 @@ export default function AnnotationAuditEpisodeListPage() {
       return idMatch && annoMatch && auditMatch && errorMatch;
     });
 
-    // Sort: '可标注' (annoStatus !== '已标注') at the top, '已标注' at the bottom
+    // Sort: '可标注' (annoStatus !== '已标注' && annoStatus !== '待校验') at the top, '已标注'/'待校验' at the bottom
     return [...list].sort((a, b) => {
-      const aIsFinished = a.annoStatus === '已标注';
-      const bIsFinished = b.annoStatus === '已标注';
+      const aIsFinished = a.annoStatus === '已标注' || a.annoStatus === '待校验';
+      const bIsFinished = b.annoStatus === '已标注' || b.annoStatus === '待校验';
       if (!aIsFinished && bIsFinished) return -1;
       if (aIsFinished && !bIsFinished) return 1;
       return a.id - b.id;
@@ -268,7 +271,7 @@ export default function AnnotationAuditEpisodeListPage() {
 
   // Stats
   const totalCount = episodes.length;
-  const annoCount = episodes.filter(d => d.annoStatus === '已标注').length;
+  const annoCount = episodes.filter(d => d.annoStatus === '已标注' || d.annoStatus === '待校验').length;
   const auditPassCount = episodes.filter(d => d.auditStatus === '通过').length;
   const auditRejectCount = episodes.filter(d => d.auditStatus === '不通过').length;
 
@@ -363,8 +366,8 @@ export default function AnnotationAuditEpisodeListPage() {
               type="link" 
               size="small" 
               icon={<AuditOutlined />}
-              style={{ padding: '0 4px', color: r.annoStatus === '已标注' ? '#722ed1' : undefined }}
-              disabled={r.annoStatus !== '已标注'}
+              style={{ padding: '0 4px', color: (r.annoStatus === '已标注' || r.annoStatus === '待校验') ? '#722ed1' : undefined }}
+              disabled={r.annoStatus !== '已标注' && r.annoStatus !== '待校验'}
               onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=audit`)}
             >
               审核
@@ -472,7 +475,7 @@ export default function AnnotationAuditEpisodeListPage() {
                 <Col><Input placeholder="ID" style={{ width: 140 }} value={filterId} onChange={e => setFilterId(e.target.value)} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear /></Col>
                 <Col>
                   <Select placeholder="标注状态" style={{ width: 160 }} allowClear value={filterAnnoStatus} onChange={setFilterAnnoStatus}
-                    options={['已标注', '未标注', '标注中', '自动标注处理中'].map(s => ({ label: s, value: s }))}
+                    options={['已标注', '未标注', '待校验', '标注中', '自动标注处理中'].map(s => ({ label: s, value: s }))}
                   />
                 </Col>
                 <Col>

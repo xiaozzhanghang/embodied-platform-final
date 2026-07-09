@@ -17,7 +17,7 @@ import {
   ArrowRightOutlined, CheckSquareOutlined, RocketOutlined, SettingFilled,
   SlidersOutlined, ExclamationCircleOutlined, DoubleLeftOutlined, DoubleRightOutlined,
   CloudUploadOutlined, PlaySquareOutlined, LayoutOutlined, FolderOpenOutlined, 
-  SaveOutlined, BulbOutlined, GlobalOutlined
+  SaveOutlined, BulbOutlined, GlobalOutlined, TagOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -35,14 +35,37 @@ export default function AnnotationAuditWorkspacePage() {
 
   // Retrieve current annotation type and mode from URL
   const [annoType, setAnnoType] = useState('范围标注');
-  const [workMode, setWorkMode] = useState('annotate'); 
+  const [workMode, setWorkMode] = useState('annotate');
+  const [deviceType, setDeviceType] = useState(null); 
 
-  useEffect(() => {
+  // 设备类型配置
+const DEVICE_TYPES = {
+  'galaxy': { name: '银河机器人', annoType: '范围标注' },
+  'luming': { name: '鹿鸣机器人', annoType: '语义标注' },
+};
+
+useEffect(() => {
     const typeFromUrl = searchParams.get('type');
     const modeFromUrl = searchParams.get('mode');
     if (typeFromUrl) setAnnoType(typeFromUrl);
     if (modeFromUrl) setWorkMode(modeFromUrl);
-  }, [searchParams]);
+
+    // 从 URL 参数获取设备类型
+    const deviceFromUrl = searchParams.get('device');
+    if (deviceFromUrl) {
+      setDeviceType(deviceFromUrl);
+      // 只有当 URL 中没有明确指定 type 时，才根据设备类型自动跳转
+      if (!typeFromUrl) {
+        const deviceConfig = DEVICE_TYPES[deviceFromUrl];
+        if (deviceConfig) {
+          setAnnoType(deviceConfig.annoType);
+        }
+      }
+    } else {
+      // 默认设备为 galaxy
+      setDeviceType('galaxy');
+    }
+  }, [searchParams, instanceId]);
 
   // Video State
   const [isPlaying, setIsPlaying] = useState(false);
@@ -105,7 +128,8 @@ export default function AnnotationAuditWorkspacePage() {
   const [controllerQuality, setControllerQuality] = useState('success');
   const [activeTabKey, setActiveTabKey] = useState('1'); 
   const timelineRef = useRef(null);
-  const [draggingHandle, setDraggingHandle] = useState(null); 
+  const [draggingHandle, setDraggingHandle] = useState(null);
+  const [draggingSegmentId, setDraggingSegmentId] = useState(null); 
   const [showDevNotes, setShowDevNotes] = useState(false);
 
   // 4. Grid Cameras active switches mapping (Used for both Range mode and Semantic 2x2 mode)
@@ -123,6 +147,7 @@ export default function AnnotationAuditWorkspacePage() {
     { id: 1, start: 0, end: 15, text: '从 桌面 捡起 箱子', enText: 'pick box from desktop', color: '#13c2c2' },
     { id: 2, start: 15, end: 30, text: '从 桌面 捡起 猕猴桃', enText: 'pick Kiwi from desktop', color: '#722ed1' }
   ]);
+  const [selectedSegmentId, setSelectedSegmentId] = useState(null);
 
   // Modal State for Add Annotation
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -260,17 +285,34 @@ export default function AnnotationAuditWorkspacePage() {
   // Timeline dragging effect
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!draggingHandle || !timelineRef.current) return;
-      
-      const rect = timelineRef.current.getBoundingClientRect();
+      const rect = timelineRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const pct = (clientX - rect.left) / rect.width;
       let frame = Math.round(pct * totalFrames);
       frame = Math.max(0, Math.min(totalFrames, frame));
 
-      if (annoType === '语义标注') {
+      // Handle segment dragging on semantic timeline
+      if (draggingSegmentId && annoType === '语义标注') {
+        setSemanticSegments(prev => prev.map(seg => {
+          if (seg.id === draggingSegmentId) {
+            if (draggingHandle === 'start') {
+              return { ...seg, start: Math.max(0, Math.min(frame, seg.end - 1)) };
+            } else if (draggingHandle === 'end') {
+              return { ...seg, end: Math.min(totalFrames, Math.max(frame, seg.start + 1)) };
+            } else if (draggingHandle === 'move') {
+              const len = seg.end - seg.start;
+              const newStart = Math.max(0, Math.min(frame, totalFrames - len));
+              return { ...seg, start: newStart, end: newStart + len };
+            }
+          }
+          return seg;
+        }));
         return;
       }
+
+      if (!draggingHandle || annoType === '语义标注') return;
 
       setSteps((prevSteps) => {
         return prevSteps.map((step) => {
@@ -291,9 +333,10 @@ export default function AnnotationAuditWorkspacePage() {
 
     const handleMouseUp = () => {
       setDraggingHandle(null);
+      setDraggingSegmentId(null);
     };
 
-    if (draggingHandle) {
+    if (draggingHandle || draggingSegmentId) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
       window.addEventListener('touchmove', handleMouseMove, { passive: false });
@@ -305,7 +348,7 @@ export default function AnnotationAuditWorkspacePage() {
       window.removeEventListener('touchmove', handleMouseMove);
       window.removeEventListener('touchend', handleMouseUp);
     };
-  }, [draggingHandle, selectedStepId, totalFrames, annoType]);
+  }, [draggingHandle, draggingSegmentId, selectedStepId, totalFrames, annoType]);
 
   const handleFrameChange = (frame) => {
     setCurrentFrame(frame);
@@ -656,7 +699,7 @@ export default function AnnotationAuditWorkspacePage() {
           </div>
 
           {/* RIGHT COLUMN: Control Panel (White Theme) */}
-          <div style={{ width: '260px', background: '#f4f4f5', borderLeft: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', color: '#18181b' }}>
+          <div style={{ width: '320px', background: '#f4f4f5', borderLeft: '1px solid #e4e4e7', display: 'flex', flexDirection: 'column', color: '#18181b' }}>
             
             {/* Sidebar Tab headers */}
             <div style={{ display: 'flex', borderBottom: '1px solid #e4e4e7', background: '#fff' }}>
@@ -716,24 +759,31 @@ export default function AnnotationAuditWorkspacePage() {
 
                   {/* Action Buttons to Start & Stop */}
                   <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#4b5563', marginBottom: 6 }}>操作手柄录制：</div>
-                  <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                    <Button 
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                    <Button
                       type="primary"
-                      icon={<PlayCircleOutlined />}
-                      style={{ flex: 1.2, fontSize: '12px', height: 32, background: '#2563eb', borderColor: '#2563eb', fontWeight: 'bold' }} 
+                      style={{ flex: 1, fontSize: '11px', height: 32, background: '#2563eb', borderColor: '#2563eb', fontWeight: 'bold' }}
                       onClick={() => { setNewRangeStart(currentFrame); message.success(`🚩 已记录开始帧: ${currentFrame}f`); }}
                     >
-                      ▶ 开始 [Q]
+                      开始 [Q]
                     </Button>
-                    
-                    <Button 
-                      danger
+
+                    <Button
                       type="primary"
-                      icon={<PauseOutlined />}
-                      style={{ flex: 1.2, fontSize: '12px', height: 32, fontWeight: 'bold' }} 
+                      style={{ flex: 1, fontSize: '11px', height: 32, fontWeight: 'bold', background: '#fa8c16', borderColor: '#fa8c16' }}
                       onClick={() => handleStopAction(currentFrame)}
                     >
-                      ⏸ 结束 [R]
+                      标记 [R]
+                    </Button>
+
+                    <Button
+                      type="primary"
+                      style={{ flex: 1, fontSize: '11px', height: 32, fontWeight: 'bold', background: '#52c41a', borderColor: '#52c41a' }}
+                      onClick={() => {
+                        message.success('标注数据已本地暂存并成功保存！');
+                      }}
+                    >
+                      保存
                     </Button>
                   </div>
 
@@ -757,29 +807,76 @@ export default function AnnotationAuditWorkspacePage() {
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {semanticSegments.map(seg => (
-                      <div 
-                        key={seg.id} 
-                        style={{ 
-                          background: '#fafafa', 
-                          border: '1px solid #e4e4e7', 
-                          borderRadius: 4, 
-                          padding: '8px 10px',
-                          fontSize: '11px'
+                      <div
+                        key={seg.id}
+                        onClick={() => setSelectedSegmentId(seg.id)}
+                        style={{
+                          background: selectedSegmentId === seg.id ? 'linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%)' : '#fafafa',
+                          border: selectedSegmentId === seg.id ? '1px solid #1677ff' : '1px solid #e2e8f0',
+                          borderLeft: selectedSegmentId === seg.id ? '5px solid #1677ff' : '1px solid #e2e8f0',
+                          borderRadius: 6,
+                          padding: selectedSegmentId === seg.id ? '12px 12px 12px 8px' : '12px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          boxShadow: selectedSegmentId === seg.id ? '0 4px 12px rgba(22, 119, 255, 0.15)' : 'none',
+                          transition: 'all 0.2s',
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#1f2937', fontWeight: 'bold', marginBottom: 4 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#1f2937', fontWeight: 'bold', marginBottom: selectedSegmentId === seg.id ? 6 : 4 }}>
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }} title={seg.text}>
                             {seg.text}
                           </span>
-                          <DeleteOutlined 
-                            style={{ color: '#ef4444', cursor: 'pointer' }} 
-                            onClick={() => setSemanticSegments(semanticSegments.filter(x => x.id !== seg.id))}
+                          <DeleteOutlined
+                            style={{ color: '#ef4444', cursor: 'pointer' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSemanticSegments(semanticSegments.filter(x => x.id !== seg.id));
+                              if (selectedSegmentId === seg.id) setSelectedSegmentId(null);
+                            }}
                           />
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6b7280', fontSize: 10 }}>
-                          <span>区间: {seg.start} - {seg.end}f</span>
-                          <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 'bold' }} onClick={() => setCurrentFrame(seg.start)}>跳转定位</span>
-                        </div>
+                        {selectedSegmentId === seg.id ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Input
+                              size="small"
+                              style={{ width: 60, fontSize: 10 }}
+                              value={seg.start}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0;
+                                setSemanticSegments(semanticSegments.map(s => s.id === seg.id ? { ...s, start: Math.max(0, Math.min(val, seg.end - 1)) } : s));
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              prefix="起:"
+                            />
+                            <Input
+                              size="small"
+                              style={{ width: 60, fontSize: 10 }}
+                              value={seg.end}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0;
+                                setSemanticSegments(semanticSegments.map(s => s.id === seg.id ? { ...s, end: Math.min(totalFrames, Math.max(val, seg.start + 1)) } : s));
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              prefix="止:"
+                            />
+                            <Button
+                              size="small"
+                              type="link"
+                              style={{ fontSize: 9, padding: 0 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentFrame(seg.start);
+                              }}
+                            >
+                              跳转
+                            </Button>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6b7280', fontSize: 10 }}>
+                            <span>区间: {seg.start} - {seg.end}f</span>
+                            <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 'bold' }} onClick={(e) => { e.stopPropagation(); setCurrentFrame(seg.start); }}>跳转定位</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -924,6 +1021,7 @@ export default function AnnotationAuditWorkspacePage() {
                     📖 语义标注开发说明
                   </div>
                   <ul style={{ paddingLeft: 12, margin: 0, color: '#64748b', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <li><strong>录制控制优化</strong>: 原“结束”按钮变更为“标记 [R]”呼出标注配置弹框，并增加绿色“💾 保存”按钮本地暂存标注修改。</li>
                     <li><strong>双栏布局调整</strong>: 主视区 2x2 网格居左（75%），控制面板居右（25%），契合主流工作流。</li>
                     <li><strong>时序轴高亮与跳转</strong>: 标注列表中显示每段已标区间，点击「跳转定位」可以直接更新主进度轴。</li>
                     <li><strong>快速词典预填</strong>: 标签页支持点击常用「技能/物体/目标」卡片，秒级拉起添加标注 Modal 并自动预选字段。</li>
@@ -941,8 +1039,8 @@ export default function AnnotationAuditWorkspacePage() {
         <div style={{ background: '#fff', borderTop: '1px solid #cbd5e1', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           
           {/* Progress Slider bar */}
-          <div 
-            style={{ height: '6px', background: '#e4e4e7', borderRadius: '3px', position: 'relative', cursor: 'pointer' }}
+          <div
+            style={{ height: '12px', background: '#e4e4e7', borderRadius: '3px', position: 'relative', cursor: 'pointer' }}
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               const pct = (e.clientX - rect.left) / rect.width;
@@ -951,56 +1049,109 @@ export default function AnnotationAuditWorkspacePage() {
             }}
           >
             {/* Draw current frame line */}
-            <div style={{ position: 'absolute', top: '-4px', left: `${(currentFrame / totalFrames) * 100}%`, width: '10px', height: '14px', background: '#ef4444', borderRadius: '2px', cursor: 'col-resize' }} />
+            <div style={{ position: 'absolute', top: '-6px', left: `${(currentFrame / totalFrames) * 100}%`, width: '10px', height: '20px', background: '#ef4444', borderRadius: '2px', cursor: 'col-resize' }} />
             
             {/* Render saved ranges overlay on timeline */}
             {semanticSegments.map(seg => (
-              <div 
+              <div
                 key={seg.id}
                 style={{
                   position: 'absolute',
                   left: `${(seg.start / totalFrames) * 100}%`,
                   width: `${((seg.end - seg.start) / totalFrames) * 100}%`,
-                  height: '100%',
+                  height: selectedSegmentId === seg.id ? 26 : '100%',
+                  top: selectedSegmentId === seg.id ? -3 : 0,
                   background: seg.color,
-                  opacity: 0.4
+                  opacity: selectedSegmentId === seg.id ? 1 : 0.4,
+                  cursor: 'pointer',
+                  borderRadius: 2,
+                  border: selectedSegmentId === seg.id ? '1.5px solid #1677ff' : 'none',
+                  boxShadow: selectedSegmentId === seg.id ? '0 0 10px rgba(22, 119, 255, 0.7)' : 'none',
+                  zIndex: selectedSegmentId === seg.id ? 10 : 2,
+                  transition: 'all 0.15s ease',
+                }}
+                onClick={() => {
+                  setSelectedSegmentId(seg.id);
+                  setCurrentFrame(seg.start);
                 }}
               />
             ))}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            {/* Epoch Timestamp in bottom-left */}
-            <span style={{ fontSize: '11px', color: '#4b5563' }}>
-              {getDynamicTimestamp(currentFrame)}
-            </span>
-
-            {/* Playback Buttons */}
-            <Space size={16}>
-              <Button type="text" icon={<StepBackwardOutlined style={{ color: '#475569' }} />} onClick={() => setCurrentFrame(Math.max(0, currentFrame - 1))} />
-              <Button 
-                type="text" 
-                icon={isPlaying ? <PauseOutlined style={{ color: '#2563eb' }} /> : <PlayCircleOutlined style={{ color: '#2563eb' }} />} 
-                onClick={() => setIsPlaying(!isPlaying)} 
-                style={{ background: '#f4f4f5', borderRadius: '50%', width: 28, height: 28, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-              />
-              <Button type="text" icon={<StepForwardOutlined style={{ color: '#475569' }} />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + 1))} />
+            {/* Left: Navigation */}
+            <Space size={12}>
+              <Button type="text" icon={<LeftOutlined style={{ color: '#64748b' }} />} onClick={() => setCurrentFrame(0)} />
+              <span style={{ fontSize: '11px', color: '#4b5563' }}>{getDynamicTimestamp(currentFrame)}</span>
+              <Button type="text" icon={<RightOutlined style={{ color: '#64748b' }} />} onClick={() => setCurrentFrame(totalFrames)} />
             </Space>
 
-            {/* Right: annotation info and speed */}
-            <Space size={16}>
-              <span style={{ fontSize: '11px', color: '#4b5563' }}>
-                帧数: <strong>{currentFrame}f</strong> / {totalFrames}f
-              </span>
-              <Select defaultValue={1} size="small" variant="borderless" style={{ width: 60, color: '#475569' }} onChange={setPlaybackSpeed}>
+            {/* Center: Playback Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', borderRadius: 20, padding: '4px 12px', border: '1px solid #e4e4e7' }}>
+              <Button type="text" icon={<DoubleLeftOutlined style={{ color: '#64748b', fontSize: 10 }} />} onClick={() => setCurrentFrame(0)} size="small" />
+              <Button type="text" icon={<StepBackwardOutlined style={{ color: '#64748b' }} />} onClick={() => setCurrentFrame(Math.max(0, currentFrame - 1))} />
+              <Button
+                type="primary"
+                icon={isPlaying ? <PauseOutlined /> : <PlayCircleOutlined />}
+                onClick={() => setIsPlaying(!isPlaying)}
+                style={{ borderRadius: '50%', width: 36, height: 36, minWidth: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(37, 99, 235, 0.3)' }}
+              />
+              <Button type="text" icon={<StepForwardOutlined style={{ color: '#64748b' }} />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + 1))} />
+              <Button type="text" icon={<DoubleRightOutlined style={{ color: '#64748b', fontSize: 10 }} />} onClick={() => setCurrentFrame(totalFrames)} size="small" />
+              <Divider type="vertical" style={{ height: 20, margin: '0 4px' }} />
+              <Button type="text" icon={<ReloadOutlined style={{ color: '#64748b' }} />} size="small" />
+              <Select defaultValue={1} size="small" variant="borderless" style={{ width: 50, color: '#475569' }} onChange={setPlaybackSpeed}>
                 <Option value={0.5}>0.5x</Option>
-                <Option value={1}>1.0x</Option>
-                <Option value={2}>2.0x</Option>
+                <Option value={1}>1x</Option>
+                <Option value={2}>2x</Option>
               </Select>
-              
-              <Radio.Group size="small" value={annoType} onChange={(e) => setAnnoType(e.target.value)} buttonStyle="solid">
-                <Radio.Button value="框标注">返回其它标注</Radio.Button>
-              </Radio.Group>
+            </div>
+
+            {/* Right: Action Buttons */}
+            <Space size={8}>
+              <span style={{ fontSize: '11px', color: '#4b5563' }}>
+                {currentTime}s / <strong>{currentFrame}f</strong>
+              </span>
+              <Button
+                size="small"
+                type="primary"
+                style={{ borderRadius: 4 }}
+                onClick={() => { message.success('标注完成'); router.push(`/annotation/audit/${instanceId}`); }}
+              >
+                完成标注(T)
+              </Button>
+              <Button
+                size="small"
+                style={{
+                  background: '#fff2e8',
+                  borderColor: '#ffbb96',
+                  color: '#d48806',
+                  borderRadius: 4,
+                }}
+                onClick={() => message.warning('已标记为质检不合格')}
+              >
+                质检不合格
+              </Button>
+              <Button
+                size="small"
+                style={{
+                  background: '#f6ffed',
+                  borderColor: '#b7eb8f',
+                  color: '#52c41a',
+                  borderRadius: 4,
+                }}
+                onClick={() => message.success('抽检通过')}
+              >
+                抽检通过
+              </Button>
+              <Button
+                size="small"
+                danger
+                style={{ borderRadius: 4 }}
+                onClick={() => message.error('抽检不通过')}
+              >
+                抽检不通过
+              </Button>
             </Space>
           </div>
         </div>
@@ -1748,11 +1899,73 @@ export default function AnnotationAuditWorkspacePage() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space>
-            <Button type="text" icon={<PlayCircleOutlined />} onClick={() => setIsPlaying(!isPlaying)} />
+            <Button type="text" icon={<LeftOutlined />} onClick={() => setCurrentFrame(0)} />
             <span style={{ fontSize: 11 }}>{currentTime}s / {currentFrame}f</span>
+            <Button type="text" icon={<RightOutlined />} onClick={() => setCurrentFrame(totalFrames)} />
           </Space>
-          <Space>
-            <Button type="primary" size="small" onClick={() => router.push(`/annotation/audit/${instanceId}`)}>完成标注</Button>
+
+          {/* Center: Playback Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', borderRadius: 20, padding: '4px 12px', border: '1px solid #e4e4e7' }}>
+            <Button type="text" icon={<DoubleLeftOutlined style={{ fontSize: 10 }} />} onClick={() => setCurrentFrame(0)} size="small" />
+            <Button type="text" icon={<StepBackwardOutlined />} onClick={() => setCurrentFrame(Math.max(0, currentFrame - 1))} />
+            <Button
+              type="primary"
+              icon={isPlaying ? <PauseOutlined /> : <PlayCircleOutlined />}
+              onClick={() => setIsPlaying(!isPlaying)}
+              style={{ borderRadius: '50%', width: 36, height: 36, minWidth: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(37, 99, 235, 0.3)' }}
+            />
+            <Button type="text" icon={<StepForwardOutlined />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + 1))} />
+            <Button type="text" icon={<DoubleRightOutlined style={{ fontSize: 10 }} />} onClick={() => setCurrentFrame(totalFrames)} size="small" />
+            <Divider type="vertical" style={{ height: 20, margin: '0 4px' }} />
+            <Button type="text" icon={<ReloadOutlined />} size="small" />
+            <Select defaultValue={1} size="small" variant="borderless" style={{ width: 50, color: '#475569' }} onChange={setPlaybackSpeed}>
+              <Option value={0.5}>0.5x</Option>
+              <Option value={1}>1x</Option>
+              <Option value={2}>2x</Option>
+            </Select>
+          </div>
+
+          <Space size={8}>
+            <Button
+              size="small"
+              type="primary"
+              style={{ borderRadius: 4 }}
+              onClick={() => { message.success('标注完成'); router.push(`/annotation/audit/${instanceId}`); }}
+            >
+              完成标注(T)
+            </Button>
+            <Button
+              size="small"
+              style={{
+                background: '#fff2e8',
+                borderColor: '#ffbb96',
+                color: '#d48806',
+                borderRadius: 4,
+              }}
+              onClick={() => message.warning('已标记为质检不合格')}
+            >
+              质检不合格
+            </Button>
+            <Button
+              size="small"
+              style={{
+                background: '#f6ffed',
+                borderColor: '#b7eb8f',
+                color: '#52c41a',
+                borderRadius: 4,
+              }}
+              onClick={() => message.success('抽检通过')}
+            >
+              抽检通过
+            </Button>
+            <Button
+              size="small"
+              danger
+              style={{ borderRadius: 4 }}
+              onClick={() => message.error('抽检不通过')}
+            >
+              抽检不通过
+            </Button>
           </Space>
         </div>
       </div>

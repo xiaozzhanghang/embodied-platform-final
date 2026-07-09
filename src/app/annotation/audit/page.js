@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge } from 'antd';
+import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select } from 'antd';
 import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
@@ -74,6 +74,25 @@ export default function AnnotationAuditPage() {
   const [filters, setFilters] = useState({});
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const { message } = App.useApp();
+  const [reassignModalOpen, setReassignModalOpen] = useState(false);
+  const [reassignRecord, setReassignRecord] = useState(null);
+  const [reassignForm] = Form.useForm();
+
+  const handleReassign = (record) => {
+    setReassignRecord(record);
+    reassignForm.setFieldsValue({
+      annotator: record.annotator,
+      auditor: record.auditor,
+    });
+    setReassignModalOpen(true);
+  };
+
+  const handleReassignSubmit = () => {
+    reassignForm.validateFields().then(values => {
+      message.success(`已将「${values.annotator}」分配为标注员，「${values.auditor}」分配为审核员`);
+      setReassignModalOpen(false);
+    });
+  };
 
   const filteredData = React.useMemo(() => {
     return instanceMockData.filter(item => {
@@ -161,7 +180,7 @@ export default function AnnotationAuditPage() {
       title: '操作', key: 'action', width: 160, fixed: 'right',
       render: (_, r) => (
         <Space size="small">
-          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => message.info('重新分配功能')}>重新分配</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => handleReassign(r)}>重新分配</Button>
           <Button type="link" size="small" icon={<LoginOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/annotation/audit/${r.instanceId}`)}>进入</Button>
         </Space>
       )
@@ -240,6 +259,41 @@ export default function AnnotationAuditPage() {
           }}
         />
       </Card>
+
+      {/* 重新分配弹窗 */}
+      <Modal
+        title="重新分配"
+        open={reassignModalOpen}
+        onCancel={() => setReassignModalOpen(false)}
+        onOk={handleReassignSubmit}
+        okText="确定"
+        cancelText="取消"
+      >
+        <Form form={reassignForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item
+            name="annotator"
+            label="标注员"
+            rules={[{ required: true, message: '请选择标注员' }]}
+          >
+            <Select placeholder="请选择标注员">
+              {people.map(p => (
+                <Select.Option key={p} value={p}>{p}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="auditor"
+            label="审核员"
+            rules={[{ required: true, message: '请选择审核员' }]}
+          >
+            <Select placeholder="请选择审核员">
+              {people.map(p => (
+                <Select.Option key={p} value={p}>{p}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </MainLayout>
   );
 }

@@ -9,10 +9,20 @@ import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
 
+// 状态流转: 待标注 → 标注中 → 待校验 → 校验中 → 已完成
+const ANNO_STATUS_COLORS = {
+    '待标注': 'default',
+    '标注中': 'processing',
+    '待校验': 'warning',
+    '校验中': 'processing',
+    '已完成': 'success',
+};
+
 const mockProjects = [
-    { key: '1', projectId: 'AP-001', name: '具身抓取标注项目', startTime: '2025-02-01 10:00', progress: 70, type: '框标注', total: 50, annotated: 35 },
-    { key: '2', projectId: 'AP-002', name: 'VLA动作标注项目', startTime: '2025-02-15 14:00', progress: 45, type: '范围&框标注', total: 100, annotated: 45 },
-    { key: '3', projectId: 'AP-003', name: '关键点定位项目', startTime: '2025-03-01 09:00', progress: 10, type: '点标注', total: 200, annotated: 20 },
+    { key: '1', projectId: 'AP-001', name: '具身抓取标注项目', startTime: '2025-02-01 10:00', progress: 70, type: '框标注', total: 50, annotated: 35, status: '标注中' },
+    { key: '2', projectId: 'AP-002', name: 'VLA动作标注项目', startTime: '2025-02-15 14:00', progress: 45, type: '范围&框标注', total: 100, annotated: 45, status: '待校验' },
+    { key: '3', projectId: 'AP-003', name: '关键点定位项目', startTime: '2025-03-01 09:00', progress: 10, type: '点标注', total: 200, annotated: 20, status: '待标注' },
+    { key: '4', projectId: 'AP-004', name: '物品识别标注', startTime: '2025-03-05 09:00', progress: 100, type: '框标注', total: 80, annotated: 80, status: '已完成' },
 ];
 
 export default function AnswerPage() {
@@ -38,6 +48,12 @@ export default function AnswerPage() {
         { title: '项目ID', dataIndex: 'projectId', width: 100 },
         { title: '项目名称', dataIndex: 'name', key: 'name', width: 220 },
         { title: '标注类型', dataIndex: 'type', width: 120, render: (t) => <Tag color="blue">{t}</Tag> },
+        {
+            title: '状态',
+            dataIndex: 'status',
+            width: 100,
+            render: (s) => <Badge status={ANNO_STATUS_COLORS[s] || 'default'} text={s} />,
+        },
         { title: '总题目数', dataIndex: 'total', width: 100 },
         { title: '完成进度', key: 'progress', width: 200, render: (_, r) => (
             <Space direction="vertical" size={0} style={{ width: '100%' }}>
@@ -50,8 +66,13 @@ export default function AnswerPage() {
         )},
         { title: '分配时间', dataIndex: 'startTime', width: 170 },
         {
-            title: '操作', key: 'action', width: 120, fixed: 'right',
-            render: (_, record) => <Button type="primary" size="small" icon={<PlayCircleOutlined />} onClick={() => openWorkspace(record)}>开始标注</Button>,
+            title: '操作', key: 'action', width: 200, fixed: 'right',
+            render: (_, record) => (
+                <Space size="small">
+                    <Button type="primary" size="small" icon={<PlayCircleOutlined />} onClick={() => openWorkspace(record)}>标记</Button>
+                    <Button size="small" icon={<SaveOutlined />} onClick={() => message.success('保存成功')}>保存</Button>
+                </Space>
+            ),
         },
     ];
 
@@ -81,7 +102,7 @@ export default function AnswerPage() {
             </Card>
 
             <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
-                <Table columns={columns} dataSource={filteredData} style={{ padding: '0 24px 24px' }} pagination={{ pageSize: 10 }} />
+                <Table columns={columns} dataSource={filteredData} style={{ padding: '0 24px 24px' }} pagination={{ pageSize: 10 }} scroll={{ x: 1200 }} />
             </Card>
 
             {/* Immersive Annotation Workspace */}
