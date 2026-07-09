@@ -9,14 +9,11 @@ import MainLayout from '@/components/MainLayout';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const ANNO_TYPES = ['语义标注', '框标注', '点标注', '范围标注', '范围&框标注'];
+const ANNO_TYPES = ['语义标注', '范围标注'];
 
 const annoTypeColors = {
   '语义标注': 'blue',
-  '框标注': 'green',
-  '点标注': 'cyan',
   '范围标注': 'purple',
-  '范围&框标注': 'magenta',
 };
 
 const annoStatusConfig = {
@@ -47,7 +44,10 @@ export default function AnnotationAuditEpisodeListPage() {
   // Stateful list of episodes for dynamic updates
   const [episodes, setEpisodes] = useState(() => {
     return Array.from({ length: 20 }).map((_, i) => {
-      const annoType = ANNO_TYPES[i % 5];
+      const isDual = i % 2 === 0;
+      const device = isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)';
+      const annoType = isDual ? '语义标注' : '范围标注';
+
       const annoStatuses = ['已标注', '未标注', '标注中', '自动标注处理中'];
       const auditStatuses = ['未审核', '审核中', '通过', '不通过'];
       const annoStatus = i < 8 ? '已标注' : i < 13 ? annoStatuses[i % 4] : '未标注';
@@ -57,9 +57,10 @@ export default function AnnotationAuditEpisodeListPage() {
       return {
         key: i,
         id: 744101 + i,
-        taskName: ['抓取猕猴桃', '放置水果', '移动杯子', '擦拭桌面', '扭动阀门'][i % 5],
+        taskName: isDual ? ['抓取猕猴桃', '移动杯子', '扭动阀门'][i % 3] : ['桌面整理', '垃圾分类', '抽屉开关'][i % 3],
         instance: `实例_${instanceId}_${String(i + 1).padStart(3, '0')}`,
         annoTaskName: `标注任务_${['张三', '李四', '王五', '赵六'][i % 4]}_${String(i + 1).padStart(2, '0')}`,
+        device,
         annoType,
         totalFrames,
         manualTime: annoStatus === '已标注' ? `2026-07-08 09:12:16` : '',
@@ -68,10 +69,15 @@ export default function AnnotationAuditEpisodeListPage() {
         annoStatus,
         auditStatus,
         hasError: i === 3 || i === 11,
-        segments: annoStatus === '已标注' ? [
-          { start: Math.round(totalFrames * 0.15), end: Math.round(totalFrames * 0.45), text: 'pick {Kiwi} from {desktop}', color: '#2563eb' },
-          { start: Math.round(totalFrames * 0.55), end: Math.round(totalFrames * 0.85), text: 'place {Kiwi} on {Fruit Bowl}', color: '#16a34a' }
-        ] : []
+        segments: annoStatus === '已标注' ? (
+          isDual ? [
+            { start: Math.round(totalFrames * 0.15), end: Math.round(totalFrames * 0.45), text: 'pick {Kiwi} from {desktop}', color: '#2563eb' },
+            { start: Math.round(totalFrames * 0.55), end: Math.round(totalFrames * 0.85), text: 'place {Kiwi} on {Fruit Bowl}', color: '#16a34a' }
+          ] : [
+            { start: Math.round(totalFrames * 0.1), end: Math.round(totalFrames * 0.4), text: '右手从置物架抓取药品到药房工作台', color: '#13c2c2' },
+            { start: Math.round(totalFrames * 0.5), end: Math.round(totalFrames * 0.9), text: '双手从台面上方放置托盘到桌子', color: '#1890ff' }
+          ]
+        ) : []
       };
     });
   });
@@ -87,18 +93,40 @@ export default function AnnotationAuditEpisodeListPage() {
   const [isCopying, setIsCopying] = useState(false);
   const [copyProgress, setCopyProgress] = useState(0);
 
-  // Define a preset template as a fallback
-  const defaultSystemTemplate = {
+  // Dynamic template properties based on active selection type
+  const getActiveBatchType = () => {
+    if (selectedRows.length === 0) return '语义标注';
+    return selectedRows[0].annoType;
+  };
+
+  const activeBatchType = getActiveBatchType();
+
+  const annotatedTemplates = episodes.filter(ep => 
+    ep.annoStatus === '已标注' && 
+    ep.annoType === activeBatchType && 
+    ep.segments && 
+    ep.segments.length > 0
+  );
+
+  const defaultSystemTemplate = activeBatchType === '语义标注' ? {
     id: 'SYSTEM_PRESET',
-    taskName: '系统预设示范场景',
+    taskName: '系统预设语义模版 (双臂)',
+    annoType: '语义标注',
     totalFrames: 120,
     segments: [
       { start: 18, end: 54, text: 'pick {Kiwi} from {desktop}', color: '#2563eb' },
       { start: 66, end: 102, text: 'place {Kiwi} on {Fruit Bowl}', color: '#16a34a' }
     ]
+  } : {
+    id: 'SYSTEM_PRESET',
+    taskName: '系统预设范围模版 (单臂)',
+    annoType: '范围标注',
+    totalFrames: 120,
+    segments: [
+      { start: 15, end: 45, text: '右手从置物架抓取药品到药房工作台', color: '#13c2c2' },
+      { start: 55, end: 95, text: '双手从台面上方放置托盘到桌子', color: '#1890ff' }
+    ]
   };
-
-  const annotatedTemplates = episodes.filter(ep => ep.annoStatus === '已标注' && ep.segments && ep.segments.length > 0);
 
   const getSelectedTemplate = () => {
     if (batchTemplateId === 'SYSTEM_PRESET') return defaultSystemTemplate;
@@ -159,7 +187,7 @@ export default function AnnotationAuditEpisodeListPage() {
 
           setEpisodes(prevEpisodes => {
             return prevEpisodes.map(ep => {
-              if (selectedRowKeys.includes(ep.key) && ep.id !== template.id) {
+              if (selectedRowKeys.includes(ep.key) && ep.id !== template.id && ep.annoType === activeType) {
                 const adjustedSegments = applyStrategy(
                   template.segments,
                   batchStrategy,
@@ -182,7 +210,7 @@ export default function AnnotationAuditEpisodeListPage() {
             setIsBatchModalOpen(false);
             setSelectedRowKeys([]);
             setSelectedRows([]);
-            message.success('时序适配批量复制已成功完成！');
+            message.success(`已批量适配复制 ${activeType} 标注数据！`);
           }, 300);
 
           return 100;
@@ -248,6 +276,21 @@ export default function AnnotationAuditEpisodeListPage() {
     { title: 'ID', dataIndex: 'id', key: 'id', width: 90, render: (t) => <Text style={{ fontFamily: 'monospace', color: '#1677ff' }}>{t}</Text> },
     { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 120 },
     { title: '实例', dataIndex: 'instance', key: 'instance', width: 160, ellipsis: true },
+    { 
+      title: '采集设备', 
+      dataIndex: 'device', 
+      width: 220, 
+      ellipsis: true,
+      render: (d) => {
+        const isDual = d.includes('双臂');
+        return (
+          <Space size={4}>
+            <Badge status={isDual ? 'processing' : 'warning'} />
+            <Text strong={isDual} style={{ color: isDual ? '#0958d9' : '#d46b08' }}>{d}</Text>
+          </Space>
+        );
+      }
+    },
     { title: '标注任务名', dataIndex: 'annoTaskName', width: 180, ellipsis: true },
     {
       title: '标注类型', dataIndex: 'annoType', width: 110, align: 'center',

@@ -1238,10 +1238,7 @@ export default function AnnotationAuditWorkspacePage() {
             </Space>
             <Divider orientation="vertical" style={{ height: 16, margin: 0 }} />
             <Radio.Group size="small" value={annoType} onChange={(e) => setAnnoType(e.target.value)} buttonStyle="solid">
-              <Radio.Button value="框标注">框标注</Radio.Button>
-              <Radio.Button value="点标注">点标注</Radio.Button>
               <Radio.Button value="范围标注">范围标注</Radio.Button>
-              <Radio.Button value="范围&框标注">范围&框</Radio.Button>
               <Radio.Button value="语义标注">语义标注 (Q/R)</Radio.Button>
             </Radio.Group>
             <Divider orientation="vertical" />
