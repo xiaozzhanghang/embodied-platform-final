@@ -1529,7 +1529,25 @@ export default function AnnotationAuditWorkspacePage() {
                   <Space>
                     <span style={{ fontSize: 12, color: '#64748b' }}>动作步骤 ({steps.length})</span>
                     {showDevNotes && (
-                      <Badge count="交互 ①" style={{ backgroundColor: '#1677ff', fontSize: 9, transform: 'scale(0.8)', margin: 0 }} />
+                      <Badge 
+                        count="交互 ①" 
+                        style={{ backgroundColor: '#1677ff', fontSize: 9, transform: 'scale(0.8)', margin: 0, cursor: 'pointer' }} 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          Modal.info({
+                            title: '💡 交互点 ①: 动作步骤选择与高亮规范',
+                            width: 520,
+                            content: (
+                              <div style={{ fontSize: '12px', lineHeight: '1.6', marginTop: 10, fontFamily: 'sans-serif' }}>
+                                <p style={{ marginBottom: 8 }}><strong>1. 选中卡片样式增强：</strong> 选中卡片拥有 <code>5px</code> 宽度的蓝色左边框（<code>border-left</code>）及浅蓝色渐变底色，同时伴有外阴影和文字加粗，确保在长列表中醒目可见。</p>
+                                <p style={{ marginBottom: 8 }}><strong>2. 选中时序段反馈：</strong> 点击右侧卡片后，底部时序轴对应片段自动变高浮起并带有蓝色发光投影，提供极佳的组件间双向反馈感。</p>
+                                <p style={{ marginBottom: 0 }}><strong>3. 时序段反向选中：</strong> 直接点击时序轴上的色块，右侧列表对应卡片会自动被设为选中状态，并触发卡片高亮及自动滚屏。</p>
+                              </div>
+                            ),
+                            okText: '已了解'
+                          });
+                        }}
+                      />
                     )}
                   </Space>
                   <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={handleAddRecordedRange} style={{ fontSize: 10 }}>增加步骤</Button>
@@ -1643,7 +1661,24 @@ export default function AnnotationAuditWorkspacePage() {
                 {isSelected && (
                   <>
                     {showDevNotes && (
-                      <div style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', background: '#1677ff', color: '#fff', fontSize: 8, padding: '1px 4px', borderRadius: 3, whiteSpace: 'nowrap', zIndex: 100, fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          Modal.info({
+                            title: '💡 交互点 ②: 时序轴双滑块拖动与视频跳转',
+                            width: 520,
+                            content: (
+                              <div style={{ fontSize: '12px', lineHeight: '1.6', marginTop: 10, fontFamily: 'sans-serif' }}>
+                                <p style={{ marginBottom: 8 }}><strong>1. 双向手柄调节：</strong> 选中动作步骤后，播放条两端会自动渲染蓝色垂直微调手柄。支持鼠标/手势按住直接拖动，分别实时修改开始帧或结束帧。</p>
+                                <p style={{ marginBottom: 8 }}><strong>2. 双向数据绑定：</strong> 拖动滑块时，右侧卡片输入框中的数值实时变化；若用户手动在右侧输入框修改数值，播放轴滑块坐标也等比例自动重绘。</p>
+                                <p style={{ marginBottom: 0 }}><strong>3. 首帧对齐定位：</strong> 点击时序轴上的任何片段色块时，除了选中步骤，视频进度（Playhead）还会自动跳播对齐到该片段的起始帧（<code>startFrame</code>），方便迅速校验目标画面。</p>
+                              </div>
+                            ),
+                            okText: '已了解'
+                          });
+                        }}
+                        style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', background: '#1677ff', color: '#fff', fontSize: 8, padding: '1px 4px', borderRadius: 3, whiteSpace: 'nowrap', zIndex: 100, fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', cursor: 'pointer' }}
+                      >
                         交互 ②
                       </div>
                     )}
