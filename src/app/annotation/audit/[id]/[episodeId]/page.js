@@ -1539,19 +1539,88 @@ export default function AnnotationAuditWorkspacePage() {
             setCurrentFrame(Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames))));
           }}
         >
-          {steps.map(step => (
-            <div 
-              key={step.id} 
-              style={{
-                position: 'absolute',
-                left: `${(step.startFrame / totalFrames) * 100}%`,
-                width: `${((step.endFrame - step.startFrame) / totalFrames) * 100}%`,
-                height: '100%',
-                background: step.color,
-                opacity: selectedStepId === step.id ? 0.9 : 0.4
-              }}
-            />
-          ))}
+          {steps.map(step => {
+            const isSelected = selectedStepId === step.id;
+            return (
+              <div 
+                key={step.id} 
+                style={{
+                  position: 'absolute',
+                  left: `${(step.startFrame / totalFrames) * 100}%`,
+                  width: `${((step.endFrame - step.startFrame) / totalFrames) * 100}%`,
+                  height: '100%',
+                  background: step.color,
+                  opacity: isSelected ? 0.95 : 0.4,
+                  borderRadius: '2px'
+                }}
+              >
+                {/* Drag handles for selected step */}
+                {isSelected && (
+                  <>
+                    {/* Left Handle (Start Frame) */}
+                    <div 
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        setDraggingHandle('start');
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        setDraggingHandle('start');
+                      }}
+                      style={{
+                        position: 'absolute',
+                        left: -4,
+                        top: -3,
+                        width: 8,
+                        height: '26px',
+                        background: '#1677ff',
+                        border: '1.5px solid #fff',
+                        borderRadius: '3px',
+                        cursor: 'col-resize',
+                        zIndex: 15,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <div style={{ width: 1, height: 10, background: '#fff' }} />
+                    </div>
+
+                    {/* Right Handle (End Frame) */}
+                    <div 
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        setDraggingHandle('end');
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        setDraggingHandle('end');
+                      }}
+                      style={{
+                        position: 'absolute',
+                        right: -4,
+                        top: -3,
+                        width: 8,
+                        height: '26px',
+                        background: '#1677ff',
+                        border: '1.5px solid #fff',
+                        borderRadius: '3px',
+                        cursor: 'col-resize',
+                        zIndex: 15,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <div style={{ width: 1, height: 10, background: '#fff' }} />
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
           <div style={{ position: 'absolute', left: `${(currentFrame / totalFrames) * 100}%`, top: 0, width: 3, height: '100%', background: '#ef4444' }} />
         </div>
 
