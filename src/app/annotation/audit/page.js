@@ -22,6 +22,13 @@ const taskbooks = ['TB-抓取红色方块', 'TB-餐盘整理', 'TB-垃圾分类'
 const taskTypes = ['垃圾清理', '餐盘整理', '物品搬运', '工具使用'];
 const people = ['张三', '李四', '王五', '赵六', '钱七', '孙八'];
 
+// 设备类型选项
+const DEVICE_TYPES = ['galbot', '鹿鸣', '真机', '仿真机'];
+// 采集模式选项
+const COLLECTION_MODES = ['UMI', 'galbot', '标准采集'];
+// 遥操类型选项
+const REMOTE_CONTROL_TYPES = ['双设备', '单设备', '遥操'];
+
 function makeProgress(total, type) {
   if (type === 'full') return total;
   if (type === 'partial') return Math.floor(total * (0.3 + Math.random() * 0.5));
@@ -36,6 +43,9 @@ const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
   const annoDone = makeProgress(annoTotal, i < 5 ? 'full' : i < 12 ? 'partial' : 'zero');
   const auditDone = makeProgress(annoDone, i < 3 ? 'partial' : 'zero');
   const taskStatus = i < 3 ? '已完成' : i < 12 ? '进行中' : i < 16 ? '待分配' : '暂停';
+  const deviceType = DEVICE_TYPES[i % DEVICE_TYPES.length];
+  const collectionMode = COLLECTION_MODES[i % COLLECTION_MODES.length];
+  const remoteControlType = REMOTE_CONTROL_TYPES[i % REMOTE_CONTROL_TYPES.length];
 
   return {
     key: i,
@@ -45,6 +55,7 @@ const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
     taskId: 21795 - Math.floor(i / 2),
     instanceId: 19884 - i,
     taskName: `${taskTypes[i % taskTypes.length]}_任务_${String(i + 1).padStart(3, '0')}`,
+    taskNameEn: `Task_${taskTypes[i % taskTypes.length]}_${String(i + 1).padStart(3, '0')}`,
     annoTaskName: `${taskTypes[i % taskTypes.length]}_标注_${people[i % people.length]}`,
     dataCount,
     dataMinutes: (dataCount * 0.5 / 60).toFixed(1),
@@ -52,6 +63,12 @@ const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
     isShelfTask: i % 3 === 0 ? '是' : '否',
     rowCol: `R${Math.floor(i / 4) + 1}C${(i % 4) + 1}`,
     deviceSN: `SN-${String(2024001 + i)}`,
+    deviceType,
+    collectionMode,
+    remoteControlType,
+    taskUsage: i % 2 === 0 ? 'OfficialCollection(正式采集)' : 'TrialCollection(试用采集)',
+    sceneCategory: i % 2 === 0 ? '真实数据' : '模拟数据',
+    subSceneCategory: ['UMI工业', 'UMI家居', 'UMI物流', 'UMI医疗'][i % 4],
     qaer: people[(i + 1) % people.length],
     annotator: people[i % people.length],
     auditor: people[(i + 2) % people.length],
@@ -148,26 +165,12 @@ export default function AnnotationAuditPage() {
       render: (v) => <Progress percent={v} size="small" strokeColor={v === 100 ? '#52c41a' : '#1677ff'} style={{ margin: 0 }} />
     },
     {
-      title: '标注进度', key: 'annoProgressBar', width: 120,
-      render: (_, r) => {
-        const pct = r.annoTotal > 0 ? Math.round(r.annoProgress / r.annoTotal * 100) : 0;
-        return (
-          <Tooltip title={`${r.annoProgress} / ${r.annoTotal}`}>
-            <Progress percent={pct} size="small" strokeColor={pct === 100 ? '#52c41a' : '#1677ff'} format={() => `${r.annoProgress}/${r.annoTotal}`} style={{ margin: 0 }} />
-          </Tooltip>
-        );
-      }
+      title: '标注进度(数量)', key: 'annoProgressBar', width: 100, align: 'center',
+      render: (_, r) => <Text style={{ fontFamily: 'monospace' }}>{r.annoProgress}/{r.annoTotal}</Text>
     },
     {
-      title: '审核进度', key: 'auditProgressBar', width: 120,
-      render: (_, r) => {
-        const pct = r.auditTotal > 0 ? Math.round(r.auditProgress / r.auditTotal * 100) : 0;
-        return (
-          <Tooltip title={`${r.auditProgress} / ${r.auditTotal}`}>
-            <Progress percent={pct} size="small" strokeColor={pct === 100 ? '#52c41a' : '#722ed1'} format={() => `${r.auditProgress}/${r.auditTotal}`} style={{ margin: 0 }} />
-          </Tooltip>
-        );
-      }
+      title: '审核进度(数量)', key: 'auditProgressBar', width: 100, align: 'center',
+      render: (_, r) => <Text style={{ fontFamily: 'monospace' }}>{r.auditProgress}/{r.auditTotal}</Text>
     },
     {
       title: '标注类型', dataIndex: 'annoType', width: 110, align: 'center',
@@ -215,7 +218,6 @@ export default function AnnotationAuditPage() {
           }}
         >
           <ProFormSelect name="project" label="一级项目" placeholder="请选择" options={projectNames.map(n => ({ label: n, value: n }))} />
-          <ProFormSelect name="p2" label="二级项目" placeholder="请选择" />
           <ProFormSelect name="taskbook" label="任务书" placeholder="请选择" options={taskbooks.map(n => ({ label: n, value: n }))} />
           <ProFormText name="name" label="任务名称" placeholder="请输入" />
           <ProFormText name="taskId" label="任务ID/实例ID" placeholder="请输入" />
@@ -245,14 +247,14 @@ export default function AnnotationAuditPage() {
         styles={{ body: { padding: 0 } }} 
         style={{ borderRadius: 4 }}
       >
-        <Table 
+        <Table
           rowSelection={rowSelection}
-          columns={columns} 
-          dataSource={filteredData} 
+          columns={columns}
+          dataSource={filteredData}
           scroll={{ x: 3200 }}
           size="small"
-          pagination={{ 
-            pageSize: 20, 
+          pagination={{
+            pageSize: 20,
             showTotal: (t) => `共 ${t} 条`,
             showSizeChanger: true,
             pageSizeOptions: ['10', '20', '50', '100']

@@ -20,67 +20,95 @@ const ANNO_TYPE_COLORS = {
 const mockData = [
   {
     key: '1',
-    annoId: 'ANNO-778891',
-    name: 'FRANKA-FR3-抓取红色方块-001',
-    annoType: '框标注',
-    taskId: 'CT-20250301001',
+    taskId: '2067066846211522561',
+    taskName: '货架包裹分拣_01',
+    taskbook: '货架包裹扫码、抓取与倒框任务书',
+    taskNameEn: 'RealMan Logistics Parcel Picking Task 01',
     project: 'SimulatedCollection',
-    annoer: '标注员X',
-    reviewer: '审核员Y',
+    subSceneCategory: 'UMI工业',
+    deviceType: 'galbot',
+    taskUsage: 'OfficialCollection(正式采集)',
+    sceneCategory: '真实数据',
+    collectionMode: 'UMI',
+    remoteControlType: '双设备',
+    annoType: '框标注',
+    planCount: 100,
     status: '标注中',
     qaProgress: 100,
     annoProgress: 60,
     reviewProgress: 0,
     dataAmount: 153,
-    createTime: '2025-03-02 09:00',
+    creator: 'system',
+    createTime: '2026-06-17 10:08:35',
   },
   {
     key: '2',
-    annoId: 'ANNO-992210',
-    name: 'UR5-放置杯子-022',
-    annoType: '点标注',
-    taskId: 'CT-20250305022',
+    taskId: '2067066846127636482',
+    taskName: '零部件装配_01',
+    taskbook: '流水线精密零件插拔与装配任务书',
+    taskNameEn: 'Likong Assembly Pin Task 01',
     project: 'VLA-Data-Lab',
-    annoer: '标注员M',
-    reviewer: '审核员N',
+    subSceneCategory: 'UMI工业',
+    deviceType: '鹿鸣',
+    taskUsage: 'OfficialCollection(正式采集)',
+    sceneCategory: '真实数据',
+    collectionMode: 'UMI',
+    remoteControlType: '双设备',
+    annoType: '点标注',
+    planCount: 200,
     status: '已完成',
     qaProgress: 100,
     annoProgress: 100,
     reviewProgress: 100,
     dataAmount: 2000,
-    createTime: '2025-03-03 14:30',
+    creator: 'system',
+    createTime: '2026-06-17 10:08:35',
   },
   {
     key: '3',
-    annoId: 'ANNO-881122',
-    name: 'G1-整理厨具-007',
-    annoType: '范围&框标注',
-    taskId: 'CT-20250308007',
+    taskId: '2067066846018584578',
+    taskName: '快递拆封取出_01',
+    taskbook: '快递包裹拆封与内部物品取出任务书',
+    taskNameEn: 'Zhidongli Package Opening Task 01',
     project: 'Kitchen-Action-Set',
-    annoer: null,
-    reviewer: null,
+    subSceneCategory: 'UMI物流',
+    deviceType: 'galbot',
+    taskUsage: 'TrialCollection(试用采集)',
+    sceneCategory: '模拟数据',
+    collectionMode: 'galbot',
+    remoteControlType: '单设备',
+    annoType: '范围&框标注',
+    planCount: 150,
     status: '待分配',
     qaProgress: 100,
     annoProgress: 0,
     reviewProgress: 0,
     dataAmount: 480,
-    createTime: '2025-03-08 11:00',
+    creator: 'admin',
+    createTime: '2026-06-18 11:00:00',
   },
   {
     key: '4',
-    annoId: 'ANNO-663344',
-    name: 'G1-搬运纸箱-015',
-    annoType: '无需标注',
-    taskId: 'CT-20250310015',
+    taskId: '2067066845917921281',
+    taskName: '冰箱食物冷藏_01',
+    taskbook: '智能冰箱冷藏室食物收纳任务书',
+    taskNameEn: 'Luming Fridge Food Stocking Task 01',
     project: 'Logistics-Dataset',
-    annoer: '标注员A',
-    reviewer: null,
+    subSceneCategory: 'UMI家居',
+    deviceType: '鹿鸣',
+    taskUsage: 'OfficialCollection(正式采集)',
+    sceneCategory: '真实数据',
+    collectionMode: 'UMI',
+    remoteControlType: '双设备',
+    annoType: '无需标注',
+    planCount: 180,
     status: '审核中',
     qaProgress: 100,
     annoProgress: 100,
     reviewProgress: 45,
     dataAmount: 720,
-    createTime: '2025-03-10 09:30',
+    creator: 'system',
+    createTime: '2026-06-19 09:30:00',
   },
 ];
 
@@ -106,10 +134,12 @@ export default function AnnotationProjectsPage() {
 
   const filteredData = React.useMemo(() => {
     return mockData.filter(item => {
-      const nameMatch = !filters.name || item.name.toLowerCase().includes(filters.name.toLowerCase()) || item.annoId.toLowerCase().includes(filters.name.toLowerCase());
+      const nameMatch = !filters.name || item.taskName.toLowerCase().includes(filters.name.toLowerCase()) || item.taskId.toLowerCase().includes(filters.name.toLowerCase());
       const typeMatch = !filters.annoType || item.annoType === filters.annoType;
       const statusMatch = !filters.status || item.status === filters.status;
-      return nameMatch && typeMatch && statusMatch;
+      const deviceMatch = !filters.deviceType || item.deviceType === filters.deviceType;
+      const subSceneMatch = !filters.subSceneCategory || item.subSceneCategory === filters.subSceneCategory;
+      return nameMatch && typeMatch && statusMatch && deviceMatch && subSceneMatch;
     });
   }, [filters]);
 
@@ -128,18 +158,19 @@ export default function AnnotationProjectsPage() {
 
   const columns = [
     {
-      title: '标注ID',
-      dataIndex: 'annoId',
-      key: 'annoId',
-      width: 130,
-      render: (v) => <Text code style={{ fontSize: 12 }}>{v}</Text>,
+      title: '任务ID',
+      dataIndex: 'taskId',
+      key: 'taskId',
+      width: 160,
+      render: (v) => <Text style={{ color: '#1677ff', fontFamily: 'monospace', fontSize: 12 }}>{v}</Text>,
     },
     {
       title: '任务名称',
-      dataIndex: 'name',
-      key: 'name',
-      width: 230,
+      dataIndex: 'taskName',
+      key: 'taskName',
+      width: 180,
       ellipsis: true,
+      fixed: 'left',
       render: (v, r) => (
         <Button type="link" style={{ padding: 0, textAlign: 'left', height: 'auto' }} onClick={() => { setSelectedRecord(r); setDetailOpen(true); }}>
           {v}
@@ -147,52 +178,108 @@ export default function AnnotationProjectsPage() {
       ),
     },
     {
+      title: '英文名称',
+      dataIndex: 'taskNameEn',
+      key: 'taskNameEn',
+      width: 200,
+      ellipsis: true,
+      render: (v) => <Text type="secondary" style={{ fontSize: 11 }}>{v}</Text>,
+    },
+    {
+      title: '任务书',
+      dataIndex: 'taskbook',
+      key: 'taskbook',
+      width: 200,
+      ellipsis: true,
+    },
+    {
+      title: '子场景分类',
+      dataIndex: 'subSceneCategory',
+      key: 'subSceneCategory',
+      width: 110,
+      align: 'center',
+      render: (v) => <Tag color="blue">{v}</Tag>,
+    },
+    {
+      title: '设备类型',
+      dataIndex: 'deviceType',
+      key: 'deviceType',
+      width: 100,
+      align: 'center',
+      render: (v) => <Tag color={v === 'galbot' ? 'orange' : v === '鹿鸣' ? 'green' : 'default'}>{v}</Tag>,
+    },
+    {
+      title: '任务用途',
+      dataIndex: 'taskUsage',
+      key: 'taskUsage',
+      width: 180,
+      ellipsis: true,
+      render: (v) => <Text type="secondary" style={{ fontSize: 11 }}>{v}</Text>,
+    },
+    {
+      title: '场景分类',
+      dataIndex: 'sceneCategory',
+      key: 'sceneCategory',
+      width: 100,
+      align: 'center',
+      render: (v) => <Tag color={v === '真实数据' ? 'green' : 'cyan'}>{v}</Tag>,
+    },
+    {
+      title: '采集模式',
+      dataIndex: 'collectionMode',
+      key: 'collectionMode',
+      width: 100,
+      align: 'center',
+    },
+    {
+      title: '遥操类型',
+      dataIndex: 'remoteControlType',
+      key: 'remoteControlType',
+      width: 90,
+      align: 'center',
+    },
+    {
       title: '标注类型',
       dataIndex: 'annoType',
       key: 'annoType',
-      width: 120,
+      width: 110,
       render: (t) => <Tag color={ANNO_TYPE_COLORS[t]}>{t}</Tag>,
+    },
+    {
+      title: '计划采集',
+      dataIndex: 'planCount',
+      key: 'planCount',
+      width: 80,
+      align: 'right',
+      render: (v) => <Text strong>{v}</Text>,
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 100,
+      width: 90,
       render: (s) => {
         const cfg = statusConfig[s] || {};
         return <Badge status={cfg.color || 'default'} text={s} />;
       },
     },
     {
-      title: '标注员',
-      dataIndex: 'annoer',
-      key: 'annoer',
-      width: 110,
-      render: (v, r) => v
-        ? <Space size={4}><UserOutlined style={{ color: '#1677ff' }} /><span>{v}</span></Space>
-        : <Button size="small" type="dashed" icon={<UserOutlined />} onClick={() => openAssign(r)}>待分配</Button>,
-    },
-    {
-      title: '审核员',
-      dataIndex: 'reviewer',
-      key: 'reviewer',
-      width: 110,
-      render: (v, r) => v
-        ? <Space size={4}><UserOutlined style={{ color: '#52c41a' }} /><span>{v}</span></Space>
-        : <Button size="small" type="dashed" icon={<UserOutlined />} onClick={() => openAssign(r)}>待分配</Button>,
-    },
-    {
       title: '标注进度',
       key: 'progress',
-      width: 180,
+      width: 120,
       render: (_, r) => (
-        <Tooltip title={`标注 ${r.annoProgress}% | 审核 ${r.reviewProgress}%`}>
-          <div>
-            <div style={{ fontSize: 11, color: '#999', marginBottom: 2 }}>标注</div>
-            <Progress percent={r.annoProgress} size="small" strokeColor="#1677ff" showInfo={false} />
-            <div style={{ fontSize: 11, color: '#999', marginTop: 4, marginBottom: 2 }}>审核</div>
-            <Progress percent={r.reviewProgress} size="small" strokeColor="#52c41a" showInfo={false} />
-          </div>
+        <Tooltip title={`标注 ${r.annoProgress}%`}>
+          <Progress percent={r.annoProgress} size="small" strokeColor={r.annoProgress === 100 ? '#52c41a' : '#1677ff'} style={{ margin: 0 }} />
+        </Tooltip>
+      ),
+    },
+    {
+      title: '审核进度',
+      key: 'reviewProgress',
+      width: 120,
+      render: (_, r) => (
+        <Tooltip title={`审核 ${r.reviewProgress}%`}>
+          <Progress percent={r.reviewProgress} size="small" strokeColor={r.reviewProgress === 100 ? '#52c41a' : '#722ed1'} style={{ margin: 0 }} />
         </Tooltip>
       ),
     },
@@ -204,11 +291,10 @@ export default function AnnotationProjectsPage() {
       render: (v) => `${v} 帧`,
     },
     {
-      title: '所属项目',
-      dataIndex: 'project',
-      key: 'project',
-      width: 160,
-      ellipsis: true,
+      title: '创建人',
+      dataIndex: 'creator',
+      key: 'creator',
+      width: 80,
     },
     {
       title: '创建时间',
@@ -277,7 +363,9 @@ export default function AnnotationProjectsPage() {
             setFilters({});
           }}
         >
-          <ProFormText name="name" label="任务名称" placeholder="请输入" />
+          <ProFormText name="name" label="任务名称/ID" placeholder="请输入任务名称或任务ID" />
+          <ProFormSelect name="subSceneCategory" label="子场景分类" placeholder="请选择" options={['UMI工业', 'UMI家居', 'UMI物流', 'UMI医疗'].map(v => ({ value: v, label: v }))} />
+          <ProFormSelect name="deviceType" label="设备类型" placeholder="请选择" options={[{ value: 'galbot', label: 'galbot' }, { value: '鹿鸣', label: '鹿鸣' }, { value: '真机', label: '真机' }, { value: '仿真机', label: '仿真机' }]} />
           <ProFormSelect name="annoType" label="标注类型" placeholder="全部" options={Object.keys(ANNO_TYPE_COLORS).map(v => ({ value: v, label: v }))} />
           <ProFormSelect name="status" label="标注状态" placeholder="全部" options={Object.keys(statusConfig).map(v => ({ value: v, label: v }))} />
         </QueryFilter>
@@ -291,7 +379,7 @@ export default function AnnotationProjectsPage() {
         <Table
           columns={columns}
           dataSource={filteredData}
-          scroll={{ x: 1600 }}
+          scroll={{ x: 2800 }}
           pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }}
           rowClassName={(r) => r.status === '待分配' ? 'row-pending' : ''}
         />
@@ -299,7 +387,7 @@ export default function AnnotationProjectsPage() {
 
       {/* Assign Modal */}
       <Modal
-        title={`分配人员 — ${selectedRecord?.name || ''}`}
+        title={`分配人员 — ${selectedRecord?.taskName || ''}`}
         open={assignOpen}
         onCancel={() => setAssignOpen(false)}
         onOk={handleAssign}

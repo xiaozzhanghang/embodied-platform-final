@@ -4,11 +4,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { 
   Button, Tag, Space, Typography, App, Badge, Divider, Select, 
-  Input, Row, Col, Progress, Switch, Tooltip, Radio, Card, List, Form, Modal, Checkbox
+  Input, Row, Col, Progress, Switch, Tooltip, Radio, Card, List, Form, Modal, Checkbox, InputNumber
 } from 'antd';
 import { 
-  CloseOutlined, SearchOutlined, ReloadOutlined, AuditOutlined, EyeOutlined, 
-  CheckCircleOutlined, FullscreenOutlined, PlayCircleOutlined, 
+  CloseOutlined, SearchOutlined, ReloadOutlined, AuditOutlined, EyeOutlined,
+  CheckCircleOutlined, FullscreenOutlined, FullscreenExitOutlined, PlayCircleOutlined, 
   CheckOutlined, InfoCircleOutlined, SelectOutlined, BorderOutlined, AimOutlined, 
   VideoCameraOutlined, LeftOutlined, RightOutlined, PauseOutlined, StepBackwardOutlined, 
   StepForwardOutlined, CaretRightOutlined, CaretLeftOutlined, UndoOutlined, 
@@ -67,11 +67,56 @@ useEffect(() => {
     }
   }, [searchParams, instanceId]);
 
+  // Episode list for auto-navigation (mirrors list page data)
+  const allEpisodeIds = Array.from({ length: 20 }, (_, i) => ({
+    id: 744101 + i,
+    annoType: i % 2 === 0 ? '语义标注' : '范围标注',
+  }));
+
+  // Complete annotation and auto-navigate to next episode
+  const handleCompleteAnnotation = () => {
+    const currentIdx = allEpisodeIds.findIndex(ep => String(ep.id) === String(episodeId));
+    const nextEp = currentIdx >= 0 ? allEpisodeIds[currentIdx + 1] : null;
+    if (nextEp) {
+      message.success(`标注完成！自动跳转到下一条数据 #${nextEp.id}...`);
+      setTimeout(() => {
+        router.push(`/annotation/audit/${instanceId}/${nextEp.id}?type=${encodeURIComponent(nextEp.annoType)}&mode=annotate`);
+      }, 600);
+    } else {
+      message.success('所有数据标注完成！返回列表页');
+      setTimeout(() => {
+        router.push(`/annotation/audit/${instanceId}`);
+      }, 600);
+    }
+  };
+
   // Video State
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentFrame, setCurrentFrame] = useState(50);
+  const [currentFrame, setCurrentFrame] = useState(30);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenCamera, setFullscreenCamera] = useState('camera_head_left_color');
   const totalFrames = 120; 
+
+  // Playback timer simulation
+  useEffect(() => {
+    let intervalId;
+    if (isPlaying) {
+      const intervalMs = 33 / playbackSpeed; // ~30 fps simulation
+      intervalId = setInterval(() => {
+        setCurrentFrame((prev) => {
+          if (prev >= totalFrames) {
+            setIsPlaying(false);
+            return totalFrames;
+          }
+          return prev + 1;
+        });
+      }, intervalMs);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isPlaying, playbackSpeed, totalFrames]);
 
   // Format dynamic epoch timestamp based on current frame: 2024/10/23 16:25:37.985
   const getDynamicTimestamp = (frame) => {
@@ -126,11 +171,50 @@ useEffect(() => {
     { id: 9, text: '左手从桌子拿起餐刀到台面上方', startFrame: 110, endFrame: 120, total: 11, status: 'success', color: '#722ed1' }
   ]);
   const [controllerQuality, setControllerQuality] = useState('success');
-  const [activeTabKey, setActiveTabKey] = useState('1'); 
+  const [activeTabKey, setActiveTabKey] = useState('1');
   const timelineRef = useRef(null);
+  const semanticTimelineRef = useRef(null);
   const [draggingHandle, setDraggingHandle] = useState(null);
-  const [draggingSegmentId, setDraggingSegmentId] = useState(null); 
+  const [draggingSegmentId, setDraggingSegmentId] = useState(null);
   const [showDevNotes, setShowDevNotes] = useState(false);
+
+  // Use a single ref object for drag state - updated synchronously to avoid stale closures
+  const dragStateRef = useRef({
+    handle: null,
+    segmentId: null,
+    selectedStepId: null,
+    timelineRect: null
+  });
+
+  // Keep dragStateRef in sync with state
+  useEffect(() => {
+    dragStateRef.current.handle = draggingHandle;
+  }, [draggingHandle]);
+
+  useEffect(() => {
+    dragStateRef.current.segmentId = draggingSegmentId;
+  }, [draggingSegmentId]);
+
+  useEffect(() => {
+    dragStateRef.current.selectedStepId = selectedStepId;
+  }, [selectedStepId]);
+
+  // Refs for synchronous access in mousemove handlers
+  const draggingHandleRef = useRef(null);
+  const draggingSegmentIdRef = useRef(null);
+  const selectedStepIdRef = useRef(selectedStepId);
+
+  useEffect(() => {
+    selectedStepIdRef.current = selectedStepId;
+  }, [selectedStepId]);
+
+  // Synchronously set refs + state together so mousemove reads correct values immediately
+  const startDrag = (segId, handle) => {
+    draggingHandleRef.current = handle;
+    draggingSegmentIdRef.current = segId;
+    setDraggingHandle(handle);
+    setDraggingSegmentId(segId);
+  };
 
   // 4. Grid Cameras active switches mapping (Used for both Range mode and Semantic 2x2 mode)
   const [gridCameras, setGridCameras] = useState({
@@ -141,8 +225,9 @@ useEffect(() => {
   });
 
   // 5. Semantic Temporal Annotation specific states
-  const [newRangeStart, setNewRangeStart] = useState(0);
+  const [newRangeStart, setNewRangeStart] = useState(30);
   const [newRangeEnd, setNewRangeEnd] = useState(30);
+  const [isRecording, setIsRecording] = useState(false);
   const [semanticSegments, setSemanticSegments] = useState([
     { id: 1, start: 0, end: 15, text: '从 桌面 捡起 箱子', enText: 'pick box from desktop', color: '#13c2c2' },
     { id: 2, start: 15, end: 30, text: '从 桌面 捡起 猕猴桃', enText: 'pick Kiwi from desktop', color: '#722ed1' }
@@ -159,8 +244,24 @@ useEffect(() => {
   const [selectedTarget, setSelectedTarget] = useState('desktop');
   const [selectedOptions, setSelectedOptions] = useState(['右手']);
 
-  // Predefined custom dropdown items
-  const objectDropdownList = [
+  // Predefined lists as component states for dynamic expansion
+  const [skillOptions, setSkillOptions] = useState([
+    { value: 'pick {A} from {B}', label: 'pick {A} from {B}\n从 {B} 捡起 {A}' },
+    { value: 'place {A} on {B}', label: 'place {A} on {B}\n放置 {A} 到 {B}' },
+    { value: 'move {A} to {B}', label: 'move {A} to {B}\n移动 {A} 到 {B}' },
+    { value: '{A} wipe {B}', label: '{A} wipe {B}\n用 {A} 擦拭 {B}' },
+    { value: 'turn {A}', label: 'turn {A}\n转动 {A}' }
+  ]);
+
+  const [objectOptions, setObjectOptions] = useState([
+    { value: 'box', label: 'box\n箱子' },
+    { value: 'Kiwi', label: 'Kiwi\n猕猴桃' },
+    { value: 'Fruit Bowl', label: 'Fruit Bowl\n果盘' },
+    { value: 'book', label: 'book\n书' },
+    { value: 'small pack of beer', label: 'small pack of beer\n小包装啤酒' }
+  ]);
+
+  const [objectDropdownList, setObjectDropdownList] = useState([
     { label: '彩色杯子', value: 'colored cup' },
     { label: 'Brush (刷子)', value: 'Brush' },
     { label: 'Colored spoons (彩色勺子)', value: 'Colored spoons' },
@@ -169,15 +270,132 @@ useEffect(() => {
     { label: 'Strawberry (草莓)', value: 'Strawberry' },
     { label: 'Cheerilee (车厘子)', value: 'Cheerilee' },
     { label: 'Fig (无花果)', value: 'Fig' }
-  ];
+  ]);
 
-  const targetDropdownList = [
-    { label: 'desktop (桌面)', value: 'desktop' },
-    { label: 'shelves (货架)', value: 'shelves' },
-    { label: 'bookshelf (书架)', value: 'bookshelf' },
-    { label: 'table (桌子)', value: 'table' },
-    { label: 'Fruit Bowl (果盘)', value: 'Fruit Bowl' }
-  ];
+  const [targetOptions, setTargetOptions] = useState([
+    { value: 'desktop', label: 'desktop\n桌面' },
+    { value: 'shelves', label: 'shelves\n货架' },
+    { value: 'bookshelf', label: 'bookshelf\n书架' },
+    { value: 'table', label: 'table\n桌子' },
+    { value: 'Fruit Bowl', label: 'Fruit Bowl\n果盘' }
+  ]);
+
+  const [skillDropdownList, setSkillDropdownList] = useState([
+    { label: 'open {A} (打开)', value: 'open {A}' },
+    { label: 'close {A} (关闭)', value: 'close {A}' },
+    { label: 'insert {A} into {B} (插入)', value: 'insert {A} into {B}' },
+    { label: 'press {A} (按下)', value: 'press {A}' },
+    { label: 'pull {A} (拉出)', value: 'pull {A}' }
+  ]);
+
+  const [targetDropdownList, setTargetDropdownList] = useState([
+    { label: 'sink (水槽)', value: 'sink' },
+    { label: 'drawer (抽屉)', value: 'drawer' },
+    { label: 'cabinet (柜子)', value: 'cabinet' },
+    { label: 'trash can (垃圾桶)', value: 'trash can' },
+    { label: 'floor (地面)', value: 'floor' }
+  ]);
+
+  // Click handlers for adding custom values to dropdowns
+  const handleAddSkill = () => {
+    Modal.confirm({
+      title: '添加自定义技能',
+      icon: <PlusOutlined style={{ color: '#22c55e' }} />,
+      content: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+          <div>
+            <div style={{ fontSize: 12, marginBottom: 4, fontWeight: 'bold' }}>英文技能模板 (如: pick {'{A}'} from {'{B}'})</div>
+            <Input id="newSkillEn" placeholder="英文，可包含占位符" />
+          </div>
+          <div>
+            <div style={{ fontSize: 12, marginBottom: 4, fontWeight: 'bold' }}>中文含义 (如: 从 {'{B}'} 捡起 {'{A}'})</div>
+            <Input id="newSkillCn" placeholder="中文含义，可包含占位符" />
+          </div>
+        </div>
+      ),
+      okText: '添加并选中',
+      cancelText: '取消',
+      onOk: () => {
+        const en = document.getElementById('newSkillEn')?.value;
+        const cn = document.getElementById('newSkillCn')?.value;
+        if (!en) {
+          message.error('英文模板不能为空');
+          return Promise.reject();
+        }
+        const newValue = en;
+        const newLabel = cn ? `${en} (${cn})` : en;
+        setSkillDropdownList(prev => [...prev, { label: newLabel, value: newValue }]);
+        setSelectedSkill(newValue);
+        message.success(`成功添加并自动选中新技能: ${newValue}`);
+      }
+    });
+  };
+
+  const handleAddObject = () => {
+    Modal.confirm({
+      title: '添加自定义对象',
+      icon: <PlusOutlined style={{ color: '#22c55e' }} />,
+      content: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+          <div>
+            <div style={{ fontSize: 12, marginBottom: 4, fontWeight: 'bold' }}>英文名称 (如: Apple)</div>
+            <Input id="newObjEn" placeholder="英文名" />
+          </div>
+          <div>
+            <div style={{ fontSize: 12, marginBottom: 4, fontWeight: 'bold' }}>中文翻译 (如: 苹果)</div>
+            <Input id="newObjCn" placeholder="中文名" />
+          </div>
+        </div>
+      ),
+      okText: '添加并选中',
+      cancelText: '取消',
+      onOk: () => {
+        const en = document.getElementById('newObjEn')?.value;
+        const cn = document.getElementById('newObjCn')?.value;
+        if (!en) {
+          message.error('英文名称不能为空');
+          return Promise.reject();
+        }
+        const newValue = en;
+        setObjectDropdownList(prev => [...prev, { label: cn ? `${cn} (${en})` : en, value: newValue }]);
+        setSelectedObject(newValue);
+        message.success(`成功添加并自动选中新对象: ${newValue}`);
+      }
+    });
+  };
+
+  const handleAddTarget = () => {
+    Modal.confirm({
+      title: '添加自定义目标位置',
+      icon: <PlusOutlined style={{ color: '#22c55e' }} />,
+      content: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+          <div>
+            <div style={{ fontSize: 12, marginBottom: 4, fontWeight: 'bold' }}>英文名称 (如: cabinet)</div>
+            <Input id="newTgtEn" placeholder="英文名" />
+          </div>
+          <div>
+            <div style={{ fontSize: 12, marginBottom: 4, fontWeight: 'bold' }}>中文翻译 (如: 柜子)</div>
+            <Input id="newTgtCn" placeholder="中文名" />
+          </div>
+        </div>
+      ),
+      okText: '添加并选中',
+      cancelText: '取消',
+      onOk: () => {
+        const en = document.getElementById('newTgtEn')?.value;
+        const cn = document.getElementById('newTgtCn')?.value;
+        if (!en) {
+          message.error('英文名称不能为空');
+          return Promise.reject();
+        }
+        const newValue = en;
+        setTargetDropdownList(prev => [...prev, { label: cn ? `${cn} (${en})` : en, value: newValue }]);
+        setSelectedTarget(newValue);
+        message.success(`成功添加并自动选中新目标: ${newValue}`);
+      }
+    });
+  };
 
   // Helper to compile preview text dynamically
   const getCompiledText = () => {
@@ -215,6 +433,8 @@ useEffect(() => {
     const endVal = frameVal !== undefined ? frameVal : currentFrame;
     setNewRangeEnd(endVal);
     setIsAddModalOpen(true);
+    setIsPlaying(false);
+    setIsRecording(false);
     message.info(`🏁 动作停止在 ${endVal} 帧，已唤起新增语义段弹窗`);
   };
 
@@ -253,7 +473,9 @@ useEffect(() => {
       if (e.key === 'q' || e.key === 'Q') {
         e.preventDefault();
         setNewRangeStart(currentFrame);
-        message.info(`🚩 [快捷键 Q] 记录动作起始帧: ${currentFrame}f`);
+        setIsRecording(true);
+        setIsPlaying(true);
+        message.info(`🚩 [快捷键 Q] 记录动作起始帧: ${currentFrame}f，视频已开始播放`);
       } else if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         handleStopAction(currentFrame);
@@ -282,10 +504,19 @@ useEffect(() => {
 
   const [activeCamera, setActiveCamera] = useState('camera_head_left_color');
 
-  // Timeline dragging effect
+  // Timeline dragging effect - useEffect handles adding/removing global listeners
   useEffect(() => {
+    // Always add listeners when component mounts
     const handleMouseMove = (e) => {
-      const rect = timelineRef.current?.getBoundingClientRect();
+      // Check if we're actually dragging
+      const currentHandle = draggingHandleRef.current;
+      const currentSegmentId = draggingSegmentIdRef.current;
+      if (!currentHandle && !currentSegmentId) return;
+
+      // Determine which timeline rect to use based on mode
+      const rect = annoType === '语义标注'
+        ? semanticTimelineRef.current?.getBoundingClientRect()
+        : timelineRef.current?.getBoundingClientRect();
       if (!rect) return;
 
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -293,62 +524,65 @@ useEffect(() => {
       let frame = Math.round(pct * totalFrames);
       frame = Math.max(0, Math.min(totalFrames, frame));
 
-      // Handle segment dragging on semantic timeline
-      if (draggingSegmentId && annoType === '语义标注') {
+      // Handle based on annotation mode
+      // 语义标注 mode: timeline uses semanticTimelineRef and renders semanticSegments
+      // 范围标注 mode: timeline uses timelineRef and renders steps
+      if (annoType === '语义标注' && currentSegmentId) {
+        // Semantic mode - update semanticSegments array (rendered on semanticTimelineRef)
         setSemanticSegments(prev => prev.map(seg => {
-          if (seg.id === draggingSegmentId) {
-            if (draggingHandle === 'start') {
-              return { ...seg, start: Math.max(0, Math.min(frame, seg.end - 1)) };
-            } else if (draggingHandle === 'end') {
-              return { ...seg, end: Math.min(totalFrames, Math.max(frame, seg.start + 1)) };
-            } else if (draggingHandle === 'move') {
-              const len = seg.end - seg.start;
-              const newStart = Math.max(0, Math.min(frame, totalFrames - len));
-              return { ...seg, start: newStart, end: newStart + len };
-            }
+          if (seg.id !== currentSegmentId) return seg;
+          if (currentHandle === 'start') {
+            return { ...seg, start: Math.max(0, Math.min(frame, seg.end - 1)) };
+          } else if (currentHandle === 'end') {
+            return { ...seg, end: Math.min(totalFrames, Math.max(frame, seg.start + 1)) };
+          } else if (currentHandle === 'move') {
+            const len = seg.end - seg.start;
+            const newStart = Math.max(0, Math.min(frame, totalFrames - len));
+            return { ...seg, start: newStart, end: newStart + len };
           }
           return seg;
         }));
-        return;
-      }
-
-      if (!draggingHandle || annoType === '语义标注') return;
-
-      setSteps((prevSteps) => {
-        return prevSteps.map((step) => {
-          if (step.id === selectedStepId) {
-            const updated = { ...step };
-            if (draggingHandle === 'start') {
-              updated.startFrame = Math.max(0, Math.min(frame, step.endFrame - 1));
-            } else if (draggingHandle === 'end') {
-              updated.endFrame = Math.max(step.startFrame + 1, Math.min(totalFrames, frame));
-            }
-            updated.total = updated.endFrame - updated.startFrame;
-            return updated;
+      } else if (annoType === '范围标注') {
+        // Range annotation mode - update steps array (rendered on timelineRef)
+        const targetId = currentSegmentId || selectedStepIdRef.current;
+        setSteps(prevSteps => prevSteps.map(step => {
+          if (step.id !== targetId) return step;
+          const updated = { ...step };
+          if (currentHandle === 'start') {
+            updated.startFrame = Math.max(0, Math.min(frame, step.endFrame - 1));
+          } else if (currentHandle === 'end') {
+            updated.endFrame = Math.max(step.startFrame + 1, Math.min(totalFrames, frame));
+          } else if (currentHandle === 'move') {
+            const len = step.endFrame - step.startFrame;
+            const newStart = Math.max(0, Math.min(frame, totalFrames - len));
+            updated.startFrame = newStart;
+            updated.endFrame = newStart + len;
           }
-          return step;
-        });
-      });
+          updated.total = updated.endFrame - updated.startFrame;
+          return updated;
+        }));
+      }
     };
 
     const handleMouseUp = () => {
+      draggingHandleRef.current = null;
+      draggingSegmentIdRef.current = null;
       setDraggingHandle(null);
       setDraggingSegmentId(null);
     };
 
-    if (draggingHandle || draggingSegmentId) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      window.addEventListener('touchmove', handleMouseMove, { passive: false });
-      window.addEventListener('touchend', handleMouseUp);
-    }
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleMouseMove, { passive: false });
+    window.addEventListener('touchend', handleMouseUp);
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('touchmove', handleMouseMove);
       window.removeEventListener('touchend', handleMouseUp);
     };
-  }, [draggingHandle, draggingSegmentId, selectedStepId, totalFrames, annoType]);
+  }, [totalFrames, annoType]);
 
   const handleFrameChange = (frame) => {
     setCurrentFrame(frame);
@@ -618,8 +852,34 @@ useEffect(() => {
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           
           {/* LEFT COLUMN: 4 Viewports Grid (Light Mode) */}
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 10, padding: '12px' }}>
-            
+          <div style={{ flex: 1, display: isFullscreen ? 'block' : 'grid', gridTemplateColumns: isFullscreen ? '1fr' : '1fr 1fr', gridTemplateRows: isFullscreen ? '1fr' : '1fr 1fr', gap: 10, padding: '12px' }}>
+
+            {/* Fullscreen Single Viewport */}
+            {isFullscreen && (
+              <div style={{ border: '1px solid #cbd5e1', borderRadius: 6, background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', height: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', zIndex: 2 }}>
+                  <Select value={fullscreenCamera} size="small" variant="borderless" style={{ width: 300, fontSize: 12, color: '#334155' }} onChange={(val) => setFullscreenCamera(val)}>
+                    <Option value="camera_head_left_color">/rgb/dicolor/image_raw/compressed (主视角)</Option>
+                    <Option value="camera_head_right_color">/rgb/dicolor/image_raw/compressed (副视角)</Option>
+                    <Option value="camera_hand_left_color">/rgb/depth/image_raw/colorized (深度图)</Option>
+                    <Option value="joints">joints.json (三维仿真模型)</Option>
+                    <Option value="camera_usb_left">/usb_cam_left/jpeg_raw/compressed (左手操)</Option>
+                    <Option value="camera_usb_fisheye">/usb_cam_fisheye/jpeg_raw/compressed (鱼眼镜头)</Option>
+                    <Option value="camera_usb_right">/usb_cam_right/jpeg_raw/compressed (侧边视角)</Option>
+                  </Select>
+                  <Space>
+                    <Button size="small" type="text" icon={<FullscreenExitOutlined style={{ color: '#64748b' }} />} onClick={() => setIsFullscreen(false)} />
+                  </Space>
+                </div>
+                <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                  {renderGridContent(fullscreenCamera)}
+                </div>
+              </div>
+            )}
+
+            {/* Normal 4 Grid View */}
+            {!isFullscreen && (
+              <>
             {/* Viewport 1 (Top Left) */}
             <div style={{ border: '1px solid #cbd5e1', borderRadius: 6, background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', zIndex: 2 }}>
@@ -632,7 +892,7 @@ useEffect(() => {
                   <Option value="camera_usb_fisheye">/usb_cam_fisheye/jpeg_raw/compressed (鱼眼镜头)</Option>
                   <Option value="camera_usb_right">/usb_cam_right/jpeg_raw/compressed (侧边视角)</Option>
                 </Select>
-                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} />
+                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} onClick={() => { setFullscreenCamera(gridCameras.grid1); setIsFullscreen(true); }} />
               </div>
               <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                 {renderGridContent(gridCameras.grid1)}
@@ -651,7 +911,7 @@ useEffect(() => {
                   <Option value="camera_usb_fisheye">/usb_cam_fisheye/jpeg_raw/compressed (鱼眼镜头)</Option>
                   <Option value="camera_usb_right">/usb_cam_right/jpeg_raw/compressed (侧边视角)</Option>
                 </Select>
-                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} />
+                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} onClick={() => { setFullscreenCamera(gridCameras.grid2); setIsFullscreen(true); }} />
               </div>
               <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                 {renderGridContent(gridCameras.grid2)}
@@ -670,7 +930,7 @@ useEffect(() => {
                   <Option value="camera_usb_fisheye">/usb_cam_fisheye/jpeg_raw/compressed (鱼眼镜头)</Option>
                   <Option value="camera_usb_right">/usb_cam_right/jpeg_raw/compressed (侧边视角)</Option>
                 </Select>
-                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} />
+                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} onClick={() => { setFullscreenCamera(gridCameras.grid3); setIsFullscreen(true); }} />
               </div>
               <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                 {renderGridContent(gridCameras.grid3)}
@@ -689,12 +949,14 @@ useEffect(() => {
                   <Option value="camera_usb_fisheye">/usb_cam_fisheye/jpeg_raw/compressed (鱼眼镜头)</Option>
                   <Option value="camera_usb_right">/usb_cam_right/jpeg_raw/compressed (侧边视角)</Option>
                 </Select>
-                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} />
+                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} onClick={() => { setFullscreenCamera(gridCameras.grid4); setIsFullscreen(true); }} />
               </div>
               <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                 {renderGridContent(gridCameras.grid4)}
               </div>
             </div>
+              </>
+            )}
 
           </div>
 
@@ -703,7 +965,7 @@ useEffect(() => {
             
             {/* Sidebar Tab headers */}
             <div style={{ display: 'flex', borderBottom: '1px solid #e4e4e7', background: '#fff' }}>
-              {['标签', '统计', '标注'].map((tab) => {
+              {['标注', '标签', '统计'].map((tab) => {
                 const isActive = semanticActiveTab === tab;
                 return (
                   <div 
@@ -731,31 +993,6 @@ useEffect(() => {
               
               {semanticActiveTab === '标注' && (
                 <>
-                  {/* Shortcut Card info */}
-                  <div style={{ border: '1px solid #e4e4e7', borderRadius: 6, background: '#fafafa', padding: '10px', marginBottom: 14 }}>
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#2563eb', borderBottom: '1px solid #e4e4e7', paddingBottom: 4, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
-                      <span>⌨️ 键盘快捷操作流</span>
-                      <Tag color="blue" style={{ fontSize: 9, margin: 0 }}>Active</Tag>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '11px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#555' }}>开始截取</span>
-                        <kbd style={{ background: '#f1f1f1', padding: '1px 4px', border: '1px solid #ccc', borderRadius: 3 }}>Q</kbd>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#555' }}>结束并弹窗</span>
-                        <kbd style={{ background: '#f1f1f1', padding: '1px 4px', border: '1px solid #ccc', borderRadius: 3 }}>R</kbd>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#555' }}>激活标注</span>
-                        <kbd style={{ background: '#f1f1f1', padding: '1px 4px', border: '1px solid #ccc', borderRadius: 3 }}>Enter</kbd>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#555' }}>上传并保存</span>
-                        <kbd style={{ background: '#f1f1f1', padding: '1px 4px', border: '1px solid #ccc', borderRadius: 3 }}>Ctrl+S</kbd>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Action Buttons to Start & Stop */}
                   <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#4b5563', marginBottom: 6 }}>操作手柄录制：</div>
@@ -763,15 +1000,30 @@ useEffect(() => {
                     <Button
                       type="primary"
                       style={{ flex: 1, fontSize: '11px', height: 32, background: '#2563eb', borderColor: '#2563eb', fontWeight: 'bold' }}
-                      onClick={() => { setNewRangeStart(currentFrame); message.success(`🚩 已记录开始帧: ${currentFrame}f`); }}
+                      onClick={() => {
+                        setNewRangeStart(currentFrame);
+                        setIsRecording(true);
+                        setIsPlaying(true);
+                        message.success(`🚩 已记录开始帧: ${currentFrame}f，视频开始播放`);
+                      }}
                     >
                       开始 [Q]
                     </Button>
+                    
+                    <style>{`
+                      @keyframes pulseOpacity {
+                        0% { opacity: 0.3; }
+                        50% { opacity: 0.8; }
+                        100% { opacity: 0.3; }
+                      }
+                    `}</style>
 
                     <Button
                       type="primary"
                       style={{ flex: 1, fontSize: '11px', height: 32, fontWeight: 'bold', background: '#fa8c16', borderColor: '#fa8c16' }}
-                      onClick={() => handleStopAction(currentFrame)}
+                      onClick={() => {
+                        handleStopAction(currentFrame);
+                      }}
                     >
                       标记 [R]
                     </Button>
@@ -787,17 +1039,21 @@ useEffect(() => {
                     </Button>
                   </div>
 
-                  {/* Modal manual trigger */}
-                  <Button 
-                    type="dashed" 
-                    block 
-                    size="middle" 
-                    icon={<PlusOutlined />}
-                    style={{ fontSize: '11px', color: '#4b5563', borderStyle: 'dashed', marginBottom: 18 }}
-                    onClick={() => setIsAddModalOpen(true)}
-                  >
-                    手动添加标注
-                  </Button>
+                  {/* User Guide Banner replacing redundant manual add button */}
+                  <div style={{ 
+                    padding: '8px 10px', 
+                    background: '#f8fafc', 
+                    borderRadius: 6, 
+                    border: '1px dashed #cbd5e1', 
+                    fontSize: '11px', 
+                    color: '#64748b', 
+                    marginBottom: 16,
+                    lineHeight: '1.5'
+                  }}>
+                    💡 <strong>录制操作流</strong>：<br />
+                    1. 播放/拖拽定位到起始位置，按 <strong>Q</strong> / 点击“开始”<br />
+                    2. 继续播放/拖拽定位到结束位置，按 <strong>R</strong> / 点击“标记”
+                  </div>
 
                   {/* List of segment blocks in sidebar */}
                   <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#4b5563', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
@@ -837,24 +1093,28 @@ useEffect(() => {
                         </div>
                         {selectedSegmentId === seg.id ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <Input
+                            <InputNumber
                               size="small"
-                              style={{ width: 60, fontSize: 10 }}
+                              style={{ width: 80, fontSize: 10 }}
                               value={seg.start}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value) || 0;
-                                setSemanticSegments(semanticSegments.map(s => s.id === seg.id ? { ...s, start: Math.max(0, Math.min(val, seg.end - 1)) } : s));
+                              min={0}
+                              max={seg.end - 1}
+                              onChange={(val) => {
+                                const cleanVal = val === null ? 0 : val;
+                                setSemanticSegments(semanticSegments.map(s => s.id === seg.id ? { ...s, start: Math.max(0, Math.min(cleanVal, seg.end - 1)) } : s));
                               }}
                               onClick={(e) => e.stopPropagation()}
                               prefix="起:"
                             />
-                            <Input
+                            <InputNumber
                               size="small"
-                              style={{ width: 60, fontSize: 10 }}
+                              style={{ width: 80, fontSize: 10 }}
                               value={seg.end}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value) || 0;
-                                setSemanticSegments(semanticSegments.map(s => s.id === seg.id ? { ...s, end: Math.min(totalFrames, Math.max(val, seg.start + 1)) } : s));
+                              min={seg.start + 1}
+                              max={totalFrames}
+                              onChange={(val) => {
+                                const cleanVal = val === null ? 0 : val;
+                                setSemanticSegments(semanticSegments.map(s => s.id === seg.id ? { ...s, end: Math.min(totalFrames, Math.max(cleanVal, seg.start + 1)) } : s));
                               }}
                               onClick={(e) => e.stopPropagation()}
                               prefix="止:"
@@ -1037,45 +1297,174 @@ useEffect(() => {
 
         {/* Playback Control Bar (Light Mode) */}
         <div style={{ background: '#fff', borderTop: '1px solid #cbd5e1', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          
+
           {/* Progress Slider bar */}
           <div
-            style={{ height: '12px', background: '#e4e4e7', borderRadius: '3px', position: 'relative', cursor: 'pointer' }}
+            ref={semanticTimelineRef}
+            style={{ height: '24px', background: '#e4e4e7', borderRadius: '4px', position: 'relative', cursor: 'pointer', overflow: 'visible' }}
             onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
+              const rect = semanticTimelineRef.current?.getBoundingClientRect();
+              if (!rect) return;
               const pct = (e.clientX - rect.left) / rect.width;
               let frame = Math.round(pct * totalFrames);
               setCurrentFrame(Math.max(0, Math.min(totalFrames, frame)));
             }}
           >
             {/* Draw current frame line */}
-            <div style={{ position: 'absolute', top: '-6px', left: `${(currentFrame / totalFrames) * 100}%`, width: '10px', height: '20px', background: '#ef4444', borderRadius: '2px', cursor: 'col-resize' }} />
+            <div style={{ position: 'absolute', top: '-4px', left: `${(currentFrame / totalFrames) * 100}%`, width: '2px', height: '32px', background: '#ef4444', borderRadius: '1px', zIndex: 30, pointerEvents: 'none' }} />
             
+            {/* Draw active recording range */}
+            {isRecording && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `${(Math.min(newRangeStart, currentFrame) / totalFrames) * 100}%`,
+                  width: `${(Math.abs(currentFrame - newRangeStart) / totalFrames) * 100}%`,
+                  height: '100%',
+                  top: 0,
+                  background: 'rgba(239, 68, 68, 0.25)',
+                  border: '1.5px dashed #ef4444',
+                  borderRadius: 2,
+                  zIndex: 5,
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  animation: 'pulseOpacity 1.5s infinite ease-in-out'
+                }}
+              >
+                <span style={{ fontSize: '8px', color: '#dc2626', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#dc2626', display: 'inline-block' }} />
+                  录制中 {Math.min(newRangeStart, currentFrame)}-{Math.max(newRangeStart, currentFrame)}f
+                </span>
+              </div>
+            )}
+
+            {/* Draw pending unsaved segment range */}
+            {!isRecording && isAddModalOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `${(Math.min(newRangeStart, newRangeEnd) / totalFrames) * 100}%`,
+                  width: `${(Math.abs(newRangeEnd - newRangeStart) / totalFrames) * 100}%`,
+                  height: '100%',
+                  top: 0,
+                  background: 'rgba(250, 140, 22, 0.25)',
+                  border: '1.5px dashed #fa8c16',
+                  borderRadius: 2,
+                  zIndex: 6,
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <span style={{ fontSize: '8px', color: '#ea580c', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#fa8c16', display: 'inline-block' }} />
+                  待保存 {Math.min(newRangeStart, newRangeEnd)}-{Math.max(newRangeStart, newRangeEnd)}f
+                </span>
+              </div>
+            )}
+
             {/* Render saved ranges overlay on timeline */}
-            {semanticSegments.map(seg => (
+            {semanticSegments.map(seg => {
+              const isSelected = selectedSegmentId === seg.id;
+              return (
               <div
                 key={seg.id}
                 style={{
                   position: 'absolute',
                   left: `${(seg.start / totalFrames) * 100}%`,
                   width: `${((seg.end - seg.start) / totalFrames) * 100}%`,
-                  height: selectedSegmentId === seg.id ? 26 : '100%',
-                  top: selectedSegmentId === seg.id ? -3 : 0,
-                  background: seg.color,
-                  opacity: selectedSegmentId === seg.id ? 1 : 0.4,
-                  cursor: 'pointer',
-                  borderRadius: 2,
-                  border: selectedSegmentId === seg.id ? '1.5px solid #1677ff' : 'none',
-                  boxShadow: selectedSegmentId === seg.id ? '0 0 10px rgba(22, 119, 255, 0.7)' : 'none',
-                  zIndex: selectedSegmentId === seg.id ? 10 : 2,
+                  height: isSelected ? '30px' : '100%',
+                  top: isSelected ? -3 : 0,
+                  background: isSelected ? `linear-gradient(180deg, ${seg.color}ee, ${seg.color}cc)` : seg.color,
+                  opacity: isSelected ? 1 : 0.4,
+                  cursor: isSelected ? 'move' : 'pointer',
+                  borderRadius: isSelected ? 4 : 2,
+                  border: isSelected ? '2px solid #0ea5e9' : 'none',
+                  boxShadow: isSelected ? '0 0 0 3px rgba(14, 165, 233, 0.3), 0 0 16px rgba(14, 165, 233, 0.4)' : 'none',
+                  zIndex: isSelected ? 10 : 2,
                   transition: 'all 0.15s ease',
                 }}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setSelectedSegmentId(seg.id);
                   setCurrentFrame(seg.start);
                 }}
-              />
-            ))}
+                onMouseDown={(e) => {
+                  if (!isSelected) return;
+                  e.stopPropagation();
+                  startDrag(seg.id, 'move');
+                }}
+              >
+                {/* Left Handle for Start Frame */}
+                {isSelected && (
+                  <div
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      startDrag(seg.id, 'start');
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 12,
+                      height: 26,
+                      background: '#fff',
+                      border: '2px solid #0ea5e9',
+                      borderRadius: 5,
+                      cursor: 'col-resize',
+                      zIndex: 15,
+                      boxShadow: '0 2px 8px rgba(14, 165, 233, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {/* Grip lines */}
+                    <div style={{ display: 'flex', gap: 2 }}>
+                      <div style={{ width: 1.5, height: 14, background: '#0ea5e9', borderRadius: 1 }} />
+                      <div style={{ width: 1.5, height: 14, background: '#0ea5e9', borderRadius: 1 }} />
+                    </div>
+                  </div>
+                )}
+                {/* Right Handle for End Frame */}
+                {isSelected && (
+                  <div
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      startDrag(seg.id, 'end');
+                    }}
+                    style={{
+                      position: 'absolute',
+                      right: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 12,
+                      height: 26,
+                      background: '#fff',
+                      border: '2px solid #0ea5e9',
+                      borderRadius: 5,
+                      cursor: 'col-resize',
+                      zIndex: 15,
+                      boxShadow: '0 2px 8px rgba(14, 165, 233, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {/* Grip lines */}
+                    <div style={{ display: 'flex', gap: 2 }}>
+                      <div style={{ width: 1.5, height: 14, background: '#0ea5e9', borderRadius: 1 }} />
+                      <div style={{ width: 1.5, height: 14, background: '#0ea5e9', borderRadius: 1 }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+            })}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1088,7 +1477,7 @@ useEffect(() => {
 
             {/* Center: Playback Controls */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', borderRadius: 20, padding: '4px 12px', border: '1px solid #e4e4e7' }}>
-              <Button type="text" icon={<DoubleLeftOutlined style={{ color: '#64748b', fontSize: 10 }} />} onClick={() => setCurrentFrame(0)} size="small" />
+              <Button type="text" icon={<DoubleLeftOutlined style={{ color: '#64748b', fontSize: 10 }} />} onClick={() => message.info('上一条标注数据')} size="small" />
               <Button type="text" icon={<StepBackwardOutlined style={{ color: '#64748b' }} />} onClick={() => setCurrentFrame(Math.max(0, currentFrame - 1))} />
               <Button
                 type="primary"
@@ -1097,7 +1486,7 @@ useEffect(() => {
                 style={{ borderRadius: '50%', width: 36, height: 36, minWidth: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(37, 99, 235, 0.3)' }}
               />
               <Button type="text" icon={<StepForwardOutlined style={{ color: '#64748b' }} />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + 1))} />
-              <Button type="text" icon={<DoubleRightOutlined style={{ color: '#64748b', fontSize: 10 }} />} onClick={() => setCurrentFrame(totalFrames)} size="small" />
+              <Button type="text" icon={<DoubleRightOutlined style={{ color: '#64748b', fontSize: 10 }} />} onClick={() => message.info('下一条标注数据')} size="small" />
               <Divider type="vertical" style={{ height: 20, margin: '0 4px' }} />
               <Button type="text" icon={<ReloadOutlined style={{ color: '#64748b' }} />} size="small" />
               <Select defaultValue={1} size="small" variant="borderless" style={{ width: 50, color: '#475569' }} onChange={setPlaybackSpeed}>
@@ -1109,14 +1498,11 @@ useEffect(() => {
 
             {/* Right: Action Buttons */}
             <Space size={8}>
-              <span style={{ fontSize: '11px', color: '#4b5563' }}>
-                {currentTime}s / <strong>{currentFrame}f</strong>
-              </span>
               <Button
                 size="small"
                 type="primary"
                 style={{ borderRadius: 4 }}
-                onClick={() => { message.success('标注完成'); router.push(`/annotation/audit/${instanceId}`); }}
+                onClick={handleCompleteAnnotation}
               >
                 完成标注(T)
               </Button>
@@ -1164,122 +1550,240 @@ useEffect(() => {
           open={isAddModalOpen}
           onCancel={() => setIsAddModalOpen(false)}
           footer={null}
-          width={720}
+          width={960}
           bodyStyle={{ padding: '16px 24px' }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             
+            {/* 0. 帧区间配置 (Manual Frame Range Config) */}
+            <div style={{ display: 'flex', alignItems: 'center', background: '#f8fafc', padding: '10px 14px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+              <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px', color: '#334155' }}>帧区间</span>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>开始帧:</span>
+                <InputNumber 
+                  min={0} 
+                  max={totalFrames} 
+                  value={newRangeStart} 
+                  onChange={(val) => {
+                    const cleanVal = val === null ? 0 : val;
+                    setNewRangeStart(cleanVal);
+                    if (cleanVal >= newRangeEnd) {
+                      setNewRangeEnd(Math.min(totalFrames, cleanVal + 1));
+                    }
+                  }} 
+                  style={{ width: 85 }}
+                  size="small"
+                />
+                <span style={{ fontSize: '12px', color: '#64748b' }}>结束帧:</span>
+                <InputNumber 
+                  min={0} 
+                  max={totalFrames} 
+                  value={newRangeEnd} 
+                  onChange={(val) => {
+                    const cleanVal = val === null ? 0 : val;
+                    setNewRangeEnd(cleanVal);
+                    if (cleanVal <= newRangeStart) {
+                      setNewRangeStart(Math.max(0, cleanVal - 1));
+                    }
+                  }} 
+                  style={{ width: 85 }}
+                  size="small"
+                />
+                <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
+                  (已选区间长度: <span style={{ color: '#0f172a', fontWeight: 'bold' }}>{Math.abs(newRangeEnd - newRangeStart)}</span> 帧)
+                </span>
+              </div>
+            </div>
+
             {/* 1. 技能 Select row */}
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>技能</span>
-              <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {[
-                  { value: 'pick {A} from {B}', label: 'pick {A} from {B}\n从 {B} 捡起 {A}' },
-                  { value: 'place {A} on {B}', label: 'place {A} on {B}\n放置 {A} 到 {B}' },
-                  { value: 'move {A} to {B}', label: 'move {A} to {B}\n移动 {A} 到 {B}' },
-                  { value: '{A} wipe {B}', label: '{A} wipe {B}\n用 {A} 擦拭 {B}' },
-                  { value: 'turn {A}', label: 'turn {A}\n转动 {A}' }
-                ].map(item => (
-                  <div 
-                    key={item.value}
-                    onClick={() => setSelectedSkill(item.value)}
-                    style={{
-                      border: selectedSkill === item.value ? '2px solid #22c55e' : '1px solid #d9d9d9',
-                      borderRadius: 4,
-                      padding: '4px 10px',
-                      fontSize: '11px',
-                      cursor: 'pointer',
-                      background: selectedSkill === item.value ? '#f0fdf4' : '#fff',
-                      whiteSpace: 'pre-line',
-                      textAlign: 'center'
-                    }}
-                  >
-                    {item.label}
-                  </div>
-                ))}
-                
-                <Select value={selectedSkill} size="small" style={{ width: 120 }} onChange={setSelectedSkill}>
-                  <Option value="pick {A} from {B}">{"pick {A} from {B}"}</Option>
-                  <Option value="place {A} on {B}">{"place {A} on {B}"}</Option>
-                  <Option value="custom">自定义技能</Option>
-                </Select>
-                <Button size="small" icon={<PlusOutlined />} />
+              <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 }}>
+                {(() => {
+                  const isSkillInQuickOptions = skillOptions.some(opt => opt.value === selectedSkill);
+                  return (
+                    <>
+                      {skillOptions.map(item => {
+                        const isSelected = selectedSkill === item.value && isSkillInQuickOptions;
+                        return (
+                          <div 
+                            key={item.value}
+                            onClick={() => setSelectedSkill(item.value)}
+                            style={{
+                              border: isSelected ? '2px solid #22c55e' : '1px solid #d9d9d9',
+                              borderRadius: 4,
+                              padding: '4px 10px',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              background: isSelected ? '#f0fdf4' : '#fff',
+                              whiteSpace: 'pre-line',
+                              textAlign: 'center',
+                              fontWeight: isSelected ? 'bold' : 'normal',
+                              flexShrink: 0
+                            }}
+                          >
+                            {item.label}
+                          </div>
+                        );
+                      })}
+                      
+                      <Select 
+                        value={isSkillInQuickOptions ? undefined : selectedSkill} 
+                        placeholder="选择更多技能..."
+                        size="small" 
+                        style={{ width: 170, flexShrink: 0 }} 
+                        onChange={setSelectedSkill}
+                        dropdownRender={(menu) => (
+                          <>
+                            {menu}
+                            <Divider style={{ margin: '4px 0' }} />
+                            <Button 
+                              type="text" 
+                              block 
+                              icon={<PlusOutlined />} 
+                              onClick={handleAddSkill}
+                              style={{ textAlign: 'left', padding: '4px 12px', fontSize: '11px', color: '#1677ff' }}
+                            >
+                              新增自定义技能
+                            </Button>
+                          </>
+                        )}
+                      >
+                        {skillDropdownList.map(opt => (
+                          <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+                        ))}
+                      </Select>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
             {/* 2. 对象 Select row */}
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>对象</span>
-              <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {[
-                  { value: 'box', label: 'box\n箱子' },
-                  { value: 'Kiwi', label: 'Kiwi\n猕猴桃' },
-                  { value: 'Fruit Bowl', label: 'Fruit Bowl\n果盘' },
-                  { value: 'book', label: 'book\n书' },
-                  { value: 'small pack of beer', label: 'small pack of beer\n小包装啤酒' }
-                ].map(item => (
-                  <div 
-                    key={item.value}
-                    onClick={() => setSelectedObject(item.value)}
-                    style={{
-                      border: selectedObject === item.value ? '2px solid #22c55e' : '1px solid #d9d9d9',
-                      borderRadius: 4,
-                      padding: '4px 10px',
-                      fontSize: '11px',
-                      cursor: 'pointer',
-                      background: selectedObject === item.value ? '#f0fdf4' : '#fff',
-                      whiteSpace: 'pre-line',
-                      textAlign: 'center'
-                    }}
-                  >
-                    {item.label}
-                  </div>
-                ))}
+              <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 }}>
+                {(() => {
+                  const isObjectInQuickOptions = objectOptions.some(opt => opt.value === selectedObject);
+                  return (
+                    <>
+                      {objectOptions.map(item => {
+                        const isSelected = selectedObject === item.value && isObjectInQuickOptions;
+                        return (
+                          <div 
+                            key={item.value}
+                            onClick={() => setSelectedObject(item.value)}
+                            style={{
+                              border: isSelected ? '2px solid #22c55e' : '1px solid #d9d9d9',
+                              borderRadius: 4,
+                              padding: '4px 10px',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              background: isSelected ? '#f0fdf4' : '#fff',
+                              whiteSpace: 'pre-line',
+                              textAlign: 'center',
+                              fontWeight: isSelected ? 'bold' : 'normal',
+                              flexShrink: 0
+                            }}
+                          >
+                            {item.label}
+                          </div>
+                        );
+                      })}
 
-                <Select value={selectedObject} size="small" style={{ width: 120 }} onChange={setSelectedObject}>
-                  {objectDropdownList.map(obj => (
-                    <Option key={obj.value} value={obj.value}>{obj.label}</Option>
-                  ))}
-                </Select>
-                <Button size="small" icon={<PlusOutlined />} />
+                      <Select 
+                        value={isObjectInQuickOptions ? undefined : selectedObject} 
+                        placeholder="选择更多对象..."
+                        size="small" 
+                        style={{ width: 170, flexShrink: 0 }} 
+                        onChange={setSelectedObject}
+                        dropdownRender={(menu) => (
+                          <>
+                            {menu}
+                            <Divider style={{ margin: '4px 0' }} />
+                            <Button 
+                              type="text" 
+                              block 
+                              icon={<PlusOutlined />} 
+                              onClick={handleAddObject}
+                              style={{ textAlign: 'left', padding: '4px 12px', fontSize: '11px', color: '#1677ff' }}
+                            >
+                              新增自定义对象
+                            </Button>
+                          </>
+                        )}
+                      >
+                        {objectDropdownList.map(obj => (
+                          <Option key={obj.value} value={obj.value}>{obj.label}</Option>
+                        ))}
+                      </Select>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
             {/* 3. 目标 Select row */}
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>目标</span>
-              <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {[
-                  { value: 'desktop', label: 'desktop\n桌面' },
-                  { value: 'shelves', label: 'shelves\n货架' },
-                  { value: 'bookshelf', label: 'bookshelf\n书架' },
-                  { value: 'table', label: 'table\n桌子' },
-                  { value: 'Fruit Bowl', label: 'Fruit Bowl\n果盘' }
-                ].map(item => (
-                  <div 
-                    key={item.value}
-                    onClick={() => setSelectedTarget(item.value)}
-                    style={{
-                      border: selectedTarget === item.value ? '2px solid #22c55e' : '1px solid #d9d9d9',
-                      borderRadius: 4,
-                      padding: '4px 10px',
-                      fontSize: '11px',
-                      cursor: 'pointer',
-                      background: selectedTarget === item.value ? '#f0fdf4' : '#fff',
-                      whiteSpace: 'pre-line',
-                      textAlign: 'center'
-                    }}
-                  >
-                    {item.label}
-                  </div>
-                ))}
+              <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 }}>
+                {(() => {
+                  const isTargetInQuickOptions = targetOptions.some(opt => opt.value === selectedTarget);
+                  return (
+                    <>
+                      {targetOptions.map(item => {
+                        const isSelected = selectedTarget === item.value && isTargetInQuickOptions;
+                        return (
+                          <div 
+                             key={item.value}
+                             onClick={() => setSelectedTarget(item.value)}
+                             style={{
+                               border: isSelected ? '2px solid #22c55e' : '1px solid #d9d9d9',
+                               borderRadius: 4,
+                               padding: '4px 10px',
+                               fontSize: '11px',
+                               cursor: 'pointer',
+                               background: isSelected ? '#f0fdf4' : '#fff',
+                               whiteSpace: 'pre-line',
+                               textAlign: 'center',
+                               fontWeight: isSelected ? 'bold' : 'normal',
+                               flexShrink: 0
+                             }}
+                          >
+                            {item.label}
+                          </div>
+                        );
+                      })}
 
-                <Select value={selectedTarget} size="small" style={{ width: 120 }} onChange={setSelectedTarget}>
-                  {targetDropdownList.map(tgt => (
-                    <Option key={tgt.value} value={tgt.value}>{tgt.label}</Option>
-                  ))}
-                </Select>
-                <Button size="small" icon={<PlusOutlined />} />
+                      <Select 
+                        value={isTargetInQuickOptions ? undefined : selectedTarget} 
+                        placeholder="选择更多目标..."
+                        size="small" 
+                        style={{ width: 170, flexShrink: 0 }} 
+                        onChange={setSelectedTarget}
+                        dropdownRender={(menu) => (
+                          <>
+                            {menu}
+                            <Divider style={{ margin: '4px 0' }} />
+                            <Button 
+                              type="text" 
+                              block 
+                              icon={<PlusOutlined />} 
+                              onClick={handleAddTarget}
+                              style={{ textAlign: 'left', padding: '4px 12px', fontSize: '11px', color: '#1677ff' }}
+                            >
+                              新增自定义目标
+                            </Button>
+                          </>
+                        )}
+                      >
+                        {targetDropdownList.map(tgt => (
+                          <Option key={tgt.value} value={tgt.value}>{tgt.label}</Option>
+                        ))}
+                      </Select>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1420,7 +1924,27 @@ useEffect(() => {
         <div style={{ flex: 1.6, display: 'flex', flexDirection: 'column', gap: 12 }}>
           
           {annoType === '范围标注' ? (
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 10 }}>
+            <div style={{ flex: 1, display: isFullscreen ? 'block' : 'grid', gridTemplateColumns: isFullscreen ? '1fr' : '1fr 1fr', gridTemplateRows: isFullscreen ? '1fr' : '1fr 1fr', gap: 10 }}>
+              {/* Fullscreen Single Viewport */}
+              {isFullscreen && (
+                <div style={{ background: '#fafafa', border: '1px solid #cbd5e1', borderRadius: 6, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', height: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', background: '#fff', zIndex: 2 }}>
+                    <Select value={fullscreenCamera} size="small" variant="borderless" style={{ width: 280, fontSize: 12, fontWeight: 500 }} onChange={(val) => setFullscreenCamera(val)}>
+                      <Option value="camera_head_left_color">camera_head_left_color_color</Option>
+                      <Option value="camera_head_right_color">camera_head_right_color_color</Option>
+                      <Option value="camera_hand_left_color">camera_hand_left_color_color</Option>
+                      <Option value="camera_hand_right_color">camera_hand_right_color_color</Option>
+                      <Option value="joints">joints.json (3D 模型)</Option>
+                    </Select>
+                    <Button size="small" type="text" icon={<FullscreenExitOutlined />} onClick={() => setIsFullscreen(false)} />
+                  </div>
+                  {renderGridContent(fullscreenCamera)}
+                </div>
+              )}
+
+              {/* Normal 4 Grid View */}
+              {!isFullscreen && (
+              <>
               {/* Grid 1 */}
               <div style={{ background: '#fafafa', border: '1px solid #cbd5e1', borderRadius: 6, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', background: '#fff', zIndex: 2 }}>
@@ -1431,7 +1955,7 @@ useEffect(() => {
                     <Option value="camera_hand_right_color">camera_hand_right_color_color</Option>
                     <Option value="joints">joints.json (3D 模型)</Option>
                   </Select>
-                  <Button size="small" type="text" icon={<FullscreenOutlined />} />
+                  <Button size="small" type="text" icon={<FullscreenOutlined />} onClick={() => { setFullscreenCamera(gridCameras.grid1); setIsFullscreen(true); }} />
                 </div>
                 {renderGridContent(gridCameras.grid1)}
               </div>
@@ -1446,7 +1970,7 @@ useEffect(() => {
                     <Option value="camera_hand_right_color">camera_hand_right_color_color</Option>
                     <Option value="joints">joints.json (3D 模型)</Option>
                   </Select>
-                  <Button size="small" type="text" icon={<FullscreenOutlined />} />
+                  <Button size="small" type="text" icon={<FullscreenOutlined />} onClick={() => { setFullscreenCamera(gridCameras.grid2); setIsFullscreen(true); }} />
                 </div>
                 {renderGridContent(gridCameras.grid2)}
               </div>
@@ -1461,7 +1985,7 @@ useEffect(() => {
                     <Option value="camera_hand_right_color">camera_hand_right_color_color</Option>
                     <Option value="joints">joints.json (3D 模型)</Option>
                   </Select>
-                  <Button size="small" type="text" icon={<FullscreenOutlined />} />
+                  <Button size="small" type="text" icon={<FullscreenOutlined />} onClick={() => { setFullscreenCamera(gridCameras.grid3); setIsFullscreen(true); }} />
                 </div>
                 {renderGridContent(gridCameras.grid3)}
               </div>
@@ -1479,10 +2003,12 @@ useEffect(() => {
                     </Select>
                     {gridCameras.grid4 === 'joints' && <Tag color="cyan" style={{ fontSize: 9, margin: 0 }}>机器人</Tag>}
                   </Space>
-                  <Button size="small" type="text" icon={<FullscreenOutlined />} />
+                  <Button size="small" type="text" icon={<FullscreenOutlined />} onClick={() => { setFullscreenCamera(gridCameras.grid4); setIsFullscreen(true); }} />
                 </div>
                 {renderGridContent(gridCameras.grid4)}
               </div>
+              </>
+              )}
             </div>
           ) : (
             <div style={{ flex: 1, background: '#fff', border: '1px solid #cbd5e1', borderRadius: 6, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -1719,24 +2245,53 @@ useEffect(() => {
                           transition: 'all 0.2s'
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                           <span style={{ fontSize: 12, fontWeight: isSelected ? 700 : 600, color: isSelected ? '#0958d9' : '#1f2937' }}>
                             {step.id}. {step.text}
                           </span>
-                          <Tag color="success">正确</Tag>
+                          <Space size={8}>
+                            <Tag color="success" style={{ margin: 0 }}>正确</Tag>
+                            <DeleteOutlined
+                              style={{ color: '#ef4444', cursor: 'pointer', fontSize: 13 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const filtered = steps.filter(x => x.id !== step.id);
+                                const reindexed = filtered.map((x, i) => ({ ...x, id: i + 1 }));
+                                setSteps(reindexed);
+                                if (selectedStepId === step.id) {
+                                  setSelectedStepId(reindexed.length > 0 ? reindexed[0].id : null);
+                                }
+                                message.success(`已删除动作步骤 ${step.id}`);
+                              }}
+                            />
+                          </Space>
                         </div>
                         <Row gutter={8} style={{ fontSize: 11 }} onClick={(e) => e.stopPropagation()}>
                           <Col span={8}>
                             <div>开始帧</div>
-                            <Input size="small" value={step.startFrame} onChange={(e) => handleStepFrameChange(idx, 'startFrame', e.target.value)} />
+                            <InputNumber 
+                              size="small" 
+                              value={step.startFrame} 
+                              min={0}
+                              max={step.endFrame - 1}
+                              onChange={(val) => handleStepFrameChange(idx, 'startFrame', val)} 
+                              style={{ width: '100%' }}
+                            />
                           </Col>
                           <Col span={8}>
                             <div>结束帧</div>
-                            <Input size="small" value={step.endFrame} onChange={(e) => handleStepFrameChange(idx, 'endFrame', e.target.value)} />
+                            <InputNumber 
+                              size="small" 
+                              value={step.endFrame} 
+                              min={step.startFrame + 1}
+                              max={totalFrames}
+                              onChange={(val) => handleStepFrameChange(idx, 'endFrame', val)} 
+                              style={{ width: '100%' }}
+                            />
                           </Col>
                           <Col span={8}>
                             <div>总共</div>
-                            <Input size="small" disabled value={step.total} />
+                            <InputNumber size="small" disabled value={step.total} style={{ width: '100%' }} />
                           </Col>
                         </Row>
                       </div>
@@ -1772,7 +2327,7 @@ useEffect(() => {
       <div style={{ background: '#fff', borderTop: '1px solid #e2e8f0', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div 
           ref={timelineRef}
-          style={{ position: 'relative', height: 20, background: '#e2e8f0', borderRadius: 4, cursor: 'pointer' }}
+          style={{ position: 'relative', height: 24, background: '#e2e8f0', borderRadius: 4, cursor: 'pointer', overflow: 'visible' }}
           onClick={(e) => {
             const rect = timelineRef.current.getBoundingClientRect();
             const pct = (e.clientX - rect.left) / rect.width;
@@ -1782,27 +2337,37 @@ useEffect(() => {
           {steps.map(step => {
             const isSelected = selectedStepId === step.id;
             return (
-              <div 
-                key={step.id} 
+              <div
+                key={step.id}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleStepSelect(step.id);
                   setCurrentFrame(step.startFrame);
                 }}
+                onMouseDown={(e) => {
+                  if (!isSelected) return;
+                  e.stopPropagation();
+                  startDrag(step.id, 'move');
+                }}
+                onTouchStart={(e) => {
+                  if (!isSelected) return;
+                  e.stopPropagation();
+                  startDrag(step.id, 'move');
+                }}
                 style={{
                   position: 'absolute',
                   left: `${(step.startFrame / totalFrames) * 100}%`,
                   width: `${((step.endFrame - step.startFrame) / totalFrames) * 100}%`,
-                  height: isSelected ? '26px' : '100%',
+                  height: isSelected ? '30px' : '100%',
                   top: isSelected ? -3 : 0,
-                  background: step.color,
+                  background: isSelected ? `linear-gradient(180deg, ${step.color}ee, ${step.color}cc)` : step.color,
                   opacity: isSelected ? 1 : 0.4,
-                  borderRadius: '2px',
-                  border: isSelected ? '1.5px solid #1677ff' : 'none',
-                  boxShadow: isSelected ? '0 0 10px rgba(22, 119, 255, 0.7)' : 'none',
+                  borderRadius: isSelected ? 4 : 2,
+                  border: isSelected ? '2px solid #0ea5e9' : 'none',
+                  boxShadow: isSelected ? '0 0 0 3px rgba(14, 165, 233, 0.3), 0 0 16px rgba(14, 165, 233, 0.4)' : 'none',
                   zIndex: isSelected ? 10 : 2,
                   transition: 'all 0.15s ease',
-                  cursor: 'pointer'
+                  cursor: isSelected ? 'move' : 'pointer'
                 }}
               >
                 {/* Drag handles for selected step */}
@@ -1830,83 +2395,110 @@ useEffect(() => {
                         交互 ②
                       </div>
                     )}
-                    {/* Left Handle (Start Frame) */}
-                    <div 
+                    {/* Left Handle (Start Frame) - Rounded pill style */}
+                    <div
                       onMouseDown={(e) => {
                         e.stopPropagation();
-                        setDraggingHandle('start');
+                        startDrag(step.id, 'start');
                       }}
                       onTouchStart={(e) => {
                         e.stopPropagation();
-                        setDraggingHandle('start');
+                        startDrag(step.id, 'start');
                       }}
                       style={{
                         position: 'absolute',
-                        left: -4,
-                        top: -3,
-                        width: 8,
-                        height: '26px',
-                        background: '#1677ff',
-                        border: '1.5px solid #fff',
-                        borderRadius: '3px',
+                        left: -8,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 12,
+                        height: 26,
+                        background: '#fff',
+                        border: '2px solid #0ea5e9',
+                        borderRadius: 5,
                         cursor: 'col-resize',
-                        zIndex: 15,
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        zIndex: 20,
+                        boxShadow: '0 2px 8px rgba(14, 165, 233, 0.4)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        transition: 'transform 0.1s ease, box-shadow 0.1s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-50%) scale(1.15)';
+                        e.currentTarget.style.boxShadow = '0 4px 14px rgba(14, 165, 233, 0.6)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(14, 165, 233, 0.4)';
                       }}
                     >
-                      <div style={{ width: 1, height: 10, background: '#fff' }} />
+                      {/* Grip lines */}
+                      <div style={{ display: 'flex', gap: 2 }}>
+                        <div style={{ width: 1.5, height: 14, background: '#0ea5e9', borderRadius: 1 }} />
+                        <div style={{ width: 1.5, height: 14, background: '#0ea5e9', borderRadius: 1 }} />
+                      </div>
                     </div>
 
-                    {/* Right Handle (End Frame) */}
-                    <div 
+                    {/* Right Handle (End Frame) - Rounded pill style */}
+                    <div
                       onMouseDown={(e) => {
                         e.stopPropagation();
-                        setDraggingHandle('end');
+                        startDrag(step.id, 'end');
                       }}
                       onTouchStart={(e) => {
                         e.stopPropagation();
-                        setDraggingHandle('end');
+                        startDrag(step.id, 'end');
                       }}
                       style={{
                         position: 'absolute',
-                        right: -4,
-                        top: -3,
-                        width: 8,
-                        height: '26px',
-                        background: '#1677ff',
-                        border: '1.5px solid #fff',
-                        borderRadius: '3px',
+                        right: -8,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 12,
+                        height: 26,
+                        background: '#fff',
+                        border: '2px solid #0ea5e9',
+                        borderRadius: 5,
                         cursor: 'col-resize',
-                        zIndex: 15,
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        zIndex: 20,
+                        boxShadow: '0 2px 8px rgba(14, 165, 233, 0.4)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        transition: 'transform 0.1s ease, box-shadow 0.1s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-50%) scale(1.15)';
+                        e.currentTarget.style.boxShadow = '0 4px 14px rgba(14, 165, 233, 0.6)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(14, 165, 233, 0.4)';
                       }}
                     >
-                      <div style={{ width: 1, height: 10, background: '#fff' }} />
+                      {/* Grip lines */}
+                      <div style={{ display: 'flex', gap: 2 }}>
+                        <div style={{ width: 1.5, height: 14, background: '#0ea5e9', borderRadius: 1 }} />
+                        <div style={{ width: 1.5, height: 14, background: '#0ea5e9', borderRadius: 1 }} />
+                      </div>
                     </div>
                   </>
                 )}
               </div>
             );
           })}
-          <div style={{ position: 'absolute', left: `${(currentFrame / totalFrames) * 100}%`, top: 0, width: 3, height: '100%', background: '#ef4444' }} />
+          <div style={{ position: 'absolute', left: `${(currentFrame / totalFrames) * 100}%`, top: -4, width: 2, height: '32px', background: '#ef4444', borderRadius: 1, zIndex: 30, pointerEvents: 'none' }} />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space>
-            <Button type="text" icon={<LeftOutlined />} onClick={() => setCurrentFrame(0)} />
-            <span style={{ fontSize: 11 }}>{currentTime}s / {currentFrame}f</span>
-            <Button type="text" icon={<RightOutlined />} onClick={() => setCurrentFrame(totalFrames)} />
+            <Button type="text" icon={<LeftOutlined />} onClick={() => message.info('上一条标注数据')} />
+            <Button type="text" icon={<RightOutlined />} onClick={() => message.info('下一条标注数据')} />
           </Space>
 
           {/* Center: Playback Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', borderRadius: 20, padding: '4px 12px', border: '1px solid #e4e4e7' }}>
-            <Button type="text" icon={<DoubleLeftOutlined style={{ fontSize: 10 }} />} onClick={() => setCurrentFrame(0)} size="small" />
+            <Button type="text" icon={<DoubleLeftOutlined style={{ fontSize: 10 }} />} onClick={() => message.info('上一条标注数据')} size="small" />
             <Button type="text" icon={<StepBackwardOutlined />} onClick={() => setCurrentFrame(Math.max(0, currentFrame - 1))} />
             <Button
               type="primary"
@@ -1915,7 +2507,7 @@ useEffect(() => {
               style={{ borderRadius: '50%', width: 36, height: 36, minWidth: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(37, 99, 235, 0.3)' }}
             />
             <Button type="text" icon={<StepForwardOutlined />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + 1))} />
-            <Button type="text" icon={<DoubleRightOutlined style={{ fontSize: 10 }} />} onClick={() => setCurrentFrame(totalFrames)} size="small" />
+            <Button type="text" icon={<DoubleRightOutlined style={{ fontSize: 10 }} />} onClick={() => message.info('下一条标注数据')} size="small" />
             <Divider type="vertical" style={{ height: 20, margin: '0 4px' }} />
             <Button type="text" icon={<ReloadOutlined />} size="small" />
             <Select defaultValue={1} size="small" variant="borderless" style={{ width: 50, color: '#475569' }} onChange={setPlaybackSpeed}>
@@ -1930,7 +2522,7 @@ useEffect(() => {
               size="small"
               type="primary"
               style={{ borderRadius: 4 }}
-              onClick={() => { message.success('标注完成'); router.push(`/annotation/audit/${instanceId}`); }}
+              onClick={handleCompleteAnnotation}
             >
               完成标注(T)
             </Button>
