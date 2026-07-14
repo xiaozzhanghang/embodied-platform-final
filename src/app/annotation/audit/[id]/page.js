@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Radio, Progress, List } from 'antd';
-import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, CopyOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Radio, Progress, List, Upload, InputNumber } from 'antd';
+import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -93,6 +93,13 @@ export default function AnnotationAuditEpisodeListPage() {
   const [batchStrategy, setBatchStrategy] = useState('proportional');
   const [isCopying, setIsCopying] = useState(false);
   const [copyProgress, setCopyProgress] = useState(0);
+
+  // Upload Data Modal State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadFileList, setUploadFileList] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadForm] = Form.useForm();
 
   // Dynamic template properties based on active selection type
   const getActiveBatchType = () => {
@@ -245,7 +252,141 @@ export default function AnnotationAuditEpisodeListPage() {
         }));
         setSelectedRowKeys([]);
         setSelectedRows([]);
-        message.success('已批量清除选中实例的标注数据！');
+        message.success('已批量清除标注数据！');
+      }
+    });
+  };
+
+  const handleStartUpload = () => {
+    uploadForm.validateFields().then(values => {
+      setIsUploading(true);
+      setUploadProgress(0);
+      const interval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            
+            const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            const currentLength = episodes.length;
+            const isDual = currentLength % 2 === 0;
+            
+            const newEpisodes = [
+              {
+                key: `uploaded_${Date.now()}_1`,
+                id: 744101 + currentLength + 10,
+                taskName: values.dataType === 'mp4' ? '抓取物品示范(RGB视频)' : values.dataType === 'trajectory' ? '桌面整理任务(双臂协同)' : '垃圾分类投放(点位)',
+                instance: `实例_${instanceId}_${String(currentLength + 1).padStart(3, '0')}`,
+                annoTaskName: `自动解析标注_${String(currentLength + 1).padStart(2, '0')}`,
+                device: isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)',
+                annoType: isDual ? '语义标注' : '范围标注',
+                totalFrames: values.totalFrames || 150,
+                manualTime: '',
+                modelTime: nowStr,
+                parseStatus: '解析完成',
+                annoStatus: '未标注',
+                auditStatus: '未审核',
+                hasError: false,
+                segments: []
+              },
+              {
+                key: `uploaded_${Date.now()}_2`,
+                id: 744101 + currentLength + 11,
+                taskName: values.dataType === 'mp4' ? '移动水杯演示(RGB视频)' : values.dataType === 'trajectory' ? '旋转圆形阀门(双臂)' : '工具使用反馈',
+                instance: `实例_${instanceId}_${String(currentLength + 2).padStart(3, '0')}`,
+                annoTaskName: `自动解析标注_${String(currentLength + 2).padStart(2, '0')}`,
+                device: isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)',
+                annoType: isDual ? '语义标注' : '范围标注',
+                totalFrames: values.totalFrames || 180,
+                manualTime: '',
+                modelTime: nowStr,
+                parseStatus: '解析完成',
+                annoStatus: '未标注',
+                auditStatus: '未审核',
+                hasError: false,
+                segments: []
+              },
+              {
+                key: `uploaded_${Date.now()}_3`,
+                id: 744101 + currentLength + 12,
+                taskName: values.dataType === 'mp4' ? '垃圾处理教学(RGB视频)' : values.dataType === 'trajectory' ? '餐盘整理序列' : '开合抽屉轨迹',
+                instance: `实例_${instanceId}_${String(currentLength + 3).padStart(3, '0')}`,
+                annoTaskName: `自动解析标注_${String(currentLength + 3).padStart(2, '0')}`,
+                device: isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)',
+                annoType: isDual ? '语义标注' : '范围标注',
+                totalFrames: values.totalFrames || 210,
+                manualTime: '',
+                modelTime: nowStr,
+                parseStatus: '解析完成',
+                annoStatus: '未标注',
+                auditStatus: '未审核',
+                hasError: false,
+                segments: []
+              }
+            ];
+
+            setEpisodes(prev => [...newEpisodes, ...prev]);
+            
+            setTimeout(() => {
+              setIsUploading(false);
+              setIsUploadModalOpen(false);
+              setUploadFileList([]);
+              message.success('🚀 成功上传并自动解析 3 个新具身动作序列数据！');
+            }, 300);
+
+            return 100;
+          }
+          return prev + 20;
+        });
+      }, 150);
+    }).catch(() => {
+      message.warning('请补充必填信息');
+    });
+  };
+
+  const handleBatchAuditPass = () => {
+    Modal.confirm({
+      title: '确认批量审核通过？',
+      content: `确定要将选中的 ${selectedRowKeys.length} 个实例的审核状态设置为「通过」吗？`,
+      okText: '确定',
+      cancelText: '取消',
+      onOk() {
+        setEpisodes(prev => prev.map(ep => {
+          if (selectedRowKeys.includes(ep.key)) {
+            return {
+              ...ep,
+              auditStatus: '通过',
+              annoStatus: ep.annoStatus === '未标注' ? '已标注' : ep.annoStatus
+            };
+          }
+          return ep;
+        }));
+        setSelectedRowKeys([]);
+        setSelectedRows([]);
+        message.success('批量审核通过操作成功！');
+      }
+    });
+  };
+
+  const handleBatchAuditReject = () => {
+    Modal.confirm({
+      title: '确认批量审核驳回？',
+      content: `确定要将选中的 ${selectedRowKeys.length} 个实例的审核状态设置为「不通过」吗？`,
+      okText: '确定',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk() {
+        setEpisodes(prev => prev.map(ep => {
+          if (selectedRowKeys.includes(ep.key)) {
+            return {
+              ...ep,
+              auditStatus: '不通过'
+            };
+          }
+          return ep;
+        }));
+        setSelectedRowKeys([]);
+        setSelectedRows([]);
+        message.warning('批量审核驳回操作成功！');
       }
     });
   };
@@ -422,6 +563,14 @@ export default function AnnotationAuditEpisodeListPage() {
              <Text strong style={{ fontSize: '14px' }}>标注审核 — 实例 #{instanceId}</Text>
            </Space>
            <Space>
+             <Button 
+               type="primary" 
+               icon={<UploadOutlined />} 
+               onClick={() => { uploadForm.resetFields(); setUploadFileList([]); setIsUploadModalOpen(true); }}
+               style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
+             >
+               上传数据
+             </Button>
              <Button type="primary" size="small" icon={<AuditOutlined />} onClick={() => message.success('审核全部数据')}>审核全部数据</Button>
              <Button type="text" icon={<CloseOutlined />} onClick={() => router.push('/annotation/audit')} />
            </Space>
@@ -536,6 +685,25 @@ export default function AnnotationAuditEpisodeListPage() {
                   onClick={handleBatchReset}
                 >
                   批量清除标注
+                </Button>
+                <Button 
+                  type="primary"
+                  size="middle" 
+                  icon={<CheckCircleOutlined />}
+                  style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 'bold' }}
+                  onClick={handleBatchAuditPass}
+                >
+                  批量一键通过
+                </Button>
+                <Button 
+                  type="primary"
+                  size="middle" 
+                  danger
+                  icon={<CloseOutlined />}
+                  style={{ fontWeight: 'bold' }}
+                  onClick={handleBatchAuditReject}
+                >
+                  批量一键驳回
                 </Button>
                 <Button 
                   size="middle"
@@ -717,6 +885,99 @@ export default function AnnotationAuditEpisodeListPage() {
             </div>
             
           </div>
+        )}
+      </Modal>
+
+
+      {/* ----------------------------------------------------
+          POPUP MODAL: 上传数据 (Upload Data)
+          ---------------------------------------------------- */}
+      <Modal
+        title={
+          <Space>
+            <UploadOutlined style={{ color: '#1677ff', fontSize: 18 }} />
+            <span style={{ fontSize: '15px', fontWeight: 'bold' }}>上传数据 (导入机器人序列)</span>
+          </Space>
+        }
+        open={isUploadModalOpen}
+        onCancel={() => !isUploading && setIsUploadModalOpen(false)}
+        onOk={handleStartUpload}
+        okText="确认上传并自动解析"
+        cancelText="取消"
+        okButtonProps={{ style: { background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }, disabled: uploadFileList.length === 0 || isUploading }}
+        width={640}
+        destroyOnClose
+        maskClosable={!isUploading}
+      >
+        {isUploading ? (
+          <div style={{ padding: '30px 10px', textAlign: 'center' }}>
+            <LoadingOutlined style={{ fontSize: 36, color: '#1677ff', marginBottom: 16 }} spin />
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1e293b', marginBottom: 12 }}>
+              正在上传并执行机器人运动解析与轨迹生成，请稍候... ({uploadProgress}%)
+            </div>
+            <Progress percent={uploadProgress} strokeColor="#1677ff" status="active" style={{ maxWidth: 400, margin: '0 auto' }} />
+          </div>
+        ) : (
+          <Form
+            form={uploadForm}
+            layout="vertical"
+            initialValues={{ dataType: 'zip', totalFrames: 120 }}
+          >
+            <Form.Item
+              name="dataType"
+              label="数据类型"
+              rules={[{ required: true }]}
+            >
+              <Select>
+                <Option value="zip">机器人轨迹 + 相机视频 (压缩包 ZIP)</Option>
+                <Option value="mp4">单纯 RGB 视频录制文件 (MP4)</Option>
+                <Option value="trajectory">关节角点控制轨迹信息 (JSON)</Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item label="选择数据文件" required>
+              <Upload.Dragger
+                fileList={uploadFileList}
+                beforeUpload={(file) => {
+                  setUploadFileList([file]);
+                  return false;
+                }}
+                onRemove={() => setUploadFileList([])}
+                maxCount={1}
+              >
+                <p className="ant-upload-drag-icon">
+                  <InboxOutlined style={{ color: '#1677ff', fontSize: 36 }} />
+                </p>
+                <p style={{ fontSize: 13, fontWeight: 'bold', color: '#475569', margin: '8px 0 4px' }}>
+                  点击或拖拽文件至此区域进行上传
+                </p>
+                <p style={{ fontSize: 11, color: '#94a3b8' }}>
+                  支持拖放单文件，最大 200MB。机器人轨迹格式支持 JSON、CSV、ZIP 归档包。
+                </p>
+              </Upload.Dragger>
+            </Form.Item>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="totalFrames"
+                  label="初始预设帧数"
+                  rules={[{ required: true, message: '请输入初始预设帧数' }]}
+                >
+                  <InputNumber min={30} max={2000} style={{ width: '100%' }} suffix="帧" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="uploadOperator" label="上传操作员">
+                  <Input placeholder="当前登录用户" disabled value="张三 (管理员)" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#1e40af' }}>
+              <strong>📋 提示：</strong>上传成功后，系统会自动调用大模型解析服务进行视频分帧、手眼位置对齐及机器人本体关节状态估计（预计耗时 5~10 秒）。解析完成后，新上传的数据将自动在主列表中呈现，可进行时序标注和审核。
+            </div>
+          </Form>
         )}
       </Modal>
 

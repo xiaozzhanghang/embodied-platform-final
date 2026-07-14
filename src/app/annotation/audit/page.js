@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select } from 'antd';
-import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select, InputNumber } from 'antd';
+import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, PlusOutlined, FileAddOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 const ANNO_TYPES = ['框标注', '点标注', '范围标注', '范围&框标注'];
 const TASK_STATUSES = ['进行中', '已完成', '待分配', '暂停'];
@@ -28,6 +29,54 @@ const DEVICE_TYPES = ['galbot', '鹿鸣', '真机', '仿真机'];
 const COLLECTION_MODES = ['UMI', 'galbot', '标准采集'];
 // 遥操类型选项
 const REMOTE_CONTROL_TYPES = ['双设备', '单设备', '遥操'];
+
+// 已采集未标注的数据源列表（关联自数据资产目录）
+const collectedDataSources = [
+  { 
+    value: 'catalog_1', 
+    label: '桌面书籍整理 (organize_books_on_the_table) [ID: 1b3e56c1b...] (银河 v2.1, 仿真数据)', 
+    project: '银河 v2.1 仿真测试', 
+    taskbook: 'TB-物品摆放', 
+    taskName: '桌面书籍整理_仿真任务', 
+    dataCount: 1255, 
+    deviceType: '仿真机', 
+    steps: [
+      { arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' },
+      { arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近' },
+      { arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧' },
+      { arm: '右手 (Right Arm)', skill: '放置', object: '桌面', goal: '稳定释放' }
+    ] 
+  },
+  { 
+    value: 'catalog_2', 
+    label: '鹿鸣双臂手眼协同动作采集 (session_028) [ID: session_028_6f8...] (鹿鸣 v1.0, 真实数据)', 
+    project: '鹿鸣高频协同抓取', 
+    taskbook: 'TB-餐盘整理', 
+    taskName: '鹿鸣手眼协同采集_028', 
+    dataCount: 15222, 
+    deviceType: '鹿鸣', 
+    steps: [
+      { arm: '双手 (Dual Arms)', skill: '识别', object: '目标物品', goal: '确认位置' },
+      { arm: '双手 (Dual Arms)', skill: '靠近', object: '目标物品', goal: '避障靠近' },
+      { arm: '双手 (Dual Arms)', skill: '抓取', object: '目标物品', goal: '牢固夹紧' },
+      { arm: '双手 (Dual Arms)', skill: '放置', object: '桌面', goal: '稳定释放' }
+    ] 
+  },
+  { 
+    value: 'catalog_3', 
+    label: '鹿鸣双手臂动作标定测试 (session_029) [ID: session_029_6f8...] (鹿鸣 v1.0, 真实数据)', 
+    project: '鹿鸣高频协同抓取', 
+    taskbook: 'TB-餐盘整理', 
+    taskName: '鹿鸣手臂标定测试_029', 
+    dataCount: 11020, 
+    deviceType: '鹿鸣', 
+    steps: [
+      { arm: '双手 (Dual Arms)', skill: '识别', object: '目标物品', goal: '确认位置' },
+      { arm: '双手 (Dual Arms)', skill: '旋转', object: '目标物品', goal: '扭转至角度' },
+      { arm: '双手 (Dual Arms)', skill: '松开', object: '目标物品', goal: '稳定释放' }
+    ] 
+  }
+];
 
 function makeProgress(total, type) {
   if (type === 'full') return total;
@@ -88,12 +137,29 @@ const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
 export default function AnnotationAuditPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('all');
-  const [filters, setFilters] = useState({});
+   const [filters, setFilters] = useState({});
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const { message } = App.useApp();
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
   const [reassignRecord, setReassignRecord] = useState(null);
   const [reassignForm] = Form.useForm();
+  
+  const [tableData, setTableData] = useState(instanceMockData);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('embodied_anno_tasks');
+    if (saved) {
+      try {
+        setTableData(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('embodied_anno_tasks', JSON.stringify(tableData));
+  }, [tableData]);
 
   const handleReassign = (record) => {
     setReassignRecord(record);
@@ -106,13 +172,24 @@ export default function AnnotationAuditPage() {
 
   const handleReassignSubmit = () => {
     reassignForm.validateFields().then(values => {
-      message.success(`已将「${values.annotator}」分配为标注员，「${values.auditor}」分配为审核员`);
+      setTableData(prev => prev.map(item => {
+        if (item.key === reassignRecord.key) {
+          return {
+            ...item,
+            annotator: values.annotator,
+            auditor: values.auditor,
+            taskStatus: item.annotator === '-' || values.annotator === '-' ? '待分配' : '进行中'
+          };
+        }
+        return item;
+      }));
+      message.success(`人员分配成功！`);
       setReassignModalOpen(false);
     });
   };
 
   const filteredData = React.useMemo(() => {
-    return instanceMockData.filter(item => {
+    return tableData.filter(item => {
       const projectMatch = !filters.project || item.project.includes(filters.project);
       const taskbookMatch = !filters.taskbook || item.taskbook === filters.taskbook;
       const nameMatch = !filters.name || item.taskName.includes(filters.name);
@@ -123,7 +200,69 @@ export default function AnnotationAuditPage() {
       const auditorMatch = !filters.auditor || item.auditor === filters.auditor;
       return projectMatch && taskbookMatch && nameMatch && idMatch && typeMatch && statusMatch && annotatorMatch && auditorMatch;
     });
-  }, [filters]);
+  }, [filters, tableData]);
+
+  const handleCreateTask = () => {
+    newTaskForm.validateFields().then(values => {
+      const now = new Date();
+      const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+      const newId = 16800 + Math.floor(Math.random() * 100);
+      const newTask = {
+        key: `new_${Date.now()}`,
+        project: values.project || '新建项目',
+        taskbook: values.taskbook || '新任务书',
+        annoId: newId,
+        taskId: 21700 + Math.floor(Math.random() * 100),
+        instanceId: 19800 + Math.floor(Math.random() * 100),
+        taskName: values.taskName,
+        taskNameEn: values.taskName,
+        annoTaskName: `${values.taskName}_标注_${values.annotator || '待分配'}`,
+        dataCount: values.dataCount || 120,
+        dataMinutes: ((values.dataCount || 120) * 0.5 / 60).toFixed(1),
+        taskStatus: '待分配',
+        isShelfTask: '否',
+        rowCol: 'R1C1',
+        deviceSN: `SN-${Date.now().toString().slice(-6)}`,
+        deviceType: values.deviceType || 'galbot',
+        collectionMode: 'UMI',
+        remoteControlType: '单设备',
+        taskUsage: 'OfficialCollection(正式采集)',
+        sceneCategory: '真实数据',
+        subSceneCategory: 'UMI工业',
+        qaer: values.qaer || '',
+        annotator: values.annotator || '待分配',
+        auditor: values.auditor || '待分配',
+        collector: '',
+        qaProgress: 0,
+        annoProgress: 0,
+        annoTotal: values.dataCount || 120,
+        auditProgress: 0,
+        auditTotal: 0,
+        annoType: values.annoType,
+        taskDesc: values.taskDesc || `${values.taskName}场景数据标注`,
+        creator: '当前用户',
+        createTime: timeStr,
+      };
+      setTableData(prev => [newTask, ...prev]);
+      setIsNewTaskOpen(false);
+      newTaskForm.resetFields();
+      message.success(`✅ 已成功新建标注任务「${values.taskName}」`);
+    }).catch(() => message.warning('请补充必填项'));
+  };
+
+  const handleSourceChange = (value) => {
+    const selectedSource = collectedDataSources.find(s => s.value === value);
+    if (selectedSource) {
+      newTaskForm.setFieldsValue({
+        taskName: selectedSource.taskName,
+        project: selectedSource.project,
+        taskbook: selectedSource.taskbook,
+        dataCount: selectedSource.dataCount,
+        deviceType: selectedSource.deviceType,
+        steps: selectedSource.steps || [],
+      });
+    }
+  };
 
   const statusColors = {
     '进行中': 'processing',
@@ -238,6 +377,14 @@ export default function AnnotationAuditPage() {
         }
         extra={
           <Space>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={() => router.push('/annotation/audit/create')}
+              style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
+            >
+              新建标注任务
+            </Button>
             <Button icon={<UserOutlined />} disabled={selectedRowKeys.length === 0} onClick={() => message.info(`已选 ${selectedRowKeys.length} 条，批量分配`)}>
               批量分配 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
             </Button>
@@ -296,6 +443,7 @@ export default function AnnotationAuditPage() {
           </Form.Item>
         </Form>
       </Modal>
+
     </MainLayout>
   );
 }
