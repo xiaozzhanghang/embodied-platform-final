@@ -475,24 +475,24 @@ function CreateTaskContent() {
 
             <Card title="基础信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
               <Row gutter={24}>
-                <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} dropdownRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} dropdownRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} dropdownRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} popupRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="任务名称" name="name" required><Input /></Form.Item></Col>
                 <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} dropdownRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择" options={optionsMap.mode} dropdownRender={m => renderDropdown(m, 'mode')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} dropdownRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} dropdownRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="指派默认采集员" name="collector" required><Select placeholder="请选择指派采集员" options={collectorsList} /></Form.Item></Col>
               </Row>
             </Card>
 
             <Card title="采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
               <Row gutter={24}>
-                <Col span={8}><Form.Item label="设备类型" name="deviceType" required><Select options={optionsMap.deviceType} dropdownRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="设备类型" name="deviceType" required><Select options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="分配默认设备实例" name="deviceInstance" required><Select placeholder="请选择设备实例" options={filteredDeviceInstances} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="遥操主控方式" name="teleType" required><Select options={optionsMap.teleType} dropdownRender={m => renderDropdown(m, 'teleType')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="遥操主控方式" name="teleType" required><Select options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} /></Form.Item></Col>
               </Row>
               <Table dataSource={availableParts} columns={[{title:'名称', dataIndex:'name'},{title:'类型', dataIndex:'type'}]} rowSelection={{type:'checkbox', selectedRowKeys:selectedPartKeys}} pagination={false} size="small" bordered />
             </Card>

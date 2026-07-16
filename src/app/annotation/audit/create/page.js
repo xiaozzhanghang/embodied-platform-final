@@ -21,7 +21,8 @@ import {
   Select,
   InputNumber,
   Divider,
-  Alert
+  Alert,
+  Radio
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -37,7 +38,8 @@ import {
   SettingOutlined,
   TeamOutlined,
   OrderedListOutlined,
-  LinkOutlined
+  LinkOutlined,
+  EditOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
@@ -80,6 +82,12 @@ const collectedDataSources = [
       { arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近' },
       { arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧' },
       { arm: '右手 (Right Arm)', skill: '放置', object: '桌面', goal: '稳定释放' }
+    ],
+    naturalSteps: [
+      { text: '右手识别并定位桌上的目标书籍' },
+      { text: '右手避障缓慢靠近书籍' },
+      { text: '右手牢固夹紧并抓取书籍' },
+      { text: '右手将书籍平稳放置在目标桌面上释放' }
     ]
   },
   {
@@ -95,6 +103,12 @@ const collectedDataSources = [
       { arm: '双手 (Dual Arms)', skill: '靠近', object: '目标物品', goal: '避障靠近' },
       { arm: '双手 (Dual Arms)', skill: '抓取', object: '目标物品', goal: '牢固夹紧' },
       { arm: '双手 (Dual Arms)', skill: '放置', object: '桌面', goal: '稳定释放' }
+    ],
+    naturalSteps: [
+      { text: '双手识别并定位桌上的待整理餐盘' },
+      { text: '双手避障靠近餐盘' },
+      { text: '双手牢固夹紧抓取餐盘' },
+      { text: '双手平稳将餐盘移至指定放置区域' }
     ]
   },
   {
@@ -109,28 +123,109 @@ const collectedDataSources = [
       { arm: '双手 (Dual Arms)', skill: '识别', object: '目标物品', goal: '确认位置' },
       { arm: '双手 (Dual Arms)', skill: '旋转', object: '目标物品', goal: '扭转至角度' },
       { arm: '双手 (Dual Arms)', skill: '松开', object: '目标物品', goal: '稳定释放' }
+    ],
+    naturalSteps: [
+      { text: '双手识别目标物品并确认位置' },
+      { text: '双手将物品旋转至指定包装/装配角度' },
+      { text: '双手在指定位置稳定松开释放' }
+    ]
+  },
+  {
+    value: 'catalog_4',
+    label: '工业纸箱打包封装与装箱任务 (session_175_mov) [ID: session_175_box...] (galbot, 真实数据)',
+    project: '垃圾分类抓取项目',
+    taskbook: 'TB-物品摆放',
+    taskName: '纸箱打包装箱_session_175',
+    dataCount: 120,
+    deviceType: 'galbot',
+    steps: [
+      { arm: '双手 (Dual Arms)', skill: '抓取', object: '纸箱', goal: '牢固夹紧' },
+      { arm: '双手 (Dual Arms)', skill: '放置', object: '泡沫填充纸', goal: '稳定释放' },
+      { arm: '双手 (Dual Arms)', skill: '抓取', object: '工厂部件', goal: '牢固夹紧' },
+      { arm: '双手 (Dual Arms)', skill: '放置', object: '泡沫填充纸', goal: '稳定释放' },
+      { arm: '双手 (Dual Arms)', skill: '对准', object: '纸箱', goal: '推拉合拢' },
+      { arm: '双手 (Dual Arms)', skill: '对准', object: '胶带封装器', goal: '对齐插槽' }
+    ],
+    naturalSteps: [
+      { text: '展开纸箱并封底 (Unfold box and seal bottom)' },
+      { text: '放入底部泡沫垫 (Place bottom foam pad)' },
+      { text: '放入工厂部件 (Place factory components/metal brackets)' },
+      { text: '放入顶部泡沫垫 (Place top foam pad)' },
+      { text: '折叠合拢箱盖 (Fold box lids)' },
+      { text: '顶部封箱 (Seal top)' }
     ]
   }
 ];
 
+// ============ 动作步骤预设模板 ============
+const ACTION_TEMPLATES = {
+  box_packing: {
+    steps: [
+      { arm: '双手 (Dual Arms)', skill: '抓取', object: '纸箱', goal: '牢固夹紧' },
+      { arm: '双手 (Dual Arms)', skill: '放置', object: '泡沫填充纸', goal: '稳定释放' },
+      { arm: '双手 (Dual Arms)', skill: '抓取', object: '工厂部件', goal: '牢固夹紧' },
+      { arm: '双手 (Dual Arms)', skill: '放置', object: '泡沫填充纸', goal: '稳定释放' },
+      { arm: '双手 (Dual Arms)', skill: '对准', object: '纸箱', goal: '推拉合拢' },
+      { arm: '双手 (Dual Arms)', skill: '对准', object: '胶带封装器', goal: '对齐插槽' }
+    ],
+    naturalSteps: [
+      { text: '展开纸箱并封底 (Unfold box and seal bottom)' },
+      { text: '放入底部泡沫垫 (Place bottom foam pad)' },
+      { text: '放入工厂部件 (Place factory components/metal brackets)' },
+      { text: '放入顶部泡沫垫 (Place top foam pad)' },
+      { text: '折叠合拢箱盖 (Fold box lids)' },
+      { text: '顶部封箱 (Seal top)' }
+    ]
+  },
+  books_organize: {
+    steps: [
+      { arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' },
+      { arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近' },
+      { arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧' },
+      { arm: '右手 (Right Arm)', skill: '放置', object: '桌面', goal: '稳定释放' }
+    ],
+    naturalSteps: [
+      { text: '右手识别并定位桌上的目标书籍' },
+      { text: '右手避障缓慢靠近书籍' },
+      { text: '右手牢固夹紧并抓取书籍' },
+      { text: '右手将书籍平稳放置在目标桌面上释放' }
+    ]
+  },
+  dishes_clean: {
+    steps: [
+      { arm: '双手 (Dual Arms)', skill: '识别', object: '餐盘', goal: '确认位置' },
+      { arm: '双手 (Dual Arms)', skill: '靠近', object: '餐盘', goal: '避障靠近' },
+      { arm: '双手 (Dual Arms)', skill: '抓取', object: '餐盘', goal: '牢固夹紧' },
+      { arm: '双手 (Dual Arms)', skill: '放置', object: '桌面', goal: '稳定释放' }
+    ],
+    naturalSteps: [
+      { text: '双手识别并定位桌上的待整理餐盘' },
+      { text: '双手避障靠近餐盘' },
+      { text: '双手牢固夹紧抓取餐盘' },
+      { text: '双手平稳将餐盘移至指定放置区域' }
+    ]
+  },
+  drawer_operation: {
+    steps: [
+      { arm: '右手 (Right Arm)', skill: '识别', object: '抽屉', goal: '确认位置' },
+      { arm: '右手 (Right Arm)', skill: '靠近', object: '抽屉', goal: '避障靠近' },
+      { arm: '右手 (Right Arm)', skill: '抓取', object: '抽屉', goal: '牢固夹紧' },
+      { arm: '右手 (Right Arm)', skill: '松开', object: '抽屉', goal: '稳定释放' }
+    ],
+    naturalSteps: [
+      { text: '识别抽屉把手位置并调整末端方向' },
+      { text: '末端靠近并握紧抽屉拉手' },
+      { text: '匀速拉开抽屉至最大开度' },
+      { text: '释放把手并退回安全等待位置' }
+    ]
+  }
+};
+
 // ============ 区块标题组件 ============
-const SectionHeader = ({ icon, title, subtitle, number }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-    <div style={{
-      width: 32, height: 32, borderRadius: 8,
-      background: 'linear-gradient(135deg, #1677ff 0%, #4096ff 100%)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#fff', fontSize: 15, fontWeight: 700
-    }}>
-      {number}
-    </div>
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {icon}
-        <span style={{ fontSize: 15, fontWeight: 600, color: '#1f1f1f' }}>{title}</span>
-      </div>
-      {subtitle && <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2 }}>{subtitle}</div>}
-    </div>
+const SectionHeader = ({ icon, title }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+    {icon}
+    <span style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f' }}>{title}</span>
   </div>
 );
 
@@ -142,6 +237,19 @@ export default function CreateAnnotationTaskPage() {
   const [activeCatalog, setActiveCatalog] = useState(null);
   const [episodesList, setEpisodesList] = useState([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [sopMode, setSopMode] = useState('structured'); // 'structured' or 'natural'
+
+  // Apply predefined template and fill steps data
+  const handleTemplateSelect = (value) => {
+    const template = ACTION_TEMPLATES[value];
+    if (template) {
+      form.setFieldsValue({
+        steps: template.steps,
+        naturalSteps: template.naturalSteps
+      });
+      message.success('已成功应用预设动作模版并填充步骤数据！');
+    }
+  };
 
   // Generate mock action episodes when catalog is changed
   const handleCatalogChange = (value) => {
@@ -158,6 +266,7 @@ export default function CreateAnnotationTaskPage() {
       dataCount: 120, // default annotation count
       deviceType: catalog.deviceType,
       steps: catalog.steps || [],
+      naturalSteps: catalog.naturalSteps || [],
       taskDesc: `针对数据目录「${catalog.label.split(' [')[0]}」的机器人时序动作标注`
     });
 
@@ -213,6 +322,17 @@ export default function CreateAnnotationTaskPage() {
       const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
       const newId = 16800 + Math.floor(Math.random() * 100);
 
+      // Compile steps depending on chosen mode
+      const processedSteps = sopMode === 'natural'
+        ? (values.naturalSteps || []).map((s, idx) => ({
+            id: idx + 1,
+            text: s.text || ''
+          }))
+        : (values.steps || []).map((s, idx) => ({
+            id: idx + 1,
+            text: `${s.arm || ''}对${s.object || ''}进行[${s.skill || ''}]，达到[${s.goal || ''}]`
+          }));
+
       const newTask = {
         key: `new_${Date.now()}`,
         project: values.project || '未命名项目',
@@ -236,7 +356,10 @@ export default function CreateAnnotationTaskPage() {
         taskDesc: values.taskDesc || `${values.taskName}场景数据标注`,
         creator: '当前用户',
         createTime: timeStr,
-        steps: values.steps || [],
+        steps: processedSteps,
+        rawSteps: values.steps || [],
+        rawNaturalSteps: values.naturalSteps || [],
+        sopMode: sopMode,
         selectedIds: selectedRowKeys
       };
 
@@ -306,7 +429,8 @@ export default function CreateAnnotationTaskPage() {
               annoType: '范围标注',
               deviceType: 'galbot',
               dataCount: 120,
-              steps: [{ arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' }]
+              steps: [{ arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' }],
+              naturalSteps: [{ text: '右手识别并定位桌上的目标书籍' }]
             }}
           >
 
@@ -320,7 +444,7 @@ export default function CreateAnnotationTaskPage() {
                   subtitle="从数据资产目录中选择已导入或已采集的动作序列数据包"
                 />
               }
-              bordered={false}
+              variant="borderless"
               style={cardStyle}
             >
               <Row gutter={16}>
@@ -351,15 +475,17 @@ export default function CreateAnnotationTaskPage() {
                     tooltip="设置需要下发标注的动作实例数量，将自动对应下方数据表中的选中数量"
                     style={{ marginBottom: 0 }}
                   >
-                    <InputNumber
-                      min={1}
-                      style={{ width: '100%' }}
-                      onChange={handleCountChange}
-                      addonAfter="条"
-                      size="large"
-                      disabled={!activeCatalog}
-                      placeholder={activeCatalog ? "" : "请先选择目录"}
-                    />
+                    <Space.Compact style={{ width: '100%' }}>
+                      <InputNumber
+                        min={1}
+                        style={{ width: 'calc(100% - 46px)' }}
+                        onChange={handleCountChange}
+                        size="large"
+                        disabled={!activeCatalog}
+                        placeholder={activeCatalog ? "" : "请先选择目录"}
+                      />
+                      <Button size="large" disabled style={{ width: 46, padding: 0, color: 'rgba(0, 0, 0, 0.45)', backgroundColor: '#fafafa', borderLeft: 0, cursor: 'default' }}>条</Button>
+                    </Space.Compact>
                   </Form.Item>
                 </Col>
               </Row>
@@ -429,7 +555,7 @@ export default function CreateAnnotationTaskPage() {
                   subtitle="设置任务名称、标注类型、所属项目等基础信息"
                 />
               }
-              bordered={false}
+              variant="borderless"
               style={cardStyle}
             >
               <Row gutter={16}>
@@ -482,7 +608,7 @@ export default function CreateAnnotationTaskPage() {
                   subtitle="分配本任务的标注员与审核员"
                 />
               }
-              bordered={false}
+              variant="borderless"
               style={cardStyle}
             >
               <Row gutter={16}>
@@ -503,115 +629,447 @@ export default function CreateAnnotationTaskPage() {
             <Card
               title={
                 <SectionHeader
-                  number="4"
                   icon={<OrderedListOutlined style={{ color: '#1677ff' }} />}
-                  title="动作步骤编排 (SOP Steps)"
-                  subtitle="定义标注任务中的机器人动作步骤序列"
+                  title="动作步骤编排"
                 />
               }
-              bordered={false}
+              extra={
+                <div style={{ 
+                  display: 'flex', 
+                  background: '#f1f5f9', 
+                  padding: '2px', 
+                  borderRadius: '8px', 
+                  border: '1px solid #e2e8f0',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)'
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setSopMode('structured')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 16px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '12px',
+                      fontWeight: sopMode === 'structured' ? 600 : 500,
+                      color: sopMode === 'structured' ? '#2563eb' : '#64748b',
+                      background: sopMode === 'structured' ? '#ffffff' : 'transparent',
+                      boxShadow: sopMode === 'structured' ? '0 2px 8px rgba(37, 99, 235, 0.08)' : 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  >
+                    <OrderedListOutlined style={{ fontSize: 13 }} />
+                    结构化步骤
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSopMode('natural')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 16px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '12px',
+                      fontWeight: sopMode === 'natural' ? 600 : 500,
+                      color: sopMode === 'natural' ? '#10b981' : '#64748b',
+                      background: sopMode === 'natural' ? '#ffffff' : 'transparent',
+                      boxShadow: sopMode === 'natural' ? '0 2px 8px rgba(16, 185, 129, 0.08)' : 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                  >
+                    <EditOutlined style={{ fontSize: 13 }} />
+                    自然语言描述
+                  </button>
+                </div>
+              }
+              variant="borderless"
               style={cardStyle}
             >
-              <Form.List name="steps">
-                {(fields, { add, remove }) => (
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+
+              {/* 模版选择与填充 */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: 20,
+                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                padding: '16px 20px',
+                borderRadius: 12,
+                border: '1px dashed #cbd5e1'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <InfoCircleFilled style={{ color: '#1677ff' }} />
+                    预设动作步骤模版一键填充:
+                  </span>
+                  <Select
+                    placeholder="选择预设动作模版一键填充步骤数据..."
+                    style={{ width: 360 }}
+                    size="middle"
+                    onChange={handleTemplateSelect}
+                    allowClear
+                  >
+                    <Option value="box_packing">📦 工业纸箱打包封装与装箱模版 (6 步)</Option>
+                    <Option value="books_organize">📚 桌面书籍整理与摆放模版 (4 步)</Option>
+                    <Option value="dishes_clean">🍽️ 餐盘清理与协同搬运模版 (4 步)</Option>
+                    <Option value="drawer_operation">🚪 抽屉开关与取物操作模版 (4 步)</Option>
+                  </Select>
+                </div>
+              </div>
+
+              {sopMode === 'natural' ? (
+                <Form.List name="naturalSteps">
+                  {(fields, { add, remove, move }) => (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative', paddingLeft: 12 }}>
+                      {/* Visual vertical connector line */}
+                      <div style={{
+                        position: 'absolute',
+                        left: '27px',
+                        top: '24px',
+                        bottom: '24px',
+                        width: '2px',
+                        borderLeft: '2px dashed #cbd5e1',
+                        zIndex: 0
+                      }} />
+
+                      {fields.map((field, index) => (
+                        <div
+                          key={field.key}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('text/plain', String(index));
+                            e.currentTarget.style.opacity = '0.6';
+                          }}
+                          onDragEnd={(e) => {
+                            e.currentTarget.style.opacity = '1';
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                            if (!isNaN(fromIndex) && fromIndex !== index) {
+                              move(fromIndex, index);
+                            }
+                          }}
+                          style={{
+                            display: 'flex',
+                            gap: 16,
+                            background: '#ffffff',
+                            border: '1px dashed #cbd5e1',
+                            borderRadius: 12,
+                            padding: '16px 20px',
+                            position: 'relative',
+                            zIndex: 1,
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                            transition: 'all 0.2s ease',
+                            alignItems: 'center',
+                            cursor: 'grab'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#10b981';
+                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.08)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = '#cbd5e1';
+                            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
+                            e.currentTarget.style.transform = 'none';
+                          }}
+                        >
+                          {/* Step Number Badge */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#ffffff',
+                              fontWeight: 'bold',
+                              fontSize: 14,
+                              boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
+                            }}>
+                              {String(index + 1).padStart(2, '0')}
+                            </div>
+                            <div style={{ color: '#94a3b8', fontSize: 16, marginTop: 4, cursor: 'grab', userSelect: 'none' }}>
+                              ⋮
+                            </div>
+                          </div>
+
+                          {/* Form Content */}
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>自然语言动作描述</div>
+                            <Form.Item {...field} name={[field.name, 'text']} rules={[{ required: true, message: '请输入步骤描述' }]} noStyle>
+                              <Input
+                                placeholder="在此描述具体的机器人动作步骤，例如：双手抓取底部泡沫填充纸放入箱内"
+                                size="large"
+                                style={{
+                                  width: '100%',
+                                  borderRadius: 8,
+                                  borderColor: '#cbd5e1'
+                                }}
+                                prefix={<EditOutlined style={{ color: '#94a3b8', marginRight: 4 }} />}
+                              />
+                            </Form.Item>
+                          </div>
+
+                          {/* Delete Action Button */}
+                          <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
+                            <Button
+                              type="text"
+                              danger
+                              size="middle"
+                              disabled={fields.length <= 1}
+                              icon={<MinusCircleOutlined style={{ fontSize: 16 }} />}
+                              onClick={() => remove(field.name)}
+                              style={{
+                                borderRadius: 8,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#fef2f2',
+                                border: '1px solid #fee2e2',
+                                width: 36,
+                                height: 36
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Add Step Button */}
                       <Button
-                        type="primary"
-                        size="small"
+                        type="dashed"
+                        onClick={() => add({ text: '' })}
                         icon={<PlusOutlined />}
-                        onClick={() => add({ arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' })}
-                        style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
+                        style={{
+                          width: '100%',
+                          height: 48,
+                          borderRadius: 12,
+                          color: '#10b981',
+                          borderColor: '#a7f3d0',
+                          background: '#ecfdf5',
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6
+                        }}
                       >
-                        添加步骤
+                        添加自然语言步骤
                       </Button>
                     </div>
+                  )}
+                </Form.List>
+              ) : (
+                <Form.List name="steps">
+                  {(fields, { add, remove, move }) => (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative', paddingLeft: 12 }}>
+                      {/* Visual vertical connector line */}
+                      <div style={{
+                        position: 'absolute',
+                        left: '27px',
+                        top: '24px',
+                        bottom: '24px',
+                        width: '2px',
+                        borderLeft: '2px dashed #cbd5e1',
+                        zIndex: 0
+                      }} />
 
-                    <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
-                      {/* Table Header */}
-                      <Row style={{ background: '#fafafa', padding: '10px 12px', borderBottom: '1px solid #f0f0f0', fontWeight: 'bold', fontSize: 12, color: '#475569' }} align="middle">
-                        <Col span={2} style={{ textAlign: 'center' }}>排序</Col>
-                        <Col span={5}>执行末端类型</Col>
-                        <Col span={5}>原子技能</Col>
-                        <Col span={5}>操作对象</Col>
-                        <Col span={5}>操作目标</Col>
-                        <Col span={2} style={{ textAlign: 'center' }}>操作</Col>
-                      </Row>
+                      {fields.map((field, index) => (
+                        <div
+                          key={field.key}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('text/plain', String(index));
+                            e.currentTarget.style.opacity = '0.6';
+                          }}
+                          onDragEnd={(e) => {
+                            e.currentTarget.style.opacity = '1';
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                            if (!isNaN(fromIndex) && fromIndex !== index) {
+                              move(fromIndex, index);
+                            }
+                          }}
+                          style={{
+                            display: 'flex',
+                            gap: 16,
+                            background: '#ffffff',
+                            border: '1px dashed #cbd5e1',
+                            borderRadius: 12,
+                            padding: '16px 20px',
+                            position: 'relative',
+                            zIndex: 1,
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                            transition: 'all 0.2s ease',
+                            cursor: 'grab'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#1677ff';
+                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(22, 119, 255, 0.08)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = '#cbd5e1';
+                            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
+                            e.currentTarget.style.transform = 'none';
+                          }}
+                        >
+                          {/* Step Number Badge */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#ffffff',
+                              fontWeight: 'bold',
+                              fontSize: 14,
+                              boxShadow: '0 2px 6px rgba(37, 99, 235, 0.3)'
+                            }}>
+                              {String(index + 1).padStart(2, '0')}
+                            </div>
+                            <div style={{ color: '#94a3b8', fontSize: 16, marginTop: 4, cursor: 'grab', userSelect: 'none' }}>
+                              ⋮
+                            </div>
+                          </div>
 
-                      {/* Table Body */}
-                      <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-                        {fields.map((field, index) => (
-                          <Row key={field.key} style={{ padding: '8px 12px', borderBottom: index === fields.length - 1 ? 'none' : '1px solid #f0f0f0', background: '#fff' }} align="middle" gutter={8}>
-                            <Col span={2} style={{ textAlign: 'center', color: '#bfbfbf', fontSize: 16, cursor: 'grab' }}>
-                              ＋
-                            </Col>
-                            <Col span={5}>
-                              <Form.Item {...field} name={[field.name, 'arm']} rules={[{ required: true }]} noStyle>
-                                <Select size="small" style={{ width: '100%' }}>
-                                  <Option value="右手 (Right Arm)">右手 (Right Arm)</Option>
-                                  <Option value="左手 (Left Arm)">左手 (Left Arm)</Option>
-                                  <Option value="双手 (Dual Arms)">双手 (Dual Arms)</Option>
-                                  <Option value="底盘 (Base)">底盘 (Base)</Option>
-                                  <Option value="相机 (Camera)">相机 (Camera)</Option>
-                                </Select>
-                              </Form.Item>
-                            </Col>
-                            <Col span={5}>
-                              <Form.Item {...field} name={[field.name, 'skill']} rules={[{ required: true }]} noStyle>
-                                <Select size="small" style={{ width: '100%' }}>
-                                  <Option value="识别">识别</Option>
-                                  <Option value="靠近">靠近</Option>
-                                  <Option value="抓取">抓取</Option>
-                                  <Option value="放置">放置</Option>
-                                  <Option value="旋转">旋转</Option>
-                                  <Option value="对准">对准</Option>
-                                  <Option value="松开">松开</Option>
-                                </Select>
-                              </Form.Item>
-                            </Col>
-                            <Col span={5}>
-                              <Form.Item {...field} name={[field.name, 'object']} rules={[{ required: true }]} noStyle>
-                                <Select size="small" style={{ width: '100%' }}>
-                                  <Option value="目标物品">目标物品</Option>
-                                  <Option value="阀门">阀门</Option>
-                                  <Option value="垃圾桶">垃圾桶</Option>
-                                  <Option value="餐盘">餐盘</Option>
-                                  <Option value="抽屉">抽屉</Option>
-                                  <Option value="螺丝刀">螺丝刀</Option>
-                                  <Option value="桌面">桌面</Option>
-                                </Select>
-                              </Form.Item>
-                            </Col>
-                            <Col span={5}>
-                              <Form.Item {...field} name={[field.name, 'goal']} rules={[{ required: true }]} noStyle>
-                                <Select size="small" style={{ width: '100%' }}>
-                                  <Option value="确认位置">确认位置</Option>
-                                  <Option value="避障靠近">避障靠近</Option>
-                                  <Option value="牢固夹紧">牢固夹紧</Option>
-                                  <Option value="稳定释放">稳定释放</Option>
-                                  <Option value="扭转至角度">扭转至角度</Option>
-                                  <Option value="对齐插槽">对齐插槽</Option>
-                                  <Option value="推拉合拢">推拉合拢</Option>
-                                </Select>
-                              </Form.Item>
-                            </Col>
-                            <Col span={2} style={{ textAlign: 'center' }}>
-                              <Button
-                                type="text"
-                                danger
-                                size="small"
-                                disabled={fields.length <= 1}
-                                icon={<MinusCircleOutlined style={{ color: '#ff4d4f' }} />}
-                                onClick={() => remove(field.name)}
-                              />
-                            </Col>
-                          </Row>
-                        ))}
-                      </div>
+                          {/* Form Content Grid */}
+                          <div style={{ flex: 1 }}>
+                            <Row gutter={[12, 12]}>
+                              <Col xs={24} sm={12} md={6}>
+                                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>执行末端类型</div>
+                                <Form.Item {...field} name={[field.name, 'arm']} rules={[{ required: true }]} noStyle>
+                                  <Select size="middle" style={{ width: '100%' }}>
+                                    <Option value="右手 (Right Arm)">右手 (Right Arm)</Option>
+                                    <Option value="左手 (Left Arm)">左手 (Left Arm)</Option>
+                                    <Option value="双手 (Dual Arms)">双手 (Dual Arms)</Option>
+                                    <Option value="底盘 (Base)">底盘 (Base)</Option>
+                                    <Option value="相机 (Camera)">相机 (Camera)</Option>
+                                  </Select>
+                                </Form.Item>
+                              </Col>
+                              
+                              <Col xs={24} sm={12} md={6}>
+                                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>原子技能</div>
+                                <Form.Item {...field} name={[field.name, 'skill']} rules={[{ required: true }]} noStyle>
+                                  <Select size="middle" style={{ width: '100%' }}>
+                                    <Option value="识别">识别</Option>
+                                    <Option value="靠近">靠近</Option>
+                                    <Option value="抓取">抓取</Option>
+                                    <Option value="放置">放置</Option>
+                                    <Option value="旋转">旋转</Option>
+                                    <Option value="对准">对准</Option>
+                                    <Option value="松开">松开</Option>
+                                  </Select>
+                                </Form.Item>
+                              </Col>
+
+                              <Col xs={24} sm={12} md={6}>
+                                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>操作对象</div>
+                                <Form.Item {...field} name={[field.name, 'object']} rules={[{ required: true }]} noStyle>
+                                  <Select size="middle" style={{ width: '100%' }}>
+                                    <Option value="目标物品">目标物品</Option>
+                                    <Option value="阀门">阀门</Option>
+                                    <Option value="垃圾桶">垃圾桶</Option>
+                                    <Option value="餐盘">餐盘</Option>
+                                    <Option value="抽屉">抽屉</Option>
+                                    <Option value="螺丝刀">螺丝刀</Option>
+                                    <Option value="桌面">桌面</Option>
+                                    <Option value="纸箱">纸箱</Option>
+                                    <Option value="泡沫填充纸">泡沫填充纸</Option>
+                                    <Option value="工厂部件">工厂部件</Option>
+                                    <Option value="胶带封装器">胶带封装器</Option>
+                                  </Select>
+                                </Form.Item>
+                              </Col>
+
+                              <Col xs={24} sm={12} md={6}>
+                                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>操作目标</div>
+                                <Form.Item {...field} name={[field.name, 'goal']} rules={[{ required: true }]} noStyle>
+                                  <Select size="middle" style={{ width: '100%' }}>
+                                    <Option value="确认位置">确认位置</Option>
+                                    <Option value="避障靠近">避障靠近</Option>
+                                    <Option value="牢固夹紧">牢固夹紧</Option>
+                                    <Option value="稳定释放">稳定释放</Option>
+                                    <Option value="扭转至角度">扭转至角度</Option>
+                                    <Option value="对齐插槽">对齐插槽</Option>
+                                    <Option value="推拉合拢">推拉合拢</Option>
+                                  </Select>
+                                </Form.Item>
+                              </Col>
+                            </Row>
+                          </div>
+
+                          {/* Delete Action Button */}
+                          <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
+                            <Button
+                              type="text"
+                              danger
+                              size="middle"
+                              disabled={fields.length <= 1}
+                              icon={<MinusCircleOutlined style={{ fontSize: 16 }} />}
+                              onClick={() => remove(field.name)}
+                              style={{
+                                borderRadius: 8,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#fef2f2',
+                                border: '1px solid #fee2e2',
+                                width: 36,
+                                height: 36
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Add Step Button */}
+                      <Button
+                        type="dashed"
+                        onClick={() => add({ arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' })}
+                        icon={<PlusOutlined />}
+                        style={{
+                          width: '100%',
+                          height: 48,
+                          borderRadius: 12,
+                          color: '#2563eb',
+                          borderColor: '#93c5fd',
+                          background: '#f0f7ff',
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6
+                        }}
+                      >
+                        添加结构化步骤
+                      </Button>
                     </div>
-                  </div>
-                )}
-              </Form.List>
+                  )}
+                </Form.List>
+              )}
             </Card>
 
 

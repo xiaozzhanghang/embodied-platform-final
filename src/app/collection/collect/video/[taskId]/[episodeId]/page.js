@@ -452,7 +452,7 @@ export default function EpisodeVideoPage() {
             }
             bordered
             style={{ borderRadius: 8, height: 600, display: 'flex', flexDirection: 'column' }}
-            bodyStyle={{ flex: 1, padding: 20, display: 'flex', flexDirection: 'column', height: 'calc(100% - 50px)' }}
+            styles={{ body: { flex: 1, padding: 20, display: 'flex', flexDirection: 'column', height: 'calc(100% - 50px)' } }}
           >
             {selectedFileNode ? (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>

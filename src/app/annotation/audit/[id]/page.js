@@ -754,7 +754,7 @@ export default function AnnotationAuditEpisodeListPage() {
         footer={null}
         width={750}
         maskClosable={!isCopying}
-        bodyStyle={{ padding: '12px 16px' }}
+        styles={{ body: { padding: '12px 16px' } }}
       >
         {isCopying ? (
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>

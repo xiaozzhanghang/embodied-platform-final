@@ -8,7 +8,7 @@ import {
 } from 'antd';
 import { 
   CloseOutlined, SearchOutlined, ReloadOutlined, AuditOutlined, EyeOutlined,
-  CheckCircleOutlined, FullscreenOutlined, FullscreenExitOutlined, PlayCircleOutlined, 
+  CheckCircleOutlined, CheckCircleFilled, FullscreenOutlined, FullscreenExitOutlined, PlayCircleOutlined, 
   CheckOutlined, InfoCircleOutlined, SelectOutlined, BorderOutlined, AimOutlined, 
   VideoCameraOutlined, LeftOutlined, RightOutlined, PauseOutlined, StepBackwardOutlined, 
   StepForwardOutlined, CaretRightOutlined, CaretLeftOutlined, UndoOutlined, 
@@ -224,6 +224,128 @@ useEffect(() => {
     grid4: 'joints'
   });
 
+  // ============ 标注模版生成与套用状态 ============
+  const [isSaveTplModalOpen, setIsSaveTplModalOpen] = useState(false);
+  const [isApplyTplModalOpen, setIsApplyTplModalOpen] = useState(false);
+  const [tplName, setTplName] = useState('');
+  const [tplDesc, setTplDesc] = useState('');
+  const [savedTemplates, setSavedTemplates] = useState([]);
+
+  // 加载已保存标注模版
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('embodied_anno_templates');
+      if (saved) {
+        try {
+          setSavedTemplates(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        const defaultAnnoTemplates = [
+          {
+            id: 'tpl_default_1',
+            name: '🍽️ 餐厅餐盘整理标准标注模版',
+            desc: '覆盖完整的双臂就餐收拾工序，包括托盘抓取、餐盘理顺、餐叉摆放，适配鹿鸣双臂机器人。',
+            stepCount: 9,
+            creator: '系统内置',
+            createTime: '2026-07-12 10:15:30',
+            steps: [
+              { text: '右手从置物架抓取托盘并放置在餐桌上', startFrame: 0, endFrame: 15 },
+              { text: '左手拿起杯子平稳放置到托盘边缘', startFrame: 15, endFrame: 30 },
+              { text: '右手从餐桌抓取待收碗盘并叠放', startFrame: 30, endFrame: 45 },
+              { text: '双手端起装载碗盘的托盘至工作区', startFrame: 45, endFrame: 60 },
+              { text: '右手取消毒布快速擦拭餐桌残留油渍', startFrame: 60, endFrame: 75 },
+              { text: '右手放置餐盘到清洗机架格内', startFrame: 75, endFrame: 90 },
+              { text: '右手拿起备用刀叉整理归置', startFrame: 90, endFrame: 100 },
+              { text: '左手协助校正主干刀叉位置', startFrame: 100, endFrame: 110 },
+              { text: '双手清洁理顺并退回初始安全点', startFrame: 110, endFrame: 120 }
+            ]
+          },
+          {
+            id: 'tpl_default_2',
+            name: '📦 工业打包贴标标准标注模版',
+            desc: '标准的6工步纸箱开箱封底及贴标工段步骤，适配Galbot真机采集数据。',
+            stepCount: 6,
+            creator: '系统内置',
+            createTime: '2026-07-14 16:40:00',
+            steps: [
+              { text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 20 },
+              { text: '右手取底部泡沫垫并放入纸箱', startFrame: 20, endFrame: 40 },
+              { text: '右手抓取核心金属支架入箱', startFrame: 40, endFrame: 65 },
+              { text: '左手取顶部泡沫垫覆盖定位', startFrame: 65, endFrame: 80 },
+              { text: '双手折叠两侧箱盖合拢', startFrame: 80, endFrame: 100 },
+              { text: '双手持胶带机封口封箱', startFrame: 100, endFrame: 120 }
+            ]
+          }
+        ];
+        setSavedTemplates(defaultAnnoTemplates);
+        localStorage.setItem('embodied_anno_templates', JSON.stringify(defaultAnnoTemplates));
+      }
+    }
+  }, [isApplyTplModalOpen, isSaveTplModalOpen]);
+
+  // 弹出保存模版 Modal
+  const openSaveTplModal = () => {
+    const defaultName = `${annoType}模版_${new Date().toLocaleDateString().replace(/\//g, '')}_${Math.floor(100 + Math.random() * 900)}`;
+    setTplName(defaultName);
+    setTplDesc(`包含 ${steps.length} 个动作步骤，覆盖 ${steps.length > 0 ? steps[steps.length - 1].endFrame : 0} 帧区间`);
+    setIsSaveTplModalOpen(true);
+  };
+
+  // 确认保存模版
+  const handleSaveTemplate = () => {
+    if (!tplName.trim()) {
+      message.warning('请输入模版名称');
+      return;
+    }
+    const newTpl = {
+      id: `tpl_${Date.now()}`,
+      name: tplName,
+      desc: tplDesc,
+      steps: steps.map(s => ({ text: s.text, startFrame: s.startFrame, endFrame: s.endFrame })),
+      stepCount: steps.length,
+      creator: '当前用户',
+      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
+    };
+
+    const updated = [newTpl, ...savedTemplates];
+    setSavedTemplates(updated);
+    localStorage.setItem('embodied_anno_templates', JSON.stringify(updated));
+    setIsSaveTplModalOpen(false);
+    message.success(`标注模版「${tplName}」生成并保存成功！可在任务模版或批量标注中查看`);
+  };
+
+  // 确认套用模版
+  const handleApplyTemplate = (tpl) => {
+    if (!tpl || !tpl.steps || tpl.steps.length === 0) return;
+    
+    const colors = ['#13c2c2', '#722ed1', '#1890ff', '#52c41a', '#faad14', '#ff4d4f', '#eb2f96'];
+    const mapped = tpl.steps.map((step, idx) => ({
+      id: idx + 1,
+      text: step.text,
+      startFrame: step.startFrame,
+      endFrame: step.endFrame,
+      total: step.endFrame - step.startFrame,
+      status: 'success',
+      color: colors[idx % colors.length]
+    }));
+
+    setSteps(mapped);
+    if (mapped.length > 0) {
+      setSelectedStepId(mapped[0].id);
+    }
+    setIsApplyTplModalOpen(false);
+    message.success(`已成功批量套用模版「${tpl.name}」的动作步骤及帧数范围！请进一步核对校验动作帧数。`);
+  };
+
+  // 自然语言描述模式状态与同步
+  const [annotationInputMode, setAnnotationInputMode] = useState('structured'); // 'structured' 或 'natural'
+  const [customNaturalText, setCustomNaturalText] = useState('');
+  const [customNaturalTextEn, setCustomNaturalTextEn] = useState('');
+  const [selectedRefStepId, setSelectedRefStepId] = useState(null);
+  const [showCustomInputs, setShowCustomInputs] = useState(false);
+
   // 5. Semantic Temporal Annotation specific states
   const [newRangeStart, setNewRangeStart] = useState(30);
   const [newRangeEnd, setNewRangeEnd] = useState(30);
@@ -428,6 +550,17 @@ useEffect(() => {
     return { en, cn };
   };
 
+  useEffect(() => {
+    if (isAddModalOpen) {
+      const { cn, en } = getCompiledText();
+      setCustomNaturalText(cn);
+      setCustomNaturalTextEn(en);
+      setAnnotationInputMode('structured');
+      setSelectedRefStepId(null);
+      setShowCustomInputs(false);
+    }
+  }, [isAddModalOpen]);
+
   // Immediate Action when Stop is Clicked/Pressed: Set End point AND open Modal Dialog!
   const handleStopAction = (frameVal) => {
     const endVal = frameVal !== undefined ? frameVal : currentFrame;
@@ -439,9 +572,21 @@ useEffect(() => {
   };
 
   const handleSaveSemanticSegment = () => {
-    const { en, cn } = getCompiledText();
-    const formattedText = `${cn} (${selectedOptions.join('/')})`;
-    const formattedEn = `${en} (${selectedOptions.join('/')})`;
+    let formattedText = '';
+    let formattedEn = '';
+
+    if (annotationInputMode === 'natural') {
+      if (!customNaturalText.trim()) {
+        message.warning('请输入自然语言描述内容');
+        return;
+      }
+      formattedText = customNaturalText.trim();
+      formattedEn = customNaturalTextEn.trim() || 'custom instruction';
+    } else {
+      const { en, cn } = getCompiledText();
+      formattedText = `${cn} (${selectedOptions.join('/')})`;
+      formattedEn = `${en} (${selectedOptions.join('/')})`;
+    }
 
     const newSeg = {
       id: Date.now(),
@@ -454,6 +599,11 @@ useEffect(() => {
     setSemanticSegments([...semanticSegments, newSeg]);
     message.success(`成功保存语义区间段: [${newRangeStart} - ${newRangeEnd}f]`);
     setIsAddModalOpen(false);
+
+    // Reset inputs
+    setCustomNaturalText('');
+    setCustomNaturalTextEn('');
+    setAnnotationInputMode('structured');
 
     // Pre-populate next range start at current end
     setNewRangeStart(newRangeEnd);
@@ -835,15 +985,6 @@ useEffect(() => {
             <Tooltip title="快捷键帮助">
               <BulbOutlined style={{ color: '#eab308', cursor: 'pointer' }} />
             </Tooltip>
-            <Button 
-              type="primary" 
-              size="small"
-              icon={<CloudUploadOutlined />} 
-              style={{ background: '#eab308', borderColor: '#eab308', color: '#fff', fontSize: '11px', fontWeight: 'bold' }}
-              onClick={() => message.success('已将标注时序语义上传至服务器并保存！')}
-            >
-              保存并上传 (Ctrl+S)
-            </Button>
             <CloseOutlined style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => router.push(`/annotation/audit/${instanceId}`)} />
           </Space>
         </div>
@@ -851,113 +992,20 @@ useEffect(() => {
         {/* Workspace Body (Left 2x2 Grid, Right Control) */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           
-          {/* LEFT COLUMN: 4 Viewports Grid (Light Mode) */}
-          <div style={{ flex: 1, display: isFullscreen ? 'block' : 'grid', gridTemplateColumns: isFullscreen ? '1fr' : '1fr 1fr', gridTemplateRows: isFullscreen ? '1fr' : '1fr 1fr', gap: 10, padding: '12px' }}>
-
-            {/* Fullscreen Single Viewport */}
-            {isFullscreen && (
-              <div style={{ border: '1px solid #cbd5e1', borderRadius: 6, background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', height: '100%' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', zIndex: 2 }}>
-                  <Select value={fullscreenCamera} size="small" variant="borderless" style={{ width: 300, fontSize: 12, color: '#334155' }} onChange={(val) => setFullscreenCamera(val)}>
-                    <Option value="camera_head_left_color">/rgb/dicolor/image_raw/compressed (主视角)</Option>
-                    <Option value="camera_head_right_color">/rgb/dicolor/image_raw/compressed (副视角)</Option>
-                    <Option value="camera_hand_left_color">/rgb/depth/image_raw/colorized (深度图)</Option>
-                    <Option value="joints">joints.json (三维仿真模型)</Option>
-                    <Option value="camera_usb_left">/usb_cam_left/jpeg_raw/compressed (左手操)</Option>
-                    <Option value="camera_usb_fisheye">/usb_cam_fisheye/jpeg_raw/compressed (鱼眼镜头)</Option>
-                    <Option value="camera_usb_right">/usb_cam_right/jpeg_raw/compressed (侧边视角)</Option>
-                  </Select>
-                  <Space>
-                    <Button size="small" type="text" icon={<FullscreenExitOutlined style={{ color: '#64748b' }} />} onClick={() => setIsFullscreen(false)} />
-                  </Space>
-                </div>
-                <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                  {renderGridContent(fullscreenCamera)}
-                </div>
-              </div>
-            )}
-
-            {/* Normal 4 Grid View */}
-            {!isFullscreen && (
-              <>
-            {/* Viewport 1 (Top Left) */}
-            <div style={{ border: '1px solid #cbd5e1', borderRadius: 6, background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', zIndex: 2 }}>
-                <Select value={gridCameras.grid1} size="small" variant="borderless" style={{ width: 280, fontSize: 10, color: '#334155' }} onChange={(val) => handleGridCameraChange('grid1', val)}>
-                  <Option value="camera_head_left_color">/rgb/dicolor/image_raw/compressed (主视角)</Option>
-                  <Option value="camera_head_right_color">/rgb/dicolor/image_raw/compressed (副视角)</Option>
-                  <Option value="camera_hand_left_color">/rgb/depth/image_raw/colorized (深度图)</Option>
-                  <Option value="joints">joints.json (三维仿真模型)</Option>
-                  <Option value="camera_usb_left">/usb_cam_left/jpeg_raw/compressed (左手操)</Option>
-                  <Option value="camera_usb_fisheye">/usb_cam_fisheye/jpeg_raw/compressed (鱼眼镜头)</Option>
-                  <Option value="camera_usb_right">/usb_cam_right/jpeg_raw/compressed (侧边视角)</Option>
-                </Select>
-                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} onClick={() => { setFullscreenCamera(gridCameras.grid1); setIsFullscreen(true); }} />
+          {/* LEFT COLUMN: Single Video Viewport (Semantic Video) */}
+          <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: 6, background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative', height: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 12px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', zIndex: 2 }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#334155', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <VideoCameraOutlined style={{ color: '#1677ff' }} />
+                  /rgb/dicolor/image_raw/compressed (主视角相机视频)
+                </span>
+                <Tag color="blue" variant="filled" style={{ margin: 0, fontSize: '11px' }}>主视角相机</Tag>
               </div>
               <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                {renderGridContent(gridCameras.grid1)}
+                {renderGridContent('camera_head_left_color')}
               </div>
             </div>
-
-            {/* Viewport 2 (Top Right) */}
-            <div style={{ border: '1px solid #cbd5e1', borderRadius: 6, background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', zIndex: 2 }}>
-                <Select value={gridCameras.grid2} size="small" variant="borderless" style={{ width: 280, fontSize: 10, color: '#334155' }} onChange={(val) => handleGridCameraChange('grid2', val)}>
-                  <Option value="camera_head_left_color">/rgb/dicolor/image_raw/compressed (主视角)</Option>
-                  <Option value="camera_head_right_color">/rgb/dicolor/image_raw/compressed (副视角)</Option>
-                  <Option value="camera_hand_left_color">/rgb/depth/image_raw/colorized (深度图)</Option>
-                  <Option value="joints">joints.json (三维仿真模型)</Option>
-                  <Option value="camera_usb_left">/usb_cam_left/jpeg_raw/compressed (左手操)</Option>
-                  <Option value="camera_usb_fisheye">/usb_cam_fisheye/jpeg_raw/compressed (鱼眼镜头)</Option>
-                  <Option value="camera_usb_right">/usb_cam_right/jpeg_raw/compressed (侧边视角)</Option>
-                </Select>
-                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} onClick={() => { setFullscreenCamera(gridCameras.grid2); setIsFullscreen(true); }} />
-              </div>
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                {renderGridContent(gridCameras.grid2)}
-              </div>
-            </div>
-
-            {/* Viewport 3 (Bottom Left) */}
-            <div style={{ border: '1px solid #cbd5e1', borderRadius: 6, background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', zIndex: 2 }}>
-                <Select value={gridCameras.grid3} size="small" variant="borderless" style={{ width: 280, fontSize: 10, color: '#334155' }} onChange={(val) => handleGridCameraChange('grid3', val)}>
-                  <Option value="camera_head_left_color">/rgb/dicolor/image_raw/compressed (主视角)</Option>
-                  <Option value="camera_head_right_color">/rgb/dicolor/image_raw/compressed (副视角)</Option>
-                  <Option value="camera_hand_left_color">/rgb/depth/image_raw/colorized (深度图)</Option>
-                  <Option value="joints">joints.json (三维仿真模型)</Option>
-                  <Option value="camera_usb_left">/usb_cam_left/jpeg_raw/compressed (左手操)</Option>
-                  <Option value="camera_usb_fisheye">/usb_cam_fisheye/jpeg_raw/compressed (鱼眼镜头)</Option>
-                  <Option value="camera_usb_right">/usb_cam_right/jpeg_raw/compressed (侧边视角)</Option>
-                </Select>
-                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} onClick={() => { setFullscreenCamera(gridCameras.grid3); setIsFullscreen(true); }} />
-              </div>
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                {renderGridContent(gridCameras.grid3)}
-              </div>
-            </div>
-
-            {/* Viewport 4 (Bottom Right) */}
-            <div style={{ border: '1px solid #cbd5e1', borderRadius: 6, background: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', zIndex: 2 }}>
-                <Select value={gridCameras.grid4} size="small" variant="borderless" style={{ width: 280, fontSize: 10, color: '#334155' }} onChange={(val) => handleGridCameraChange('grid4', val)}>
-                  <Option value="camera_head_left_color">/rgb/dicolor/image_raw/compressed (主视角)</Option>
-                  <Option value="camera_head_right_color">/rgb/dicolor/image_raw/compressed (副视角)</Option>
-                  <Option value="camera_hand_left_color">/rgb/depth/image_raw/colorized (深度图)</Option>
-                  <Option value="joints">joints.json (三维仿真模型)</Option>
-                  <Option value="camera_usb_left">/usb_cam_left/jpeg_raw/compressed (左手操)</Option>
-                  <Option value="camera_usb_fisheye">/usb_cam_fisheye/jpeg_raw/compressed (鱼眼镜头)</Option>
-                  <Option value="camera_usb_right">/usb_cam_right/jpeg_raw/compressed (侧边视角)</Option>
-                </Select>
-                <Button size="small" type="text" icon={<FullscreenOutlined style={{ color: '#64748b' }} />} onClick={() => { setFullscreenCamera(gridCameras.grid4); setIsFullscreen(true); }} />
-              </div>
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                {renderGridContent(gridCameras.grid4)}
-              </div>
-            </div>
-              </>
-            )}
-
           </div>
 
           {/* RIGHT COLUMN: Control Panel (White Theme) */}
@@ -1026,16 +1074,6 @@ useEffect(() => {
                       }}
                     >
                       标记 [R]
-                    </Button>
-
-                    <Button
-                      type="primary"
-                      style={{ flex: 1, fontSize: '11px', height: 32, fontWeight: 'bold', background: '#52c41a', borderColor: '#52c41a' }}
-                      onClick={() => {
-                        message.success('标注数据已本地暂存并成功保存！');
-                      }}
-                    >
-                      保存
                     </Button>
                   </div>
 
@@ -1487,7 +1525,7 @@ useEffect(() => {
               />
               <Button type="text" icon={<StepForwardOutlined style={{ color: '#64748b' }} />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + 1))} />
               <Button type="text" icon={<DoubleRightOutlined style={{ color: '#64748b', fontSize: 10 }} />} onClick={() => message.info('下一条标注数据')} size="small" />
-              <Divider type="vertical" style={{ height: 20, margin: '0 4px' }} />
+              <Divider orientation="vertical" style={{ height: 20, margin: '0 4px' }} />
               <Button type="text" icon={<ReloadOutlined style={{ color: '#64748b' }} />} size="small" />
               <Select defaultValue={1} size="small" variant="borderless" style={{ width: 50, color: '#475569' }} onChange={setPlaybackSpeed}>
                 <Option value={0.5}>0.5x</Option>
@@ -1498,6 +1536,18 @@ useEffect(() => {
 
             {/* Right: Action Buttons */}
             <Space size={8}>
+              <Button
+                size="small"
+                style={{
+                  background: '#f9f0ff',
+                  borderColor: '#d3adf7',
+                  color: '#722ed1',
+                  borderRadius: 4,
+                }}
+                onClick={openSaveTplModal}
+              >
+                生成标注模版
+              </Button>
               <Button
                 size="small"
                 type="primary"
@@ -1551,7 +1601,7 @@ useEffect(() => {
           onCancel={() => setIsAddModalOpen(false)}
           footer={null}
           width={960}
-          bodyStyle={{ padding: '16px 24px' }}
+          styles={{ body: { padding: '16px 24px' } }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             
@@ -1595,240 +1645,360 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* 1. 技能 Select row */}
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>技能</span>
-              <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 }}>
-                {(() => {
-                  const isSkillInQuickOptions = skillOptions.some(opt => opt.value === selectedSkill);
-                  return (
-                    <>
-                      {skillOptions.map(item => {
-                        const isSelected = selectedSkill === item.value && isSkillInQuickOptions;
-                        return (
-                          <div 
-                            key={item.value}
-                            onClick={() => setSelectedSkill(item.value)}
-                            style={{
-                              border: isSelected ? '2px solid #22c55e' : '1px solid #d9d9d9',
-                              borderRadius: 4,
-                              padding: '4px 10px',
-                              fontSize: '11px',
-                              cursor: 'pointer',
-                              background: isSelected ? '#f0fdf4' : '#fff',
-                              whiteSpace: 'pre-line',
-                              textAlign: 'center',
-                              fontWeight: isSelected ? 'bold' : 'normal',
-                              flexShrink: 0
-                            }}
+            {/* Mode switcher for Structured Template vs Natural Language */}
+            <div style={{ display: 'flex', alignItems: 'center', background: '#faf5ff', padding: '8px 12px', borderRadius: 6, border: '1px solid #d8b4fe', margin: '4px 0' }}>
+              <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px', color: '#6b21a8' }}>描述模式</span>
+              <Radio.Group 
+                size="small" 
+                value={annotationInputMode} 
+                onChange={(e) => setAnnotationInputMode(e.target.value)} 
+                buttonStyle="solid"
+              >
+                <Radio.Button value="structured">💡 结构化模版拼装</Radio.Button>
+                <Radio.Button value="natural">✍️ 自然语言描述</Radio.Button>
+              </Radio.Group>
+            </div>
+
+            {annotationInputMode === 'structured' ? (
+              <>
+                {/* 1. 技能 Select row */}
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>技能</span>
+                  <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 }}>
+                    {(() => {
+                      const isSkillInQuickOptions = skillOptions.some(opt => opt.value === selectedSkill);
+                      return (
+                        <>
+                          {skillOptions.map(item => {
+                            const isSelected = selectedSkill === item.value && isSkillInQuickOptions;
+                            return (
+                              <div 
+                                key={item.value}
+                                onClick={() => setSelectedSkill(item.value)}
+                                style={{
+                                  border: isSelected ? '2px solid #22c55e' : '1px solid #d9d9d9',
+                                  borderRadius: 4,
+                                  padding: '4px 10px',
+                                  fontSize: '11px',
+                                  cursor: 'pointer',
+                                  background: isSelected ? '#f0fdf4' : '#fff',
+                                  whiteSpace: 'pre-line',
+                                  textAlign: 'center',
+                                  fontWeight: isSelected ? 'bold' : 'normal',
+                                  flexShrink: 0
+                                }}
+                              >
+                                {item.label}
+                              </div>
+                            );
+                          })}
+                          
+                          <Select 
+                            value={isSkillInQuickOptions ? undefined : selectedSkill} 
+                            placeholder="选择更多技能..."
+                            size="small" 
+                            style={{ width: 170, flexShrink: 0 }} 
+                            onChange={setSelectedSkill}
+                            popupRender={(menu) => (
+                              <>
+                                {menu}
+                                <Divider style={{ margin: '4px 0' }} />
+                                <Button 
+                                  type="text" 
+                                  block 
+                                  icon={<PlusOutlined />} 
+                                  onClick={handleAddSkill}
+                                  style={{ textAlign: 'left', padding: '4px 12px', fontSize: '11px', color: '#1677ff' }}
+                                >
+                                  新增自定义技能
+                                </Button>
+                              </>
+                            )}
                           >
-                            {item.label}
-                          </div>
-                        );
-                      })}
-                      
-                      <Select 
-                        value={isSkillInQuickOptions ? undefined : selectedSkill} 
-                        placeholder="选择更多技能..."
-                        size="small" 
-                        style={{ width: 170, flexShrink: 0 }} 
-                        onChange={setSelectedSkill}
-                        dropdownRender={(menu) => (
-                          <>
-                            {menu}
-                            <Divider style={{ margin: '4px 0' }} />
-                            <Button 
-                              type="text" 
-                              block 
-                              icon={<PlusOutlined />} 
-                              onClick={handleAddSkill}
-                              style={{ textAlign: 'left', padding: '4px 12px', fontSize: '11px', color: '#1677ff' }}
-                            >
-                              新增自定义技能
-                            </Button>
-                          </>
-                        )}
-                      >
-                        {skillDropdownList.map(opt => (
-                          <Option key={opt.value} value={opt.value}>{opt.label}</Option>
-                        ))}
-                      </Select>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
+                            {skillDropdownList.map(opt => (
+                              <Option key={opt.value} value={opt.value}>{opt.label}</Option>
+                            ))}
+                          </Select>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
 
-            {/* 2. 对象 Select row */}
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>对象</span>
-              <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 }}>
-                {(() => {
-                  const isObjectInQuickOptions = objectOptions.some(opt => opt.value === selectedObject);
-                  return (
-                    <>
-                      {objectOptions.map(item => {
-                        const isSelected = selectedObject === item.value && isObjectInQuickOptions;
-                        return (
-                          <div 
-                            key={item.value}
-                            onClick={() => setSelectedObject(item.value)}
-                            style={{
-                              border: isSelected ? '2px solid #22c55e' : '1px solid #d9d9d9',
-                              borderRadius: 4,
-                              padding: '4px 10px',
-                              fontSize: '11px',
-                              cursor: 'pointer',
-                              background: isSelected ? '#f0fdf4' : '#fff',
-                              whiteSpace: 'pre-line',
-                              textAlign: 'center',
-                              fontWeight: isSelected ? 'bold' : 'normal',
-                              flexShrink: 0
-                            }}
+                {/* 2. 对象 Select row */}
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>对象</span>
+                  <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 }}>
+                    {(() => {
+                      const isObjectInQuickOptions = objectOptions.some(opt => opt.value === selectedObject);
+                      return (
+                        <>
+                          {objectOptions.map(item => {
+                            const isSelected = selectedObject === item.value && isObjectInQuickOptions;
+                            return (
+                              <div 
+                                key={item.value}
+                                onClick={() => setSelectedObject(item.value)}
+                                style={{
+                                  border: isSelected ? '2px solid #22c55e' : '1px solid #d9d9d9',
+                                  borderRadius: 4,
+                                  padding: '4px 10px',
+                                  fontSize: '11px',
+                                  cursor: 'pointer',
+                                  background: isSelected ? '#f0fdf4' : '#fff',
+                                  whiteSpace: 'pre-line',
+                                  textAlign: 'center',
+                                  fontWeight: isSelected ? 'bold' : 'normal',
+                                  flexShrink: 0
+                                }}
+                              >
+                                {item.label}
+                              </div>
+                            );
+                          })}
+
+                          <Select 
+                            value={isObjectInQuickOptions ? undefined : selectedObject} 
+                            placeholder="选择更多对象..."
+                            size="small" 
+                            style={{ width: 170, flexShrink: 0 }} 
+                            onChange={setSelectedObject}
+                            popupRender={(menu) => (
+                              <>
+                                {menu}
+                                <Divider style={{ margin: '4px 0' }} />
+                                <Button 
+                                  type="text" 
+                                  block 
+                                  icon={<PlusOutlined />} 
+                                  onClick={handleAddObject}
+                                  style={{ textAlign: 'left', padding: '4px 12px', fontSize: '11px', color: '#1677ff' }}
+                                >
+                                  新增自定义对象
+                                </Button>
+                              </>
+                            )}
                           >
-                            {item.label}
-                          </div>
-                        );
-                      })}
+                            {objectDropdownList.map(obj => (
+                              <Option key={obj.value} value={obj.value}>{obj.label}</Option>
+                            ))}
+                          </Select>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
 
-                      <Select 
-                        value={isObjectInQuickOptions ? undefined : selectedObject} 
-                        placeholder="选择更多对象..."
-                        size="small" 
-                        style={{ width: 170, flexShrink: 0 }} 
-                        onChange={setSelectedObject}
-                        dropdownRender={(menu) => (
-                          <>
-                            {menu}
-                            <Divider style={{ margin: '4px 0' }} />
-                            <Button 
-                              type="text" 
-                              block 
-                              icon={<PlusOutlined />} 
-                              onClick={handleAddObject}
-                              style={{ textAlign: 'left', padding: '4px 12px', fontSize: '11px', color: '#1677ff' }}
-                            >
-                              新增自定义对象
-                            </Button>
-                          </>
-                        )}
-                      >
-                        {objectDropdownList.map(obj => (
-                          <Option key={obj.value} value={obj.value}>{obj.label}</Option>
-                        ))}
-                      </Select>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
+                {/* 3. 目标 Select row */}
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>目标</span>
+                  <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 }}>
+                    {(() => {
+                      const isTargetInQuickOptions = targetOptions.some(opt => opt.value === selectedTarget);
+                      return (
+                        <>
+                          {targetOptions.map(item => {
+                            const isSelected = selectedTarget === item.value && isTargetInQuickOptions;
+                            return (
+                              <div 
+                                 key={item.value}
+                                 onClick={() => setSelectedTarget(item.value)}
+                                 style={{
+                                   border: isSelected ? '2px solid #22c55e' : '1px solid #d9d9d9',
+                                   borderRadius: 4,
+                                   padding: '4px 10px',
+                                   fontSize: '11px',
+                                   cursor: 'pointer',
+                                   background: isSelected ? '#f0fdf4' : '#fff',
+                                   whiteSpace: 'pre-line',
+                                   textAlign: 'center',
+                                   fontWeight: isSelected ? 'bold' : 'normal',
+                                   flexShrink: 0
+                                 }}
+                              >
+                                {item.label}
+                              </div>
+                            );
+                          })}
 
-            {/* 3. 目标 Select row */}
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>目标</span>
-              <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', flexWrap: 'nowrap', paddingBottom: 4 }}>
-                {(() => {
-                  const isTargetInQuickOptions = targetOptions.some(opt => opt.value === selectedTarget);
-                  return (
-                    <>
-                      {targetOptions.map(item => {
-                        const isSelected = selectedTarget === item.value && isTargetInQuickOptions;
-                        return (
-                          <div 
-                             key={item.value}
-                             onClick={() => setSelectedTarget(item.value)}
-                             style={{
-                               border: isSelected ? '2px solid #22c55e' : '1px solid #d9d9d9',
-                               borderRadius: 4,
-                               padding: '4px 10px',
-                               fontSize: '11px',
-                               cursor: 'pointer',
-                               background: isSelected ? '#f0fdf4' : '#fff',
-                               whiteSpace: 'pre-line',
-                               textAlign: 'center',
-                               fontWeight: isSelected ? 'bold' : 'normal',
-                               flexShrink: 0
-                             }}
+                          <Select 
+                            value={isTargetInQuickOptions ? undefined : selectedTarget} 
+                            placeholder="选择更多目标..."
+                            size="small" 
+                            style={{ width: 170, flexShrink: 0 }} 
+                            onChange={setSelectedTarget}
+                            popupRender={(menu) => (
+                              <>
+                                {menu}
+                                <Divider style={{ margin: '4px 0' }} />
+                                <Button 
+                                  type="text" 
+                                  block 
+                                  icon={<PlusOutlined />} 
+                                  onClick={handleAddTarget}
+                                  style={{ textAlign: 'left', padding: '4px 12px', fontSize: '11px', color: '#1677ff' }}
+                                >
+                                  新增自定义目标
+                                </Button>
+                              </>
+                            )}
                           >
-                            {item.label}
+                            {targetDropdownList.map(tgt => (
+                              <Option key={tgt.value} value={tgt.value}>{tgt.label}</Option>
+                            ))}
+                          </Select>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* 4. 选项 Checkbox row */}
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>选项</span>
+                  <Checkbox.Group 
+                    options={['左手', '右手']} 
+                    value={selectedOptions} 
+                    onChange={setSelectedOptions} 
+                  />
+                </div>
+              </>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, background: '#f8fafc', padding: 16, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                <div>
+                  <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#475569', marginBottom: 6 }}>📋 历史/模版动作步骤 (点击直接选中)</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 120, overflowY: 'auto', background: '#fff', border: '1px solid #cbd5e1', borderRadius: 6, padding: '8px 12px', marginBottom: 6 }}>
+                    {steps.map((st, idx) => {
+                      const isSelected = selectedRefStepId === st.id;
+                      return (
+                        <div 
+                          key={st.id || idx}
+                          onClick={() => {
+                            setSelectedRefStepId(st.id);
+                            setCustomNaturalText(st.text);
+                            // Auto generate simple english action translation context
+                            let enPlaceholder = 'execute task step';
+                            if (st.text.includes('抓取')) enPlaceholder = 'grasp item';
+                            else if (st.text.includes('放置')) enPlaceholder = 'place item';
+                            else if (st.text.includes('拿起')) enPlaceholder = 'pick up item';
+                            else if (st.text.includes('擦拭')) enPlaceholder = 'wipe surface';
+                            else if (st.text.includes('整理')) enPlaceholder = 'rearrange items';
+                            setCustomNaturalTextEn(enPlaceholder);
+                            message.success(`已选中步骤 ${idx + 1}: ${st.text}`);
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            background: isSelected ? '#f0fdf4' : '#f8fafc',
+                            borderRadius: 6,
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            border: isSelected ? '2px solid #22c55e' : '1px solid #e2e8f0',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 6
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ 
+                              background: isSelected ? '#22c55e' : (st.color || '#1677ff'), 
+                              color: '#fff', 
+                              width: 18, 
+                              height: 18, 
+                              borderRadius: '50%', 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center', 
+                              fontSize: 10, 
+                              fontWeight: 'bold', 
+                              flexShrink: 0 
+                            }}>
+                              {idx + 1}
+                            </span>
+                            <span style={{ color: isSelected ? '#166534' : '#334155', fontWeight: isSelected ? 'bold' : 500 }}>{st.text}</span>
                           </div>
-                        );
-                      })}
-
-                      <Select 
-                        value={isTargetInQuickOptions ? undefined : selectedTarget} 
-                        placeholder="选择更多目标..."
-                        size="small" 
-                        style={{ width: 170, flexShrink: 0 }} 
-                        onChange={setSelectedTarget}
-                        dropdownRender={(menu) => (
-                          <>
-                            {menu}
-                            <Divider style={{ margin: '4px 0' }} />
-                            <Button 
-                              type="text" 
-                              block 
-                              icon={<PlusOutlined />} 
-                              onClick={handleAddTarget}
-                              style={{ textAlign: 'left', padding: '4px 12px', fontSize: '11px', color: '#1677ff' }}
-                            >
-                              新增自定义目标
-                            </Button>
-                          </>
-                        )}
-                      >
-                        {targetDropdownList.map(tgt => (
-                          <Option key={tgt.value} value={tgt.value}>{tgt.label}</Option>
-                        ))}
-                      </Select>
-                    </>
-                  );
-                })()}
+                          {isSelected && <CheckCircleFilled style={{ color: '#22c55e', fontSize: '14px' }} />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ textAlign: 'right', marginTop: 4 }}>
+                    <Button 
+                      type="link" 
+                      size="small" 
+                      onClick={() => setShowCustomInputs(!showCustomInputs)}
+                      style={{ fontSize: '11px', padding: 0 }}
+                    >
+                      {showCustomInputs ? '🙈 收起自定义输入栏' : '✏️ 找不到对应步骤？手动输入自定义描述'}
+                    </Button>
+                  </div>
+                </div>
+                {showCustomInputs && (
+                  <>
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#475569', marginBottom: 6 }}>✍️ 自然语言描述 (中文)</div>
+                      <Input 
+                        value={customNaturalText} 
+                        onChange={(e) => {
+                          setSelectedRefStepId(null);
+                          setCustomNaturalText(e.target.value);
+                        }} 
+                        placeholder="在此处输入新描述，例如：右手从置物架抓取药品放至工作台..." 
+                        style={{ borderRadius: 6, padding: '8px 12px' }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#475569', marginBottom: 6 }}>🔤 英文指令映射 (English Instruction - 选填)</div>
+                      <Input 
+                        value={customNaturalTextEn} 
+                        onChange={(e) => {
+                          setSelectedRefStepId(null);
+                          setCustomNaturalTextEn(e.target.value);
+                        }} 
+                        placeholder="Enter English corresponding action description, e.g. pick box from desktop..." 
+                        style={{ borderRadius: 6, padding: '8px 12px' }}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-
-            {/* 4. 选项 Checkbox row */}
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ width: '80px', fontWeight: 'bold', fontSize: '12px' }}>选项</span>
-              <Checkbox.Group 
-                options={['左手', '右手']} 
-                value={selectedOptions} 
-                onChange={setSelectedOptions} 
-              />
-            </div>
+            )}
 
             <Divider style={{ margin: '8px 0' }} />
 
             {/* Dynamic sentence compiled preview in green */}
-            <div style={{ padding: '12px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 4, textAlign: 'center' }}>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#52c41a', fontFamily: 'monospace' }}>
-                {getCompiledText().en}
+            <div style={{ padding: '12px', background: '#f0fdf4', border: '1px solid #b7eb8f', borderRadius: 6, textAlign: 'center' }}>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#15803d', fontFamily: 'monospace' }}>
+                {annotationInputMode === 'natural' ? (customNaturalTextEn || 'custom_instruction') : getCompiledText().en}
               </div>
-              <div style={{ fontSize: '14px', color: '#389e0d', marginTop: 4, fontWeight: 'bold' }}>
-                {getCompiledText().cn}
+              <div style={{ fontSize: '15px', color: '#166534', marginTop: 4, fontWeight: 'bold' }}>
+                {annotationInputMode === 'natural' ? (customNaturalText || '请输入描述内容...') : `${getCompiledText().cn} (${selectedOptions.join('/')})`}
               </div>
             </div>
 
             {/* Footer Buttons */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
-              <Button onClick={() => {
-                const customPrompt = prompt('请输入自定义自然语言指令:', getCompiledText().cn);
-                if (customPrompt) {
-                  const newSeg = {
-                    id: Date.now(),
-                    start: newRangeStart,
-                    end: newRangeEnd,
-                    text: customPrompt,
-                    enText: 'custom instruction',
-                    color: '#fa8c16'
-                  };
-                  setSemanticSegments([...semanticSegments, newSeg]);
-                  setIsAddModalOpen(false);
-                  message.success('已存入自定义指令段！');
-                }
-              }}>
-                ✏️ 自定义
-              </Button>
+              {annotationInputMode === 'structured' ? (
+                <Button 
+                  onClick={() => {
+                    const { cn, en } = getCompiledText();
+                    setCustomNaturalText(`${cn} (${selectedOptions.join('/')})`);
+                    setCustomNaturalTextEn(`${en} (${selectedOptions.join('/')})`);
+                    setAnnotationInputMode('natural');
+                  }}
+                  icon={<EditOutlined />}
+                >
+                  自定义描述
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => setAnnotationInputMode('structured')}
+                  icon={<BulbOutlined />}
+                >
+                  模版拼接
+                </Button>
+              )}
               <Button 
                 type="primary" 
                 style={{ background: '#22c55e', borderColor: '#22c55e', color: '#fff', fontWeight: 'bold' }}
@@ -1838,6 +2008,66 @@ useEffect(() => {
               </Button>
             </div>
 
+          </div>
+        </Modal>
+
+        {/* ============ POPUP MODAL: 生成标注模版 ============ */}
+        <Modal
+          title={<span style={{ fontSize: '15px', fontWeight: 'bold' }}>💾 生成并保存标注模版</span>}
+          open={isSaveTplModalOpen}
+          onCancel={() => setIsSaveTplModalOpen(false)}
+          onOk={handleSaveTemplate}
+          okText="确认保存"
+          cancelText="取消"
+          width={580}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 12 }}>
+            <div>
+              <Text strong style={{ fontSize: '13px', color: '#334155' }}>标注模版名称</Text>
+              <Input 
+                value={tplName} 
+                onChange={(e) => setTplName(e.target.value)} 
+                placeholder="请输入模版名称..." 
+                style={{ marginTop: 6, borderRadius: 6 }} 
+              />
+            </div>
+            <div>
+              <Text strong style={{ fontSize: '13px', color: '#334155' }}>模版描述说明</Text>
+              <Input.TextArea 
+                value={tplDesc} 
+                onChange={(e) => setTplDesc(e.target.value)} 
+                placeholder="请输入模版描述（如适用设备、场景说明等）..." 
+                rows={3}
+                style={{ marginTop: 6, borderRadius: 6 }} 
+              />
+            </div>
+            <div>
+              <Text strong style={{ fontSize: '13px', color: '#334155', display: 'block', marginBottom: 8 }}>模版步骤预览 ({steps.length} 步)</Text>
+              <div style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', background: '#f8fafc' }}>
+                {steps.map((s, idx) => (
+                  <div key={s.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: idx === steps.length - 1 ? 'none' : '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '70%' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 18,
+                        height: 18,
+                        borderRadius: '50%',
+                        background: s.color || '#1677ff',
+                        color: '#fff',
+                        fontSize: 10,
+                        fontWeight: 'bold'
+                      }}>
+                        {idx + 1}
+                      </span>
+                      <Text ellipsis style={{ fontSize: 12 }}>{s.text}</Text>
+                    </div>
+                    <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>{s.startFrame} - {s.endFrame} 帧</Tag>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </Modal>
 
@@ -1892,11 +2122,6 @@ useEffect(() => {
               />
             </Space>
             <Divider orientation="vertical" style={{ height: 16, margin: 0 }} />
-            <Radio.Group size="small" value={annoType} onChange={(e) => setAnnoType(e.target.value)} buttonStyle="solid">
-              <Radio.Button value="范围标注">范围标注</Radio.Button>
-              <Radio.Button value="语义标注">语义标注 (Q/R)</Radio.Button>
-            </Radio.Group>
-            <Divider orientation="vertical" />
             <Button type="primary" size="small" icon={<CheckOutlined />} onClick={() => message.success('工作进度已保存')}>保存暂存</Button>
             <Space size={12}>
               <Button type="text" size="small" icon={<SlidersOutlined />} style={{ color: '#64748b' }} />
@@ -2508,7 +2733,7 @@ useEffect(() => {
             />
             <Button type="text" icon={<StepForwardOutlined />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + 1))} />
             <Button type="text" icon={<DoubleRightOutlined style={{ fontSize: 10 }} />} onClick={() => message.info('下一条标注数据')} size="small" />
-            <Divider type="vertical" style={{ height: 20, margin: '0 4px' }} />
+            <Divider orientation="vertical" style={{ height: 20, margin: '0 4px' }} />
             <Button type="text" icon={<ReloadOutlined />} size="small" />
             <Select defaultValue={1} size="small" variant="borderless" style={{ width: 50, color: '#475569' }} onChange={setPlaybackSpeed}>
               <Option value={0.5}>0.5x</Option>
@@ -2518,6 +2743,18 @@ useEffect(() => {
           </div>
 
           <Space size={8}>
+            <Button
+              size="small"
+              style={{
+                background: '#f9f0ff',
+                borderColor: '#d3adf7',
+                color: '#722ed1',
+                borderRadius: 4,
+              }}
+              onClick={openSaveTplModal}
+            >
+              生成标注模版
+            </Button>
             <Button
               size="small"
               type="primary"
@@ -2561,6 +2798,133 @@ useEffect(() => {
           </Space>
         </div>
       </div>
+
+      {/* ============ POPUP MODAL: 生成并保存标注模版 (范围标注页) ============ */}
+      <Modal
+        title={<span style={{ fontSize: '15px', fontWeight: 'bold' }}>💾 生成并保存标注模版</span>}
+        open={isSaveTplModalOpen}
+        onCancel={() => setIsSaveTplModalOpen(false)}
+        onOk={handleSaveTemplate}
+        okText="确认保存"
+        cancelText="取消"
+        width={580}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 12 }}>
+          <div>
+            <Text strong style={{ fontSize: '13px', color: '#334155' }}>标注模版名称</Text>
+            <Input 
+              value={tplName} 
+              onChange={(e) => setTplName(e.target.value)} 
+              placeholder="请输入模版名称..." 
+              style={{ marginTop: 6, borderRadius: 6 }} 
+            />
+          </div>
+          <div>
+            <Text strong style={{ fontSize: '13px', color: '#334155' }}>模版描述说明</Text>
+            <Input.TextArea 
+              value={tplDesc} 
+              onChange={(e) => setTplDesc(e.target.value)} 
+              placeholder="请输入模版描述（如适用设备、场景说明等）..." 
+              rows={3}
+              style={{ marginTop: 6, borderRadius: 6 }} 
+            />
+          </div>
+          <div>
+            <Text strong style={{ fontSize: '13px', color: '#334155', display: 'block', marginBottom: 8 }}>模版步骤预览 ({steps.length} 步)</Text>
+            <div style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 12px', background: '#f8fafc' }}>
+              {steps.map((s, idx) => (
+                <div key={s.id || idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: idx === steps.length - 1 ? 'none' : '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '70%' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 18,
+                      height: 18,
+                      borderRadius: '50%',
+                      background: s.color || '#1677ff',
+                      color: '#fff',
+                      fontSize: 10,
+                      fontWeight: 'bold'
+                    }}>
+                      {idx + 1}
+                    </span>
+                    <Text ellipsis style={{ fontSize: 12 }}>{s.text}</Text>
+                  </div>
+                  <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>{s.startFrame} - {s.endFrame} 帧</Tag>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ============ POPUP MODAL: 批量标注 - 复用标注模版 (范围标注页) ============ */}
+      <Modal
+        title={<span style={{ fontSize: '15px', fontWeight: 'bold' }}>🚀 批量标注 - 复用标注模版</span>}
+        open={isApplyTplModalOpen}
+        onCancel={() => setIsApplyTplModalOpen(false)}
+        footer={null}
+        width={650}
+      >
+        <div style={{ marginTop: 12 }}>
+          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 16 }}>
+            选择预设或已保存的标注模版，系统将自动复制该模版的动作步骤及帧数范围。标注员套用后，只需在时间轴上快速核对校验帧区间即可，大幅降低重复动作的标注成本。
+          </Text>
+
+          {savedTemplates.length === 0 ? (
+            <div style={{ padding: '40px 0', textAlign: 'center', background: '#f8fafc', borderRadius: 12, border: '1px dashed #cbd5e1' }}>
+              <FolderOpenOutlined style={{ fontSize: 32, color: '#94a3b8', marginBottom: 8 }} />
+              <div style={{ color: '#64748b', fontSize: 13, fontWeight: 500 }}>暂无已保存的标注模版</div>
+              <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 4 }}>您可以在左侧面板或下方操作栏中，将已标好的动作序列点击“生成标注模版”进行保存。</div>
+            </div>
+          ) : (
+            <div style={{ maxHeight: 380, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {savedTemplates.map((tpl) => (
+                <div 
+                  key={tpl.id} 
+                  style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 10,
+                    padding: 16,
+                    background: '#fff',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#1890ff';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(24, 144, 255, 0.08)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{ width: '75%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Text strong style={{ fontSize: 14 }}>{tpl.name}</Text>
+                      <Tag color="cyan" style={{ fontSize: 11 }}>{tpl.stepCount} 动作</Tag>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{tpl.desc}</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8 }}>
+                      创建人: {tpl.creator} &nbsp;|&nbsp; 创建时间: {tpl.createTime}
+                    </div>
+                  </div>
+                  <Button 
+                    type="primary" 
+                    onClick={() => handleApplyTemplate(tpl)}
+                    style={{ borderRadius: 6, fontWeight: 600 }}
+                  >
+                    套用此模版
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
 
     </div>
   );

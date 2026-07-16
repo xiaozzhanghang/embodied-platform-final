@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select, InputNumber } from 'antd';
+import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select, InputNumber, Tabs } from 'antd';
 import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, PlusOutlined, FileAddOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
@@ -75,6 +75,23 @@ const collectedDataSources = [
       { arm: '双手 (Dual Arms)', skill: '旋转', object: '目标物品', goal: '扭转至角度' },
       { arm: '双手 (Dual Arms)', skill: '松开', object: '目标物品', goal: '稳定释放' }
     ] 
+  },
+  {
+    value: 'catalog_4',
+    label: '工业纸箱打包封装与装箱任务 (session_175_mov) [ID: session_175_box...] (galbot, 真实数据)',
+    project: '垃圾分类抓取项目',
+    taskbook: 'TB-物品摆放',
+    taskName: '纸箱打包装箱_session_175',
+    dataCount: 120,
+    deviceType: 'galbot',
+    steps: [
+      { arm: '双手 (Dual Arms)', skill: '抓取', object: '纸箱', goal: '牢固夹紧' },
+      { arm: '双手 (Dual Arms)', skill: '放置', object: '泡沫填充纸', goal: '稳定释放' },
+      { arm: '双手 (Dual Arms)', skill: '抓取', object: '工厂部件', goal: '牢固夹紧' },
+      { arm: '双手 (Dual Arms)', skill: '放置', object: '泡沫填充纸', goal: '稳定释放' },
+      { arm: '双手 (Dual Arms)', skill: '对准', object: '纸箱', goal: '推拉合拢' },
+      { arm: '双手 (Dual Arms)', skill: '对准', object: '胶带封装器', goal: '对齐插槽' }
+    ]
   }
 ];
 
@@ -136,7 +153,6 @@ const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
 
 export default function AnnotationAuditPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('all');
    const [filters, setFilters] = useState({});
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const { message } = App.useApp();
@@ -369,14 +385,9 @@ export default function AnnotationAuditPage() {
 
       {/* Table Section */}
       <Card 
-        title={
-          <Space>
-            <Text strong style={{ fontSize: 15 }}>审核任务列表</Text>
-            <Tag>{filteredData.length} 条记录</Tag>
-          </Space>
-        }
+        title={<span style={{ fontWeight: 'bold' }}>标注审核任务列表</span>}
         extra={
-          <Space>
+          <Space style={{ padding: '6px 0' }}>
             <Button 
               type="primary" 
               icon={<PlusOutlined />} 
@@ -392,7 +403,7 @@ export default function AnnotationAuditPage() {
           </Space>
         }
         styles={{ body: { padding: 0 } }} 
-        style={{ borderRadius: 4 }}
+        style={{ borderRadius: 8 }}
       >
         <Table
           rowSelection={rowSelection}
