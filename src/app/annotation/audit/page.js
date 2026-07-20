@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select, InputNumber, Tabs } from 'antd';
-import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, PlusOutlined, FileAddOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, PlusOutlined, FileAddOutlined, MinusCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
@@ -153,6 +153,7 @@ const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
 
 export default function AnnotationAuditPage() {
   const router = useRouter();
+  const [activeStatusTab, setActiveStatusTab] = useState('all');
    const [filters, setFilters] = useState({});
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const { message } = App.useApp();
@@ -206,6 +207,12 @@ export default function AnnotationAuditPage() {
 
   const filteredData = React.useMemo(() => {
     return tableData.filter(item => {
+      // 状态页签过滤
+      if (activeStatusTab === 'pending' && item.taskStatus !== '待分配') return false;
+      if (activeStatusTab === 'running' && item.taskStatus !== '进行中') return false;
+      if (activeStatusTab === 'completed' && item.taskStatus !== '已完成') return false;
+      if (activeStatusTab === 'paused' && item.taskStatus !== '暂停') return false;
+
       const projectMatch = !filters.project || item.project.includes(filters.project);
       const taskbookMatch = !filters.taskbook || item.taskbook === filters.taskbook;
       const nameMatch = !filters.name || item.taskName.includes(filters.name);
@@ -216,7 +223,7 @@ export default function AnnotationAuditPage() {
       const auditorMatch = !filters.auditor || item.auditor === filters.auditor;
       return projectMatch && taskbookMatch && nameMatch && idMatch && typeMatch && statusMatch && annotatorMatch && auditorMatch;
     });
-  }, [filters, tableData]);
+  }, [filters, tableData, activeStatusTab]);
 
   const handleCreateTask = () => {
     newTaskForm.validateFields().then(values => {
@@ -335,11 +342,24 @@ export default function AnnotationAuditPage() {
     { title: '创建人', dataIndex: 'creator', width: 80 },
     { title: '创建时间', dataIndex: 'createTime', width: 160 },
     {
-      title: '操作', key: 'action', width: 160, fixed: 'right',
+      title: '操作', key: 'action', width: 200, fixed: 'right',
       render: (_, r) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => handleReassign(r)}>重新分配</Button>
           <Button type="link" size="small" icon={<LoginOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/annotation/audit/${r.instanceId}`)}>进入</Button>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />} style={{ padding: 0 }} onClick={() => {
+            Modal.confirm({
+              title: '确认删除',
+              content: `确定要删除标注任务「${r.taskName}」(ID: ${r.annoId}) 吗？删除后不可恢复。`,
+              okText: '确定删除',
+              okType: 'danger',
+              cancelText: '取消',
+              onOk() {
+                setTableData(prev => prev.filter(item => item.key !== r.key));
+                message.success(`已删除标注任务「${r.taskName}」`);
+              }
+            });
+          }}>删除</Button>
         </Space>
       )
     }
@@ -385,7 +405,16 @@ export default function AnnotationAuditPage() {
 
       {/* Table Section */}
       <Card 
-        title={<span style={{ fontWeight: 'bold' }}>标注审核任务列表</span>}
+        title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>标注列表</span>}
+        tabList={[
+          { key: 'all', tab: `全部 (${tableData.length})` },
+          { key: 'pending', tab: `待分配 (${tableData.filter(t => t.taskStatus === '待分配').length})` },
+          { key: 'running', tab: `进行中 (${tableData.filter(t => t.taskStatus === '进行中').length})` },
+          { key: 'completed', tab: `已完成 (${tableData.filter(t => t.taskStatus === '已完成').length})` },
+          { key: 'paused', tab: `暂停 (${tableData.filter(t => t.taskStatus === '暂停').length})` }
+        ]}
+        activeTabKey={activeStatusTab}
+        onTabChange={(key) => setActiveStatusTab(key)}
         extra={
           <Space style={{ padding: '6px 0' }}>
             <Button 

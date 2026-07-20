@@ -35,6 +35,7 @@ export default function AnnotationAuditEpisodeListPage() {
   const router = useRouter();
   const params = useParams();
   const instanceId = params.id;
+  const [activeAnnoTab, setActiveAnnoTab] = useState('all');
   const { message } = App.useApp();
 
   const [filterAnnoStatus, setFilterAnnoStatus] = useState(null);
@@ -49,10 +50,10 @@ export default function AnnotationAuditEpisodeListPage() {
       const device = isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)';
       const annoType = isDual ? '语义标注' : '范围标注';
 
-      const annoStatuses = ['已标注', '未标注', '标注中', '自动标注处理中'];
+      const annoStatuses = ['已标注', '未标注', '待校验', '标注中', '自动标注处理中'];
       const auditStatuses = ['未审核', '审核中', '通过', '不通过'];
-      const annoStatus = i < 8 ? '已标注' : i < 13 ? annoStatuses[i % 4] : '未标注';
-      const auditStatus = annoStatus === '已标注' ? auditStatuses[i % 4] : '未审核';
+      const annoStatus = i < 6 ? '已标注' : i < 16 ? annoStatuses[i % 5] : '未标注';
+      const auditStatus = (annoStatus === '已标注' || annoStatus === '待校验') ? auditStatuses[i % 4] : '未审核';
       const totalFrames = 120 + (i * 12);
 
       return {
@@ -64,13 +65,13 @@ export default function AnnotationAuditEpisodeListPage() {
         device,
         annoType,
         totalFrames,
-        manualTime: annoStatus === '已标注' ? `2026-07-08 09:12:16` : '',
+        manualTime: (annoStatus === '已标注' || annoStatus === '待校验') ? `2026-07-08 09:12:16` : '',
         modelTime: i % 5 === 0 ? `2026-07-08 08:00:00` : '',
         parseStatus: '解析完成',
         annoStatus,
         auditStatus,
         hasError: i === 3 || i === 11,
-        segments: annoStatus === '已标注' ? (
+        segments: (annoStatus === '已标注' || annoStatus === '待校验') ? (
           isDual ? [
             { start: Math.round(totalFrames * 0.15), end: Math.round(totalFrames * 0.45), text: 'pick {Kiwi} from {desktop}', color: '#2563eb' },
             { start: Math.round(totalFrames * 0.55), end: Math.round(totalFrames * 0.85), text: 'place {Kiwi} on {Fruit Bowl}', color: '#16a34a' }
@@ -393,6 +394,13 @@ export default function AnnotationAuditEpisodeListPage() {
 
   const filteredData = React.useMemo(() => {
     const list = episodes.filter(item => {
+      // 标注状态页签过滤
+      if (activeAnnoTab === 'unannotated' && item.annoStatus !== '未标注') return false;
+      if (activeAnnoTab === 'processing' && item.annoStatus !== '标注中') return false;
+      if (activeAnnoTab === 'auto_processing' && item.annoStatus !== '自动标注处理中') return false;
+      if (activeAnnoTab === 'annotated' && item.annoStatus !== '已标注') return false;
+      if (activeAnnoTab === 'to_verify' && item.annoStatus !== '待校验') return false;
+
       const idMatch = !filterId || String(item.id).includes(filterId);
       const annoMatch = !filterAnnoStatus || item.annoStatus === filterAnnoStatus;
       const auditMatch = !filterAuditStatus || item.auditStatus === filterAuditStatus;
@@ -408,7 +416,7 @@ export default function AnnotationAuditEpisodeListPage() {
       if (aIsFinished && !bIsFinished) return 1;
       return a.id - b.id;
     });
-  }, [episodes, filterId, filterAnnoStatus, filterAuditStatus, filterError]);
+  }, [episodes, filterId, filterAnnoStatus, filterAuditStatus, filterError, activeAnnoTab]);
 
   // Stats
   const totalCount = episodes.length;
@@ -640,7 +648,7 @@ export default function AnnotationAuditEpisodeListPage() {
                 <Col>
                   <Space>
                     <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                    <Button icon={<ReloadOutlined />} onClick={() => { setFilterId(''); setFilterAnnoStatus(null); setFilterAuditStatus(null); setFilterError(null); }}>重置</Button>
+                    <Button icon={<ReloadOutlined />} onClick={() => { setFilterId(''); setFilterAnnoStatus(null); setFilterAuditStatus(null); setFilterError(null); setActiveAnnoTab('all'); }}>重置</Button>
                   </Space>
                 </Col>
               </Row>
@@ -716,27 +724,42 @@ export default function AnnotationAuditEpisodeListPage() {
             </div>
           )}
 
-          {/* Table */}
-          <Table 
-            rowSelection={{
-              selectedRowKeys,
-              onChange: (keys, rows) => {
-                setSelectedRowKeys(keys);
-                setSelectedRows(rows);
-              }
-            }}
-            columns={columns} 
-            dataSource={filteredData} 
-            pagination={{ 
-              pageSize: 20, 
-              showTotal: (t) => `共 ${t} 条`,
-              showSizeChanger: true,
-              pageSizeOptions: ['10', '20', '50']
-            }}
-            size="small"
-            bordered
-            scroll={{ x: 1600 }}
-          />
+          {/* Table wrapped in Card with status tabs */}
+          <Card
+            tabList={[
+              { key: 'all', tab: `全部 (${episodes.length})` },
+              { key: 'annotated', tab: `已标注 (${episodes.filter(e => e.annoStatus === '已标注').length})` },
+              { key: 'unannotated', tab: `未标注 (${episodes.filter(e => e.annoStatus === '未标注').length})` },
+              { key: 'to_verify', tab: `待校验 (${episodes.filter(e => e.annoStatus === '待校验').length})` },
+              { key: 'processing', tab: `标注中 (${episodes.filter(e => e.annoStatus === '标注中').length})` },
+              { key: 'auto_processing', tab: `自动标注处理中 (${episodes.filter(e => e.annoStatus === '自动标注处理中').length})` }
+            ]}
+            activeTabKey={activeAnnoTab}
+            onTabChange={(key) => setActiveAnnoTab(key)}
+            styles={{ body: { padding: 0 } }}
+            style={{ borderRadius: 8, border: '1px solid #f0f0f0' }}
+          >
+            <Table 
+              rowSelection={{
+                selectedRowKeys,
+                onChange: (keys, rows) => {
+                  setSelectedRowKeys(keys);
+                  setSelectedRows(rows);
+                }
+              }}
+              columns={columns} 
+              dataSource={filteredData} 
+              pagination={{ 
+                pageSize: 20, 
+                showTotal: (t) => `共 ${t} 条`,
+                showSizeChanger: true,
+                pageSizeOptions: ['10', '20', '50']
+              }}
+              size="small"
+              bordered
+              scroll={{ x: 1600 }}
+            />
+          </Card>
         </div>
       </div>
 
