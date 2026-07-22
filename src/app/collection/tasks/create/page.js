@@ -628,9 +628,6 @@ function CreateTaskContent() {
               {mode === 'edit' ? '编辑任务：' : mode === 'copy' ? '复制任务：' : '基于模版创建：'}
               {selectedTemplate?.name}
             </Title>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {taskFormType === 'collect' ? '任务类型：数采下发（需进行设备采集）' : '任务类型：资产关联（直接引入数据进行标注审核）'}
-            </Text>
           </div>
         </div>
         <Radio.Group 
