@@ -370,22 +370,9 @@ export default function TaskInstancePage() {
               </Row>
 
               <Row gutter={16}>
-                <Col span={12}>
+                <Col span={24}>
                   <Form.Item label="分包数 / 计划采集量 (条)" name="planCount" required initialValue={100}>
                     <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入该分包计划采集条数" addonAfter="条" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="指派设备实例" name="deviceInstance" required rules={[{ required: true, message: '请指派设备实例' }]}>
-                    <Select 
-                      placeholder="请指派设备实例" 
-                      options={[
-                        { value: 'R002GB-RGB-101', label: 'R002GB-RGB-101 (Galbot RGB)' },
-                        { value: 'R002GB-RGB-102', label: 'R002GB-RGB-102 (Galbot RGB)' },
-                        { value: 'DEV-FR-301', label: 'FRANKA-FR3-1号 (Franka Std)' },
-                      ]} 
-                      defaultValue="R002GB-RGB-101"
-                    />
                   </Form.Item>
                 </Col>
               </Row>
@@ -419,9 +406,6 @@ export default function TaskInstancePage() {
             </>
           )}
 
-          <Form.Item label="是否自动生成数据集" name="autoDataset" initialValue={false}>
-            <Switch checkedChildren="是" unCheckedChildren="否" />
-          </Form.Item>
           <Form.Item label="分包备注说明" name="remarks">
             <TextArea rows={2} placeholder="请输入分包备注信息..." />
           </Form.Item>
