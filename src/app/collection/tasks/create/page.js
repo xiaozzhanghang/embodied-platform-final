@@ -512,6 +512,7 @@ function CreateTaskContent() {
       p1: catalog.project,
       taskbook: catalog.taskbook,
       deviceType: catalog.deviceType,
+      assetDataCount: 20
     });
 
     // Generate mock episodes for the table
@@ -538,6 +539,18 @@ function CreateTaskContent() {
     if (catalog.steps) {
       setSteps(catalog.steps.map((s, idx) => ({ ...s, id: idx + 1 })));
     }
+  };
+
+  const handleAssetCountChange = (val) => {
+    const num = Math.min(val || 0, episodesList.length);
+    const targetKeys = episodesList.slice(0, num).map(item => item.key);
+    setSelectedRowKeys(targetKeys);
+    form.setFieldsValue({ assetDataCount: num });
+  };
+
+  const handleAssetTableSelectChange = (keys) => {
+    setSelectedRowKeys(keys);
+    form.setFieldsValue({ assetDataCount: keys.length });
   };
 
   const renderSelection = () => (
@@ -724,20 +737,41 @@ function CreateTaskContent() {
                   styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} 
                   style={{ marginBottom: 24, borderRadius: 8 }}
                 >
-                  <Form.Item 
-                    name="dataSource" 
-                    label="数据资产目录数据源" 
-                    required 
-                    rules={[{ required: true, message: '请选择关联的数据资产目录' }]}
-                    extra="从资产库导入对应的动作包数据，任务发布后将直接触发其标注审核流程"
-                  >
-                    <Select 
-                      placeholder="请选择或输入搜索数据资产目录中的已采集动作段..." 
-                      onChange={handleCatalogChange}
-                      options={collectedDataSources}
-                      showSearch
-                    />
-                  </Form.Item>
+                  <Row gutter={16}>
+                    <Col span={16}>
+                      <Form.Item 
+                        name="dataSource" 
+                        label="数据资产目录数据源" 
+                        required 
+                        rules={[{ required: true, message: '请选择关联的数据资产目录' }]}
+                        extra="从资产库导入对应的动作包数据，任务发布后将直接触发其标注审核流程"
+                      >
+                        <Select 
+                          placeholder="请选择或输入搜索数据资产目录中的已采集动作段..." 
+                          onChange={handleCatalogChange}
+                          options={collectedDataSources}
+                          showSearch
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item 
+                        name="assetDataCount" 
+                        label="需要关联数据数量" 
+                        tooltip="设置本次任务关联引用的数据包条数，将自动对应下方明细表中的选中勾选状态"
+                      >
+                        <InputNumber
+                          min={1}
+                          max={episodesList.length || 1000}
+                          style={{ width: '100%' }}
+                          onChange={handleAssetCountChange}
+                          disabled={!activeCatalog}
+                          placeholder={activeCatalog ? "输入关联数量" : "请先选择数据源"}
+                          addonAfter="条"
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
 
                   {activeCatalog && (
                     <div style={{ marginTop: 16 }}>
@@ -763,7 +797,7 @@ function CreateTaskContent() {
                       <Table
                         rowSelection={{
                           selectedRowKeys,
-                          onChange: (keys) => setSelectedRowKeys(keys)
+                          onChange: handleAssetTableSelectChange
                         }}
                         columns={[
                           { title: '动作数据包 ID', dataIndex: 'id', width: 140 },
