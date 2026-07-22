@@ -19,11 +19,17 @@ import MainLayout from '@/components/MainLayout';
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-const mockInstances = [
-  { key: '1', instanceId: '12745', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '张三', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-11 09:00', endTime: '-', collectProgress: 53, qaProgress: 0, status: '采集中' },
-  { key: '2', instanceId: '12744', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '李四', deviceInstance: 'R002GB-RGB-102', startTime: '2026-03-11 10:30', endTime: '-', collectProgress: 80, qaProgress: 0, status: '采集中' },
-  { key: '3', instanceId: '12619', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '-', deviceInstance: '—', startTime: '-', endTime: '-', collectProgress: 0, qaProgress: 0, status: '待分配' },
-  { key: '4', instanceId: '12511', taskName: '餐具摆放', autoDataset: false, isShelf: false, shelfPos: '--', annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '王五', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-10 14:30', endTime: '2026-03-12 18:00', collectProgress: 100, qaProgress: 100, status: '已完成' },
+const mockInstancesCollect = [
+  { key: '1', instanceId: '12745', taskName: '餐具摆放', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '张三', annotator: '李四', auditor: '王五', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-11 09:00', collectProgress: 53, status: '采集中' },
+  { key: '2', instanceId: '12744', taskName: '餐具摆放', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '李四', annotator: '赵六', auditor: '天奇管理员', deviceInstance: 'R002GB-RGB-102', startTime: '2026-03-11 10:30', collectProgress: 80, status: '采集中' },
+  { key: '3', instanceId: '12619', taskName: '餐具摆放', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '-', annotator: '-', auditor: '-', deviceInstance: '—', startTime: '-', collectProgress: 0, status: '待分配' },
+  { key: '4', instanceId: '12511', taskName: '餐具摆放', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '王五', annotator: '李四', auditor: '王五', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-10 14:30', collectProgress: 100, status: '已完成' },
+];
+
+const mockInstancesAsset = [
+  { key: '1', instanceId: 'AST-844101', taskName: '工业纸箱打包封装', assetSource: 'Lumos_FastUMI_202606', annoType: '帧区间标注', planCount: 30, annotator: '李四', auditor: '王五', startTime: '2026-06-12 10:00', collectProgress: 75, status: '标注审核中' },
+  { key: '2', instanceId: 'AST-844102', taskName: '工业纸箱打包封装', assetSource: 'Lumos_FastUMI_202606', annoType: '帧区间标注', planCount: 25, annotator: '张三', auditor: '天奇管理员', startTime: '2026-06-12 11:30', collectProgress: 40, status: '标注审核中' },
+  { key: '3', instanceId: 'AST-844103', taskName: '工业纸箱打包封装', assetSource: 'Lumos_FastUMI_202606', annoType: '关键帧标注', planCount: 20, annotator: '-', auditor: '-', startTime: '-', collectProgress: 0, status: '待分配' },
 ];
 
 const StatCard = ({ icon, value, label, iconBg, color }) => (
@@ -50,6 +56,7 @@ export default function TaskInstancePage() {
   const [addPackForm] = Form.useForm();
   const [annoForm] = Form.useForm();
   
+  const [taskMode, setTaskMode] = useState('collect'); // 'collect' (需要采集数据) or 'asset' (关联数据资产)
   const [activeTab, setActiveTab] = useState('all');
   const [infoExpanded, setInfoExpanded] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -65,7 +72,7 @@ export default function TaskInstancePage() {
   const handlePausePack = (record) => {
     Modal.confirm({
       title: `暂停包 ${record.instanceId}`,
-      content: `暂停后，采集员将无法继续录入。该包内已采集完成的数据将自动打包解析并流转至质检中心。`,
+      content: `暂停后，操作员将无法继续录入。该包内已完成的数据将自动打包解析并流转至质检中心。`,
       okText: '确认暂停',
       cancelText: '取消',
       okButtonProps: { danger: true },
@@ -76,7 +83,7 @@ export default function TaskInstancePage() {
   const handleCompletePack = (record) => {
     Modal.confirm({
       title: `标记包 ${record.instanceId} 为完成`,
-      content: `确认后，该包将结束采集并自动打包解析，数据将流转至质检中心。`,
+      content: `确认后，该包将结束流程并自动打包解析，数据将流转至质检中心。`,
       okText: '确认完成',
       cancelText: '取消',
       onOk: () => message.success(`包 ${record.instanceId} 已完成`),
@@ -109,18 +116,17 @@ export default function TaskInstancePage() {
     );
   };
 
-  const columns = [
-    { title: '实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 100 },
+  const columnsCollect = [
+    { title: '分包实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 110 },
     { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 120 },
-    { title: '自动数据集', dataIndex: 'autoDataset', key: 'autoDataset', width: 100, render: (v) => <Tag color={v ? 'green' : 'default'}>{v ? '是' : '否'}</Tag> },
-    { title: '标注类型', dataIndex: 'annoType', key: 'annoType', width: 120 },
-    { title: '单包采集量', dataIndex: 'singlePack', key: 'singlePack', width: 100 },
-    { title: '计划采集量', dataIndex: 'planCount', key: 'planCount', width: 100 },
     { title: '采集人员', dataIndex: 'collector', key: 'collector', width: 100 },
+    { title: '指派标注员', dataIndex: 'annotator', key: 'annotator', width: 100 },
+    { title: '指派审核员', dataIndex: 'auditor', key: 'auditor', width: 100 },
+    { title: '分包数/计划数', key: 'planCount', width: 120, render: (_, r) => <span>{r.singlePack} / {r.planCount} 条</span> },
     { title: '分配设备实例', dataIndex: 'deviceInstance', key: 'deviceInstance', width: 140 },
     { title: '开始时间', dataIndex: 'startTime', key: 'startTime', width: 150 },
     {
-      title: '采集进度', key: 'collectProgress', width: 140,
+      title: '采集/标注进度', key: 'collectProgress', width: 140,
       render: (_, record) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Progress percent={record.collectProgress} size="small" showInfo={false} style={{ flex: 1 }} strokeColor="#1677ff" />
@@ -128,23 +134,58 @@ export default function TaskInstancePage() {
         </div>
       )
     },
-    { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (s) => <Tag color={s === '已完成' ? 'success' : 'processing'}>{s}</Tag> },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (s) => <Tag color={s === '已完成' ? 'success' : s === '待分配' ? 'default' : 'processing'}>{s}</Tag> },
     { title: '操作', key: 'action', width: 180, fixed: 'right', render: (_, record) => getStatusActions(record) },
   ];
+
+  const columnsAsset = [
+    { title: '分包实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 120 },
+    { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 140 },
+    { title: '关联资产数据源', dataIndex: 'assetSource', key: 'assetSource', width: 160 },
+    { title: '指派标注员', dataIndex: 'annotator', key: 'annotator', width: 100 },
+    { title: '指派审核员', dataIndex: 'auditor', key: 'auditor', width: 100 },
+    { title: '分包关联数据数', key: 'planCount', width: 130, render: (_, r) => <span>{r.planCount} 条</span> },
+    { title: '开始时间', dataIndex: 'startTime', key: 'startTime', width: 150 },
+    {
+      title: '标注审核进度', key: 'collectProgress', width: 140,
+      render: (_, record) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Progress percent={record.collectProgress} size="small" showInfo={false} style={{ flex: 1 }} strokeColor="#52c41a" />
+          <span style={{ fontSize: 12, color: '#595959' }}>{record.collectProgress}%</span>
+        </div>
+      )
+    },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (s) => <Tag color={s === '已完成' ? 'success' : s === '待分配' ? 'default' : 'purple'}>{s}</Tag> },
+    { title: '操作', key: 'action', width: 180, fixed: 'right', render: (_, record) => getStatusActions(record) },
+  ];
+
+  const currentColumns = taskMode === 'collect' ? columnsCollect : columnsAsset;
+  const currentMockData = taskMode === 'collect' ? mockInstancesCollect : mockInstancesAsset;
 
   return (
     <MainLayout>
       <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '任务详情' }]} style={{ marginBottom: 16 }} />
 
-      <Button type="link" icon={<ArrowLeftOutlined />} onClick={() => router.push('/collection/tasks')} style={{ padding: 0, marginBottom: 12 }}>
-        返回任务列表
-      </Button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <Button type="link" icon={<ArrowLeftOutlined />} onClick={() => router.push('/collection/tasks')} style={{ padding: 0 }}>
+          返回任务列表
+        </Button>
+        <Radio.Group value={taskMode} onChange={(e) => setTaskMode(e.target.value)} buttonStyle="solid" size="small">
+          <Radio.Button value="collect">📷 需要采集数据任务类型</Radio.Button>
+          <Radio.Button value="asset">📦 关联数据资产任务类型</Radio.Button>
+        </Radio.Group>
+      </div>
 
       {/* High-Fidelity Header Card */}
       <Card style={{ marginBottom: 24, borderRadius: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', background: '#f8f9fc' }} styles={{ body: { padding: '24px 28px' } }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <Title level={4} style={{ margin: 0 }}>任务详情：餐具摆放 ({id})</Title>
-          <Tag color="processing" bordered={false} style={{ borderRadius: 10, padding: '0 12px', background: '#e6f4ff', color: '#1677ff' }}>进行中</Tag>
+          <Title level={4} style={{ margin: 0 }}>
+            {taskMode === 'collect' ? '任务详情：餐具摆放数采任务' : '任务详情：工业纸箱打包封装关联标注任务'} ({id})
+          </Title>
+          <Tag color={taskMode === 'collect' ? 'blue' : 'purple'} bordered={false} style={{ borderRadius: 10, padding: '2px 12px' }}>
+            {taskMode === 'collect' ? '需要采集数据模式' : '关联数据资产模式'}
+          </Tag>
+          <Tag color="processing" bordered={false} style={{ borderRadius: 10, padding: '2px 12px', background: '#e6f4ff', color: '#1677ff' }}>进行中</Tag>
         </div>
 
         {/* Basic Info Bar - Collapsible */}
@@ -177,8 +218,10 @@ export default function TaskInstancePage() {
                   <div style={{ fontWeight: 600, color: '#262626' }}>{id}</div>
                 </Col>
                 <Col span={6}>
-                  <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>任务状态</div>
-                  <Tag color="default" style={{ borderRadius: 4 }}>进行中</Tag>
+                  <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>任务模式类型</div>
+                  <Tag color={taskMode === 'collect' ? 'blue' : 'purple'}>
+                    {taskMode === 'collect' ? '需要采集数据' : '关联数据资产'}
+                  </Tag>
                 </Col>
                 <Col span={6}>
                   <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>创建人</div>
@@ -193,13 +236,19 @@ export default function TaskInstancePage() {
                   <div style={{ fontWeight: 600, color: '#262626' }}>Supermarket (超市场景)</div>
                 </Col>
                 <Col span={6}>
-                  <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>采集模式</div>
-                  <div style={{ fontWeight: 600, color: '#262626' }}>WholeBody</div>
+                  <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>默认标注员</div>
+                  <div style={{ fontWeight: 600, color: '#262626' }}>李四</div>
                 </Col>
                 <Col span={6}>
-                  <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>遥操类型</div>
-                  <div style={{ fontWeight: 600, color: '#262626' }}>Master-slave</div>
+                  <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>默认审核员</div>
+                  <div style={{ fontWeight: 600, color: '#262626' }}>王五</div>
                 </Col>
+                {taskMode === 'collect' && (
+                  <Col span={6}>
+                    <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>默认采集员</div>
+                    <div style={{ fontWeight: 600, color: '#262626' }}>张三</div>
+                  </Col>
+                )}
                 <Col span={6}>
                   <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>创建时间</div>
                   <div style={{ fontWeight: 600, color: '#262626' }}>2026-03-10 14:22</div>
@@ -211,38 +260,45 @@ export default function TaskInstancePage() {
 
         {/* Statistics Row */}
         <div style={{ display: 'flex', gap: 16 }}>
-          <StatCard icon="📦" value="3" label="总包数" iconBg="#e6f4ff" color="#1677ff" />
-          <StatCard icon="✅" value="3" label="已完成包" iconBg="#f6ffed" color="#52c41a" />
-          <StatCard icon="⚡" value="0" label="采集中包" iconBg="#fffbe6" color="#faad14" />
-          <StatCard icon="🔢" value="30/30" label="采集记录进度" iconBg="#f9f0ff" color="#722ed1" />
+          <StatCard icon="📦" value={currentMockData.length} label="总分包数" iconBg="#e6f4ff" color="#1677ff" />
+          <StatCard icon="✅" value="1" label="已完成分包" iconBg="#f6ffed" color="#52c41a" />
+          <StatCard icon="⚡" value="2" label="处理中分包" iconBg="#fffbe6" color="#faad14" />
+          <StatCard icon="🔢" value={taskMode === 'collect' ? '300/400' : '75/100'} label="总关联/采集条目数" iconBg="#f9f0ff" color="#722ed1" />
         </div>
       </Card>
 
       <Card style={{ borderRadius: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Title level={5} style={{ margin: 0 }}>包列表</Title>
-            <Text type="secondary" style={{ fontSize: 13 }}>每个包分配给一名采集员，包内包含多条采集记录</Text>
+            <Title level={5} style={{ margin: 0 }}>分包明细列表</Title>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {taskMode === 'collect' 
+                ? '每个分包包含具体的采集员、标注员、审核员及计划采集数量' 
+                : '每个关联分包指定具体的标注员、审核员及分包关联数据数量'}
+            </Text>
           </div>
           <Button type="text" icon={<ReloadOutlined />} style={{ color: '#8c8c8c' }} />
         </div>
 
         <div style={{ background: '#fff', borderRadius: 8, padding: '16px 20px', border: '1px solid #f0f0f0', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space size={16} align="bottom">
-            <Form.Item label="实例任务id" style={{ marginBottom: 0 }}><Input placeholder="实例任务id" style={{ width: 160 }} /></Form.Item>
-            <Form.Item label="操作物体" style={{ marginBottom: 0 }}><Select placeholder="操作物体" style={{ width: 160 }} /></Form.Item>
-            <Form.Item label="采集人员" style={{ marginBottom: 0 }}><Select placeholder="采集人员" style={{ width: 160 }} /></Form.Item>
+            <Form.Item label="分包ID" style={{ marginBottom: 0 }}><Input placeholder="分包ID" style={{ width: 140 }} /></Form.Item>
+            <Form.Item label="标注员" style={{ marginBottom: 0 }}><Select placeholder="请选择标注员" style={{ width: 140 }} options={[{value:'李四', label:'李四'}, {value:'张三', label:'张三'}]} /></Form.Item>
+            <Form.Item label="审核员" style={{ marginBottom: 0 }}><Select placeholder="请选择审核员" style={{ width: 140 }} options={[{value:'王五', label:'王五'}, {value:'天奇管理员', label:'天奇管理员'}]} /></Form.Item>
+            {taskMode === 'collect' && (
+              <Form.Item label="采集员" style={{ marginBottom: 0 }}><Select placeholder="采集人员" style={{ width: 140 }} options={[{value:'张三', label:'张三'}, {value:'李四', label:'李四'}]} /></Form.Item>
+            )}
             <Form.Item style={{ marginBottom: 0 }}><Button type="primary" icon={<SearchOutlined />}>搜索</Button></Form.Item>
           </Space>
             <Space size={12}>
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddPackVisible(true)}>添加分包</Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddPackVisible(true)}>新建分包</Button>
               <Button 
                 icon={<PauseOutlined />} 
                 disabled={selectedRowKeys.length === 0} 
                 onClick={() => setIsPauseTaskVisible(true)}
                 style={{ borderRadius: 6, background: selectedRowKeys.length > 0 ? '#e6f7ff' : '#f5f5f5', color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf', border: 'none' }}
               >
-                暂停任务
+                暂停分包
               </Button>
               <Button 
                 icon={<PlusOutlined />} 
@@ -250,7 +306,7 @@ export default function TaskInstancePage() {
                 onClick={() => setIsAddAnnoVisible(true)}
                 style={{ borderRadius: 6, background: selectedRowKeys.length > 0 ? '#e6f7ff' : '#f5f5f5', color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf', border: 'none' }}
               >
-                添加标注任务
+                指派标注审核流
               </Button>
             </Space>
           </div>
@@ -259,9 +315,9 @@ export default function TaskInstancePage() {
           activeKey={activeTab}
           onChange={setActiveTab}
           items={[
-            { key: 'all', label: <span>全部 <Badge count={4} style={{ backgroundColor: '#e6f4ff', color: '#1677ff', boxShadow: 'none', marginLeft: 4 }} /></span> },
+            { key: 'all', label: <span>全部 <Badge count={currentMockData.length} style={{ backgroundColor: '#e6f4ff', color: '#1677ff', boxShadow: 'none', marginLeft: 4 }} /></span> },
             { key: 'pending', label: '待分配' },
-            { key: 'collecting', label: '采集中' },
+            { key: 'collecting', label: taskMode === 'collect' ? '采集中' : '标注中' },
             { key: 'done', label: '已完成' },
           ]}
           style={{ marginBottom: 16 }}
@@ -269,8 +325,8 @@ export default function TaskInstancePage() {
 
         <Table
           rowSelection={{ type: 'checkbox', selectedRowKeys, onChange: setSelectedRowKeys }}
-          columns={columns}
-          dataSource={mockInstances}
+          columns={currentColumns}
+          dataSource={currentMockData}
           scroll={{ x: 1400 }}
           pagination={false}
           size="middle"
@@ -279,42 +335,102 @@ export default function TaskInstancePage() {
 
       {/* --- MODALS --- */}
 
-      {/* 1. 添加分包弹窗 */}
+      {/* 1. 新建分包弹窗 (区分需要采集数据 vs 关联数据资产) */}
       <Modal
-        title={<div style={{ paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>新建分包</div>}
+        title={
+          <div style={{ paddingBottom: 12, borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>新建任务分包</span>
+            <Tag color={taskMode === 'collect' ? 'blue' : 'purple'}>
+              {taskMode === 'collect' ? '需要采集数据分包' : '关联数据资产分包'}
+            </Tag>
+          </div>
+        }
         open={isAddPackVisible}
         onCancel={() => setIsAddPackVisible(false)}
-        width={520}
-        okText="确定"
+        width={560}
+        okText="确定创建分包"
         cancelText="取消"
         onOk={() => {
-          message.success('分包创建成功');
+          message.success('分包创建成功，已分配对应的成员与分包数据量！');
           setIsAddPackVisible(false);
         }}
       >
-        <Form form={addPackForm} layout="vertical" style={{ paddingTop: 24 }}>
-          <Form.Item label="选择采集员" name="collector" required>
-            <Select placeholder="请选择采集员" options={[{ value: 'u1', label: '采集员 - 张三' }, { value: 'u2', label: '采集员 - 李四' }]} />
-          </Form.Item>
-          <Form.Item label="指派设备实例" name="deviceInstance" required>
-            <Select 
-              placeholder="请指派设备实例" 
-              options={[
-                { value: 'R002GB-RGB-101', label: 'R002GB-RGB-101 (Galbot RGB - 在线)' },
-                { value: 'R002GB-RGB-102', label: 'R002GB-RGB-102 (Galbot RGB - 离线)' },
-                { value: 'R002GB-RGBD-101', label: 'R002GB-RGBD-101 (Galbot RGBD - 在线)' },
-                { value: 'DEV-FR-301', label: 'FRANKA-FR3-1号 (Franka Std - 在线)' },
-              ]} 
-            />
-          </Form.Item>
-          <Form.Item label="计划采集量 (单包)" name="planCount" required initialValue={100}>
-            <InputNumber min={1} style={{ width: '100%' }} />
-          </Form.Item>
+        <Form form={addPackForm} layout="vertical" style={{ paddingTop: 16 }}>
+          {taskMode === 'collect' ? (
+            <>
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Form.Item label="选择采集员" name="collector" required rules={[{ required: true, message: '请选择采集员' }]}>
+                    <Select placeholder="请选择采集员" options={[{ value: 'u1', label: '张三 (采集员)' }, { value: 'u2', label: '李四 (采集员)' }]} defaultValue="u1" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="选择标注员" name="annotator" required rules={[{ required: true, message: '请选择标注员' }]}>
+                    <Select placeholder="请选择标注员" options={[{ value: 'a1', label: '李四 (标注员)' }, { value: 'a2', label: '赵六 (标注员)' }]} defaultValue="a1" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item label="选择审核员" name="auditor" required rules={[{ required: true, message: '请选择审核员' }]}>
+                    <Select placeholder="请选择审核员" options={[{ value: 'v1', label: '王五 (审核员)' }, { value: 'v2', label: '天奇管理员' }]} defaultValue="v1" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="分包数 / 计划采集量 (条)" name="planCount" required initialValue={100}>
+                    <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入该分包计划采集条数" addonAfter="条" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="指派设备实例" name="deviceInstance" required rules={[{ required: true, message: '请指派设备实例' }]}>
+                    <Select 
+                      placeholder="请指派设备实例" 
+                      options={[
+                        { value: 'R002GB-RGB-101', label: 'R002GB-RGB-101 (Galbot RGB)' },
+                        { value: 'R002GB-RGB-102', label: 'R002GB-RGB-102 (Galbot RGB)' },
+                        { value: 'DEV-FR-301', label: 'FRANKA-FR3-1号 (Franka Std)' },
+                      ]} 
+                      defaultValue="R002GB-RGB-101"
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </>
+          ) : (
+            <>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="选择标注员" name="annotator" required rules={[{ required: true, message: '请选择标注员' }]}>
+                    <Select placeholder="请选择标注员" options={[{ value: 'a1', label: '李四 (标注员)' }, { value: 'a2', label: '张三 (标注员)' }]} defaultValue="a1" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="选择审核员" name="auditor" required rules={[{ required: true, message: '请选择审核员' }]}>
+                    <Select placeholder="请选择审核员" options={[{ value: 'v1', label: '王五 (审核员)' }, { value: 'v2', label: '天奇管理员' }]} defaultValue="v1" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={16}>
+                <Col span={24}>
+                  <Form.Item label="分包数 / 关联资产数据量 (条)" name="planCount" required initialValue={30}>
+                    <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入该分包关联资产数据条数" addonAfter="条" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Form.Item label="关联资产目录批次说明" name="assetBatch" initialValue="Lumos_FastUMI_20260601 自动划分批次">
+                <Input placeholder="输入该分包引用的数据资产批次" />
+              </Form.Item>
+            </>
+          )}
+
           <Form.Item label="是否自动生成数据集" name="autoDataset" initialValue={false}>
             <Switch checkedChildren="是" unCheckedChildren="否" />
           </Form.Item>
-          <Form.Item label="备注说明" name="remarks">
-            <TextArea rows={3} placeholder="请输入分包备注信息..." />
+          <Form.Item label="分包备注说明" name="remarks">
+            <TextArea rows={2} placeholder="请输入分包备注信息..." />
           </Form.Item>
         </Form>
       </Modal>

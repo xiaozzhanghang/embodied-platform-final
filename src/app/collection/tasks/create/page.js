@@ -688,14 +688,16 @@ function CreateTaskContent() {
                   <Row gutter={24}>
                     <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} popupRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="任务名称" name="name" required><Input /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="关联任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} popupRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="任务名称" name="name" required><Input placeholder="请输入任务名称" /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} placeholder="En Name" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="指派默认采集员" name="collector" required><Select placeholder="请选择指派采集员" options={collectorsList} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="指派默认采集员" name="collector" required><Select placeholder="请选择指派采集员" options={collectorsList} defaultValue="张三" /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="指派默认标注员" name="annotator" required><Select placeholder="请选择标注员" options={annotatorsList} defaultValue="李四" /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="指派默认审核员" name="auditor" required><Select placeholder="请选择审核员" options={auditorsList} defaultValue="王五" /></Form.Item></Col>
                   </Row>
                 </Card>
 
@@ -711,17 +713,19 @@ function CreateTaskContent() {
             ) : (
               <>
                 {/* Render Step 0 Form for Data Asset Linkage Mode */}
-                <Card title="基础信息 & 关联成员" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+                <Card title="基础信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
                   <Row gutter={24}>
                     <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="关联任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} popupRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="任务名称" name="name" required><Input /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="任务名称" name="name" required><Input placeholder="请输入任务名称" /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} placeholder="En Name" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="指派默认标注员" name="annotator" required><Select placeholder="请选择标注员" options={annotatorsList} defaultValue="张三" /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="指派默认采集员" name="collector" required><Select placeholder="请选择指派采集员" options={collectorsList} defaultValue="张三" /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="指派默认标注员" name="annotator" required><Select placeholder="请选择标注员" options={annotatorsList} defaultValue="李四" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="指派默认审核员" name="auditor" required><Select placeholder="请选择审核员" options={auditorsList} defaultValue="王五" /></Form.Item></Col>
                   </Row>
                 </Card>
