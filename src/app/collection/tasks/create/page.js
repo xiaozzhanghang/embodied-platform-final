@@ -671,32 +671,22 @@ function CreateTaskContent() {
               </Row>
             </Card>
 
-            {/* 2. Placed DIRECTLY BELOW 基础信息: 采集数据来源 (单选选择形式) */}
-            <Card title="采集数据来源" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+            {/* 2. Placed DIRECTLY BELOW 基础信息: 任务模式类型 (单选 Radio 组形式) */}
+            <Card title="任务模式" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ fontWeight: 600, color: '#262626', width: 110, flexShrink: 0 }}>
-                  <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>采集数据来源:
+                  <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>任务模式类型:
                 </span>
                 <Radio.Group 
-                  value={dataSourceType} 
+                  value={taskFormType} 
                   onChange={e => {
-                    const val = e.target.value;
-                    setDataSourceType(val);
-                    if (['human_video', 'sim_import'].includes(val)) {
-                      setTaskFormType('asset');
-                    } else {
-                      setTaskFormType('collect');
-                    }
+                    setTaskFormType(e.target.value);
+                    setCurrentStep(0);
                   }}
-                  style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}
+                  style={{ display: 'flex', gap: 32 }}
                 >
-                  <Radio value="galbot">GALBOT G1/S1</Radio>
-                  <Radio value="human_video">人类视频导入</Radio>
-                  <Radio value="ego_gopro">ego-gopro</Radio>
-                  <Radio value="ego_iphone">ego-iphone</Radio>
-                  <Radio value="umi">UMI数据采集</Radio>
-                  <Radio value="humanoid">人形机器人采集</Radio>
-                  <Radio value="sim_import">仿真数据导入</Radio>
+                  <Radio value="collect">需要采集数据</Radio>
+                  <Radio value="asset">关联数据资产 / 外部导入</Radio>
                 </Radio.Group>
               </div>
             </Card>
