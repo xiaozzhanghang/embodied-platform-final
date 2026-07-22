@@ -689,6 +689,7 @@ function CreateTaskContent() {
                     <Col span={8}><Form.Item label="任务名称" name="name" required><Input placeholder="请输入任务名称" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} placeholder="En Name" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="设备类型" name="deviceType" required><Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
                   </Row>
@@ -696,9 +697,8 @@ function CreateTaskContent() {
 
                 <Card title="采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
                   <Row gutter={24}>
-                    <Col span={8}><Form.Item label="设备类型" name="deviceType" required><Select options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择采集模式" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} defaultValue="WholeBody" /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="遥操主控方式" name="teleType" required><Select options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} /></Form.Item></Col>
+                    <Col span={12}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择采集模式" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} defaultValue="WholeBody" /></Form.Item></Col>
+                    <Col span={12}><Form.Item label="遥操主控方式" name="teleType" required><Select options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} /></Form.Item></Col>
                   </Row>
                   <Table dataSource={availableParts} columns={[{title:'名称', dataIndex:'name'},{title:'类型', dataIndex:'type'}]} rowSelection={{type:'checkbox', selectedRowKeys:selectedPartKeys}} pagination={false} size="small" bordered />
                 </Card>
@@ -714,6 +714,7 @@ function CreateTaskContent() {
                     <Col span={8}><Form.Item label="任务名称" name="name" required><Input placeholder="请输入任务名称" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} placeholder="En Name" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="设备类型" name="deviceType" required><Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
                   </Row>
