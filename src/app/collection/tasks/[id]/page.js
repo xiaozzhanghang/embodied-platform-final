@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { 
   Table, Button, Tag, Space, Card, Typography, Breadcrumb, 
   Badge, App, Modal, Form, Select, Input, Switch, Tabs, 
@@ -20,10 +20,10 @@ const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const mockInstancesCollect = [
-  { key: '1', instanceId: '12745', taskName: '餐具摆放', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '张三', annotator: '李四', auditor: '王五', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-11 09:00', collectProgress: 53, status: '采集中' },
-  { key: '2', instanceId: '12744', taskName: '餐具摆放', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '李四', annotator: '赵六', auditor: '天奇管理员', deviceInstance: 'R002GB-RGB-102', startTime: '2026-03-11 10:30', collectProgress: 80, status: '采集中' },
-  { key: '3', instanceId: '12619', taskName: '餐具摆放', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '-', annotator: '-', auditor: '-', deviceInstance: '—', startTime: '-', collectProgress: 0, status: '待分配' },
-  { key: '4', instanceId: '12511', taskName: '餐具摆放', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '王五', annotator: '李四', auditor: '王五', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-10 14:30', collectProgress: 100, status: '已完成' },
+  { key: '1', instanceId: '12745', taskName: '货架物品物理采集', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '张三', annotator: '李四', auditor: '王五', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-11 09:00', collectProgress: 53, status: '采集中' },
+  { key: '2', instanceId: '12744', taskName: '货架物品物理采集', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '李四', annotator: '赵六', auditor: '天奇管理员', deviceInstance: 'R002GB-RGB-102', startTime: '2026-03-11 10:30', collectProgress: 80, status: '采集中' },
+  { key: '3', instanceId: '12619', taskName: '货架物品物理采集', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '-', annotator: '-', auditor: '-', deviceInstance: '—', startTime: '-', collectProgress: 0, status: '待分配' },
+  { key: '4', instanceId: '12511', taskName: '货架物品物理采集', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '王五', annotator: '李四', auditor: '王五', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-10 14:30', collectProgress: 100, status: '已完成' },
 ];
 
 const mockInstancesAsset = [
@@ -52,11 +52,22 @@ const StatCard = ({ icon, value, label, iconBg, color }) => (
 export default function TaskInstancePage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { message } = App.useApp();
   const [addPackForm] = Form.useForm();
   const [annoForm] = Form.useForm();
   
-  const [taskMode, setTaskMode] = useState('collect'); // 'collect' (需要采集数据) or 'asset' (关联数据资产)
+  const typeParam = searchParams ? searchParams.get('type') : null;
+  const initialMode = typeParam === 'asset' || id === '12854' ? 'asset' : 'collect';
+  const [taskMode, setTaskMode] = useState(initialMode);
+
+  useEffect(() => {
+    if (typeParam === 'asset' || id === '12854') {
+      setTaskMode('asset');
+    } else if (typeParam === 'collect' || id === '12853') {
+      setTaskMode('collect');
+    }
+  }, [typeParam, id]);
   const [activeTab, setActiveTab] = useState('all');
   const [infoExpanded, setInfoExpanded] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);

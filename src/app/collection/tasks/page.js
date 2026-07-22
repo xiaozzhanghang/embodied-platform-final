@@ -34,9 +34,10 @@ export default function TaskCenterPage() {
   const mockData = [
     { 
       key: '1', 
-      instanceId: 'INS-766794-A',
+      instanceId: 'INS-COLLECT-12853',
       taskId: '12853', 
-      name: '货架物品采集 - 实例 01', 
+      name: '货架物品物理采集任务', 
+      taskType: 'collect',
       project: 'SimulatedCollection',
       isShelfTask: '是',
       shelfPosition: 'A-1-2',
@@ -52,9 +53,29 @@ export default function TaskCenterPage() {
     },
     { 
       key: '2', 
+      instanceId: 'INS-ASSET-12854',
+      taskId: '12854', 
+      name: '工业纸箱打包封装标注任务', 
+      taskType: 'asset',
+      project: 'InternalCommercial',
+      isShelfTask: '否',
+      shelfPosition: '-',
+      annoType: '帧区间标注',
+      collectedCount: 75,
+      plannedCount: 100,
+      collector: '无需采集 (资产关联)',
+      startTime: '2026-06-12 10:00',
+      endTime: '-',
+      collectProgress: '75%',
+      qaProgress: '75%',
+      status: '进行中', 
+    },
+    { 
+      key: '3', 
       instanceId: 'INS-766794-B',
       taskId: '12837', 
-      name: '桌面操作任务 - 实例 02', 
+      name: '桌面操作物理数采任务 - 实例 02', 
+      taskType: 'collect',
       project: 'SimulatedCollection',
       isShelfTask: '是',
       shelfPosition: '-',
@@ -69,59 +90,53 @@ export default function TaskCenterPage() {
       status: '进行中', 
     },
     { 
-      key: '3', 
-      instanceId: 'INS-GB116-001',
-      taskId: 'CT-Galbot-1.16', 
-      name: 'Galbot-1.16-双臂精细整理作业-001', 
-      project: 'InternalCommercial',
-      isShelfTask: '否',
-      shelfPosition: '-',
-      annoType: '双端数采',
-      collectedCount: 2,
-      plannedCount: 50,
-      collector: '赵六',
-      startTime: '-',
-      endTime: '-',
-      collectProgress: '4%',
-      qaProgress: '0%',
-      status: '进行中', 
-    },
-    { 
       key: '4', 
       instanceId: 'INS-LUMOS-001',
       taskId: 'CT-20260414001', 
-      name: 'Lumos-双手筷子与勺子整理-001', 
+      name: 'Lumos-双手整理离线资产任务', 
+      taskType: 'asset',
       project: 'InternalCommercial',
       isShelfTask: '否',
       shelfPosition: '-',
       annoType: '离线数采',
-      collectedCount: 0,
+      collectedCount: 40,
       plannedCount: 50,
-      collector: '王小二',
-      startTime: '-',
+      collector: '无需采集 (资产关联)',
+      startTime: '2026-04-14 09:00',
       endTime: '-',
-      collectProgress: '0%',
-      qaProgress: '0%',
+      collectProgress: '80%',
+      qaProgress: '80%',
       status: '进行中', 
     },
   ];
 
   const columns = [
-    { title: '实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 140, fixed: 'left' },
-    { title: '任务名称', dataIndex: 'name', key: 'name', width: 200, ellipsis: true },
-    { title: '是否货架任务', dataIndex: 'isShelfTask', key: 'isShelfTask', width: 110, align: 'center' },
-    { title: '行列号', dataIndex: 'shelfPosition', key: 'shelfPosition', width: 80, align: 'center' },
+    { title: '实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 160, fixed: 'left' },
+    { 
+      title: '任务名称', 
+      dataIndex: 'name', 
+      key: 'name', 
+      width: 260, 
+      render: (text, record) => (
+        <Space direction="vertical" size={2}>
+          <Text strong style={{ fontSize: 13 }}>{text}</Text>
+          <Tag color={record.taskType === 'asset' ? 'purple' : 'blue'} bordered={false} style={{ fontSize: 11, width: 'fit-content' }}>
+            {record.taskType === 'asset' ? '📦 关联数据资产' : '📷 需要采集数据'}
+          </Tag>
+        </Space>
+      )
+    },
     { title: '标注类型', dataIndex: 'annoType', key: 'annoType', width: 120 },
     { 
-      title: '单包采集量 / 计划采集量', 
+      title: '完成数据量 / 计划数据量', 
       key: 'quota', 
       width: 180,
-      render: (_, record) => <span>{record.collectedCount} / {record.plannedCount}</span>
+      render: (_, record) => <span>{record.collectedCount} / {record.plannedCount} 条</span>
     },
-    { title: '采集人员', dataIndex: 'collector', key: 'collector', width: 100 },
+    { title: '采集人员', dataIndex: 'collector', key: 'collector', width: 150 },
     { title: '开始时间', dataIndex: 'startTime', key: 'startTime', width: 160 },
     { 
-      title: '采集进度', 
+      title: '进度', 
       dataIndex: 'collectProgress', 
       key: 'collectProgress', 
       width: 100,
@@ -135,24 +150,20 @@ export default function TaskCenterPage() {
       render: (s) => <Tag color={s === '已完成' ? 'success' : 'processing'}>{s}</Tag>
     },
     {
-      title: '操作', key: 'action', width: 350, fixed: 'right',
+      title: '操作', key: 'action', width: 280, fixed: 'right',
       render: (_, record) => (
         <Space separator={<Divider orientation="vertical" />} size={0}>
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => router.push(`/collection/tasks/${record.taskId}`)} style={{ padding: '0 4px' }}>查看详情</Button>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
-          <SpecMarker
-            id="tasks-copy"
-            number={4}
-            title="模板复制与参数克隆"
-            rules={[
-              "点击‘复制’按钮，路由携带 `?mode=copy&taskId=[id]` 跳转到新建任务表单页。",
-              "表单需自动复刻并回显源任务的所有采集参数（动作模板、自检规则、传感器时空配置等）。",
-              "为防止冲突，复制后的‘任务名称’需清空或自动加上‘_copy’后缀，‘实例ID’重新自动生成。"
-            ]}
-            remark="提供便捷的采集任务模板化复制功能，避免重复性人工参数输入。"
+          <Button 
+            type="link" 
+            size="small" 
+            icon={<EyeOutlined />} 
+            onClick={() => router.push(`/collection/tasks/${record.taskId}?type=${record.taskType}`)} 
+            style={{ padding: '0 4px', fontWeight: 600 }}
           >
-            <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
-          </SpecMarker>
+            查看详情
+          </Button>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
+          <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
           <Button type="link" size="small" icon={<DeleteOutlined />} danger style={{ padding: '0 4px' }} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>删除</Button>
         </Space>
       )
