@@ -400,9 +400,6 @@ export default function TaskInstancePage() {
                 </Col>
               </Row>
 
-              <Form.Item label="关联资产目录批次说明" name="assetBatch" initialValue="Lumos_FastUMI_20260601 自动划分批次">
-                <Input placeholder="输入该分包引用的数据资产批次" />
-              </Form.Item>
             </>
           )}
 
