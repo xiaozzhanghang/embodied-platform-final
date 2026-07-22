@@ -184,6 +184,7 @@ function CreateTaskContent() {
       { value: 'sub_stack', label: '码垛', parent: 'Industry' },
     ],
     deviceType: [
+      { value: 'UMI_Orin', label: 'UMI_Orin' },
       { value: 'galbot_2.2_RGB', label: 'galbot_2.2_RGB' },
       { value: 'galbot_2.2_RGBD', label: 'galbot_2.2_RGBD(深度)' },
       { value: 'galbot_1.16_G2', label: 'galbot_1.16_G2 (XCU/HPU双端)' },
@@ -428,46 +429,39 @@ function CreateTaskContent() {
   const handleDeviceTypeChange = (value, shouldResetInstance = true) => {
     // Device-type-specific part configurations
     const partsMap = {
+      'UMI_Orin': [
+        { key: 'p1', name: 'UMI_头部左相机...', type: 'Body-HeadLeftCamera', resolution: '1920x1080', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+        { key: 'p2', name: 'UMI_头部右相机...', type: 'Body-HeadRightCamera', resolution: '1280x960', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+        { key: 'p3', name: 'UMI_手部左上相机...', type: 'Body-HandleLeftTopCamera', resolution: '1280x1024', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+        { key: 'p4', name: 'UMI_手部左下相机...', type: 'Body-HandleLeftBottomCamera', resolution: '1280x1024', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+      ],
       'galbot_1.16_G2': [
-        { key: 'xcu', name: 'XCU 底座控制卡', type: 'ControlUnit-XCU (192.168.1.66)' },
-        { key: 'hpu', name: 'HPU Orin 算力板', type: 'ComputeUnit-HPU (192.168.1.88)' },
-        { key: 'cam_hl', name: '头部左相机 (GMSL2)', type: 'Camera-HEAD_L (1080p)' },
-        { key: 'cam_hr', name: '头部右相机 (GMSL2)', type: 'Camera-HEAD_R (1080p)' },
-        { key: 'cam_wl', name: '腕部左相机 (GMSL2)', type: 'Camera-HAND_L (720p)' },
-        { key: 'cam_wr', name: '腕部右相机 (GMSL2)', type: 'Camera-HAND_R (720p)' },
-        { key: 'arm_l', name: '左臂 (7-DOF)', type: 'Actuator-LeftArm' },
-        { key: 'arm_r', name: '右臂 (7-DOF)', type: 'Actuator-RightArm' },
+        { key: 'xcu', name: 'XCU 底座控制卡', type: 'ControlUnit-XCU', resolution: '1280x960', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+        { key: 'hpu', name: 'HPU Orin 算力板', type: 'ComputeUnit-HPU', resolution: '1280x960', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+        { key: 'cam_hl', name: '头部左相机', type: 'Camera-HEAD_L', resolution: '1920x1080', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+        { key: 'cam_hr', name: '头部右相机', type: 'Camera-HEAD_R', resolution: '1920x1080', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
       ],
       'lumos_fastumi': [
-        { key: 'backpack', name: '数采背包主机', type: 'ComputeUnit-Backpack (192.168.54.110)' },
-        { key: 'cam_wl', name: '腕部左相机', type: 'Camera-Wrist_L (RGB)' },
-        { key: 'cam_wr', name: '腕部右相机', type: 'Camera-Wrist_R (RGB)' },
-        { key: 'cam_head', name: '头部相机', type: 'Camera-Head_Eye (RGB)' },
-        { key: 'gripper_l', name: '左侧夹爪', type: 'Gripper-Left (USB)' },
-        { key: 'gripper_r', name: '右侧夹爪', type: 'Gripper-Right (USB)' },
+        { key: 'backpack', name: '数采背包主机', type: 'ComputeUnit-Backpack', resolution: '1280x960', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+        { key: 'cam_wl', name: '腕部左相机', type: 'Camera-Wrist_L', resolution: '1280x960', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+        { key: 'cam_wr', name: '腕部右相机', type: 'Camera-Wrist_R', resolution: '1280x960', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
       ],
       'franka_std': [
-        { key: 'ctrl', name: 'Franka 控制器', type: 'Controller-FCI (172.16.0.2)' },
-        { key: 'cam_front', name: '前置相机', type: 'Camera-Front (RGB)' },
-        { key: 'cam_wrist', name: '腕部相机', type: 'Camera-Wrist (RGB)' },
-        { key: 'cam_side', name: '侧面相机', type: 'Camera-Side (RGB)' },
-      ],
-      'ur5e_std': [
-        { key: 'ctrl', name: 'UR 控制器', type: 'Controller-URScript (192.168.1.10)' },
-        { key: 'cam_front', name: '前置相机', type: 'Camera-Front (RGB)' },
-        { key: 'cam_wrist', name: '腕部相机', type: 'Camera-Wrist (RGB)' },
+        { key: 'ctrl', name: 'Franka 控制器', type: 'Controller-FCI', resolution: '1280x960', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+        { key: 'cam_front', name: '前置相机', type: 'Camera-Front', resolution: '1920x1080', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
       ],
     };
 
     const defaultParts = [
-      { key: 'p1', name: '头部左相机', type: 'Body-HeadLeftCamera' },
-      { key: 'p2', name: '头部右相机', type: 'Body-HeadRightCamera' },
-      { key: 'p3', name: '手部左相机_RGB', type: 'Body-HandLeftCamera' },
+      { key: 'p1', name: 'UMI_头部左相机...', type: 'Body-HeadLeftCamera', resolution: '1920x1080', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+      { key: 'p2', name: 'UMI_头部右相机...', type: 'Body-HeadRightCamera', resolution: '1280x960', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+      { key: 'p3', name: 'UMI_手部左上相机...', type: 'Body-HandleLeftTopCamera', resolution: '1280x1024', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
+      { key: 'p4', name: 'UMI_手部左下相机...', type: 'Body-HandleLeftBottomCamera', resolution: '1280x1024', fps: '30fps', quality: '60', fov: 'none', depth: 'none' },
     ];
 
     const parts = partsMap[value] || defaultParts;
     setAvailableParts(parts);
-    setSelectedPartKeys(parts.map(p => p.key));
+    setSelectedPartKeys(['p1', 'p2']);
     
     const filtered = allDeviceInstances.filter(inst => inst.parent === value);
     setFilteredDeviceInstances(filtered.length > 0 ? filtered : allDeviceInstances);
@@ -696,11 +690,106 @@ function CreateTaskContent() {
                 </Card>
 
                 <Card title="采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
-                  <Row gutter={24}>
-                    <Col span={12}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择采集模式" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} defaultValue="WholeBody" /></Form.Item></Col>
-                    <Col span={12}><Form.Item label="遥操主控方式" name="teleType" required><Select options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} /></Form.Item></Col>
+                  <Row gutter={24} style={{ marginBottom: 16 }}>
+                    <Col span={10}>
+                      <Form.Item label="设备类型" name="deviceType" required initialValue="UMI_Orin">
+                        <Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={10}>
+                      <Form.Item label="遥操类型" name="teleType" required>
+                        <Select placeholder="请选择遥操类型" options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} />
+                      </Form.Item>
+                    </Col>
                   </Row>
-                  <Table dataSource={availableParts} columns={[{title:'名称', dataIndex:'name'},{title:'类型', dataIndex:'type'}]} rowSelection={{type:'checkbox', selectedRowKeys:selectedPartKeys}} pagination={false} size="small" bordered />
+
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                    <div style={{ fontWeight: 600, color: '#262626', width: 70, paddingTop: 6, flexShrink: 0 }}>设备部件</div>
+                    <div style={{ flex: 1, overflowX: 'auto' }}>
+                      <Table 
+                        dataSource={availableParts} 
+                        columns={[
+                          { title: '部件名称', dataIndex: 'name', key: 'name', width: 170, ellipsis: true },
+                          { title: '部件类型', dataIndex: 'type', key: 'type', width: 180, ellipsis: true },
+                          { 
+                            title: '分辨率', key: 'resolution', width: 130,
+                            render: (text, r) => (
+                              <Select 
+                                size="small"
+                                defaultValue={r.resolution || '1280x960'} 
+                                style={{ width: '100%' }}
+                                options={[
+                                  { value: '1280x960', label: '1280x960' },
+                                  { value: '1280x1024', label: '1280x1024' },
+                                  { value: '1920x1080', label: '1920x1080' },
+                                  { value: '3840x2160', label: '3840x2160' }
+                                ]} 
+                              />
+                            )
+                          },
+                          { 
+                            title: '帧率', key: 'fps', width: 100,
+                            render: (text, r) => (
+                              <Select 
+                                size="small"
+                                defaultValue={r.fps || '30fps'} 
+                                style={{ width: '100%' }}
+                                options={[
+                                  { value: '15fps', label: '15fps' },
+                                  { value: '30fps', label: '30fps' },
+                                  { value: '60fps', label: '60fps' }
+                                ]} 
+                              />
+                            )
+                          },
+                          { 
+                            title: '图像质量', key: 'quality', width: 95,
+                            render: (text, r) => (
+                              <Select 
+                                size="small"
+                                defaultValue={r.quality || '60'} 
+                                style={{ width: '100%' }}
+                                options={[
+                                  { value: '60', label: '60' },
+                                  { value: '80', label: '80' },
+                                  { value: '100', label: '100' }
+                                ]} 
+                              />
+                            )
+                          },
+                          { 
+                            title: 'FOV', key: 'fov', width: 100,
+                            render: (text, r) => (
+                              <Select 
+                                size="small"
+                                defaultValue={r.fov || 'none'} 
+                                style={{ width: '100%' }}
+                                options={[
+                                  { value: 'none', label: 'none' },
+                                  { value: '90°', label: '90°' },
+                                  { value: '120°', label: '120°' }
+                                ]} 
+                              />
+                            )
+                          },
+                          { 
+                            title: '深度&红外信息', key: 'depth', width: 260,
+                            render: (text, r) => (
+                              <Radio.Group defaultValue={r.depth || 'none'} size="small" style={{ fontSize: 12 }}>
+                                <Radio value="none">都不采集</Radio>
+                                <Radio value="infrared">红外信息</Radio>
+                                <Radio value="depth">深度信息</Radio>
+                              </Radio.Group>
+                            )
+                          },
+                        ]} 
+                        rowSelection={{ type: 'checkbox', selectedRowKeys: selectedPartKeys, onChange: setSelectedPartKeys }} 
+                        pagination={false} 
+                        size="small" 
+                        bordered 
+                      />
+                    </div>
+                  </div>
                 </Card>
               </>
             ) : (
