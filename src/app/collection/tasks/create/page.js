@@ -625,6 +625,7 @@ function CreateTaskContent() {
             </Title>
           </div>
         </div>
+      </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32, padding: '0 100px' }}>
         <Steps current={currentStep} labelPlacement="horizontal" style={{ width: '100%', maxWidth: 800 }}
@@ -644,18 +645,6 @@ function CreateTaskContent() {
       }}>
         {currentStep === 0 ? (
           <>
-            <Alert 
-              message={
-                taskFormType === 'collect' 
-                  ? '【数据数采模式】当前形式将生成针对具体物理设备/仿真场景的采集指令，派发给采集员执行。'
-                  : '【资产关联模式】直接在系统已有的数据资产包（如已录制视频、已上传轨迹）中选择数据，建立标注审核待办。'
-              } 
-              type="info" 
-              showIcon 
-              icon={<InfoCircleOutlined />}
-              style={{ marginBottom: 24, borderRadius: 8 }}
-            />
-
             <Alert 
               message={
                 taskFormType === 'collect' 
@@ -732,6 +721,9 @@ function CreateTaskContent() {
               </div>
             </Card>
 
+            {/* 3. Dynamic Card per mode */}
+            {taskFormType === 'collect' ? (
+              <>
                 <Card title="采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
                   <Row gutter={24} style={{ marginBottom: 16 }}>
                     <Col span={8}>
