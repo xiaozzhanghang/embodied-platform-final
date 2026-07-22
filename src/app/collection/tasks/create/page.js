@@ -673,13 +673,36 @@ function CreateTaskContent() {
 
             {/* 2. Placed DIRECTLY BELOW 基础信息: 任务模式与采集数据来源 */}
             <Card title="任务模式与数据来源" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
-              <div style={{ marginBottom: 20 }}>
+              {/* Row 1: 采集数据来源 (7种可选项) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                <span style={{ fontWeight: 600, color: '#262626', width: 110, flexShrink: 0 }}>
+                  <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>采集数据来源:
+                </span>
+                <Radio.Group 
+                  value={dataSourceType} 
+                  onChange={e => setDataSourceType(e.target.value)}
+                  style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}
+                >
+                  <Radio value="galbot">GALBOT G1/S1</Radio>
+                  <Radio value="human_video">人类视频导入</Radio>
+                  <Radio value="ego_gopro">ego-gopro</Radio>
+                  <Radio value="ego_iphone">ego-iphone</Radio>
+                  <Radio value="umi">UMI数据采集</Radio>
+                  <Radio value="humanoid">人形机器人采集</Radio>
+                  <Radio value="sim_import">仿真数据导入</Radio>
+                </Radio.Group>
+              </div>
+
+              {/* Row 2: 任务类型/模式自由切换 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <span style={{ fontWeight: 600, color: '#262626', width: 110, flexShrink: 0 }}>
+                  <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>任务模式类型:
+                </span>
                 <Radio.Group 
                   value={taskFormType} 
                   onChange={e => {
-                    const val = e.target.value;
-                    setTaskFormType(val);
-                    setDataSourceType(val === 'collect' ? 'galbot' : 'human_video');
+                    setTaskFormType(e.target.value);
+                    setCurrentStep(0);
                   }} 
                   buttonStyle="solid"
                   size="medium"
@@ -690,33 +713,6 @@ function CreateTaskContent() {
                   <Radio.Button value="asset">
                     <Space><DatabaseOutlined /> 关联数据资产 / 外部导入</Space>
                   </Radio.Button>
-                </Radio.Group>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <span style={{ fontWeight: 600, color: '#262626', width: 110, flexShrink: 0 }}>
-                  <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>采集数据来源:
-                </span>
-                <Radio.Group 
-                  value={dataSourceType} 
-                  onChange={e => {
-                    const val = e.target.value;
-                    setDataSourceType(val);
-                    if (['human_video', 'sim_import'].includes(val)) {
-                      setTaskFormType('asset');
-                    } else {
-                      setTaskFormType('collect');
-                    }
-                  }}
-                  style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}
-                >
-                  <Radio value="galbot">GALBOT G1/S1</Radio>
-                  <Radio value="human_video">人类视频导入</Radio>
-                  <Radio value="ego_gopro">ego-gopro</Radio>
-                  <Radio value="ego_iphone">ego-iphone</Radio>
-                  <Radio value="umi">UMI数据采集</Radio>
-                  <Radio value="humanoid">人形机器人采集</Radio>
-                  <Radio value="sim_import">仿真数据导入</Radio>
                 </Radio.Group>
               </div>
             </Card>
