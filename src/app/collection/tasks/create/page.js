@@ -819,11 +819,6 @@ function CreateTaskContent() {
                         <Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} />
                       </Form.Item>
                     </Col>
-                    <Col span={12}>
-                      <Form.Item label="遥操类型" name="teleType" required>
-                        <Select placeholder="请选择遥操类型" options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} />
-                      </Form.Item>
-                    </Col>
                   </Row>
 
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
