@@ -695,9 +695,6 @@ function CreateTaskContent() {
                     <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="指派默认采集员" name="collector" required><Select placeholder="请选择指派采集员" options={collectorsList} defaultValue="张三" /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="指派默认标注员" name="annotator" required><Select placeholder="请选择标注员" options={annotatorsList} defaultValue="李四" /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="指派默认审核员" name="auditor" required><Select placeholder="请选择审核员" options={auditorsList} defaultValue="王五" /></Form.Item></Col>
                   </Row>
                 </Card>
 
@@ -724,9 +721,6 @@ function CreateTaskContent() {
                     <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="指派默认采集员" name="collector" required><Select placeholder="请选择指派采集员" options={collectorsList} defaultValue="张三" /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="指派默认标注员" name="annotator" required><Select placeholder="请选择标注员" options={annotatorsList} defaultValue="李四" /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="指派默认审核员" name="auditor" required><Select placeholder="请选择审核员" options={auditorsList} defaultValue="王五" /></Form.Item></Col>
                   </Row>
                 </Card>
 
