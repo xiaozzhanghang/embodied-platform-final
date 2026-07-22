@@ -28,10 +28,100 @@ function TemplateForm() {
   const [steps, setSteps] = useState([
     { key: '1', effector: '右手', skill: '识别', object: '目标物品', target: '确认位置' },
     ...(isEdit ? [
-      { key: '2', effector: '右手', skill: '接近', object: '目标物品', target: '对齐中心' },
+      { key: '2', effector: '右手', skill: '移动', object: '目标物品', target: '确认位置' },
       { key: '3', effector: '右手', skill: '抓取', object: '目标物品', target: '稳定握持' }
     ] : [])
   ]);
+
+  const [customActionTemplates, setCustomActionTemplates] = useState([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('embodied_action_templates');
+      if (saved) {
+        try {
+          setCustomActionTemplates(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
+  const ACTION_TEMPLATES_MOCK = {
+    act_1: [
+      { key: '1', effector: '双手', skill: '识别', object: '容器', target: '确认位置' },
+      { key: '2', effector: '右手', skill: '移动', object: '目标物品', target: '确认位置' },
+      { key: '3', effector: '右手', skill: '抓取', object: '目标物品', target: '稳定握持' },
+      { key: '4', effector: '左手', skill: '移动', object: '目标物品', target: '确认位置' },
+      { key: '5', effector: '双手', skill: '放置', object: '容器', target: '内部' }
+    ],
+    act_2: [
+      { key: '1', effector: '右手', skill: '识别', object: '目标物品', target: '确认位置' },
+      { key: '2', effector: '右手', skill: '移动', object: '目标物品', target: '确认位置' },
+      { key: '3', effector: '右手', skill: '抓取', object: '目标物品', target: '稳定握持' },
+      { key: '4', effector: '右手', skill: '放置', object: '目标物品', target: '内部' }
+    ],
+    act_3: [
+      { key: '1', effector: '双手', skill: '识别', object: '容器', target: '确认位置' },
+      { key: '2', effector: '双手', skill: '移动', object: '容器', target: '确认位置' },
+      { key: '3', effector: '双手', skill: '抓取', object: '容器', target: '稳定握持' },
+      { key: '4', effector: '双手', skill: '放置', object: '容器', target: '内部' }
+    ],
+    act_4: [
+      { key: '1', effector: '右手', skill: '识别', object: '抽屉', target: '确认位置' },
+      { key: '2', effector: '右手', skill: '移动', object: '抽屉', target: '确认位置' },
+      { key: '3', effector: '右手', skill: '打开', object: '抽屉', target: '内部' },
+      { key: '4', effector: '右手', skill: '放置', object: '目标物品', target: '内部' }
+    ]
+  };
+
+  const handleSelectActionTemplate = (value) => {
+    if (!value) return;
+    if (ACTION_TEMPLATES_MOCK[value]) {
+      setSteps(ACTION_TEMPLATES_MOCK[value]);
+      message.success('已成功导入动作模版的步骤编排！');
+      return;
+    }
+    const found = customActionTemplates.find(t => t.key === value);
+    if (found && found.steps) {
+      const mappedSteps = found.steps.map((str, index) => {
+        let effector = '右手';
+        if (str.includes('左手')) effector = '左手';
+        else if (str.includes('双手')) effector = '双手';
+        else if (str.includes('底盘')) effector = '底盘';
+
+        let skill = '移动';
+        if (str.includes('识别') || str.includes('定位')) skill = '识别';
+        else if (str.includes('抓取') || str.includes('夹紧') || str.includes('取')) skill = '抓取';
+        else if (str.includes('放置') || str.includes('放入') || str.includes('折叠') || str.includes('封口')) skill = '放置';
+        else if (str.includes('打开') || str.includes('拉开')) skill = '打开';
+
+        let object = '目标物品';
+        if (str.includes('抽屉')) object = '抽屉';
+        else if (str.includes('把手')) object = '门把手';
+        else if (str.includes('纸箱') || str.includes('箱') || str.includes('盒') || str.includes('容器') || str.includes('盘')) object = '容器';
+
+        let target = '确认位置';
+        if (str.includes('稳定') || str.includes('牢固') || str.includes('握持')) target = '稳定握持';
+        else if (str.includes('内') || str.includes('底') || str.includes('里') || str.includes('中')) target = '内部';
+
+        return {
+          key: (index + 1).toString(),
+          effector,
+          skill,
+          object,
+          target
+        };
+      });
+      setSteps(mappedSteps);
+      message.success(`已成功导入动作模版「${found.name}」的步骤编排！`);
+    }
+  };
+
+  const updateStepField = (key, field, value) => {
+    setSteps(prev => prev.map(item => item.key === key ? { ...item, [field]: value } : item));
+  };
 
   useEffect(() => {
     if (isEdit) {
@@ -47,7 +137,7 @@ function TemplateForm() {
 
   const addStep = () => {
     const newKey = (steps.length + 1).toString();
-    setSteps([...steps, { key: newKey, effector: '右手', skill: '', object: '', target: '' }]);
+    setSteps([...steps, { key: newKey, effector: '右手', skill: '识别', object: '目标物品', target: '确认位置' }]);
   };
 
   const removeStep = (key) => {
@@ -65,7 +155,7 @@ function TemplateForm() {
       title: '执行末端类型', 
       dataIndex: 'effector', 
       render: (val, record) => (
-        <Select defaultValue={val} style={{ width: '100%' }} options={[
+        <Select value={val} onChange={(value) => updateStepField(record.key, 'effector', value)} style={{ width: '100%' }} options={[
           { value: '右手', label: '右手 (Right Arm)' },
           { value: '左手', label: '左手 (Left Arm)' },
           { value: '双手', label: '双手 (Dual Arms)' },
@@ -76,8 +166,8 @@ function TemplateForm() {
     { 
       title: '原子技能', 
       dataIndex: 'skill', 
-      render: (val) => (
-        <Select defaultValue={val} style={{ width: '100%' }} options={[
+      render: (val, record) => (
+        <Select value={val} onChange={(value) => updateStepField(record.key, 'skill', value)} style={{ width: '100%' }} options={[
           { value: '识别', label: '识别' },
           { value: '抓取', label: '抓取' },
           { value: '移动', label: '移动' },
@@ -89,8 +179,8 @@ function TemplateForm() {
     { 
       title: '操作对象', 
       dataIndex: 'object', 
-      render: (val) => (
-        <Select defaultValue={val} style={{ width: '100%' }} options={[
+      render: (val, record) => (
+        <Select value={val} onChange={(value) => updateStepField(record.key, 'object', value)} style={{ width: '100%' }} options={[
           { value: '目标物品', label: '目标物品' },
           { value: '抽屉', label: '抽屉' },
           { value: '门把手', label: '门把手' },
@@ -101,8 +191,8 @@ function TemplateForm() {
     { 
       title: '操作目标', 
       dataIndex: 'target', 
-      render: (val) => (
-        <Select defaultValue={val} style={{ width: '100%' }} options={[
+      render: (val, record) => (
+        <Select value={val} onChange={(value) => updateStepField(record.key, 'target', value)} style={{ width: '100%' }} options={[
           { value: '确认位置', label: '确认位置' },
           { value: '稳定握持', label: '稳定握持' },
           { value: '内部', label: '内部' }
@@ -189,9 +279,25 @@ function TemplateForm() {
         >
           <Card 
             title={
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 12 }}>
                 <span>动作步骤编排 (SOP Steps)</span>
-                <Button type="primary" ghost icon={<PlusOutlined />} onClick={addStep}>添加步骤</Button>
+                <Space>
+                  <span style={{ fontSize: 13, fontWeight: 'normal', color: '#595959' }}>导入动作模板:</span>
+                  <Select 
+                    placeholder="选择已有动作模板快速导入步骤" 
+                    style={{ width: 280 }}
+                    onChange={handleSelectActionTemplate}
+                    options={[
+                      { value: 'act_1', label: '📦 工业纸箱打包封装与装箱模版' },
+                      { value: 'act_2', label: '📚 桌面书籍整理与摆放模版' },
+                      { value: 'act_3', label: '🍽️ 餐盘清理与协同搬运模版' },
+                      { value: 'act_4', label: '🚪 抽屉开关与取物操作模版' },
+                      ...customActionTemplates.map(t => ({ value: t.key, label: t.name }))
+                    ]}
+                    allowClear
+                  />
+                  <Button type="primary" ghost icon={<PlusOutlined />} onClick={addStep}>添加步骤</Button>
+                </Space>
               </div>
             } 
             bordered={false} 

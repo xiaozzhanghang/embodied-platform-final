@@ -4,14 +4,15 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Button, Space, Card, Typography, Breadcrumb, Tag, 
-  App, Row, Col, Avatar, Tooltip, Input, Divider, Form, Select, Tabs
+  App, Row, Col, Avatar, Tooltip, Input, Divider, Form, Select, Tabs, Radio, Modal
 } from 'antd';
 import { 
   PlusOutlined, SearchOutlined, LayoutOutlined,
   ShoppingOutlined, ToolOutlined, RestOutlined,
   SkinOutlined, ExperimentOutlined, DeleteOutlined,
   EditOutlined, PlayCircleOutlined, ReloadOutlined, DownOutlined, UpOutlined,
-  NodeIndexOutlined, FileTextOutlined, FolderOpenOutlined, UserOutlined, TagOutlined
+  NodeIndexOutlined, FileTextOutlined, FolderOpenOutlined, UserOutlined, TagOutlined,
+  MinusCircleOutlined, UnorderedListOutlined
 } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
@@ -60,7 +61,68 @@ export default function TaskTemplatesPage() {
   const router = useRouter();
   const { message, modal } = App.useApp();
   const [activeTab, setActiveTab] = useState('task');
+  const [actionTemplates, setActionTemplates] = useState([]);
   const [annoTemplates, setAnnoTemplates] = useState([]);
+
+  // Modal states for creating action templates
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [actionForm] = Form.useForm();
+  const [actionInputMode, setActionInputMode] = useState('structured');
+  const [actionSteps, setActionSteps] = useState([
+    { key: '1', arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' },
+    { key: '2', arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近' },
+    { key: '3', arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧' }
+  ]);
+  const [actionNaturalText, setActionNaturalText] = useState(
+    "1. 右手 (Right Arm) 识别 目标物品 (确认位置)\n2. 右手 (Right Arm) 靠近 目标物品 (避障靠近)\n3. 右手 (Right Arm) 抓取 目标物品 (牢固夹紧)"
+  );
+
+  const addActionStep = () => {
+    const newKey = (actionSteps.length + 1).toString();
+    setActionSteps([...actionSteps, { key: newKey, arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' }]);
+  };
+
+  const removeActionStep = (key) => {
+    setActionSteps(actionSteps.filter(item => item.key !== key));
+  };
+
+  const updateActionStepField = (key, field, val) => {
+    setActionSteps(prev => prev.map(item => item.key === key ? { ...item, [field]: val } : item));
+  };
+
+  const handleActionModalSubmit = () => {
+    actionForm.validateFields().then(values => {
+      let stepTexts = [];
+      if (actionInputMode === 'structured') {
+        stepTexts = actionSteps.map(s => `${s.arm} ${s.skill} ${s.object} (${s.goal})`);
+      } else {
+        stepTexts = actionNaturalText.split('\n').map(line => line.replace(/^\d+[\.\、\s]*/, '').trim()).filter(Boolean);
+      }
+
+      if (stepTexts.length === 0) {
+        message.error('动作步骤序列不能为空！');
+        return;
+      }
+
+      const newTemplate = {
+        key: 'act_user_' + Date.now(),
+        name: values.name,
+        desc: values.desc || '',
+        type: '服务数据',
+        device: values.device,
+        stepCount: stepTexts.length,
+        steps: stepTexts
+      };
+
+      const updated = [...actionTemplates, newTemplate];
+      setActionTemplates(updated);
+      localStorage.setItem('embodied_action_templates', JSON.stringify(updated));
+
+      message.success('动作模板创建成功！');
+      setIsActionModalOpen(false);
+      actionForm.resetFields();
+    });
+  };
 
   // 加载已保存标注模版
   React.useEffect(() => {
@@ -79,6 +141,23 @@ export default function TaskTemplatesPage() {
     }
   }, [activeTab]);
 
+  // 加载已保存动作模版
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('embodied_action_templates');
+      if (saved) {
+        try {
+          setActionTemplates(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        setActionTemplates(defaultActionTemplates);
+        localStorage.setItem('embodied_action_templates', JSON.stringify(defaultActionTemplates));
+      }
+    }
+  }, [activeTab]);
+
   const handleDeleteAnnoTemplate = (id, name) => {
     modal.confirm({
       title: '确定删除该标注模版吗？',
@@ -91,6 +170,22 @@ export default function TaskTemplatesPage() {
         setAnnoTemplates(updated);
         localStorage.setItem('embodied_anno_templates', JSON.stringify(updated));
         message.success(`标注模版「${name}」已删除`);
+      }
+    });
+  };
+
+  const handleDeleteActionTemplate = (id, name) => {
+    modal.confirm({
+      title: '确定删除该动作模版吗？',
+      content: `删除后，新建任务模版时将无法再选择该模版。此操作不可恢复。`,
+      okText: '确定删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: () => {
+        const updated = actionTemplates.filter(t => t.key !== id);
+        setActionTemplates(updated);
+        localStorage.setItem('embodied_action_templates', JSON.stringify(updated));
+        message.success(`动作模版「${name}」已删除`);
       }
     });
   };
@@ -158,7 +253,7 @@ export default function TaskTemplatesPage() {
     }
   ];
 
-  const actionTemplates = [
+  const defaultActionTemplates = [
     {
       key: 'act_1',
       name: '📦 工业纸箱打包封装与装箱模版',
@@ -225,14 +320,8 @@ export default function TaskTemplatesPage() {
         <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '模板中心' }]} style={{ marginBottom: 16 }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <Title level={3} style={{ margin: 0, marginBottom: 8 }}>模板中心</Title>
-            <Text type="secondary">管理采集任务模版、预设动作模版、以及从标注工作台导出的标注模版。</Text>
+            <Title level={3} style={{ margin: 0 }}>模板中心</Title>
           </div>
-          {activeTab === 'task' && (
-            <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => router.push('/collection/templates/create')}>
-              创建新模板
-            </Button>
-          )}
         </div>
       </div>
 
@@ -252,21 +341,18 @@ export default function TaskTemplatesPage() {
 
       {activeTab === 'task' && (
         <>
-          <Card 
-            style={{ marginBottom: 24, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-            styles={{ body: { padding: '24px 24px 16px' } }}
-          >
-            <QueryFilter
-                submitter={{
-                    submitButtonProps: { icon: <SearchOutlined /> },
-                    resetButtonProps: { icon: <ReloadOutlined /> },
-                }}
-            >
-                <ProFormText name="name" label="模板名称" placeholder="搜索模板名称..." />
-                <ProFormSelect name="type" label="模板类型" placeholder="全部类型" options={[{label:'服务数据', value:'service'}, {label:'工业数据', value:'industry'}]} />
-                <ProFormText name="creator" label="创建人" placeholder="请输入创建人" />
-            </QueryFilter>
-          </Card>
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <Input placeholder="搜索模板名称..." style={{ width: 220 }} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear />
+              <Select placeholder="全部类型" style={{ width: 150 }} allowClear options={[{label:'服务数据', value:'service'}, {label:'工业数据', value:'industry'}]} />
+              <Input placeholder="创建人" style={{ width: 150 }} allowClear />
+              <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+              <Button icon={<ReloadOutlined />}>重置</Button>
+            </div>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/templates/create')}>
+              创建任务模板
+            </Button>
+          </div>
 
           <Row gutter={[24, 24]}>
             {mockTemplates.map((tpl) => (
@@ -332,30 +418,53 @@ export default function TaskTemplatesPage() {
       )}
 
       {activeTab === 'action' && (
-        <Row gutter={[24, 24]}>
+        <>
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <Input placeholder="搜索动作模板..." style={{ width: 220 }} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear />
+              <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+            </div>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsActionModalOpen(true)}>
+              创建动作模板
+            </Button>
+          </div>
+          <Row gutter={[24, 24]}>
           {actionTemplates.map((tpl) => (
             <Col span={12} key={tpl.key}>
               <Card 
                 title={
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                     <Text strong style={{ fontSize: 14 }}>{tpl.name}</Text>
-                    <Tag color="purple">{tpl.type}</Tag>
+                    <Space>
+                      <Tag color="purple">{tpl.type}</Tag>
+                      {tpl.key.startsWith('act_user_') && (
+                        <Button 
+                          type="text" 
+                          danger 
+                          size="small" 
+                          icon={<DeleteOutlined />} 
+                          onClick={() => handleDeleteActionTemplate(tpl.key, tpl.name)} 
+                          style={{ padding: '0 4px', height: 'auto' }}
+                        />
+                      )}
+                    </Space>
                   </div>
                 }
                 style={{ borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.01)' }}
+                styles={{ body: { height: 220, display: 'flex', flexDirection: 'column' } }}
               >
-                <div style={{ marginBottom: 12, fontSize: 13, color: '#64748b' }}>{tpl.desc}</div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <div style={{ marginBottom: 12, fontSize: 13, color: '#64748b', minHeight: 20 }}>{tpl.desc}</div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                   <Tag color="cyan">步骤数: {tpl.stepCount}</Tag>
                   <Tag>适配设备: {tpl.device}</Tag>
                 </div>
-                <Divider style={{ margin: '12px 0' }} />
-                <div>
-                  <Text strong style={{ fontSize: 12, color: '#334155', display: 'block', marginBottom: 8 }}>预设SOP动作序列流程：</Text>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #f1f5f9' }}>
+                <Divider style={{ margin: '8px 0' }} />
+                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  <Text strong style={{ fontSize: 12, color: '#334155', display: 'block', marginBottom: 8, flexShrink: 0 }}>预设SOP动作序列流程：</Text>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #f1f5f9', flex: 1, overflowY: 'auto' }}>
                     {tpl.steps.map((st, idx) => (
                       <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                        <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold' }}>
+                        <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold', flexShrink: 0 }}>
                           {idx + 1}
                         </span>
                         <span style={{ color: '#1e293b', fontWeight: 500 }}>{st}</span>
@@ -367,6 +476,7 @@ export default function TaskTemplatesPage() {
             </Col>
           ))}
         </Row>
+        </>
       )}
 
       {activeTab === 'annotation' && (
@@ -402,26 +512,27 @@ export default function TaskTemplatesPage() {
                       </div>
                     }
                     style={{ borderRadius: 12, border: '1px solid #e2e8f0' }}
+                    styles={{ body: { height: 220, display: 'flex', flexDirection: 'column' } }}
                   >
-                    <div style={{ marginBottom: 12, fontSize: 13, color: '#64748b' }}>{tpl.desc}</div>
-                    <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                    <div style={{ marginBottom: 12, fontSize: 13, color: '#64748b', minHeight: 20 }}>{tpl.desc}</div>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                       <Tag color="green">标注模版</Tag>
                       <Tag color="blue">动作数: {tpl.stepCount}</Tag>
                       <Tag color="orange">创建时间: {tpl.createTime}</Tag>
                     </div>
-                    <Divider style={{ margin: '12px 0' }} />
-                    <div>
-                      <Text strong style={{ fontSize: 12, color: '#334155', display: 'block', marginBottom: 8 }}>已封存动作帧区间数据：</Text>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#ecfdf5', padding: 12, borderRadius: 8, border: '1px solid #d1fae5' }}>
+                    <Divider style={{ margin: '8px 0' }} />
+                    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                      <Text strong style={{ fontSize: 12, color: '#334155', display: 'block', marginBottom: 8, flexShrink: 0 }}>已封存动作帧区间数据：</Text>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#ecfdf5', padding: 12, borderRadius: 8, border: '1px solid #d1fae5', flex: 1, overflowY: 'auto' }}>
                         {tpl.steps.map((st, idx) => (
                           <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#059669', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold' }}>
+                              <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#059669', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold', flexShrink: 0 }}>
                                 {idx + 1}
                               </span>
                               <span style={{ color: '#065f46', fontWeight: 500 }}>{st.text}</span>
                             </div>
-                            <Tag color="emerald" style={{ margin: 0, background: '#10b981', color: '#fff', border: 'none', fontSize: 11 }}>
+                            <Tag color="emerald" style={{ margin: 0, background: '#10b981', color: '#fff', border: 'none', fontSize: 11, flexShrink: 0 }}>
                               {st.startFrame} - {st.endFrame} 帧
                             </Tag>
                           </div>
@@ -435,6 +546,246 @@ export default function TaskTemplatesPage() {
           )}
         </div>
       )}
+
+      {/* Create Action Template Modal */}
+      <Modal
+        title={
+          <span style={{ fontSize: 16, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <PlusOutlined style={{ color: '#1677ff' }} /> 新建动作模版
+          </span>
+        }
+        open={isActionModalOpen}
+        onOk={handleActionModalSubmit}
+        onCancel={() => {
+          setIsActionModalOpen(false);
+          actionForm.resetFields();
+        }}
+        width={800}
+        okText="保存模板"
+        cancelText="取消"
+        destroyOnClose
+      >
+        <Form form={actionForm} layout="vertical" initialValues={{ device: 'galbot' }}>
+          {/* Top Section: Basic Config */}
+          <div style={{ background: '#fafafa', padding: '16px 20px', borderRadius: 8, marginBottom: 20, border: '1px solid #f0f0f0' }}>
+            <div style={{ fontWeight: 'bold', fontSize: 13, marginBottom: 12, color: '#334155' }}>基础配置</div>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item label="动作模板名称" name="name" rules={[{ required: true, message: '请输入模板名称' }]} style={{ marginBottom: 12 }}>
+                  <Input placeholder="请输入模版名称，如：桌面书籍整理与摆放模版" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item label="适配设备类型" name="device" rules={[{ required: true }]} style={{ marginBottom: 12 }}>
+                  <Select placeholder="请选择" options={[
+                    { value: 'galbot', label: 'Galbot (单臂/双臂)' },
+                    { value: 'franka_fr3', label: 'Franka FR3' },
+                    { value: '鹿鸣', label: '鹿鸣' }
+                  ]} />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Form.Item label="模板描述" name="desc" style={{ marginBottom: 0 }}>
+              <Input.TextArea rows={2} placeholder="简述该动作模板的适用动作类型 and 技能点描述" />
+            </Form.Item>
+          </div>
+
+          {/* Bottom Section: SOP Steps */}
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <span style={{ fontWeight: 'bold', fontSize: 13, color: '#334155' }}>
+                <UnorderedListOutlined style={{ marginRight: 6 }} />预设SOP动作步骤序列
+              </span>
+              <Radio.Group 
+                value={actionInputMode} 
+                onChange={e => setActionInputMode(e.target.value)} 
+                optionType="button" 
+                buttonStyle="solid"
+                size="small"
+              >
+                <Radio.Button value="structured">结构化步骤</Radio.Button>
+                <Radio.Button value="natural">自然语言描述</Radio.Button>
+              </Radio.Group>
+            </div>
+
+            {actionInputMode === 'structured' ? (
+              <div>
+                <div style={{ maxHeight: 280, overflowY: 'auto', paddingRight: 4, marginBottom: 12 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
+                    {actionSteps.map((item, index) => (
+                      <div 
+                        key={item.key}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '12px 16px',
+                          background: '#ffffff',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: 8,
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.01)'
+                        }}
+                      >
+                        {/* Step Number Badge */}
+                        <div style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                          fontWeight: 'bold',
+                          fontSize: 12,
+                          boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)',
+                          flexShrink: 0
+                        }}>
+                          {String(index + 1).padStart(2, '0')}
+                        </div>
+
+                        {/* Dropdowns row */}
+                        <div style={{ flex: 1 }}>
+                          <Row gutter={[8, 8]}>
+                            <Col span={6}>
+                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>执行末端类型</div>
+                              <Select 
+                                value={item.arm} 
+                                onChange={(val) => updateActionStepField(item.key, 'arm', val)}
+                                size="small" 
+                                style={{ width: '100%' }}
+                              >
+                                <Select.Option value="右手 (Right Arm)">右手 (Right Arm)</Select.Option>
+                                <Select.Option value="左手 (Left Arm)">左手 (Left Arm)</Select.Option>
+                                <Select.Option value="双手 (Dual Arms)">双手 (Dual Arms)</Select.Option>
+                                <Select.Option value="底盘 (Base)">底盘 (Base)</Select.Option>
+                                <Select.Option value="相机 (Camera)">相机 (Camera)</Select.Option>
+                              </Select>
+                            </Col>
+
+                            <Col span={6}>
+                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>原子技能</div>
+                              <Select 
+                                value={item.skill} 
+                                onChange={(val) => updateActionStepField(item.key, 'skill', val)}
+                                size="small" 
+                                style={{ width: '100%' }}
+                              >
+                                <Select.Option value="识别">识别</Select.Option>
+                                <Select.Option value="靠近">靠近</Select.Option>
+                                <Select.Option value="抓取">抓取</Select.Option>
+                                <Select.Option value="放置">放置</Select.Option>
+                                <Select.Option value="旋转">旋转</Select.Option>
+                                <Select.Option value="对准">对准</Select.Option>
+                                <Select.Option value="松开">松开</Select.Option>
+                              </Select>
+                            </Col>
+
+                            <Col span={6}>
+                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>操作对象</div>
+                              <Select 
+                                value={item.object} 
+                                onChange={(val) => updateActionStepField(item.key, 'object', val)}
+                                size="small" 
+                                style={{ width: '100%' }}
+                              >
+                                <Select.Option value="目标物品">目标物品</Select.Option>
+                                <Select.Option value="阀门">阀门</Select.Option>
+                                <Select.Option value="垃圾桶">垃圾桶</Select.Option>
+                                <Select.Option value="餐盘">餐盘</Select.Option>
+                                <Select.Option value="抽屉">抽屉</Select.Option>
+                                <Select.Option value="螺丝刀">螺丝刀</Select.Option>
+                                <Select.Option value="桌面">桌面</Select.Option>
+                                <Select.Option value="纸箱">纸箱</Select.Option>
+                                <Select.Option value="泡沫填充纸">泡沫填充纸</Select.Option>
+                                <Select.Option value="工厂部件">工厂部件</Select.Option>
+                                <Select.Option value="胶带封装器">胶带封装器</Select.Option>
+                              </Select>
+                            </Col>
+
+                            <Col span={6}>
+                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>操作目标</div>
+                              <Select 
+                                value={item.goal} 
+                                onChange={(val) => updateActionStepField(item.key, 'goal', val)}
+                                size="small" 
+                                style={{ width: '100%' }}
+                              >
+                                <Select.Option value="确认位置">确认位置</Select.Option>
+                                <Select.Option value="避障靠近">避障靠近</Select.Option>
+                                <Select.Option value="牢固夹紧">牢固夹紧</Select.Option>
+                                <Select.Option value="稳定释放">稳定释放</Select.Option>
+                                <Select.Option value="扭转至角度">扭转至角度</Select.Option>
+                                <Select.Option value="对齐插槽">对齐插槽</Select.Option>
+                                <Select.Option value="推拉合拢">推拉合拢</Select.Option>
+                              </Select>
+                            </Col>
+                          </Row>
+                        </div>
+
+                        {/* Delete Button */}
+                        <Button 
+                          type="text" 
+                          danger 
+                          size="small" 
+                          disabled={actionSteps.length <= 1}
+                          icon={<MinusCircleOutlined style={{ fontSize: 14 }} />}
+                          onClick={() => removeActionStep(item.key)}
+                          style={{
+                            borderRadius: 6,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#fef2f2',
+                            border: '1px solid #fee2e2',
+                            width: 28,
+                            height: 28,
+                            marginTop: 14
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Button
+                    type="dashed"
+                    onClick={addActionStep}
+                    icon={<PlusOutlined />}
+                    style={{
+                      width: '100%',
+                      height: 38,
+                      borderRadius: 8,
+                      color: '#2563eb',
+                      borderColor: '#93c5fd',
+                      background: '#f0f7ff',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6
+                    }}
+                  >
+                    添加结构化步骤
+                  </Button>
+                </div>
+              ) : (
+                <div style={{ marginBottom: 12 }}>
+                <Input.TextArea 
+                  rows={6} 
+                  value={actionNaturalText}
+                  onChange={e => setActionNaturalText(e.target.value)}
+                  placeholder="请输入自然语言描述的动作步骤流程，每行代表一个步骤。例如：&#10;1. 右手 (Right Arm) 识别 目标物品 (确认位置)&#10;2. 右手 (Right Arm) 靠近 目标物品 (避障靠近)"
+                  style={{ fontFamily: 'monospace', fontSize: 12 }}
+                />
+                <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 6 }}>
+                  支持直接复制大段以空格/符号分隔的动作文本描述，每行文字将自动转换为模板中的独立工作步骤。
+                </Text>
+              </div>
+            )}
+          </div>
+        </Form>
+      </Modal>
 
       <style jsx>{`
         .hover-action:hover {

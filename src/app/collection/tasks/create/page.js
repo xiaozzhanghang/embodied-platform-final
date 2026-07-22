@@ -13,19 +13,79 @@ import {
   QuestionCircleOutlined, LayoutOutlined, FileTextOutlined,
   CheckOutlined, RightOutlined, InfoCircleOutlined, EyeOutlined,
   ShoppingOutlined, SkinOutlined, ToolOutlined, ExperimentOutlined,
-  RestOutlined
+  RestOutlined, VideoCameraOutlined, DatabaseOutlined, LinkOutlined,
+  UserOutlined, AuditOutlined, ThunderboltOutlined, SyncOutlined,
+  UnorderedListOutlined, InfoCircleFilled, EditOutlined, MinusCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-// Collectors list
+// Collectors / Annotators / Auditors lists
 const collectorsList = [
   { value: '张三', label: '张三 (采集员-001)' },
   { value: '李四', label: '李四 (采集员-002)' },
   { value: '王五', label: '王五 (采集员-003)' },
   { value: '赵六', label: '赵六 (采集员-004)' },
+];
+
+const annotatorsList = [
+  { value: '张三', label: '张三 (标注员-001)' },
+  { value: '李四', label: '李四 (标注员-002)' },
+  { value: '陈七', label: '陈七 (标注员-A)' },
+  { value: '孙八', label: '孙八 (标注员-B)' },
+];
+
+const auditorsList = [
+  { value: '王五', label: '王五 (审核员-001)' },
+  { value: '赵六', label: '赵六 (审核员-002)' },
+  { value: '吴十', label: '吴十 (审核员-X)' },
+];
+
+const collectedDataSources = [
+  {
+    value: 'catalog_1',
+    label: '桌面书籍整理 (organize_books_on_the_table) [ID: 1b3e56c1b...] (Galbot 2.2, 仿真数据)',
+    project: 'InternalCommercial',
+    taskbook: '桌面整理采集规范 V1.0',
+    taskName: '桌面书籍整理_仿真任务',
+    dataCount: 80,
+    deviceType: 'galbot_2.2_RGB',
+    steps: [
+      { id: 1, effector: '右手 (Right Arm)', skill: '识别', object: '目标物品', target: '确认位置' },
+      { id: 2, effector: '右手 (Right Arm)', skill: '靠近', object: '目标物品', target: '上方' },
+      { id: 3, effector: '右手 (Right Arm)', skill: '抓取', object: '目标物品', target: '目标点' }
+    ]
+  },
+  {
+    value: 'catalog_2',
+    label: '线缆整理动作采集 (session_028) [ID: session_028_6f8...] (Franka FR3, 真实数据)',
+    project: 'InternalCommercial',
+    taskbook: '线缆管理采集规范 V2.0',
+    taskName: '线缆管理动作采集_028',
+    dataCount: 120,
+    deviceType: 'franka_std',
+    steps: [
+      { id: 1, effector: '右手 (Right Arm)', skill: '识别', object: '门把手', target: '确认位置' },
+      { id: 2, effector: '右手 (Right Arm)', skill: '靠近', object: '门把手', target: '上方' },
+      { id: 3, effector: '右手 (Right Arm)', skill: '抓取', object: '门把手', target: '目标点' }
+    ]
+  },
+  {
+    value: 'catalog_3',
+    label: '餐具抓取测试数据 (tableware_grasping_test) [ID: a24d35e1c...] (鹿鸣 G1, 真实数据)',
+    project: 'InternalCommercial',
+    taskbook: '厨房操作采集规范 V1.2',
+    taskName: '餐具抓取测试_01',
+    dataCount: 60,
+    deviceType: 'galbot_1.16_G2',
+    steps: [
+      { id: 1, effector: '左手 (Left Arm)', skill: '识别', object: '餐盘', target: '确认位置' },
+      { id: 2, effector: '左手 (Left Arm)', skill: '靠近', object: '餐盘', target: '上方' },
+      { id: 3, effector: '左手 (Left Arm)', skill: '抓取', object: '餐盘', target: '目标点' }
+    ]
+  }
 ];
 
 // Device instances
@@ -51,6 +111,12 @@ function CreateTaskContent() {
   const [currentStep, setCurrentStep] = useState(0); // 0: 基础参数, 1: 动作预设
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   
+  // Task form type: 'collect' (需要采集数据) or 'asset' (关联数据资产)
+  const [taskFormType, setTaskFormType] = useState('collect');
+  const [activeCatalog, setActiveCatalog] = useState(null);
+  const [episodesList, setEpisodesList] = useState([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+
   // Linkage States
   const [availableParts, setAvailableParts] = useState([]);
   const [selectedPartKeys, setSelectedPartKeys] = useState([]);
@@ -153,6 +219,63 @@ function CreateTaskContent() {
 
   const removeStep = (id) => {
     setSteps(steps.filter(s => s.id !== id));
+  };
+
+  const [sopInputMode, setSopInputMode] = useState('format'); // 'format' or 'natural'
+  const [naturalStepsList, setNaturalStepsList] = useState([
+    { key: '1', text: '右手识别并定位桌上的目标书籍' },
+    { key: '2', text: '' }
+  ]);
+
+  const addNaturalStep = () => {
+    const newKey = String(Date.now());
+    setNaturalStepsList(prev => [...prev, { key: newKey, text: '' }]);
+  };
+
+  const updateNaturalStep = (key, text) => {
+    setNaturalStepsList(prev => prev.map(item => item.key === key ? { ...item, text } : item));
+  };
+
+  const removeNaturalStep = (key) => {
+    if (naturalStepsList.length <= 1) return;
+    setNaturalStepsList(prev => prev.filter(item => item.key !== key));
+  };
+
+  const handleTemplateSelectForSop = (value) => {
+    const templatesMap = {
+      box_packing: [
+        '双臂移动靠近纸箱与泡沫块预备区域',
+        '双手抓取底部泡沫填充纸放入箱内',
+        '右手放置目标物件至胶带封装箱体',
+        '双手合拢关扣纸箱上端盖板',
+        '双手拿取胶带封装器对准中缝贴合',
+        '双臂平稳托举已封箱体放置至托盘'
+      ],
+      books_organize: [
+        '右手识别并定位桌上的目标书籍',
+        '右手避障靠近目标书籍',
+        '右手牢固夹紧抓取书籍',
+        '右手平稳移动放置到指定书架'
+      ],
+      dishes_clean: [
+        '双手识别并定位餐桌上的残余餐盘',
+        '双手避障靠近餐盘两端',
+        '双手牢固夹紧端起餐盘',
+        '双手平稳移送至洗碗水槽上方释放'
+      ],
+      drawer_operation: [
+        '右手定位并靠近抽屉拉手位置',
+        '右手夹紧拉手并向外推拉合拢/拉开',
+        '左手伸入抽屉内部抓取目标物品',
+        '右手推回抽屉归位复原'
+      ]
+    };
+
+    const list = templatesMap[value];
+    if (list) {
+      setNaturalStepsList(list.map((text, idx) => ({ key: String(idx + 1), text })));
+      message.success('已成功填充预设动作步骤！');
+    }
   };
 
   const fieldLabels = {
@@ -377,6 +500,46 @@ function CreateTaskContent() {
     handleDeviceTypeChange(tpl.device, false);
   };
 
+  const handleCatalogChange = (value) => {
+    const catalog = collectedDataSources.find(c => c.value === value);
+    if (!catalog) return;
+
+    setActiveCatalog(catalog);
+
+    // Autofill the form fields
+    form.setFieldsValue({
+      name: `${catalog.taskName}_${Math.floor(1000 + Math.random() * 9000)}`,
+      p1: catalog.project,
+      taskbook: catalog.taskbook,
+      deviceType: catalog.deviceType,
+    });
+
+    // Generate mock episodes for the table
+    const mockEpisodes = Array.from({ length: catalog.dataCount }).map((_, idx) => {
+      const epId = 844101 + idx;
+      return {
+        key: String(epId),
+        id: epId,
+        episodeName: `${catalog.taskName}_ep_${String(idx + 1).padStart(3, '0')}`,
+        collectTime: `2026-06-${String(10 + (idx % 15)).padStart(2, '0')} 15:${String(idx % 60).padStart(2, '0')}:20`,
+        totalFrames: [150, 180, 220, 260, 320][idx % 5],
+        device: catalog.deviceType === 'galbot_2.2_RGB' ? 'Galbot' : catalog.deviceType,
+        parseStatus: '已解析对齐'
+      };
+    });
+
+    setEpisodesList(mockEpisodes);
+
+    // Default select first 20 items
+    const defaultKeys = mockEpisodes.slice(0, 20).map(item => item.key);
+    setSelectedRowKeys(defaultKeys);
+
+    // Sync template steps if available
+    if (catalog.steps) {
+      setSteps(catalog.steps.map((s, idx) => ({ ...s, id: idx + 1 })));
+    }
+  };
+
   const renderSelection = () => (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 32 }}>
@@ -444,58 +607,182 @@ function CreateTaskContent() {
 
   const renderConfigFlow = () => (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => setCreationStage('selection')} style={{ marginRight: 16 }} />
-        <Title level={4} style={{ margin: 0 }}>
-          {mode === 'edit' ? '编辑任务：' : mode === 'copy' ? '复制任务：' : '基于模版创建：'}
-          {selectedTemplate?.name}
-        </Title>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, background: '#fff', padding: '16px 24px', borderRadius: 8, border: '1px solid #f0f0f0' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => setCreationStage('selection')} style={{ marginRight: 16 }} />
+          <div>
+            <Title level={4} style={{ margin: 0 }}>
+              {mode === 'edit' ? '编辑任务：' : mode === 'copy' ? '复制任务：' : '基于模版创建：'}
+              {selectedTemplate?.name}
+            </Title>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {taskFormType === 'collect' ? '任务类型：数采下发（需进行设备采集）' : '任务类型：资产关联（直接引入数据进行标注审核）'}
+            </Text>
+          </div>
+        </div>
+        <Radio.Group 
+          value={taskFormType} 
+          onChange={e => {
+            setTaskFormType(e.target.value);
+            setCurrentStep(0);
+          }} 
+          buttonStyle="solid"
+          size="medium"
+        >
+          <Radio.Button value="collect">
+            <Space><VideoCameraOutlined /> 需要采集数据</Space>
+          </Radio.Button>
+          <Radio.Button value="asset">
+            <Space><DatabaseOutlined /> 关联数据资产</Space>
+          </Radio.Button>
+        </Radio.Group>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 48, padding: '0 100px' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32, padding: '0 100px' }}>
         <Steps current={currentStep} labelPlacement="horizontal" style={{ width: '100%', maxWidth: 800 }}
-          items={[{ title: <Text strong style={{ fontSize: 16 }}>基础参数</Text> }, { title: <Text strong style={{ fontSize: 16 }}>动作预设</Text> }]} 
+          items={[
+            { title: <Text strong style={{ fontSize: 15 }}>{taskFormType === 'collect' ? '基础参数' : '基础参数 & 关联资产'}</Text> }, 
+            { title: <Text strong style={{ fontSize: 15 }}>{taskFormType === 'collect' ? '动作预设' : '动作与标注审核预设'}</Text> }
+          ]} 
         />
       </div>
 
       <Form form={form} layout="vertical" onFinish={(values) => {
         if (currentStep === 0) setCurrentStep(1);
         else {
-          message.success(mode === 'edit' ? '任务修改成功' : '任务派发成功');
+          message.success(mode === 'edit' ? '任务修改成功' : taskFormType === 'collect' ? '任务派发成功' : '任务关联并成功建立标注审核流');
           router.push('/collection/tasks');
         }
       }}>
         {currentStep === 0 ? (
           <>
             <Alert 
-              message={mode === 'edit' ? '正在编辑现有任务，修改后将覆盖原始配置。' : mode === 'copy' ? '正在基于已有任务复制，您可以修改副本内容后派发。' : `你正在使用【${selectedTemplate?.name}】模版，部分参数已自动填充`} 
-              type={mode === 'edit' ? 'warning' : 'info'} showIcon icon={<InfoCircleOutlined />}
+              message={
+                taskFormType === 'collect' 
+                  ? '【数据数采模式】当前形式将生成针对具体物理设备/仿真场景的采集指令，派发给采集员执行。'
+                  : '【资产关联模式】直接在系统已有的数据资产包（如已录制视频、已上传轨迹）中选择数据，建立标注审核待办。'
+              } 
+              type="info" 
+              showIcon 
+              icon={<InfoCircleOutlined />}
               style={{ marginBottom: 24, borderRadius: 8 }}
             />
 
-            <Card title="基础信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
-              <Row gutter={24}>
-                <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} popupRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="任务名称" name="name" required><Input /></Form.Item></Col>
-                <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="指派默认采集员" name="collector" required><Select placeholder="请选择指派采集员" options={collectorsList} /></Form.Item></Col>
-              </Row>
-            </Card>
+            {/* Render Step 0 Form for Collect Mode */}
+            {taskFormType === 'collect' ? (
+              <>
+                <Card title="基础信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+                  <Row gutter={24}>
+                    <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} popupRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="任务名称" name="name" required><Input /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="采集模式" name="mode" required><Select placeholder="请选择" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="指派默认采集员" name="collector" required><Select placeholder="请选择指派采集员" options={collectorsList} /></Form.Item></Col>
+                  </Row>
+                </Card>
 
-            <Card title="采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
-              <Row gutter={24}>
-                <Col span={8}><Form.Item label="设备类型" name="deviceType" required><Select options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="分配默认设备实例" name="deviceInstance" required><Select placeholder="请选择设备实例" options={filteredDeviceInstances} /></Form.Item></Col>
-                <Col span={8}><Form.Item label="遥操主控方式" name="teleType" required><Select options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} /></Form.Item></Col>
-              </Row>
-              <Table dataSource={availableParts} columns={[{title:'名称', dataIndex:'name'},{title:'类型', dataIndex:'type'}]} rowSelection={{type:'checkbox', selectedRowKeys:selectedPartKeys}} pagination={false} size="small" bordered />
-            </Card>
+                <Card title="采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+                  <Row gutter={24}>
+                    <Col span={8}><Form.Item label="设备类型" name="deviceType" required><Select options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="分配默认设备实例" name="deviceInstance" required><Select placeholder="请选择设备实例" options={filteredDeviceInstances} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="遥操主控方式" name="teleType" required><Select options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} /></Form.Item></Col>
+                  </Row>
+                  <Table dataSource={availableParts} columns={[{title:'名称', dataIndex:'name'},{title:'类型', dataIndex:'type'}]} rowSelection={{type:'checkbox', selectedRowKeys:selectedPartKeys}} pagination={false} size="small" bordered />
+                </Card>
+              </>
+            ) : (
+              <>
+                {/* Render Step 0 Form for Data Asset Linkage Mode */}
+                <Card title="基础信息 & 关联成员" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+                  <Row gutter={24}>
+                    <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="关联任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} popupRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="任务名称" name="name" required><Input /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="指派默认标注员" name="annotator" required><Select placeholder="请选择标注员" options={annotatorsList} defaultValue="张三" /></Form.Item></Col>
+                    <Col span={8}><Form.Item label="指派默认审核员" name="auditor" required><Select placeholder="请选择审核员" options={auditorsList} defaultValue="王五" /></Form.Item></Col>
+                  </Row>
+                </Card>
+
+                <Card 
+                  title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <LinkOutlined style={{ color: '#1677ff' }} />
+                      <span>关联数据资产目录数据</span>
+                    </div>
+                  } 
+                  bordered={false} 
+                  styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} 
+                  style={{ marginBottom: 24, borderRadius: 8 }}
+                >
+                  <Form.Item 
+                    name="dataSource" 
+                    label="数据资产目录数据源" 
+                    required 
+                    rules={[{ required: true, message: '请选择关联的数据资产目录' }]}
+                    extra="从资产库导入对应的动作包数据，任务发布后将直接触发其标注审核流程"
+                  >
+                    <Select 
+                      placeholder="请选择或输入搜索数据资产目录中的已采集动作段..." 
+                      onChange={handleCatalogChange}
+                      options={collectedDataSources}
+                      showSearch
+                    />
+                  </Form.Item>
+
+                  {activeCatalog && (
+                    <div style={{ marginTop: 16 }}>
+                      <div style={{
+                        padding: '12px 16px',
+                        background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 8,
+                        display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 13,
+                        marginBottom: 16
+                      }}>
+                        <span><Text type="secondary">项目归属：</Text><Text strong>{activeCatalog.project}</Text></span>
+                        <span><Text type="secondary">关联任务书：</Text><Text strong>{activeCatalog.taskbook}</Text></span>
+                        <span><Text type="secondary">适配设备：</Text><Text strong>{activeCatalog.deviceType}</Text></span>
+                        <span><Text type="secondary">资产数据包数：</Text><Text strong>{activeCatalog.dataCount} 条</Text></span>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <Text strong style={{ fontSize: 13 }}>选择具体关联数据包明细：</Text>
+                        <Tag color="blue">
+                          已选择 {selectedRowKeys.length} / {episodesList.length} 条数据
+                        </Tag>
+                      </div>
+
+                      <Table
+                        rowSelection={{
+                          selectedRowKeys,
+                          onChange: (keys) => setSelectedRowKeys(keys)
+                        }}
+                        columns={[
+                          { title: '动作数据包 ID', dataIndex: 'id', width: 140 },
+                          { title: '数据包名称 (Episode Name)', dataIndex: 'episodeName' },
+                          { title: '包含帧数', dataIndex: 'totalFrames', width: 120, render: (frames) => <span>{frames} 帧</span> },
+                          { title: '采集时间', dataIndex: 'collectTime', width: 180 },
+                          { title: '解析状态', dataIndex: 'parseStatus', width: 120, render: (s) => <Tag color="success">{s}</Tag> }
+                        ]}
+                        dataSource={episodesList}
+                        rowKey="key"
+                        pagination={{ pageSize: 5, size: 'small' }}
+                        size="small"
+                        bordered
+                      />
+                    </div>
+                  )}
+                </Card>
+              </>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
               <Button type="primary" size="large" style={{ width: 160 }} onClick={() => setCurrentStep(1)}>下一步</Button>
@@ -503,41 +790,254 @@ function CreateTaskContent() {
           </>
         ) : (
           <>
-            <Card bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
-               <Row gutter={24}>
-                  <Col span={12}><Form.Item label="动作步骤"><Radio.Group defaultValue="format"><Radio value="format">格式化步骤</Radio><Radio value="natural">自然语言描述</Radio></Radio.Group></Form.Item></Col>
-                  <Col span={12}><Form.Item label="任务模版"><Select value={selectedTemplate?.id} onChange={(v) => setSelectedTemplate(mockTemplates.find(t => t.id === v))} options={mockTemplates.map(t => ({ value: t.id, label: t.name }))} style={{width:'100%'}} /></Form.Item></Col>
-               </Row>
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                 <Text strong>动作步骤编排 (SOP Steps)</Text>
-                 <Button icon={<PlusOutlined />} onClick={addStep} style={{ color: '#1677ff', borderColor: '#1677ff' }}>添加步骤</Button>
-               </div>
-               <Table 
-                 dataSource={steps} 
-                 rowKey="id"
-                 pagination={false} 
-                 bordered
-                 columns={[
-                   { title: '排序', width: 60, align: 'center', render: () => <DragOutlined style={{ color: '#bfbfbf', cursor: 'grab' }} /> },
-                   { title: '执行末端类型', width: 200, render: (_, r) => <Select value={r.effector} onChange={v => updateStep(r.id, 'effector', v)} style={{ width: '100%' }} options={[{value: '右手 (Right Arm)', label: '右手 (Right Arm)'}, {value: '左手 (Left Arm)', label: '左手 (Left Arm)'}, {value: '底盘 (Base)', label: '底盘 (Base)'}]} /> },
-                   { title: '原子技能', render: (_, r) => <Select value={r.skill} onChange={v => updateStep(r.id, 'skill', v)} style={{ width: '100%' }} options={[{value:'识别', label:'识别'}, {value:'抓取', label:'抓取'}, {value:'移动', label:'移动'}, {value:'放置', label:'放置'}]} /> },
-                   { title: '操作对象', render: (_, r) => <Select value={r.object} onChange={v => updateStep(r.id, 'object', v)} style={{ width: '100%' }} options={[{value:'目标物品', label:'目标物品'}, {value:'抽屉', label:'抽屉'}, {value:'门把手', label:'门把手'}]} /> },
-                   { title: '操作目标', render: (_, r) => <Select value={r.target} onChange={v => updateStep(r.id, 'target', v)} style={{ width: '100%' }} options={[{value:'确认位置', label:'确认位置'}, {value:'上方', label:'上方'}, {value:'目标点', label:'目标点'}]} /> },
-                   { title: '操作', width: 80, align: 'center', fixed: 'right', render: (_, r) => <Button type="text" danger icon={<DeleteOutlined />} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => removeStep(r.id) })} /> }
-                 ]} 
-               />
-               <Row gutter={24} style={{marginTop:24}}>
-                  <Col span={12}><Form.Item label="采集数量" name="count"><InputNumber style={{width:'100%'}} /></Form.Item></Col>
-                  <Col span={12}><Form.Item label="上传文件"><Upload><Button icon={<UploadOutlined />}>上传文件</Button></Upload></Form.Item></Col>
-               </Row>
-               <Row gutter={24}>
-                  <Col span={12}><Form.Item label="场景初始状态" name="initState"><TextArea rows={4} /></Form.Item></Col>
-                  <Col span={12}><Form.Item label="英文场景初始状态"><TextArea rows={4} /></Form.Item></Col>
-               </Row>
+            {/* Step 1 Form Card */}
+            <Card 
+              title={
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <UnorderedListOutlined style={{ color: '#1677ff' }} />
+                    动作步骤编排
+                  </span>
+                  <Radio.Group 
+                    value={sopInputMode} 
+                    onChange={e => setSopInputMode(e.target.value)}
+                    buttonStyle="solid"
+                    size="medium"
+                  >
+                    <Radio.Button value="format">
+                      <Space><UnorderedListOutlined /> 结构化步骤</Space>
+                    </Radio.Button>
+                    <Radio.Button value="natural">
+                      <Space><EditOutlined /> 自然语言描述</Space>
+                    </Radio.Button>
+                  </Radio.Group>
+                </div>
+              }
+              bordered={false} 
+              style={{ marginBottom: 24, borderRadius: 12, border: '1px solid #e2e8f0' }}
+            >
+              {/* 预设动作步骤模版一键填充工具条 */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: 20,
+                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                padding: '16px 20px',
+                borderRadius: 12,
+                border: '1px dashed #cbd5e1'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <InfoCircleFilled style={{ color: '#1677ff' }} />
+                    预设动作步骤模版一键填充:
+                  </span>
+                  <Select
+                    placeholder="选择预设动作模版一键填充步骤数据..."
+                    style={{ width: 340 }}
+                    size="middle"
+                    onChange={handleTemplateSelectForSop}
+                    allowClear
+                  >
+                    <Select.Option value="box_packing">📦 工业纸箱打包封装与装箱模版 (6 步)</Select.Option>
+                    <Select.Option value="books_organize">📚 桌面书籍整理与摆放模版 (4 步)</Select.Option>
+                    <Select.Option value="dishes_clean">🍽️ 餐盘清理与协同搬运模版 (4 步)</Select.Option>
+                    <Select.Option value="drawer_operation">🚪 抽屉开关与取物操作模版 (4 步)</Select.Option>
+                  </Select>
+                </div>
+              </div>
+
+              {sopInputMode === 'format' ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <Text strong style={{ fontSize: 13, color: '#334155' }}>结构化动作步骤明细列表：</Text>
+                    <Button icon={<PlusOutlined />} onClick={addStep} style={{ color: '#1677ff', borderColor: '#1677ff' }}>添加步骤</Button>
+                  </div>
+                  <Table 
+                    dataSource={steps} 
+                    rowKey="id"
+                    pagination={false} 
+                    bordered
+                    columns={[
+                      { title: '排序', width: 60, align: 'center', render: () => <DragOutlined style={{ color: '#bfbfbf', cursor: 'grab' }} /> },
+                      { title: '执行末端类型', width: 200, render: (_, r) => <Select value={r.effector} onChange={v => updateStep(r.id, 'effector', v)} style={{ width: '100%' }} options={[{value: '右手 (Right Arm)', label: '右手 (Right Arm)'}, {value: '左手 (Left Arm)', label: '左手 (Left Arm)'}, {value: '双手 (Dual Arms)', label: '双手 (Dual Arms)'}, {value: '底盘 (Base)', label: '底盘 (Base)'}, {value: '相机 (Camera)', label: '相机 (Camera)'}]} /> },
+                      { title: '原子技能', render: (_, r) => <Select value={r.skill} onChange={v => updateStep(r.id, 'skill', v)} style={{ width: '100%' }} options={[{value:'识别', label:'识别'}, {value:'抓取', label:'抓取'}, {value:'移动', label:'移动'}, {value:'放置', label:'放置'}, {value:'靠近', label:'靠近'}, {value:'对准', label:'对准'}, {value:'松开', label:'松开'}]} /> },
+                      { title: '操作对象', render: (_, r) => <Select value={r.object} onChange={v => updateStep(r.id, 'object', v)} style={{ width: '100%' }} options={[{value:'目标物品', label:'目标物品'}, {value:'抽屉', label:'抽屉'}, {value:'门把手', label:'门把手'}, {value:'餐盘', label:'餐盘'}, {value:'桌面', label:'桌面'}, {value:'纸箱', label:'纸箱'}]} /> },
+                      { title: '操作目标', render: (_, r) => <Select value={r.target} onChange={v => updateStep(r.id, 'target', v)} style={{ width: '100%' }} options={[{value:'确认位置', label:'确认位置'}, {value:'避障靠近', label:'避障靠近'}, {value:'牢固夹紧', label:'牢固夹紧'}, {value:'稳定释放', label:'稳定释放'}]} /> },
+                      { title: '操作', width: 80, align: 'center', fixed: 'right', render: (_, r) => <Button type="text" danger icon={<DeleteOutlined />} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => removeStep(r.id) })} /> }
+                    ]} 
+                  />
+                </>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative', paddingLeft: 12 }}>
+                  {/* Vertical dashed line connecting step cards */}
+                  <div style={{
+                    position: 'absolute',
+                    left: '27px',
+                    top: '24px',
+                    bottom: '70px',
+                    width: '2px',
+                    borderLeft: '2px dashed #cbd5e1',
+                    zIndex: 0
+                  }} />
+
+                  {naturalStepsList.map((item, index) => (
+                    <div
+                      key={item.key}
+                      style={{
+                        display: 'flex',
+                        gap: 16,
+                        background: '#ffffff',
+                        border: '1px dashed #cbd5e1',
+                        borderRadius: 12,
+                        padding: '16px 20px',
+                        position: 'relative',
+                        zIndex: 1,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                        alignItems: 'center',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {/* Number Badge */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                          fontWeight: 'bold',
+                          fontSize: 14,
+                          boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)'
+                        }}>
+                          {String(index + 1).padStart(2, '0')}
+                        </div>
+                        <div style={{ color: '#94a3b8', fontSize: 16, marginTop: 4, cursor: 'grab', userSelect: 'none' }}>
+                          ⋮
+                        </div>
+                      </div>
+
+                      {/* Input Text Box */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>自然语言动作描述</div>
+                        <Input
+                          value={item.text}
+                          onChange={(e) => updateNaturalStep(item.key, e.target.value)}
+                          placeholder="在此描述具体的机器人动作步骤，例如：双手抓取底部泡沫填充纸放入箱内"
+                          size="large"
+                          style={{
+                            width: '100%',
+                            borderRadius: 8,
+                            borderColor: '#cbd5e1'
+                          }}
+                          prefix={<EditOutlined style={{ color: '#94a3b8', marginRight: 4 }} />}
+                        />
+                      </div>
+
+                      {/* Delete Button */}
+                      <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
+                        <Button
+                          type="text"
+                          danger
+                          size="middle"
+                          disabled={naturalStepsList.length <= 1}
+                          icon={<MinusCircleOutlined style={{ fontSize: 16 }} />}
+                          onClick={() => removeNaturalStep(item.key)}
+                          style={{
+                            borderRadius: 8,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#fef2f2',
+                            border: '1px solid #fee2e2',
+                            width: 36,
+                            height: 36
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add Natural Language Step Button */}
+                  <Button
+                    type="dashed"
+                    onClick={addNaturalStep}
+                    icon={<PlusOutlined />}
+                    style={{
+                      width: '100%',
+                      height: 48,
+                      borderRadius: 12,
+                      color: '#10b981',
+                      borderColor: '#a7f3d0',
+                      background: '#ecfdf5',
+                      fontWeight: 600,
+                      fontSize: 14,
+                      zIndex: 1
+                    }}
+                  >
+                    添加自然语言步骤
+                  </Button>
+                </div>
+              )}
+
+               {taskFormType === 'collect' ? (
+                 <>
+                   <Row gutter={24} style={{marginTop:24}}>
+                      <Col span={12}><Form.Item label="计划采集数量" name="count"><InputNumber style={{width:'100%'}} placeholder="请输入本次任务计划采集的 Episode 动作序列数量" /></Form.Item></Col>
+                      <Col span={12}><Form.Item label="采集参考附件书"><Upload><Button icon={<UploadOutlined />}>上传文件</Button></Upload></Form.Item></Col>
+                   </Row>
+                   <Row gutter={24}>
+                      <Col span={12}><Form.Item label="场景物理初始状态" name="initState"><TextArea rows={4} placeholder="描述机器人和操作对象在数采启动前的物理初始要求" /></Form.Item></Col>
+                      <Col span={12}><Form.Item label="英文物理初始状态"><TextArea rows={4} placeholder="Initial physical state description in English" /></Form.Item></Col>
+                   </Row>
+                 </>
+               ) : (
+                 <>
+                   {/* Annotation parameters configuration for asset mode */}
+                   <Divider style={{ margin: '24px 0' }} />
+                   <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 16 }}>标注工作流与审核参数预设</Text>
+                   <Row gutter={24}>
+                     <Col span={12}>
+                       <Form.Item label="标注任务类型" required defaultValue="frame_range">
+                         <Radio.Group defaultValue="frame_range">
+                           <Radio value="frame_range">动作帧区间标注</Radio>
+                           <Radio value="keyframe">关键帧精细标注</Radio>
+                           <Radio value="3d_box">3D 边界框标注</Radio>
+                         </Radio.Group>
+                       </Form.Item>
+                     </Col>
+                     <Col span={12}>
+                       <Form.Item label="首尾对齐校验要求" valuePropName="checked">
+                         <Switch defaultChecked checkedChildren="启用强制校验" unCheckedChildren="关闭强校验" />
+                       </Form.Item>
+                     </Col>
+                   </Row>
+                   <Row gutter={24}>
+                     <Col span={24}>
+                       <Form.Item label="质检质量校验必检项">
+                         <Checkbox.Group 
+                           defaultValue={['1', '2']}
+                           style={{ display: 'flex', gap: 24 }}
+                           options={[
+                             { label: '动作切分边界无重叠', value: '1' },
+                             { label: '语义标签和动作段精确一致', value: '2' },
+                             { label: '环境光照异常抛出异常', value: '3' },
+                             { label: '末端轨迹平滑度计算合格', value: '4' }
+                           ]}
+                         />
+                       </Form.Item>
+                     </Col>
+                   </Row>
+                 </>
+               )}
             </Card>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 32 }}>
               <Button size="large" style={{ width: 120 }} onClick={() => setCurrentStep(0)}>上一步</Button>
-              <Button type="primary" size="large" style={{ width: 120 }} htmlType="submit">确定</Button>
+              <Button type="primary" size="large" style={{ width: 160 }} htmlType="submit">
+                {taskFormType === 'collect' ? '发布采集任务' : '建立标注审核流'}
+              </Button>
             </div>
           </>
         )}

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Radio, Progress, List, Upload, InputNumber } from 'antd';
 import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -21,7 +22,6 @@ const annoStatusConfig = {
   '未标注': { color: 'default', icon: null },
   '待校验': { color: 'warning', icon: <ClockCircleOutlined /> },
   '标注中': { color: 'processing', icon: <ClockCircleOutlined /> },
-  '自动标注处理中': { color: 'warning', icon: <ClockCircleOutlined /> },
 };
 
 const auditStatusConfig = {
@@ -41,7 +41,7 @@ export default function AnnotationAuditEpisodeListPage() {
   const [filterAnnoStatus, setFilterAnnoStatus] = useState(null);
   const [filterAuditStatus, setFilterAuditStatus] = useState(null);
   const [filterId, setFilterId] = useState('');
-  const [filterError, setFilterError] = useState(null);
+
 
   // Stateful list of episodes for dynamic updates
   const [episodes, setEpisodes] = useState(() => {
@@ -50,7 +50,7 @@ export default function AnnotationAuditEpisodeListPage() {
       const device = isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)';
       const annoType = isDual ? '语义标注' : '范围标注';
 
-      const annoStatuses = ['已标注', '未标注', '待校验', '标注中', '自动标注处理中'];
+      const annoStatuses = ['已标注', '未标注', '待校验', '标注中'];
       const auditStatuses = ['未审核', '审核中', '通过', '不通过'];
       const annoStatus = i < 6 ? '已标注' : i < 16 ? annoStatuses[i % 5] : '未标注';
       const auditStatus = (annoStatus === '已标注' || annoStatus === '待校验') ? auditStatuses[i % 4] : '未审核';
@@ -397,15 +397,13 @@ export default function AnnotationAuditEpisodeListPage() {
       // 标注状态页签过滤
       if (activeAnnoTab === 'unannotated' && item.annoStatus !== '未标注') return false;
       if (activeAnnoTab === 'processing' && item.annoStatus !== '标注中') return false;
-      if (activeAnnoTab === 'auto_processing' && item.annoStatus !== '自动标注处理中') return false;
       if (activeAnnoTab === 'annotated' && item.annoStatus !== '已标注') return false;
       if (activeAnnoTab === 'to_verify' && item.annoStatus !== '待校验') return false;
 
       const idMatch = !filterId || String(item.id).includes(filterId);
       const annoMatch = !filterAnnoStatus || item.annoStatus === filterAnnoStatus;
       const auditMatch = !filterAuditStatus || item.auditStatus === filterAuditStatus;
-      const errorMatch = filterError === null || filterError === undefined || (filterError === '是' ? item.hasError : !item.hasError);
-      return idMatch && annoMatch && auditMatch && errorMatch;
+      return idMatch && annoMatch && auditMatch;
     });
 
     // Sort: '可标注' (annoStatus !== '已标注' && annoStatus !== '待校验') at the top, '已标注'/'待校验' at the bottom
@@ -416,7 +414,7 @@ export default function AnnotationAuditEpisodeListPage() {
       if (aIsFinished && !bIsFinished) return 1;
       return a.id - b.id;
     });
-  }, [episodes, filterId, filterAnnoStatus, filterAuditStatus, filterError, activeAnnoTab]);
+  }, [episodes, filterId, filterAnnoStatus, filterAuditStatus, activeAnnoTab]);
 
   // Stats
   const totalCount = episodes.length;
@@ -465,14 +463,6 @@ export default function AnnotationAuditEpisodeListPage() {
       align: 'center',
       render: (s, r) => {
         const config = annoStatusConfig[s] || { color: 'default' };
-        if (s === '自动标注处理中') {
-          return (
-            <Space size={4}>
-              <Tag color="orange" style={{ borderRadius: 4, margin: 0 }}>{s}</Tag>
-              <Button size="small" type="text" style={{ fontSize: 10, padding: '0 4px', height: 20 }} onClick={() => message.loading('正在重试...')}>重试</Button>
-            </Space>
-          );
-        }
         return (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Badge status={config.color} text={s} />
@@ -624,143 +614,135 @@ export default function AnnotationAuditEpisodeListPage() {
           </Card>
         </div>
 
-        <div style={{ padding: '16px 24px' }}>
-          {/* Filters */}
-          <div style={{ marginBottom: 16 }}>
-            <Form layout="inline">
-              <Row gutter={[12, 12]} style={{ width: '100%' }}>
-                <Col><Input placeholder="ID" style={{ width: 140 }} value={filterId} onChange={e => setFilterId(e.target.value)} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear /></Col>
-                <Col>
-                  <Select placeholder="标注状态" style={{ width: 160 }} allowClear value={filterAnnoStatus} onChange={setFilterAnnoStatus}
-                    options={['已标注', '未标注', '待校验', '标注中', '自动标注处理中'].map(s => ({ label: s, value: s }))}
-                  />
-                </Col>
-                <Col>
-                  <Select placeholder="审核状态" style={{ width: 160 }} allowClear value={filterAuditStatus} onChange={setFilterAuditStatus}
-                    options={['未审核', '审核中', '通过', '不通过'].map(s => ({ label: s, value: s }))}
-                  />
-                </Col>
-                <Col>
-                  <Select placeholder="是否报错" style={{ width: 120 }} allowClear value={filterError} onChange={setFilterError}
-                    options={[{ label: '是', value: '是' }, { label: '否', value: '否' }]}
-                  />
-                </Col>
-                <Col>
-                  <Space>
-                    <Button type="primary" icon={<SearchOutlined />}>查询</Button>
-                    <Button icon={<ReloadOutlined />} onClick={() => { setFilterId(''); setFilterAnnoStatus(null); setFilterAuditStatus(null); setFilterError(null); setActiveAnnoTab('all'); }}>重置</Button>
-                  </Space>
-                </Col>
-              </Row>
-            </Form>
-          </div>
-
-          {/* Interactive Floating Selection alert bar */}
-          {selectedRowKeys.length > 0 && (
-            <div style={{
-              background: '#e6f4ff',
-              border: '1px solid #91caff',
-              padding: '12px 18px',
-              borderRadius: 8,
-              marginBottom: 16,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-            }}>
-              <Space size={12}>
-                <span style={{ fontSize: 13, color: '#0958d9', fontWeight: 600 }}>
-                  已选中 {selectedRowKeys.length} 个实例数据
-                </span>
-                <span style={{ fontSize: 12, color: '#4b5563' }}>
-                  (其中已标注: {selectedRows.filter(r => r.annoStatus === '已标注').length} 个，未标注: {selectedRows.filter(r => r.annoStatus !== '已标注').length} 个)
-                </span>
-              </Space>
-              <Space>
-                <Button 
-                  type="primary" 
-                  size="middle" 
-                  icon={<CopyOutlined />} 
-                  style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
-                  onClick={handleOpenBatchModal}
-                >
-                  批量时序适配标注
-                </Button>
-                <Button 
-                  size="middle" 
-                  danger
-                  icon={<UndoOutlined />}
-                  onClick={handleBatchReset}
-                >
-                  批量清除标注
-                </Button>
-                <Button 
-                  type="primary"
-                  size="middle" 
-                  icon={<CheckCircleOutlined />}
-                  style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 'bold' }}
-                  onClick={handleBatchAuditPass}
-                >
-                  批量一键通过
-                </Button>
-                <Button 
-                  type="primary"
-                  size="middle" 
-                  danger
-                  icon={<CloseOutlined />}
-                  style={{ fontWeight: 'bold' }}
-                  onClick={handleBatchAuditReject}
-                >
-                  批量一键驳回
-                </Button>
-                <Button 
-                  size="middle"
-                  type="text"
-                  onClick={() => { setSelectedRowKeys([]); setSelectedRows([]); }}
-                >
-                  取消选择
-                </Button>
-              </Space>
-            </div>
-          )}
-
-          {/* Table wrapped in Card with status tabs */}
-          <Card
-            tabList={[
-              { key: 'all', tab: `全部 (${episodes.length})` },
-              { key: 'annotated', tab: `已标注 (${episodes.filter(e => e.annoStatus === '已标注').length})` },
-              { key: 'unannotated', tab: `未标注 (${episodes.filter(e => e.annoStatus === '未标注').length})` },
-              { key: 'to_verify', tab: `待校验 (${episodes.filter(e => e.annoStatus === '待校验').length})` },
-              { key: 'processing', tab: `标注中 (${episodes.filter(e => e.annoStatus === '标注中').length})` },
-              { key: 'auto_processing', tab: `自动标注处理中 (${episodes.filter(e => e.annoStatus === '自动标注处理中').length})` }
-            ]}
-            activeTabKey={activeAnnoTab}
-            onTabChange={(key) => setActiveAnnoTab(key)}
-            styles={{ body: { padding: 0 } }}
-            style={{ borderRadius: 8, border: '1px solid #f0f0f0' }}
-          >
-            <Table 
-              rowSelection={{
-                selectedRowKeys,
-                onChange: (keys, rows) => {
-                  setSelectedRowKeys(keys);
-                  setSelectedRows(rows);
-                }
-              }}
-              columns={columns} 
-              dataSource={filteredData} 
-              pagination={{ 
-                pageSize: 20, 
-                showTotal: (t) => `共 ${t} 条`,
-                showSizeChanger: true,
-                pageSizeOptions: ['10', '20', '50']
-              }}
-              size="small"
-              bordered
-              scroll={{ x: 1600 }}
-            />
-          </Card>
+        {/* Filters */}
+        <div style={{ marginBottom: 16 }}>
+          <Form layout="inline">
+            <Row gutter={[12, 12]} style={{ width: '100%' }}>
+              <Col><Input placeholder="ID" style={{ width: 140 }} value={filterId} onChange={e => setFilterId(e.target.value)} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear /></Col>
+              <Col>
+                <Select placeholder="标注状态" style={{ width: 160 }} allowClear value={filterAnnoStatus} onChange={setFilterAnnoStatus}
+                  options={['已标注', '未标注', '待校验', '标注中'].map(s => ({ label: s, value: s }))}
+                />
+              </Col>
+              <Col>
+                <Select placeholder="审核状态" style={{ width: 160 }} allowClear value={filterAuditStatus} onChange={setFilterAuditStatus}
+                  options={['未审核', '审核中', '通过', '不通过'].map(s => ({ label: s, value: s }))}
+                />
+              </Col>
+              <Col>
+                <Space>
+                  <Button type="primary" icon={<SearchOutlined />}>查询</Button>
+                  <Button icon={<ReloadOutlined />} onClick={() => { setFilterId(''); setFilterAnnoStatus(null); setFilterAuditStatus(null); setActiveAnnoTab('all'); }}>重置</Button>
+                </Space>
+              </Col>
+            </Row>
+          </Form>
         </div>
+
+        {/* Interactive Floating Selection alert bar */}
+        {selectedRowKeys.length > 0 && (
+          <div style={{
+            background: '#e6f4ff',
+            border: '1px solid #91caff',
+            padding: '12px 18px',
+            borderRadius: 8,
+            marginBottom: 16,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+          }}>
+            <Space size={12}>
+              <span style={{ fontSize: 13, color: '#0958d9', fontWeight: 600 }}>
+                已选中 {selectedRowKeys.length} 个实例数据
+              </span>
+              <span style={{ fontSize: 12, color: '#4b5563' }}>
+                (其中已标注: {selectedRows.filter(r => r.annoStatus === '已标注').length} 个，未标注: {selectedRows.filter(r => r.annoStatus !== '已标注').length} 个)
+              </span>
+            </Space>
+            <Space>
+              <Button 
+                type="primary" 
+                size="middle" 
+                icon={<CopyOutlined />} 
+                style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
+                onClick={handleOpenBatchModal}
+              >
+                批量时序适配标注
+              </Button>
+              <Button 
+                size="middle" 
+                danger
+                icon={<UndoOutlined />}
+                onClick={handleBatchReset}
+              >
+                批量清除标注
+              </Button>
+              <Button 
+                type="primary"
+                size="middle" 
+                icon={<CheckCircleOutlined />}
+                style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 'bold' }}
+                onClick={handleBatchAuditPass}
+              >
+                批量一键通过
+              </Button>
+              <Button 
+                type="primary"
+                size="middle" 
+                danger
+                icon={<CloseOutlined />}
+                style={{ fontWeight: 'bold' }}
+                onClick={handleBatchAuditReject}
+              >
+                批量一键驳回
+              </Button>
+              <Button 
+                size="middle"
+                type="text"
+                onClick={() => { setSelectedRowKeys([]); setSelectedRows([]); }}
+              >
+                取消选择
+              </Button>
+            </Space>
+          </div>
+        )}
+
+        {/* Table Section */}
+        <Card
+          title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>数据列表</span>}
+          tabList={[
+            { key: 'all', tab: `全部 (${episodes.length})` },
+            { key: 'annotated', tab: `已标注 (${episodes.filter(e => e.annoStatus === '已标注').length})` },
+            { key: 'unannotated', tab: `未标注 (${episodes.filter(e => e.annoStatus === '未标注').length})` },
+            { key: 'to_verify', tab: `待校验 (${episodes.filter(e => e.annoStatus === '待校验').length})` },
+            { key: 'processing', tab: `标注中 (${episodes.filter(e => e.annoStatus === '标注中').length})` },
+          ]}
+          activeTabKey={activeAnnoTab}
+          onTabChange={(key) => setActiveAnnoTab(key)}
+          styles={{ body: { padding: 0 } }}
+          style={{ borderRadius: 8 }}
+        >
+          <Table 
+            rowSelection={{
+              selectedRowKeys,
+              onChange: (keys, rows) => {
+                setSelectedRowKeys(keys);
+                setSelectedRows(rows);
+              }
+            }}
+            columns={columns} 
+            dataSource={filteredData} 
+            pagination={{ 
+              pageSize: 20, 
+              showTotal: (t) => `共 ${t} 条`,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50']
+            }}
+            size="small"
+            scroll={{ x: 1600 }}
+          />
+        </Card>
       </div>
 
       {/* ----------------------------------------------------
