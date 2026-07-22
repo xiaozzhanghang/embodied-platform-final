@@ -116,14 +116,14 @@ export default function TaskCenterPage() {
       title: '任务名称', 
       dataIndex: 'name', 
       key: 'name', 
-      width: 260, 
+      width: 320, 
       render: (text, record) => (
-        <Space direction="vertical" size={2}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
           <Text strong style={{ fontSize: 13 }}>{text}</Text>
-          <Tag color={record.taskType === 'asset' ? 'purple' : 'blue'} bordered={false} style={{ fontSize: 11, width: 'fit-content' }}>
-            {record.taskType === 'asset' ? '📦 关联数据资产' : '📷 需要采集数据'}
+          <Tag color={record.taskType === 'asset' ? 'purple' : 'blue'} bordered={false} style={{ margin: 0, fontSize: 12, flexShrink: 0 }}>
+            {record.taskType === 'asset' ? '数据资产' : '数据采集'}
           </Tag>
-        </Space>
+        </div>
       )
     },
     { title: '标注类型', dataIndex: 'annoType', key: 'annoType', width: 120 },
