@@ -683,7 +683,6 @@ function CreateTaskContent() {
                     <Col span={8}><Form.Item label="任务名称" name="name" required><Input placeholder="请输入任务名称" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} placeholder="En Name" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="设备类型" name="deviceType" required><Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
                   </Row>
@@ -691,12 +690,17 @@ function CreateTaskContent() {
 
                 <Card title="采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
                   <Row gutter={24} style={{ marginBottom: 16 }}>
-                    <Col span={10}>
+                    <Col span={8}>
+                      <Form.Item label="采集模式" name="mode" required initialValue="Real">
+                        <Select placeholder="请选择采集模式" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
                       <Form.Item label="设备类型" name="deviceType" required initialValue="UMI_Orin">
                         <Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} />
                       </Form.Item>
                     </Col>
-                    <Col span={10}>
+                    <Col span={8}>
                       <Form.Item label="遥操类型" name="teleType" required>
                         <Select placeholder="请选择遥操类型" options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} />
                       </Form.Item>
@@ -803,10 +807,112 @@ function CreateTaskContent() {
                     <Col span={8}><Form.Item label="任务名称" name="name" required><Input placeholder="请输入任务名称" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} placeholder="En Name" /></Form.Item></Col>
                     <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="设备类型" name="deviceType" required><Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
                     <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
                   </Row>
+                </Card>
+
+                <Card title="设备配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+                  <Row gutter={24} style={{ marginBottom: 16 }}>
+                    <Col span={12}>
+                      <Form.Item label="设备类型" name="deviceType" required initialValue="UMI_Orin">
+                        <Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="遥操类型" name="teleType" required>
+                        <Select placeholder="请选择遥操类型" options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                    <div style={{ fontWeight: 600, color: '#262626', width: 70, paddingTop: 6, flexShrink: 0 }}>设备部件</div>
+                    <div style={{ flex: 1, overflowX: 'auto' }}>
+                      <Table 
+                        dataSource={availableParts} 
+                        columns={[
+                          { title: '部件名称', dataIndex: 'name', key: 'name', width: 170, ellipsis: true },
+                          { title: '部件类型', dataIndex: 'type', key: 'type', width: 180, ellipsis: true },
+                          { 
+                            title: '分辨率', key: 'resolution', width: 130,
+                            render: (text, r) => (
+                              <Select 
+                                size="small"
+                                defaultValue={r.resolution || '1280x960'} 
+                                style={{ width: '100%' }}
+                                options={[
+                                  { value: '1280x960', label: '1280x960' },
+                                  { value: '1280x1024', label: '1280x1024' },
+                                  { value: '1920x1080', label: '1920x1080' },
+                                  { value: '3840x2160', label: '3840x2160' }
+                                ]} 
+                              />
+                            )
+                          },
+                          { 
+                            title: '帧率', key: 'fps', width: 100,
+                            render: (text, r) => (
+                              <Select 
+                                size="small"
+                                defaultValue={r.fps || '30fps'} 
+                                style={{ width: '100%' }}
+                                options={[
+                                  { value: '15fps', label: '15fps' },
+                                  { value: '30fps', label: '30fps' },
+                                  { value: '60fps', label: '60fps' }
+                                ]} 
+                              />
+                            )
+                          },
+                          { 
+                            title: '图像质量', key: 'quality', width: 95,
+                            render: (text, r) => (
+                              <Select 
+                                size="small"
+                                defaultValue={r.quality || '60'} 
+                                style={{ width: '100%' }}
+                                options={[
+                                  { value: '60', label: '60' },
+                                  { value: '80', label: '80' },
+                                  { value: '100', label: '100' }
+                                ]} 
+                              />
+                            )
+                          },
+                          { 
+                            title: 'FOV', key: 'fov', width: 100,
+                            render: (text, r) => (
+                              <Select 
+                                size="small"
+                                defaultValue={r.fov || 'none'} 
+                                style={{ width: '100%' }}
+                                options={[
+                                  { value: 'none', label: 'none' },
+                                  { value: '90°', label: '90°' },
+                                  { value: '120°', label: '120°' }
+                                ]} 
+                              />
+                            )
+                          },
+                          { 
+                            title: '深度&红外信息', key: 'depth', width: 260,
+                            render: (text, r) => (
+                              <Radio.Group defaultValue={r.depth || 'none'} size="small" style={{ fontSize: 12 }}>
+                                <Radio value="none">都不采集</Radio>
+                                <Radio value="infrared">红外信息</Radio>
+                                <Radio value="depth">深度信息</Radio>
+                              </Radio.Group>
+                            )
+                          },
+                        ]} 
+                        rowSelection={{ type: 'checkbox', selectedRowKeys: selectedPartKeys, onChange: setSelectedPartKeys }} 
+                        pagination={false} 
+                        size="small" 
+                        bordered 
+                      />
+                    </div>
+                  </div>
                 </Card>
 
                 <Card 
