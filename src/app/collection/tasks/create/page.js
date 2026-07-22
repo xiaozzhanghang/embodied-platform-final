@@ -1009,7 +1009,7 @@ function CreateTaskContent() {
                 </div>
               )}
 
-               {taskFormType === 'collect' ? (
+               {taskFormType === 'collect' && (
                  <>
                    <Row gutter={24} style={{marginTop:24}}>
                       <Col span={12}><Form.Item label="计划采集数量" name="count"><InputNumber style={{width:'100%'}} placeholder="请输入本次任务计划采集的 Episode 动作序列数量" /></Form.Item></Col>
@@ -1018,44 +1018,6 @@ function CreateTaskContent() {
                    <Row gutter={24}>
                       <Col span={12}><Form.Item label="场景物理初始状态" name="initState"><TextArea rows={4} placeholder="描述机器人和操作对象在数采启动前的物理初始要求" /></Form.Item></Col>
                       <Col span={12}><Form.Item label="英文物理初始状态"><TextArea rows={4} placeholder="Initial physical state description in English" /></Form.Item></Col>
-                   </Row>
-                 </>
-               ) : (
-                 <>
-                   {/* Annotation parameters configuration for asset mode */}
-                   <Divider style={{ margin: '24px 0' }} />
-                   <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 16 }}>标注工作流与审核参数预设</Text>
-                   <Row gutter={24}>
-                     <Col span={12}>
-                       <Form.Item label="标注任务类型" required defaultValue="frame_range">
-                         <Radio.Group defaultValue="frame_range">
-                           <Radio value="frame_range">动作帧区间标注</Radio>
-                           <Radio value="keyframe">关键帧精细标注</Radio>
-                           <Radio value="3d_box">3D 边界框标注</Radio>
-                         </Radio.Group>
-                       </Form.Item>
-                     </Col>
-                     <Col span={12}>
-                       <Form.Item label="首尾对齐校验要求" valuePropName="checked">
-                         <Switch defaultChecked checkedChildren="启用强制校验" unCheckedChildren="关闭强校验" />
-                       </Form.Item>
-                     </Col>
-                   </Row>
-                   <Row gutter={24}>
-                     <Col span={24}>
-                       <Form.Item label="质检质量校验必检项">
-                         <Checkbox.Group 
-                           defaultValue={['1', '2']}
-                           style={{ display: 'flex', gap: 24 }}
-                           options={[
-                             { label: '动作切分边界无重叠', value: '1' },
-                             { label: '语义标签和动作段精确一致', value: '2' },
-                             { label: '环境光照异常抛出异常', value: '3' },
-                             { label: '末端轨迹平滑度计算合格', value: '4' }
-                           ]}
-                         />
-                       </Form.Item>
-                     </Col>
                    </Row>
                  </>
                )}
