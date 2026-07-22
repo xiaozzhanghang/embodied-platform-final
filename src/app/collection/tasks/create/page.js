@@ -671,9 +671,10 @@ function CreateTaskContent() {
               </Row>
             </Card>
 
-            {/* 2. Placed DIRECTLY BELOW 基础信息: 任务模式类型 (单选 Radio 组形式) */}
-            <Card title="任务模式" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {/* Merged Card: 设备与采集配置 */}
+            <Card title="设备与采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+              {/* Top Row: 任务模式类型 Radio 单选组 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 16, borderBottom: '1px dashed #e8e8e8' }}>
                 <span style={{ fontWeight: 600, color: '#262626', width: 110, flexShrink: 0 }}>
                   <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>任务模式类型:
                 </span>
@@ -689,12 +690,10 @@ function CreateTaskContent() {
                   <Radio value="asset">关联数据资产 / 外部导入</Radio>
                 </Radio.Group>
               </div>
-            </Card>
 
-            {/* 3. Dynamic Card per mode */}
-            {taskFormType === 'collect' ? (
-              <>
-                <Card title="采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+              {/* Dynamic Content based on taskFormType */}
+              {taskFormType === 'collect' ? (
+                <>
                   <Row gutter={24} style={{ marginBottom: 16 }}>
                     <Col span={8}>
                       <Form.Item label="采集模式" name="mode" required initialValue="Real">
@@ -800,20 +799,17 @@ function CreateTaskContent() {
                       />
                     </div>
                   </div>
-                </Card>
               </>
             ) : (
               <>
                 {/* Render Channel / Asset Data Section for Asset Mode */}
-
-                <Card title="设备配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
-                  <Row gutter={24} style={{ marginBottom: 16 }}>
-                    <Col span={12}>
-                      <Form.Item label="设备类型" name="deviceType" required initialValue="UMI_Orin">
-                        <Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} />
-                      </Form.Item>
-                    </Col>
-                  </Row>
+                <Row gutter={24} style={{ marginBottom: 16 }}>
+                  <Col span={12}>
+                    <Form.Item label="设备类型" name="deviceType" required initialValue="UMI_Orin">
+                      <Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} />
+                    </Form.Item>
+                  </Col>
+                </Row>
 
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
                     <div style={{ fontWeight: 600, color: '#262626', width: 70, paddingTop: 6, flexShrink: 0 }}>设备部件</div>
@@ -902,20 +898,13 @@ function CreateTaskContent() {
                       />
                     </div>
                   </div>
-                </Card>
 
-                <Card 
-                  title={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontWeight: 600, fontSize: 14 }}>
                       <LinkOutlined style={{ color: '#1677ff' }} />
                       <span>关联数据资产目录数据</span>
                     </div>
-                  } 
-                  bordered={false} 
-                  styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} 
-                  style={{ marginBottom: 24, borderRadius: 8 }}
-                >
-                  <Row gutter={16}>
+                    <Row gutter={16}>
                     <Col span={16}>
                       <Form.Item 
                         name="dataSource" 
@@ -992,9 +981,10 @@ function CreateTaskContent() {
                       />
                     </div>
                   )}
-                </Card>
+                </div>
               </>
             )}
+            </Card>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
               <Button type="primary" size="large" style={{ width: 160 }} onClick={() => setCurrentStep(1)}>下一步</Button>
