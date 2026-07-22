@@ -639,7 +639,7 @@ function CreateTaskContent() {
       <Form form={form} layout="vertical" onFinish={(values) => {
         if (currentStep === 0) setCurrentStep(1);
         else {
-          message.success(mode === 'edit' ? '任务修改成功' : taskFormType === 'collect' ? '任务派发成功' : '任务关联并成功建立标注审核流');
+          message.success(mode === 'edit' ? '任务修改成功' : '任务发布成功');
           router.push('/collection/tasks');
         }
       }}>
@@ -1200,7 +1200,7 @@ function CreateTaskContent() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 32 }}>
               <Button size="large" style={{ width: 120 }} onClick={() => setCurrentStep(0)}>上一步</Button>
               <Button type="primary" size="large" style={{ width: 160 }} htmlType="submit">
-                {taskFormType === 'collect' ? '发布采集任务' : '建立标注审核流'}
+                发布任务
               </Button>
             </div>
           </>
