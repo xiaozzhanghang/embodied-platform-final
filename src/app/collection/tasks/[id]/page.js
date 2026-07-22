@@ -181,10 +181,6 @@ export default function TaskInstancePage() {
         <Button type="link" icon={<ArrowLeftOutlined />} onClick={() => router.push('/collection/tasks')} style={{ padding: 0 }}>
           返回任务列表
         </Button>
-        <Radio.Group value={taskMode} onChange={(e) => setTaskMode(e.target.value)} buttonStyle="solid" size="small">
-          <Radio.Button value="collect">📷 需要采集数据任务类型</Radio.Button>
-          <Radio.Button value="asset">📦 关联数据资产任务类型</Radio.Button>
-        </Radio.Group>
       </div>
 
       {/* High-Fidelity Header Card */}
@@ -246,20 +242,6 @@ export default function TaskInstancePage() {
                   <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>场景分类</div>
                   <div style={{ fontWeight: 600, color: '#262626' }}>Supermarket (超市场景)</div>
                 </Col>
-                <Col span={6}>
-                  <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>默认标注员</div>
-                  <div style={{ fontWeight: 600, color: '#262626' }}>李四</div>
-                </Col>
-                <Col span={6}>
-                  <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>默认审核员</div>
-                  <div style={{ fontWeight: 600, color: '#262626' }}>王五</div>
-                </Col>
-                {taskMode === 'collect' && (
-                  <Col span={6}>
-                    <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>默认采集员</div>
-                    <div style={{ fontWeight: 600, color: '#262626' }}>张三</div>
-                  </Col>
-                )}
                 <Col span={6}>
                   <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>创建时间</div>
                   <div style={{ fontWeight: 600, color: '#262626' }}>2026-03-10 14:22</div>
