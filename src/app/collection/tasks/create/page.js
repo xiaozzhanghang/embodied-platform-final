@@ -201,6 +201,7 @@ function CreateTaskContent() {
     ]
   });
 
+  const [dataSourceType, setDataSourceType] = useState('galbot');
   const [modalVisible, setModalVisible] = useState(false);
   const [currentField, setCurrentField] = useState(null); 
   const [newOptionLabel, setNewOptionLabel] = useState('');
@@ -624,23 +625,6 @@ function CreateTaskContent() {
             </Title>
           </div>
         </div>
-        <Radio.Group 
-          value={taskFormType} 
-          onChange={e => {
-            setTaskFormType(e.target.value);
-            setCurrentStep(0);
-          }} 
-          buttonStyle="solid"
-          size="medium"
-        >
-          <Radio.Button value="collect">
-            <Space><VideoCameraOutlined /> 需要采集数据</Space>
-          </Radio.Button>
-          <Radio.Button value="asset">
-            <Space><DatabaseOutlined /> 关联数据资产</Space>
-          </Radio.Button>
-        </Radio.Group>
-      </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32, padding: '0 100px' }}>
         <Steps current={currentStep} labelPlacement="horizontal" style={{ width: '100%', maxWidth: 800 }}
@@ -672,21 +656,81 @@ function CreateTaskContent() {
               style={{ marginBottom: 24, borderRadius: 8 }}
             />
 
-            {/* Render Step 0 Form for Collect Mode */}
-            {taskFormType === 'collect' ? (
-              <>
-                <Card title="基础信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
-                  <Row gutter={24}>
-                    <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="关联任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} popupRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="任务名称" name="name" required><Input placeholder="请输入任务名称" /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} placeholder="En Name" /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
-                  </Row>
-                </Card>
+            <Alert 
+              message={
+                taskFormType === 'collect' 
+                  ? '【数据数采模式】当前形式将生成针对具体物理设备/仿真场景的采集指令，派发给采集员执行。'
+                  : '【资产关联模式】直接在系统已有的数据资产包（如已录制视频、已上传轨迹）中选择数据，建立标注审核待办。'
+              } 
+              type="info" 
+              showIcon 
+              icon={<InfoCircleOutlined />}
+              style={{ marginBottom: 24, borderRadius: 8 }}
+            />
+
+            {/* 1. Card 1: 基础信息 (Top Fixed Card) */}
+            <Card title="基础信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+              <Row gutter={24}>
+                <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="关联任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} popupRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="任务名称" name="name" required><Input placeholder="请输入任务名称" /></Form.Item></Col>
+                <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} placeholder="En Name" /></Form.Item></Col>
+                <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
+                <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
+              </Row>
+            </Card>
+
+            {/* 2. Placed DIRECTLY BELOW 基础信息: 任务模式与采集数据来源 */}
+            <Card title="任务模式与数据来源" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+              <div style={{ marginBottom: 20 }}>
+                <Radio.Group 
+                  value={taskFormType} 
+                  onChange={e => {
+                    const val = e.target.value;
+                    setTaskFormType(val);
+                    setDataSourceType(val === 'collect' ? 'galbot' : 'human_video');
+                  }} 
+                  buttonStyle="solid"
+                  size="medium"
+                >
+                  <Radio.Button value="collect">
+                    <Space><VideoCameraOutlined /> 需要采集数据</Space>
+                  </Radio.Button>
+                  <Radio.Button value="asset">
+                    <Space><DatabaseOutlined /> 关联数据资产 / 外部导入</Space>
+                  </Radio.Button>
+                </Radio.Group>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <span style={{ fontWeight: 600, color: '#262626', width: 110, flexShrink: 0 }}>
+                  <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>采集数据来源:
+                </span>
+                <Radio.Group 
+                  value={dataSourceType} 
+                  onChange={e => {
+                    const val = e.target.value;
+                    setDataSourceType(val);
+                    if (['human_video', 'sim_import'].includes(val)) {
+                      setTaskFormType('asset');
+                    } else {
+                      setTaskFormType('collect');
+                    }
+                  }}
+                  style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}
+                >
+                  <Radio value="galbot">GALBOT G1/S1</Radio>
+                  <Radio value="human_video">人类视频导入</Radio>
+                  <Radio value="ego_gopro">ego-gopro</Radio>
+                  <Radio value="ego_iphone">ego-iphone</Radio>
+                  <Radio value="umi">UMI数据采集</Radio>
+                  <Radio value="humanoid">人形机器人采集</Radio>
+                  <Radio value="sim_import">仿真数据导入</Radio>
+                </Radio.Group>
+              </div>
+            </Card>
 
                 <Card title="采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
                   <Row gutter={24} style={{ marginBottom: 16 }}>
@@ -798,19 +842,7 @@ function CreateTaskContent() {
               </>
             ) : (
               <>
-                {/* Render Step 0 Form for Data Asset Linkage Mode */}
-                <Card title="基础信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
-                  <Row gutter={24}>
-                    <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="关联任务书" name="sop"><Select placeholder="请选择" options={optionsMap.sop} popupRender={m => renderDropdown(m, 'sop')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="任务名称" name="name" required><Input placeholder="请输入任务名称" /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="英文名称" name="enName"><Input suffix={<QuestionCircleOutlined />} placeholder="En Name" /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="任务用途" name="usage" required><Select placeholder="请选择" options={optionsMap.usage} popupRender={m => renderDropdown(m, 'usage')} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
-                    <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
-                  </Row>
-                </Card>
+                {/* Render Channel / Asset Data Section for Asset Mode */}
 
                 <Card title="设备配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
                   <Row gutter={24} style={{ marginBottom: 16 }}>
