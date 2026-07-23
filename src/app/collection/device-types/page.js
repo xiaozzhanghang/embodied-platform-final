@@ -174,7 +174,149 @@ const initialRobotData = [
   },
 ];
 
+const initialRuleData = [
+  {
+    key: 'rule-1',
+    ruleName: '视觉相机高帧率同步规则',
+    targetPart: 'Camera',
+    targetPartName: '头部相机',
+    fpsRange: '30 ± 2 fps',
+    syncThreshold: '≤ 5 ms',
+    lossTolerance: '≤ 0.1%',
+    action: '自动插补并告警',
+    status: true,
+    regTime: '2026-06-01',
+  },
+  {
+    key: 'rule-2',
+    ruleName: '机械臂关节轨迹对齐规则',
+    targetPart: 'RobotArm',
+    targetPartName: '双臂机械臂_G2',
+    fpsRange: '50 ± 1 fps',
+    syncThreshold: '≤ 2 ms',
+    lossTolerance: '0%',
+    action: '阻断采集并中断',
+    status: true,
+    regTime: '2026-06-05',
+  },
+  {
+    key: 'rule-3',
+    ruleName: '灵巧手高频触觉采集校验',
+    targetPart: 'DexterousHand',
+    targetPartName: '灵巧手_G1.16',
+    fpsRange: '100 ± 5 fps',
+    syncThreshold: '≤ 3 ms',
+    lossTolerance: '≤ 0.2%',
+    action: '告警并记录日志',
+    status: true,
+    regTime: '2026-06-10',
+  },
+  {
+    key: 'rule-4',
+    ruleName: '底层控制箱心跳对齐规则',
+    targetPart: 'ControlUnit',
+    targetPartName: 'XCU 底层控制箱',
+    fpsRange: '20 ± 1 fps',
+    syncThreshold: '≤ 10 ms',
+    lossTolerance: '≤ 0.5%',
+    action: '降级记录',
+    status: false,
+    regTime: '2026-06-15',
+  },
+];
+
 // ─── Components ─────────────────────────────────────────────────────────────
+
+function RuleTable({ data, onEdit, onDelete }) {
+  const [selectedKeys, setSelectedKeys] = useState([]);
+
+  const columns = [
+    {
+      title: '规则名称',
+      dataIndex: 'ruleName',
+      key: 'ruleName',
+      width: 220,
+      render: (text) => (
+        <Space>
+          <LineHeightOutlined style={{ color: '#52c41a' }} />
+          <Text strong style={{ fontSize: 13 }}>{text}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: '适用部件',
+      dataIndex: 'targetPartName',
+      key: 'targetPartName',
+      width: 140,
+      render: (text, r) => <Tag color="blue">{text || r.targetPart}</Tag>,
+    },
+    {
+      title: '帧率要求 (FPS)',
+      dataIndex: 'fpsRange',
+      key: 'fpsRange',
+      width: 130,
+      render: (text) => <Tag color="cyan">{text}</Tag>,
+    },
+    {
+      title: '时间戳同步阈值',
+      dataIndex: 'syncThreshold',
+      key: 'syncThreshold',
+      width: 140,
+      render: (text) => <Tag color="purple">{text}</Tag>,
+    },
+    {
+      title: '丢包容忍率',
+      dataIndex: 'lossTolerance',
+      key: 'lossTolerance',
+      width: 120,
+      render: (text) => <Tag color="orange">{text}</Tag>,
+    },
+    {
+      title: '校验动作',
+      dataIndex: 'action',
+      key: 'action',
+      width: 150,
+      render: (text) => <Tag color={text.includes('阻断') ? 'red' : 'gold'}>{text}</Tag>,
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'regTime',
+      key: 'regTime',
+      width: 120,
+    },
+    {
+      title: '操作',
+      key: 'action',
+      fixed: 'right',
+      width: 160,
+      render: (_, record) => (
+        <Space size="middle">
+          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => onEdit(record)}>
+            编辑
+          </Button>
+          <Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: 0 }} onClick={() => onDelete(record.key)}>
+            删除
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <Table
+      rowSelection={{
+        type: 'checkbox',
+        selectedRowKeys: selectedKeys,
+        onChange: setSelectedKeys,
+      }}
+      columns={columns}
+      dataSource={data}
+      scroll={{ x: 1100 }}
+      pagination={{ pageSize: 10 }}
+      size="middle"
+    />
+  );
+}
 
 function DeviceTable({ data, type, onEdit, partData }) {
   const router = useRouter();
@@ -283,11 +425,16 @@ export default function DeviceTypesPage() {
 
   const [robotData, setRobotData] = useState(initialRobotData);
   const [partData, setPartData] = useState(initialPartData);
+  const [ruleData, setRuleData] = useState(initialRuleData);
   
   // Modals state
   const [isPartModalOpen, setIsPartModalOpen] = useState(false);
   const [isRobotModalOpen, setIsRobotModalOpen] = useState(false);
+  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
+  const [robotModalTab, setRobotModalTab] = useState('config');
+  
   const [form] = Form.useForm();
+  const [ruleForm] = Form.useForm();
   const [editingItem, setEditingItem] = useState(null);
 
   const handleAddPart = () => {
@@ -299,8 +446,15 @@ export default function DeviceTypesPage() {
 
   const handleAddRobot = () => {
     setEditingItem(null);
+    setRobotModalTab('config');
     form.resetFields();
     setIsRobotModalOpen(true);
+  };
+
+  const handleAddRule = () => {
+    setEditingItem(null);
+    ruleForm.resetFields();
+    setIsRuleModalOpen(true);
   };
 
   const onPartSubmit = (values) => {
@@ -335,6 +489,23 @@ export default function DeviceTypesPage() {
     message.success(editingItem ? '修改成功' : '创建成功');
   };
 
+  const onRuleSubmit = (values) => {
+    const newRule = {
+      key: editingItem ? editingItem.key : `rule-${Date.now()}`,
+      ...values,
+      targetPartName: componentCategories.find(c => c.value === values.targetPart)?.label || values.targetPart,
+      regTime: new Date().toISOString().split('T')[0],
+      status: true,
+    };
+    if (editingItem) {
+      setRuleData(ruleData.map(r => r.key === editingItem.key ? newRule : r));
+    } else {
+      setRuleData([...ruleData, newRule]);
+    }
+    setIsRuleModalOpen(false);
+    message.success(editingItem ? '规则修改成功' : '规则创建成功');
+  };
+
   return (
     <MainLayout>
       <div style={{ marginBottom: 20 }}>
@@ -351,10 +522,10 @@ export default function DeviceTypesPage() {
           number={1}
           title="设备与部件类型切换"
           rules={[
-            "支持在‘设备类型’与‘部件类型’两个视图面板之间来回切换。",
+            "支持在‘设备类型’、‘部件类型’与‘数据规则’三个视图面板之间来回切换。",
             "切换页签时需清空当前表格选中的行 ID（selectedKeys），并触发对应的类型数据接口重新抓取。"
           ]}
-          remark="由于设备模型和零配件（部件）模型字段差异较大，切换页签会影响后续新增弹窗的表单布局。"
+          remark="由于设备模型、零配件模型及数据规则字段差异较大，切换页签会影响后续新增弹窗的表单布局。"
           style={{ width: '100%' }}
         >
           <Tabs
@@ -363,6 +534,7 @@ export default function DeviceTypesPage() {
             items={[
               { key: 'robot', label: '设备类型' },
               { key: 'part', label: '部件类型' },
+              { key: 'rule', label: '数据规则' },
             ]}
           />
         </SpecMarker>
@@ -372,7 +544,7 @@ export default function DeviceTypesPage() {
           number={2}
           title="条件检索过滤"
           rules={[
-            "支持对设备/部件类型的名称做模糊查询，状态进行下拉精确匹配，同时支持按创建人和更新时间过滤。",
+            "支持对设备/部件/数据规则的名称做模糊查询，状态进行下拉精确匹配，同时支持按创建人和更新时间过滤。",
             "各个表单项需配置‘一键清空（allowClear）’属性，以便研发调试快速重置检索条件。",
             "重置后表单数据恢复为初始空态，且自动加载无过滤条件的全局数据。"
           ]}
@@ -386,9 +558,9 @@ export default function DeviceTypesPage() {
             <Form layout="horizontal" labelCol={{ flex: '100px' }}>
               <Row gutter={24}>
                 <Col span={8}>
-                  <Form.Item label={activeTab === 'robot' ? "名称" : "名称"}>
+                  <Form.Item label={activeTab === 'robot' ? "名称" : activeTab === 'part' ? "名称" : "规则名称"}>
                     <Input 
-                      placeholder={activeTab === 'robot' ? "请输入设备类型" : "请输入部件类型"} 
+                      placeholder={activeTab === 'robot' ? "请输入设备类型" : activeTab === 'part' ? "请输入部件类型" : "请输入数据规则名称"} 
                       prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
                     />
                   </Form.Item>
@@ -420,7 +592,7 @@ export default function DeviceTypesPage() {
                     </Col>
                     <Col span={8}>
                       <Form.Item label="更新时间">
-                        <Input placeholder="请选择时间范围" allowClear />
+                        <Input placeholder="yyyy-mm-dd" allowClear />
                       </Form.Item>
                     </Col>
                   </Row>
@@ -453,7 +625,9 @@ export default function DeviceTypesPage() {
         }}>
           <Space size={8}>
             <div style={{ width: 4, height: 16, background: '#1890ff', borderRadius: 2 }} />
-            <Text strong style={{ fontSize: 15 }}>设备及部件列表</Text>
+            <Text strong style={{ fontSize: 15 }}>
+              {activeTab === 'robot' ? '设备类型列表' : activeTab === 'part' ? '部件类型列表' : '数据规则维护列表'}
+            </Text>
           </Space>
           <Space size={12}>
             <SpecMarker
@@ -705,77 +879,175 @@ export default function DeviceTypesPage() {
             </Col>
           </Row>
 
-          <Form.Item name="linkedParts" label="部件">
-            <Select 
-                mode="multiple" 
-                placeholder="请选择部件" 
-                maxTagCount="responsive"
-                options={partData.map(p => ({ label: p.name, value: p.key }))}
-            />
-          </Form.Item>
+          <Tabs 
+            activeKey={robotModalTab} 
+            onChange={setRobotModalTab} 
+            size="small"
+            style={{ marginBottom: 16 }}
+            items={[
+              { key: 'config', label: '部件与对齐配置' },
+              { key: 'rule', label: '数据规则维护' }
+            ]} 
+          />
 
-          <Form.Item label="已选部件">
-            <Form.Item shouldUpdate={(prevValues, curValues) => prevValues.linkedParts !== curValues.linkedParts} noStyle>
-                {({ getFieldValue, setFieldsValue }) => {
-                    const selectedIds = getFieldValue('linkedParts') || [];
-                    const dataSource = selectedIds.map(id => partData.find(p => p.key === id)).filter(Boolean);
-                    
-                    return (
-                        <Table 
-                            size="small"
-                            pagination={false}
-                            dataSource={dataSource}
-                            rowKey="key"
-                            bordered
-                            columns={[
-                                { 
-                                    title: '对齐点', 
-                                    key: 'alignment', 
-                                    width: 80, 
-                                    align: 'center',
-                                    render: (_, record) => (
-                                        <Form.Item name="alignmentPoint" noStyle>
-                                            <Radio.Group onChange={(e) => setFieldsValue({ alignmentPoint: record.key })}>
-                                                <Radio value={record.key} />
-                                            </Radio.Group>
-                                        </Form.Item>
-                                    )
-                                },
-                                { title: '部件名称', dataIndex: 'name', key: 'name' },
-                                { 
-                                    title: '部件类型', 
-                                    dataIndex: 'category', 
-                                    key: 'category',
-                                    render: (cat) => {
-                                        const found = componentCategories.find(c => c.value === cat);
-                                        return found ? found.label : cat;
+          {robotModalTab === 'config' ? (
+            <>
+              <Form.Item name="linkedParts" label="部件">
+                <Select 
+                    mode="multiple" 
+                    placeholder="请选择部件" 
+                    maxTagCount="responsive"
+                    options={partData.map(p => ({ label: p.name, value: p.key }))}
+                />
+              </Form.Item>
+
+              <Form.Item label="已选部件">
+                <Form.Item shouldUpdate={(prevValues, curValues) => prevValues.linkedParts !== curValues.linkedParts} noStyle>
+                    {({ getFieldValue, setFieldsValue }) => {
+                        const selectedIds = getFieldValue('linkedParts') || [];
+                        const dataSource = selectedIds.map(id => partData.find(p => p.key === id)).filter(Boolean);
+                        
+                        return (
+                            <Table 
+                                size="small"
+                                pagination={false}
+                                dataSource={dataSource}
+                                rowKey="key"
+                                bordered
+                                columns={[
+                                    { 
+                                        title: '对齐点', 
+                                        key: 'alignment', 
+                                        width: 70, 
+                                        align: 'center',
+                                        render: (_, record) => (
+                                            <Form.Item name="alignmentPoint" noStyle>
+                                                <Radio.Group onChange={(e) => setFieldsValue({ alignmentPoint: record.key })}>
+                                                    <Radio value={record.key} />
+                                                </Radio.Group>
+                                            </Form.Item>
+                                        )
+                                    },
+                                    { title: '部件名称', dataIndex: 'name', key: 'name', width: 140 },
+                                    { 
+                                        title: '部件类型', 
+                                        dataIndex: 'category', 
+                                        key: 'category',
+                                        width: 130,
+                                        render: (cat) => {
+                                            const found = componentCategories.find(c => c.value === cat);
+                                            return <Tag color="purple">{found ? found.label : cat}</Tag>;
+                                        }
+                                    },
+                                    {
+                                        title: '数据规则',
+                                        key: 'dataRule',
+                                        render: (_, record) => {
+                                            const matchedRule = ruleData.find(r => r.targetPart === record.category) || ruleData[0];
+                                            return (
+                                                <Space size={4} wrap>
+                                                    <Tag color="cyan">{matchedRule ? matchedRule.fpsRange : '30fps/≤5ms'}</Tag>
+                                                    <Tag color="blue">{matchedRule ? matchedRule.ruleName : '标准同步规则'}</Tag>
+                                                </Space>
+                                            );
+                                        }
+                                    },
+                                    { 
+                                        title: '操作', fixed: 'right',
+                                        key: 'action', 
+                                        width: 70, 
+                                        align: 'center',
+                                        render: (_, record) => (
+                                            <Button 
+                                                type="primary" 
+                                                danger 
+                                                icon={<DeleteOutlined />} 
+                                                size="small" 
+                                                shape="circle" 
+                                                onClick={() => {
+                                                    const newSelected = selectedIds.filter(id => id !== record.key);
+                                                    setFieldsValue({ linkedParts: newSelected });
+                                                }}
+                                            />
+                                        )
                                     }
-                                },
-                                { 
-                                    title: '操作', fixed: 'right',
-                                    key: 'action', 
-                                    width: 80, 
-                                    align: 'center',
-                                    render: (_, record) => (
-                                        <Button 
-                                            type="primary" 
-                                            danger 
-                                            icon={<DeleteOutlined />} 
-                                            size="small" 
-                                            shape="circle" 
-                                            onClick={() => {
-                                                const newSelected = selectedIds.filter(id => id !== record.key);
-                                                setFieldsValue({ linkedParts: newSelected });
-                                            }}
-                                        />
-                                    )
-                                }
-                            ]}
-                        />
-                    );
+                                ]}
+                            />
+                        );
+                    }}
+                </Form.Item>
+              </Form.Item>
+            </>
+          ) : (
+            <div style={{ marginBottom: 24 }}>
+              <Alert 
+                message="设备关联部件数据规则维护" 
+                description="以下规则将用于设备实例的数据采集质量校验、多通道时间戳插值以及丢包自动告警。" 
+                type="info" 
+                showIcon 
+                style={{ marginBottom: 16 }} 
+              />
+              <Form.Item shouldUpdate={(prevValues, curValues) => prevValues.linkedParts !== curValues.linkedParts} noStyle>
+                {({ getFieldValue }) => {
+                  const selectedIds = getFieldValue('linkedParts') || [];
+                  const dataSource = selectedIds.map(id => partData.find(p => p.key === id)).filter(Boolean);
+                  
+                  return (
+                    <Table 
+                      size="small"
+                      pagination={false}
+                      dataSource={dataSource}
+                      rowKey="key"
+                      bordered
+                      columns={[
+                        { title: '部件名称', dataIndex: 'name', key: 'name', width: 140 },
+                        { 
+                          title: '部件类型', 
+                          dataIndex: 'category', 
+                          key: 'category', 
+                          width: 120,
+                          render: (cat) => <Tag color="purple">{cat}</Tag>
+                        },
+                        {
+                          title: '绑定的数据规则',
+                          key: 'ruleName',
+                          render: (_, record) => {
+                            const matchedRule = ruleData.find(r => r.targetPart === record.category) || ruleData[0];
+                            return (
+                              <Select 
+                                size="small" 
+                                defaultValue={matchedRule?.key} 
+                                style={{ width: '100%' }}
+                                options={ruleData.map(r => ({ label: `${r.ruleName} (${r.fpsRange})`, value: r.key }))} 
+                              />
+                            );
+                          }
+                        },
+                        {
+                          title: '时间戳容忍',
+                          key: 'syncThreshold',
+                          width: 110,
+                          render: (_, record) => {
+                            const matchedRule = ruleData.find(r => r.targetPart === record.category) || ruleData[0];
+                            return <Tag color="purple">{matchedRule?.syncThreshold || '≤ 5 ms'}</Tag>;
+                          }
+                        },
+                        {
+                          title: '异常处理动作',
+                          key: 'action',
+                          width: 140,
+                          render: (_, record) => {
+                            const matchedRule = ruleData.find(r => r.targetPart === record.category) || ruleData[0];
+                            return <Tag color={matchedRule?.action?.includes('阻断') ? 'red' : 'gold'}>{matchedRule?.action || '自动告警'}</Tag>;
+                          }
+                        }
+                      ]}
+                    />
+                  );
                 }}
-            </Form.Item>
-          </Form.Item>
+              </Form.Item>
+            </div>
+          )}
 
           {/* 双端节点提示 */}
           <Form.Item shouldUpdate={(prev, cur) => prev.linkedParts !== cur.linkedParts} noStyle>
@@ -820,6 +1092,70 @@ export default function DeviceTypesPage() {
               </div>
               <Text type="secondary" style={{ fontSize: 12 }}>可上传最多5张单个不超过2MB且格式为jpg/jpeg/png/gif的图片</Text>
             </div>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* --- Data Rule Type Modal --- */}
+      <Modal
+        title={editingItem ? "编辑数据规则" : "新建数据规则"}
+        open={isRuleModalOpen}
+        onCancel={() => setIsRuleModalOpen(false)}
+        onOk={() => ruleForm.submit()}
+        width={720}
+        okText="确定"
+        cancelText="取消"
+      >
+        <Form form={ruleForm} layout="vertical" onFinish={onRuleSubmit} style={{ marginTop: 24 }}>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item name="ruleName" label="规则名称" rules={[{ required: true, message: '请输入规则名称' }]}>
+                <Input placeholder="例如: 视觉相机高帧率同步规则" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="targetPart" label="适用部件分类" rules={[{ required: true, message: '请选择适用部件分类' }]}>
+                <Select placeholder="请选择适用部件分类" options={componentCategories} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={24}>
+            <Col span={8}>
+              <Form.Item name="fpsRange" label="帧率要求 (FPS)" rules={[{ required: true, message: '请输入帧率要求' }]}>
+                <Input placeholder="例如: 30 ± 2 fps" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="syncThreshold" label="时间戳同步阈值" rules={[{ required: true, message: '请输入同步阈值' }]}>
+                <Input placeholder="例如: ≤ 5 ms" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="lossTolerance" label="丢包容忍率">
+                <Input placeholder="例如: ≤ 0.1%" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={24}>
+            <Col span={24}>
+              <Form.Item name="action" label="校验未通过处理动作" rules={[{ required: true }]}>
+                <Select 
+                  placeholder="请选择异常处理动作"
+                  options={[
+                    { label: '自动插补帧并发送告警日志', value: '自动插补并告警' },
+                    { label: '阻断数据采集并中断本次 Episode', value: '阻断采集并中断' },
+                    { label: '仅记录日志并打标异常帧', value: '告警并记录日志' },
+                    { label: '触发硬件重连与自动降级', value: '降级记录' },
+                  ]} 
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item name="description" label="规则描述/备注">
+            <Input.TextArea rows={3} placeholder="选填，描述该规则的适用场景及传感器防丢帧容忍范围" />
           </Form.Item>
         </Form>
       </Modal>

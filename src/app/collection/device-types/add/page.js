@@ -44,6 +44,16 @@ export default function AddRobotDevicePage() {
     { title: '部件名称', dataIndex: 'name', key: 'name' },
     { title: '部件类型', dataIndex: 'type', key: 'type' },
     { 
+      title: '数据规则', 
+      key: 'rule',
+      render: (_, r) => (
+        <Space size={4} wrap>
+          <Tag color="cyan">30fps/≤5ms</Tag>
+          <Tag color="purple">标准同步规则</Tag>
+        </Space>
+      )
+    },
+    { 
       title: '操作', fixed: 'right',
       key: 'action', 
       width: 80, 
