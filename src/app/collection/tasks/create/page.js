@@ -669,6 +669,42 @@ function CreateTaskContent() {
                 <Col span={8}><Form.Item label="场景分类" name="sceneCat" required><Select placeholder="请选择" options={optionsMap.sceneCat} popupRender={m => renderDropdown(m, 'sceneCat')} onChange={() => form.setFieldsValue({ subScene: undefined })} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="子场景分类" name="subScene"><Select placeholder="请先选择场景分类" options={optionsMap.subScene.filter(o => !o.parent || o.parent === form.getFieldValue('sceneCat'))} popupRender={m => renderDropdown(m, 'subScene')} /></Form.Item></Col>
               </Row>
+
+              <Divider style={{ margin: '16px 0 24px' }} />
+
+              <Row gutter={24} style={{ marginBottom: 16 }}>
+                <Col span={24}>
+                  <Form.Item label="上传文件" name="layoutFile">
+                    <Space>
+                      <Upload>
+                        <Button type="primary" icon={<UploadOutlined />}>上传文件</Button>
+                      </Upload>
+                      <Text type="secondary" style={{ fontSize: 13 }}>请上传场景的layout文件</Text>
+                    </Space>
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={24} style={{ marginBottom: 16 }}>
+                <Col span={12}>
+                  <Form.Item label="场景初始状态" name="initState">
+                    <TextArea rows={3} maxLength={500} showCount placeholder="请描述场景初始状态" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="英文场景初始状态" name="enInitState">
+                    <TextArea rows={3} maxLength={500} showCount placeholder="请描述英文场景初始状态" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={24}>
+                <Col span={24}>
+                  <Form.Item label="泛化条件" name="generalizationCond">
+                    <TextArea rows={3} maxLength={500} showCount placeholder="请描述泛化条件" />
+                  </Form.Item>
+                </Col>
+              </Row>
             </Card>
 
             {/* Merged Card: 设备与采集配置 */}
