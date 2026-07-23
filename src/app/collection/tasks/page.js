@@ -34,114 +34,112 @@ export default function TaskCenterPage() {
   const mockData = [
     { 
       key: '1', 
-      instanceId: 'INS-COLLECT-12853',
-      taskId: '12853', 
-      name: '货架物品物理采集任务', 
-      taskType: 'collect',
-      project: 'SimulatedCollection',
-      isShelfTask: '是',
-      shelfPosition: 'A-1-2',
-      annoType: '范围&框标注',
-      collectedCount: 850,
-      plannedCount: 1000,
-      collector: '张三',
-      startTime: '2026-03-23 10:23',
-      endTime: '2026-03-23 11:45',
-      collectProgress: '85%',
-      qaProgress: '20%',
+      taskId: 'TASK-20260415-001', 
+      taskName: '货架物品物理采集任务', 
+      taskNameEn: 'ShelfPhysicalCollect',
+      taskBookName: '桌面整理采集规范 V1.0',
+      firstLevel: 'InternalCommercial',
+      secondLevel: 'GroceryVLA',
+      taskPurpose: 'Training',
+      sceneCategory: 'Supermarket',
+      subSceneCategory: 'ShelfArea',
+      collectMode: 'Physical',
+      teleopType: 'Exoskeleton',
+      deviceType: 'Galbot_2.2_RGBD',
+      totalCount: 1000,
+      finishCount: 850,
+      createBy: 'ingest_user',
+      createTime: '2026-04-15 10:23:00',
+      updateTime: '2026-04-18 16:30:00',
+      progress: '85%',
       status: '进行中', 
     },
     { 
       key: '2', 
-      instanceId: 'INS-ASSET-12854',
-      taskId: '12854', 
-      name: '工业纸箱打包封装标注任务', 
-      taskType: 'asset',
-      project: 'InternalCommercial',
-      isShelfTask: '否',
-      shelfPosition: '-',
-      annoType: '帧区间标注',
-      collectedCount: 75,
-      plannedCount: 100,
-      collector: '无需采集 (资产关联)',
-      startTime: '2026-06-12 10:00',
-      endTime: '-',
-      collectProgress: '75%',
-      qaProgress: '75%',
+      taskId: 'TASK-20260415-002', 
+      taskName: '工业纸箱打包封装标注任务', 
+      taskNameEn: 'IndustrialPacking',
+      taskBookName: '线缆管理采集规范 V2.0',
+      firstLevel: 'InternalIndustrial',
+      secondLevel: 'Industrial_A1',
+      taskPurpose: 'Valid',
+      sceneCategory: 'FactoryFloor',
+      subSceneCategory: 'PackingLine',
+      collectMode: 'Simulated',
+      teleopType: 'VR_Controller',
+      deviceType: 'Franka_FR3',
+      totalCount: 100,
+      finishCount: 75,
+      createBy: 'admin',
+      createTime: '2026-04-12 10:00:00',
+      updateTime: '2026-04-14 11:20:00',
+      progress: '75%',
       status: '进行中', 
     },
     { 
       key: '3', 
-      instanceId: 'INS-766794-B',
-      taskId: '12837', 
-      name: '桌面操作物理数采任务 - 实例 02', 
-      taskType: 'collect',
-      project: 'SimulatedCollection',
-      isShelfTask: '是',
-      shelfPosition: '-',
-      annoType: '框标注',
-      collectedCount: 120,
-      plannedCount: 500,
-      collector: '李四',
-      startTime: '2026-03-23 14:00',
-      endTime: '-',
-      collectProgress: '24%',
-      qaProgress: '0%',
+      taskId: 'TASK-20260415-003', 
+      taskName: '桌面操作物理数采任务', 
+      taskNameEn: 'TabletopOperation',
+      taskBookName: '桌面整理采集规范 V1.0',
+      firstLevel: 'SimulatedCollection',
+      secondLevel: 'FoundationModel',
+      taskPurpose: 'Training',
+      sceneCategory: 'LivingRoom',
+      subSceneCategory: 'DiningTable',
+      collectMode: 'Physical',
+      teleopType: 'Keyboard',
+      deviceType: 'Galbot_1.16_G2',
+      totalCount: 500,
+      finishCount: 120,
+      createBy: 'zhangsan',
+      createTime: '2026-04-13 14:00:00',
+      updateTime: '2026-04-15 09:10:00',
+      progress: '24%',
       status: '进行中', 
     },
     { 
       key: '4', 
-      instanceId: 'INS-LUMOS-001',
-      taskId: 'CT-20260414001', 
-      name: 'Lumos-双手整理离线资产任务', 
-      taskType: 'asset',
-      project: 'InternalCommercial',
-      isShelfTask: '否',
-      shelfPosition: '-',
-      annoType: '离线数采',
-      collectedCount: 40,
-      plannedCount: 50,
-      collector: '无需采集 (资产关联)',
-      startTime: '2026-04-14 09:00',
-      endTime: '-',
-      collectProgress: '80%',
-      qaProgress: '80%',
-      status: '进行中', 
+      taskId: 'TASK-20260414-004', 
+      taskName: 'Lumos-双手整理离线资产任务', 
+      taskNameEn: 'LumosBimanualSorting',
+      taskBookName: '厨房操作采集规范 V1.2',
+      firstLevel: 'ExternalXupaosi',
+      secondLevel: 'SubTag_X1',
+      taskPurpose: 'Demo',
+      sceneCategory: 'Kitchen',
+      subSceneCategory: 'Countertop',
+      collectMode: 'Teleop',
+      teleopType: 'Exoskeleton',
+      deviceType: 'Lumos_FastUMI',
+      totalCount: 50,
+      finishCount: 50,
+      createBy: 'ingest_user',
+      createTime: '2026-04-14 09:00:00',
+      updateTime: '2026-04-14 18:00:00',
+      progress: '100%',
+      status: '已完成', 
     },
   ];
 
   const columns = [
-    { title: '实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 160, fixed: 'left' },
+    { title: '任务ID', dataIndex: 'taskId', key: 'taskId', width: 170, fixed: 'left' },
     { 
       title: '任务名称', 
-      dataIndex: 'name', 
-      key: 'name', 
-      width: 320, 
-      render: (text, record) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
-          <Text strong style={{ fontSize: 13 }}>{text}</Text>
-          <Tag color={record.taskType === 'asset' ? 'purple' : 'blue'} bordered={false} style={{ margin: 0, fontSize: 12, flexShrink: 0 }}>
-            {record.taskType === 'asset' ? '数据资产' : '数据采集'}
-          </Tag>
-        </div>
-      )
+      dataIndex: 'taskName', 
+      key: 'taskName', 
+      width: 220, 
+      render: (text) => <Text strong style={{ fontSize: 13 }}>{text}</Text>
     },
-    { title: '标注类型', dataIndex: 'annoType', key: 'annoType', width: 120 },
-    { 
-      title: '完成数据量 / 计划数据量', 
-      key: 'quota', 
-      width: 180,
-      render: (_, record) => <span>{record.collectedCount} / {record.plannedCount} 条</span>
-    },
-    { title: '采集人员', dataIndex: 'collector', key: 'collector', width: 150 },
-    { title: '开始时间', dataIndex: 'startTime', key: 'startTime', width: 160 },
-    { 
-      title: '进度', 
-      dataIndex: 'collectProgress', 
-      key: 'collectProgress', 
-      width: 100,
-      render: (p) => <Tag color="blue">{p}</Tag>
-    },
+    { title: '英文名称', dataIndex: 'taskNameEn', key: 'taskNameEn', width: 170, ellipsis: true },
+    { title: '任务书', dataIndex: 'taskBookName', key: 'taskBookName', width: 190, ellipsis: true },
+    { title: '一级项目', dataIndex: 'firstLevel', key: 'firstLevel', width: 150, ellipsis: true },
+    { title: '二级项目', dataIndex: 'secondLevel', key: 'secondLevel', width: 140, ellipsis: true },
+    { title: '任务用途', dataIndex: 'taskPurpose', key: 'taskPurpose', width: 120, render: (p) => <Tag color="blue">{p}</Tag> },
+    { title: '场景分类', dataIndex: 'sceneCategory', key: 'sceneCategory', width: 130 },
+    { title: '子场景分类', dataIndex: 'subSceneCategory', key: 'subSceneCategory', width: 130 },
+    { title: '计划采集', dataIndex: 'totalCount', key: 'totalCount', width: 100 },
+    { title: '已采集', dataIndex: 'finishCount', key: 'finishCount', width: 100 },
     { 
       title: '状态', 
       dataIndex: 'status', 
@@ -149,18 +147,29 @@ export default function TaskCenterPage() {
       width: 100,
       render: (s) => <Tag color={s === '已完成' ? 'success' : 'processing'}>{s}</Tag>
     },
+    { title: '创建人', dataIndex: 'createBy', key: 'createBy', width: 120 },
+    { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170, ellipsis: true },
+    { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: 170, ellipsis: true },
+    { 
+      title: '进度', 
+      dataIndex: 'progress', 
+      key: 'progress', 
+      width: 90,
+      fixed: 'right',
+      render: (p) => <Tag color="cyan">{p}</Tag>
+    },
     {
-      title: '操作', key: 'action', width: 280, fixed: 'right',
+      title: '操作', key: 'action', width: 240, fixed: 'right', align: 'center',
       render: (_, record) => (
         <Space separator={<Divider orientation="vertical" />} size={0}>
           <Button 
             type="link" 
             size="small" 
             icon={<EyeOutlined />} 
-            onClick={() => router.push(`/collection/tasks/${record.taskId}?type=${record.taskType}`)} 
+            onClick={() => router.push(`/collection/tasks/${record.taskId}`)} 
             style={{ padding: '0 4px', fontWeight: 600 }}
           >
-            查看详情
+            查看
           </Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
@@ -173,7 +182,7 @@ export default function TaskCenterPage() {
   return (
     <MainLayout>
       <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '任务管理' }]} style={{ marginBottom: 16 }} />
+        <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '任务中心' }]} style={{ marginBottom: 16 }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
           </div>
@@ -183,13 +192,13 @@ export default function TaskCenterPage() {
       <SpecMarker
         id="tasks-query"
         number={1}
-        title="所属项目与条件联合检索"
+        title="任务中心多维度检索过滤"
         rules={[
-          "支持按所属项目（下拉精确匹配）、任务书、实例 ID、任务名称（模糊）、采集员及运行状态过滤任务实例。",
-          "所有筛选项输入框应包含 placeholder 占位说明，且均需支持可一键清空状态（allowClear）。",
-          "重置操作需同时清空所有输入并刷新表格为无过滤初始态。"
+          "支持按一级项目、二级项目、任务书、任务名称、任务ID、创建人、场景分类、任务用途、采集模式、遥操类型及设备类型联合筛选。",
+          "所有筛选项支持可一键清空状态（allowClear）。",
+          "重置操作清空所有输入并刷新表格为无过滤初始态。"
         ]}
-        remark="该查询对应系统底层采集任务实例的大盘过滤，支持按状态实时检索。"
+        remark="对齐 JeecgBoot 具身智能数据采集管理平台任务中心筛选项"
         style={{ width: '100%' }}
       >
         <Card 
@@ -202,12 +211,17 @@ export default function TaskCenterPage() {
                   resetButtonProps: { icon: <ReloadOutlined /> },
               }}
           >
-              <ProFormSelect name="project" label="所属项目" placeholder="请选择项目" />
-              <ProFormSelect name="taskbook" label="任务书" placeholder="请选择任务书" />
-              <ProFormText name="instanceId" label="实例ID" placeholder="请输入实例ID" />
+              <ProFormSelect name="firstLevel" label="一级项目" placeholder="请选择一级项目" options={[{label:'InternalCommercial', value:'InternalCommercial'}, {label:'ExternalXupaosi', value:'ExternalXupaosi'}, {label:'InternalIndustrial', value:'InternalIndustrial'}]} />
+              <ProFormSelect name="secondLevel" label="二级项目" placeholder="请选择二级项目" options={[{label:'GroceryVLA', value:'GroceryVLA'}, {label:'FoundationModel', value:'FoundationModel'}]} />
+              <ProFormSelect name="taskBookName" label="任务书" placeholder="请选择任务书" />
               <ProFormText name="taskName" label="任务名称" placeholder="请输入任务名称" />
-              <ProFormText name="collector" label="采集员" placeholder="请输入采集员" />
-              <ProFormSelect name="status" label="状态" placeholder="请选择状态" options={[{label:'进行中', value:'active'}, {label:'已完成', value:'completed'}]} />
+              <ProFormText name="taskId" label="任务ID" placeholder="请输入任务ID" />
+              <ProFormText name="createBy" label="创建人" placeholder="请输入创建人" />
+              <ProFormSelect name="sceneCategory" label="场景分类" placeholder="请选择场景分类" />
+              <ProFormSelect name="taskPurpose" label="任务用途" placeholder="请选择任务用途" />
+              <ProFormSelect name="collectMode" label="采集模式" placeholder="请选择采集模式" />
+              <ProFormSelect name="teleopType" label="遥操类型" placeholder="请选择遥操类型" />
+              <ProFormSelect name="deviceType" label="设备类型" placeholder="请选择设备类型" />
           </QueryFilter>
         </Card>
       </SpecMarker>
@@ -261,7 +275,7 @@ export default function TaskCenterPage() {
                   onClick={() => {
                     const selectedIds = mockData
                       .filter(item => selectedRowKeys.includes(item.key))
-                      .map(item => item.instanceId);
+                      .map(item => item.taskId);
                     
                     Modal.confirm({
                       title: '完成',
