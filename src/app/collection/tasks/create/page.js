@@ -1192,7 +1192,7 @@ function CreateTaskContent() {
                {taskFormType === 'collect' && (
                  <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px dashed #e2e8f0' }}>
                    <Row gutter={24} style={{ marginBottom: 16 }}>
-                     <Col span={12}>
+                     <Col span={24}>
                        <Form.Item label="上传文件" name="layoutFile">
                          <Space>
                            <Upload>
@@ -1200,11 +1200,6 @@ function CreateTaskContent() {
                            </Upload>
                            <Text type="secondary" style={{ fontSize: 13 }}>请上传场景的layout文件</Text>
                          </Space>
-                       </Form.Item>
-                     </Col>
-                     <Col span={12}>
-                       <Form.Item label="是否为货架" name="isShelf" valuePropName="checked" initialValue={false}>
-                         <Switch checkedChildren="是" unCheckedChildren="否" />
                        </Form.Item>
                      </Col>
                    </Row>
