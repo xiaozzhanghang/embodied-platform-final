@@ -695,19 +695,24 @@ function CreateTaskContent() {
               {taskFormType === 'collect' ? (
                 <>
                   <Row gutter={24} style={{ marginBottom: 16 }}>
-                    <Col span={8}>
+                    <Col span={6}>
                       <Form.Item label="采集模式" name="mode" required initialValue="Real">
                         <Select placeholder="请选择采集模式" options={optionsMap.mode} popupRender={m => renderDropdown(m, 'mode')} />
                       </Form.Item>
                     </Col>
-                    <Col span={8}>
+                    <Col span={6}>
                       <Form.Item label="设备类型" name="deviceType" required initialValue="UMI_Orin">
                         <Select placeholder="请选择设备类型" options={optionsMap.deviceType} popupRender={m => renderDropdown(m, 'deviceType')} onChange={handleDeviceTypeChange} />
                       </Form.Item>
                     </Col>
-                    <Col span={8}>
+                    <Col span={6}>
                       <Form.Item label="遥操类型" name="teleType" required>
                         <Select placeholder="请选择遥操类型" options={optionsMap.teleType} popupRender={m => renderDropdown(m, 'teleType')} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={6}>
+                      <Form.Item label="采集数量" name="count" required initialValue={100}>
+                        <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入采集数量" addonAfter="条" />
                       </Form.Item>
                     </Col>
                   </Row>
@@ -1185,16 +1190,46 @@ function CreateTaskContent() {
               )}
 
                {taskFormType === 'collect' && (
-                 <>
-                   <Row gutter={24} style={{marginTop:24}}>
-                      <Col span={12}><Form.Item label="计划采集数量" name="count"><InputNumber style={{width:'100%'}} placeholder="请输入本次任务计划采集的 Episode 动作序列数量" /></Form.Item></Col>
-                      <Col span={12}><Form.Item label="采集参考附件书"><Upload><Button icon={<UploadOutlined />}>上传文件</Button></Upload></Form.Item></Col>
+                 <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px dashed #e2e8f0' }}>
+                   <Row gutter={24} style={{ marginBottom: 16 }}>
+                     <Col span={12}>
+                       <Form.Item label="上传文件" name="layoutFile">
+                         <Space>
+                           <Upload>
+                             <Button type="primary" icon={<UploadOutlined />}>上传文件</Button>
+                           </Upload>
+                           <Text type="secondary" style={{ fontSize: 13 }}>请上传场景的layout文件</Text>
+                         </Space>
+                       </Form.Item>
+                     </Col>
+                     <Col span={12}>
+                       <Form.Item label="是否为货架" name="isShelf" valuePropName="checked" initialValue={false}>
+                         <Switch checkedChildren="是" unCheckedChildren="否" />
+                       </Form.Item>
+                     </Col>
                    </Row>
+
+                   <Row gutter={24} style={{ marginBottom: 16 }}>
+                     <Col span={12}>
+                       <Form.Item label="场景初始状态" name="initState">
+                         <TextArea rows={3} maxLength={500} showCount placeholder="请描述场景初始状态" />
+                       </Form.Item>
+                     </Col>
+                     <Col span={12}>
+                       <Form.Item label="英文场景初始状态" name="enInitState">
+                         <TextArea rows={3} maxLength={500} showCount placeholder="请描述英文场景初始状态" />
+                       </Form.Item>
+                     </Col>
+                   </Row>
+
                    <Row gutter={24}>
-                      <Col span={12}><Form.Item label="场景物理初始状态" name="initState"><TextArea rows={4} placeholder="描述机器人和操作对象在数采启动前的物理初始要求" /></Form.Item></Col>
-                      <Col span={12}><Form.Item label="英文物理初始状态"><TextArea rows={4} placeholder="Initial physical state description in English" /></Form.Item></Col>
+                     <Col span={24}>
+                       <Form.Item label="泛化条件" name="generalizationCond">
+                         <TextArea rows={3} maxLength={500} showCount placeholder="请描述泛化条件" />
+                       </Form.Item>
+                     </Col>
                    </Row>
-                 </>
+                 </div>
                )}
             </Card>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 32 }}>
