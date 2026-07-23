@@ -221,6 +221,7 @@ export default function AnnotationAuditEpisodeListPage() {
             setIsBatchModalOpen(false);
             setSelectedRowKeys([]);
             setSelectedRows([]);
+            setActiveAnnoTab('to_verify');
             message.success(`已批量适配复制 ${activeBatchType} 标注数据！`);
           }, 300);
 

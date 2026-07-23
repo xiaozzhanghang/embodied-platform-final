@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   Table, Button, Input, Space, Tabs, Tag, Typography,
   Breadcrumb, Tooltip, App, Form, Row, Col, Select, Modal,
-  Card, Collapse, Divider, Radio, Popconfirm, Alert
+  Card, Collapse, Divider, Radio, Popconfirm, Alert, Upload, Switch
 } from 'antd';
 import {
   PlusOutlined,
@@ -21,7 +21,10 @@ import {
   DeleteOutlined,
   InfoCircleOutlined,
   UpOutlined,
-  DownOutlined
+  DownOutlined,
+  VideoCameraOutlined,
+  UploadOutlined,
+  MinusCircleFilled
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/MainLayout';
@@ -159,7 +162,7 @@ const initialRobotData = [
     name: 'galbot_2.2_RGB',
     enName: 'galbot_2.2',
     version: 'V2.2',
-    linkedParts: ['1', '2'],
+    dataRule: 'rule-1',
     regTime: '2025-12-20',
     status: 'active',
   },
@@ -168,7 +171,7 @@ const initialRobotData = [
     name: 'galbot_1.16_G2',
     enName: 'galbot_1.16_g2',
     version: 'V1.16',
-    linkedParts: ['xcu-1', 'hpu-1', 'arm-g2', 'hand-g116', 'cam-head-g2'],
+    dataRule: 'rule-2',
     regTime: '2026-05-29',
     status: 'active',
   },
@@ -180,10 +183,13 @@ const initialRuleData = [
     ruleName: '视觉相机高帧率同步规则',
     targetPart: 'Camera',
     targetPartName: '头部相机',
+    path: '/etc/galbot/rules/cam_head_sync.json',
     fpsRange: '30 ± 2 fps',
     syncThreshold: '≤ 5 ms',
     lossTolerance: '≤ 0.1%',
     action: '自动插补并告警',
+    coverVideo: 'head_camera_demo.mp4',
+    note: '适用于头部 RGB-D 深度相机与双目帧同步校验',
     status: true,
     regTime: '2026-06-01',
   },
@@ -192,10 +198,13 @@ const initialRuleData = [
     ruleName: '机械臂关节轨迹对齐规则',
     targetPart: 'RobotArm',
     targetPartName: '双臂机械臂_G2',
+    path: '/etc/galbot/rules/arm_g2_trajectory.json',
     fpsRange: '50 ± 1 fps',
     syncThreshold: '≤ 2 ms',
     lossTolerance: '0%',
     action: '阻断采集并中断',
+    coverVideo: 'arm_trajectory_demo.mp4',
+    note: '14轴高精度机械臂轨迹点连续性阻断校验',
     status: true,
     regTime: '2026-06-05',
   },
@@ -204,10 +213,13 @@ const initialRuleData = [
     ruleName: '灵巧手高频触觉采集校验',
     targetPart: 'DexterousHand',
     targetPartName: '灵巧手_G1.16',
+    path: '/etc/galbot/rules/hand_tactile_sync.json',
     fpsRange: '100 ± 5 fps',
     syncThreshold: '≤ 3 ms',
     lossTolerance: '≤ 0.2%',
     action: '告警并记录日志',
+    coverVideo: 'dexterous_hand_tactile.mp4',
+    note: '指尖触觉传感器阵列 100Hz 高频包校验',
     status: true,
     regTime: '2026-06-10',
   },
@@ -216,18 +228,35 @@ const initialRuleData = [
     ruleName: '底层控制箱心跳对齐规则',
     targetPart: 'ControlUnit',
     targetPartName: 'XCU 底层控制箱',
+    path: '/etc/galbot/rules/xcu_heartbeat.json',
     fpsRange: '20 ± 1 fps',
     syncThreshold: '≤ 10 ms',
     lossTolerance: '≤ 0.5%',
     action: '降级记录',
+    coverVideo: 'xcu_heartbeat_demo.mp4',
+    note: 'XCU 下位机 Galbot-OS 状态保活与心跳包',
     status: false,
     regTime: '2026-06-15',
   },
 ];
 
-// ─── Components ─────────────────────────────────────────────────────────────
+// Helper to resolve video filename to a working url in prototype
+const getVideoUrl = (filename) => {
+  if (!filename) return '/assets/videos/left_hand.mp4';
+  if (filename.startsWith('/') || filename.startsWith('http')) return filename;
+  if (filename === 'left_hand.mp4' || filename === 'right_hand.mp4') {
+    return `/assets/videos/${filename}`;
+  }
+  if (filename === 'session_028_left.mp4' || filename === 'session_028_right.mp4') {
+    return `/videos/${filename}`;
+  }
+  if (filename.includes('hand') || filename.includes('tactile')) {
+    return '/assets/videos/left_hand.mp4';
+  }
+  return '/assets/videos/right_hand.mp4';
+};
 
-function RuleTable({ data, onEdit, onDelete }) {
+function RuleTable({ data, onEdit, onDelete, onPreviewVideo }) {
   const [selectedKeys, setSelectedKeys] = useState([]);
 
   const columns = [
@@ -235,7 +264,7 @@ function RuleTable({ data, onEdit, onDelete }) {
       title: '规则名称',
       dataIndex: 'ruleName',
       key: 'ruleName',
-      width: 220,
+      width: 190,
       render: (text) => (
         <Space>
           <LineHeightOutlined style={{ color: '#52c41a' }} />
@@ -244,51 +273,32 @@ function RuleTable({ data, onEdit, onDelete }) {
       ),
     },
     {
-      title: '适用部件',
-      dataIndex: 'targetPartName',
-      key: 'targetPartName',
-      width: 140,
-      render: (text, r) => <Tag color="blue">{text || r.targetPart}</Tag>,
+      title: '维护路径',
+      dataIndex: 'path',
+      key: 'path',
+      width: 220,
+      render: (text) => {
+        if (!text) return <Text code style={{ fontSize: 11 }}>/etc/galbot/rules/default.json</Text>;
+        const paths = text.split(', ');
+        return (
+          <Space direction="vertical" size={2} style={{ display: 'flex' }}>
+            {paths.map((p, idx) => <Text code key={idx} style={{ fontSize: 10 }}>{p}</Text>)}
+          </Space>
+        );
+      }
     },
     {
-      title: '帧率要求 (FPS)',
-      dataIndex: 'fpsRange',
-      key: 'fpsRange',
-      width: 130,
-      render: (text) => <Tag color="cyan">{text}</Tag>,
-    },
-    {
-      title: '时间戳同步阈值',
-      dataIndex: 'syncThreshold',
-      key: 'syncThreshold',
-      width: 140,
-      render: (text) => <Tag color="purple">{text}</Tag>,
-    },
-    {
-      title: '丢包容忍率',
-      dataIndex: 'lossTolerance',
-      key: 'lossTolerance',
-      width: 120,
-      render: (text) => <Tag color="orange">{text}</Tag>,
-    },
-    {
-      title: '校验动作',
-      dataIndex: 'action',
-      key: 'action',
-      width: 150,
-      render: (text) => <Tag color={text.includes('阻断') ? 'red' : 'gold'}>{text}</Tag>,
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'regTime',
-      key: 'regTime',
-      width: 120,
+      title: '备注',
+      dataIndex: 'note',
+      key: 'note',
+      ellipsis: true,
+      render: (text) => <Text type="secondary" style={{ fontSize: 12 }}>{text || '-'}</Text>,
     },
     {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 160,
+      width: 140,
       render: (_, record) => (
         <Space size="middle">
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => onEdit(record)}>
@@ -318,7 +328,7 @@ function RuleTable({ data, onEdit, onDelete }) {
   );
 }
 
-function DeviceTable({ data, type, onEdit, partData }) {
+function DeviceTable({ data, type, onEdit, partData, ruleData = [] }) {
   const router = useRouter();
   const { message } = App.useApp();
   const [selectedKeys, setSelectedKeys] = useState([]);
@@ -417,7 +427,7 @@ export default function DeviceTypesPage() {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const tab = searchParams.get('tab');
-      if (tab === 'part' || tab === 'robot') {
+      if (tab === 'part' || tab === 'robot' || tab === 'rule') {
         setActiveTab(tab);
       }
     }
@@ -436,6 +446,7 @@ export default function DeviceTypesPage() {
   const [form] = Form.useForm();
   const [ruleForm] = Form.useForm();
   const [editingItem, setEditingItem] = useState(null);
+  const [previewVideoUrl, setPreviewVideoUrl] = useState(null);
 
   const handleAddPart = () => {
     setEditingItem(null);
@@ -454,6 +465,10 @@ export default function DeviceTypesPage() {
   const handleAddRule = () => {
     setEditingItem(null);
     ruleForm.resetFields();
+    ruleForm.setFieldsValue({
+      hasCoverVideo: false,
+      paths: ['']
+    });
     setIsRuleModalOpen(true);
   };
 
@@ -491,11 +506,14 @@ export default function DeviceTypesPage() {
 
   const onRuleSubmit = (values) => {
     const newRule = {
-      key: editingItem ? editingItem.key : `rule-${Date.now()}`,
+      ...editingItem,
       ...values,
-      targetPartName: componentCategories.find(c => c.value === values.targetPart)?.label || values.targetPart,
-      regTime: new Date().toISOString().split('T')[0],
-      status: true,
+      path: values.paths ? values.paths.filter(Boolean).join(', ') : '',
+      coverVideo: values.hasCoverVideo ? (editingItem?.coverVideo || 'left_hand.mp4') : null,
+      key: editingItem ? editingItem.key : `rule-${Date.now()}`,
+      targetPartName: values.targetPart ? (componentCategories.find(c => c.value === values.targetPart)?.label || values.targetPart) : (editingItem?.targetPartName || '-'),
+      regTime: editingItem ? editingItem.regTime : new Date().toISOString().split('T')[0],
+      status: editingItem ? editingItem.status : true,
     };
     if (editingItem) {
       setRuleData(ruleData.map(r => r.key === editingItem.key ? newRule : r));
@@ -644,29 +662,52 @@ export default function DeviceTypesPage() {
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
-                onClick={activeTab === 'robot' ? handleAddRobot : handleAddPart}
+                onClick={activeTab === 'robot' ? handleAddRobot : activeTab === 'part' ? handleAddPart : handleAddRule}
               >
-                {activeTab === 'robot' ? '新建设备' : '新建部件'}
+                {activeTab === 'robot' ? '新建设备' : activeTab === 'part' ? '新建部件' : '新建数据规则'}
               </Button>
             </SpecMarker>
             <Button danger icon={<DeleteOutlined />}>批量删除</Button>
             <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-              共 {(activeTab === 'robot' ? robotData : partData).length} 条记录
+              共 {(activeTab === 'robot' ? robotData : activeTab === 'part' ? partData : ruleData).length} 条记录
             </Text>
           </Space>
         </div>
 
-        <DeviceTable 
-            data={activeTab === 'robot' ? robotData : partData} 
-            type={activeTab} 
-            partData={partData}
+        {activeTab === 'rule' ? (
+          <RuleTable 
+            data={ruleData}
             onEdit={(record) => {
-                setEditingItem(record);
-                form.setFieldsValue(record);
-                if (activeTab === 'robot') setIsRobotModalOpen(true);
-                else setIsPartModalOpen(true);
+              setEditingItem(record);
+              ruleForm.setFieldsValue({
+                ...record,
+                hasCoverVideo: !!record.coverVideo,
+                paths: record.paths || (record.path ? record.path.split(', ') : [''])
+              });
+              setIsRuleModalOpen(true);
             }}
-        />
+            onDelete={(key) => {
+              setRuleData(ruleData.filter(r => r.key !== key));
+              message.success('规则已删除');
+            }}
+            onPreviewVideo={(url) => {
+              setPreviewVideoUrl(url);
+            }}
+          />
+        ) : (
+          <DeviceTable 
+              data={activeTab === 'robot' ? robotData : partData} 
+              type={activeTab} 
+              partData={partData}
+              ruleData={ruleData}
+              onEdit={(record) => {
+                  setEditingItem(record);
+                  form.setFieldsValue(record);
+                  if (activeTab === 'robot') setIsRobotModalOpen(true);
+                  else setIsPartModalOpen(true);
+              }}
+          />
+        )}
       </div>
 
       {/* --- Part Type Modal --- */}
@@ -879,19 +920,8 @@ export default function DeviceTypesPage() {
             </Col>
           </Row>
 
-          <Tabs 
-            activeKey={robotModalTab} 
-            onChange={setRobotModalTab} 
-            size="small"
-            style={{ marginBottom: 16 }}
-            items={[
-              { key: 'config', label: '部件与对齐配置' },
-              { key: 'rule', label: '数据规则维护' }
-            ]} 
-          />
-
-          {robotModalTab === 'config' ? (
-            <>
+          <Row gutter={24}>
+            <Col span={12}>
               <Form.Item name="linkedParts" label="部件">
                 <Select 
                     mode="multiple" 
@@ -900,187 +930,87 @@ export default function DeviceTypesPage() {
                     options={partData.map(p => ({ label: p.name, value: p.key }))}
                 />
               </Form.Item>
-
-              <Form.Item label="已选部件">
-                <Form.Item shouldUpdate={(prevValues, curValues) => prevValues.linkedParts !== curValues.linkedParts} noStyle>
-                    {({ getFieldValue, setFieldsValue }) => {
-                        const selectedIds = getFieldValue('linkedParts') || [];
-                        const dataSource = selectedIds.map(id => partData.find(p => p.key === id)).filter(Boolean);
-                        
-                        return (
-                            <Table 
-                                size="small"
-                                pagination={false}
-                                dataSource={dataSource}
-                                rowKey="key"
-                                bordered
-                                columns={[
-                                    { 
-                                        title: '对齐点', 
-                                        key: 'alignment', 
-                                        width: 70, 
-                                        align: 'center',
-                                        render: (_, record) => (
-                                            <Form.Item name="alignmentPoint" noStyle>
-                                                <Radio.Group onChange={(e) => setFieldsValue({ alignmentPoint: record.key })}>
-                                                    <Radio value={record.key} />
-                                                </Radio.Group>
-                                            </Form.Item>
-                                        )
-                                    },
-                                    { title: '部件名称', dataIndex: 'name', key: 'name', width: 140 },
-                                    { 
-                                        title: '部件类型', 
-                                        dataIndex: 'category', 
-                                        key: 'category',
-                                        width: 130,
-                                        render: (cat) => {
-                                            const found = componentCategories.find(c => c.value === cat);
-                                            return <Tag color="purple">{found ? found.label : cat}</Tag>;
-                                        }
-                                    },
-                                    {
-                                        title: '数据规则',
-                                        key: 'dataRule',
-                                        render: (_, record) => {
-                                            const matchedRule = ruleData.find(r => r.targetPart === record.category) || ruleData[0];
-                                            return (
-                                                <Space size={4} wrap>
-                                                    <Tag color="cyan">{matchedRule ? matchedRule.fpsRange : '30fps/≤5ms'}</Tag>
-                                                    <Tag color="blue">{matchedRule ? matchedRule.ruleName : '标准同步规则'}</Tag>
-                                                </Space>
-                                            );
-                                        }
-                                    },
-                                    { 
-                                        title: '操作', fixed: 'right',
-                                        key: 'action', 
-                                        width: 70, 
-                                        align: 'center',
-                                        render: (_, record) => (
-                                            <Button 
-                                                type="primary" 
-                                                danger 
-                                                icon={<DeleteOutlined />} 
-                                                size="small" 
-                                                shape="circle" 
-                                                onClick={() => {
-                                                    const newSelected = selectedIds.filter(id => id !== record.key);
-                                                    setFieldsValue({ linkedParts: newSelected });
-                                                }}
-                                            />
-                                        )
-                                    }
-                                ]}
-                            />
-                        );
-                    }}
-                </Form.Item>
-              </Form.Item>
-            </>
-          ) : (
-            <div style={{ marginBottom: 24 }}>
-              <Alert 
-                message="设备关联部件数据规则维护" 
-                description="以下规则将用于设备实例的数据采集质量校验、多通道时间戳插值以及丢包自动告警。" 
-                type="info" 
-                showIcon 
-                style={{ marginBottom: 16 }} 
-              />
-              <Form.Item shouldUpdate={(prevValues, curValues) => prevValues.linkedParts !== curValues.linkedParts} noStyle>
-                {({ getFieldValue }) => {
-                  const selectedIds = getFieldValue('linkedParts') || [];
-                  const dataSource = selectedIds.map(id => partData.find(p => p.key === id)).filter(Boolean);
-                  
-                  return (
-                    <Table 
-                      size="small"
-                      pagination={false}
-                      dataSource={dataSource}
-                      rowKey="key"
-                      bordered
-                      columns={[
-                        { title: '部件名称', dataIndex: 'name', key: 'name', width: 140 },
-                        { 
-                          title: '部件类型', 
-                          dataIndex: 'category', 
-                          key: 'category', 
-                          width: 120,
-                          render: (cat) => <Tag color="purple">{cat}</Tag>
-                        },
-                        {
-                          title: '绑定的数据规则',
-                          key: 'ruleName',
-                          render: (_, record) => {
-                            const matchedRule = ruleData.find(r => r.targetPart === record.category) || ruleData[0];
-                            return (
-                              <Select 
-                                size="small" 
-                                defaultValue={matchedRule?.key} 
-                                style={{ width: '100%' }}
-                                options={ruleData.map(r => ({ label: `${r.ruleName} (${r.fpsRange})`, value: r.key }))} 
-                              />
-                            );
-                          }
-                        },
-                        {
-                          title: '时间戳容忍',
-                          key: 'syncThreshold',
-                          width: 110,
-                          render: (_, record) => {
-                            const matchedRule = ruleData.find(r => r.targetPart === record.category) || ruleData[0];
-                            return <Tag color="purple">{matchedRule?.syncThreshold || '≤ 5 ms'}</Tag>;
-                          }
-                        },
-                        {
-                          title: '异常处理动作',
-                          key: 'action',
-                          width: 140,
-                          render: (_, record) => {
-                            const matchedRule = ruleData.find(r => r.targetPart === record.category) || ruleData[0];
-                            return <Tag color={matchedRule?.action?.includes('阻断') ? 'red' : 'gold'}>{matchedRule?.action || '自动告警'}</Tag>;
-                          }
-                        }
-                      ]}
-                    />
-                  );
-                }}
-              </Form.Item>
-            </div>
-          )}
-
-          {/* 双端节点提示 */}
-          <Form.Item shouldUpdate={(prev, cur) => prev.linkedParts !== cur.linkedParts} noStyle>
-            {({ getFieldValue }) => {
-              const selected = getFieldValue('linkedParts') || [];
-              const hasXcu = selected.some(id => {
-                const p = partData.find(pd => pd.key === id);
-                return p?.category === 'ControlUnit';
-              });
-              const hasHpu = selected.some(id => {
-                const p = partData.find(pd => pd.key === id);
-                return p?.category === 'ComputeUnit';
-              });
-              if (!hasXcu || !hasHpu) return null;
-              return (
-                <Alert
-                  message="检测到双端节点架构 (XCU + HPU)"
-                  description="该设备类型包含 XCU 控制单元和 HPU 算力单元，创建设备实例后可在详情页使用「XCU/HPU 部署与更新」功能进行固件刷写、VLA 算法部署、Supervisor 进程管理等操作。"
-                  type="success"
-                  showIcon
-                  style={{ marginBottom: 16 }}
+            </Col>
+            <Col span={12}>
+              <Form.Item name="dataRule" label="数据规则" rules={[{ required: true, message: '请选择数据规则' }]}>
+                <Select 
+                  placeholder="请选择数据规则"
+                  allowClear
+                  options={ruleData.map(r => ({ label: r.ruleName, value: r.key }))}
                 />
-              );
-            }}
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item label="已选部件">
+            <Form.Item shouldUpdate={(prevValues, curValues) => prevValues.linkedParts !== curValues.linkedParts} noStyle>
+                {({ getFieldValue, setFieldsValue }) => {
+                    const selectedIds = getFieldValue('linkedParts') || [];
+                    const dataSource = selectedIds.map(id => partData.find(p => p.key === id)).filter(Boolean);
+                    
+                    return (
+                        <Table 
+                            size="small"
+                            pagination={false}
+                            dataSource={dataSource}
+                            rowKey="key"
+                            bordered
+                            columns={[
+                                { 
+                                    title: '对齐点', 
+                                    key: 'alignment', 
+                                    width: 75, 
+                                    align: 'center',
+                                    render: (_, record) => (
+                                        <Form.Item name="alignmentPoint" noStyle>
+                                            <Radio.Group onChange={(e) => setFieldsValue({ alignmentPoint: record.key })}>
+                                                <Radio value={record.key} />
+                                            </Radio.Group>
+                                        </Form.Item>
+                                    )
+                                },
+                                { title: '部件名称', dataIndex: 'name', key: 'name', width: 220 },
+                                { 
+                                    title: '部件类型', 
+                                    dataIndex: 'category', 
+                                    key: 'category',
+                                    render: (cat) => {
+                                        const found = componentCategories.find(c => c.value === cat);
+                                        return <Text style={{ fontSize: 13 }}>{found ? found.label : cat}</Text>;
+                                    }
+                                },
+                                { 
+                                    title: '操作', fixed: 'right',
+                                    key: 'action', 
+                                    width: 75, 
+                                    align: 'center',
+                                    render: (_, record) => (
+                                        <Button 
+                                            type="text" 
+                                            danger 
+                                            icon={<MinusCircleFilled style={{ fontSize: 18, color: '#ff4d4f' }} />} 
+                                            size="small" 
+                                            onClick={() => {
+                                                const newSelected = selectedIds.filter(id => id !== record.key);
+                                                setFieldsValue({ linkedParts: newSelected });
+                                            }}
+                                        />
+                                    )
+                                }
+                            ]}
+                        />
+                    );
+                }}
+            </Form.Item>
           </Form.Item>
 
-          <Form.Item name="description" label="传感器描述" rules={[{ required: true }]}>
+          <Form.Item name="description" label="传感器描述" rules={[{ required: true, message: '请输入传感器描述' }]}>
             <Input.TextArea placeholder="请输入传感器描述" autoSize={{ minRows: 3, maxRows: 6 }} suffix={<Text type="secondary" style={{ fontSize: 12 }}>0 / 500</Text>} />
           </Form.Item>
 
           <Form.Item label="URDF">
             <Space>
-              <Button type="primary" icon={<PlusOutlined />} style={{ backgroundColor: '#1677ff' }}>上传URDF文件</Button>
+              <Button type="primary" icon={<UploadOutlined />} style={{ backgroundColor: '#1890ff' }}>上传URDF文件</Button>
               <Text type="secondary" style={{ fontSize: 12 }}>可上传最多1份urdf格式的文件</Text>
             </Space>
           </Form.Item>
@@ -1088,7 +1018,7 @@ export default function DeviceTypesPage() {
           <Form.Item label="设备图片">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ width: 100, height: 100, border: '1px dashed #d9d9d9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#fafafa' }}>
-                <PlusOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />
+                <PlusOutlined style={{ fontSize: 24, color: '#1890ff' }} />
               </div>
               <Text type="secondary" style={{ fontSize: 12 }}>可上传最多5张单个不超过2MB且格式为jpg/jpeg/png/gif的图片</Text>
             </div>
@@ -1108,56 +1038,95 @@ export default function DeviceTypesPage() {
       >
         <Form form={ruleForm} layout="vertical" onFinish={onRuleSubmit} style={{ marginTop: 24 }}>
           <Row gutter={24}>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item name="ruleName" label="规则名称" rules={[{ required: true, message: '请输入规则名称' }]}>
                 <Input placeholder="例如: 视觉相机高帧率同步规则" />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item name="targetPart" label="适用部件分类" rules={[{ required: true, message: '请选择适用部件分类' }]}>
-                <Select placeholder="请选择适用部件分类" options={componentCategories} />
-              </Form.Item>
-            </Col>
           </Row>
 
-          <Row gutter={24}>
-            <Col span={8}>
-              <Form.Item name="fpsRange" label="帧率要求 (FPS)" rules={[{ required: true, message: '请输入帧率要求' }]}>
-                <Input placeholder="例如: 30 ± 2 fps" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="syncThreshold" label="时间戳同步阈值" rules={[{ required: true, message: '请输入同步阈值' }]}>
-                <Input placeholder="例如: ≤ 5 ms" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="lossTolerance" label="丢包容忍率">
-                <Input placeholder="例如: ≤ 0.1%" />
-              </Form.Item>
-            </Col>
-          </Row>
+          <Form.List name="paths">
+            {(fields, { add, remove }) => (
+              <>
+                <Form.Item label="维护路径" required style={{ marginBottom: 8 }}>
+                  {fields.map((field, index) => (
+                    <Form.Item
+                      required={false}
+                      key={field.key}
+                      style={{ marginBottom: 8 }}
+                    >
+                      <Row gutter={8} align="middle">
+                        <Col span={22}>
+                          <Form.Item
+                            {...field}
+                            validateTrigger={['onChange', 'onBlur']}
+                            rules={[
+                              {
+                                required: true,
+                                whitespace: true,
+                                message: "请输入维护路径或删除该输入框。",
+                              },
+                            ]}
+                            noStyle
+                          >
+                            <Input placeholder="请输入维护路径，例如: /etc/galbot/rules/cam_head_sync.json" addonBefore={`Path ${index + 1}:`} />
+                          </Form.Item>
+                        </Col>
+                        <Col span={2}>
+                          {fields.length > 1 ? (
+                            <Button
+                              type="text"
+                              danger
+                              icon={<MinusCircleFilled style={{ fontSize: 18 }} />}
+                              onClick={() => remove(field.name)}
+                            />
+                          ) : null}
+                        </Col>
+                      </Row>
+                    </Form.Item>
+                  ))}
+                  <Form.Item style={{ marginBottom: 16 }}>
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      icon={<PlusOutlined />}
+                      style={{ width: '100%' }}
+                    >
+                      添加路径
+                    </Button>
+                  </Form.Item>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
 
           <Row gutter={24}>
             <Col span={24}>
-              <Form.Item name="action" label="校验未通过处理动作" rules={[{ required: true }]}>
-                <Select 
-                  placeholder="请选择异常处理动作"
-                  options={[
-                    { label: '自动插补帧并发送告警日志', value: '自动插补并告警' },
-                    { label: '阻断数据采集并中断本次 Episode', value: '阻断采集并中断' },
-                    { label: '仅记录日志并打标异常帧', value: '告警并记录日志' },
-                    { label: '触发硬件重连与自动降级', value: '降级记录' },
-                  ]} 
-                />
+              <Form.Item name="hasCoverVideo" label="开启封面视频" valuePropName="checked" style={{ marginBottom: 16 }}>
+                <Switch checkedChildren="是" unCheckedChildren="否" />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item name="description" label="规则描述/备注">
-            <Input.TextArea rows={3} placeholder="选填，描述该规则的适用场景及传感器防丢帧容忍范围" />
+
+
+          <Form.Item name="note" label="备注">
+            <Input.TextArea rows={3} placeholder="请输入规则描述或防丢帧参数备注" maxLength={500} showCount />
           </Form.Item>
         </Form>
+      </Modal>
+      {/* Video Preview Modal */}
+      <Modal
+        title="封面视频预览"
+        open={!!previewVideoUrl}
+        onCancel={() => setPreviewVideoUrl(null)}
+        footer={null}
+        width={640}
+        destroyOnClose
+      >
+        <div style={{ padding: '12px 0 0 0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <video src={previewVideoUrl} controls autoPlay style={{ width: '100%', maxHeight: 400, borderRadius: 8, background: '#000' }} />
+        </div>
       </Modal>
     </MainLayout>
   );
