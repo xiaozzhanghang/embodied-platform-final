@@ -11,7 +11,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const ANNO_TYPES = ['框标注', '点标注', '范围标注', '范围&框标注'];
-const TASK_STATUSES = ['进行中', '已完成', '待分配', '暂停'];
+const TASK_STATUSES = ['进行中', '已完成', '暂停'];
 
 const projectNames = [
   'SimulatedCollection(模拟采集) sin',
@@ -108,7 +108,7 @@ const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
   const annoTotal = dataCount;
   const annoDone = makeProgress(annoTotal, i < 5 ? 'full' : i < 12 ? 'partial' : 'zero');
   const auditDone = makeProgress(annoDone, i < 3 ? 'partial' : 'zero');
-  const taskStatus = i < 3 ? '已完成' : i < 12 ? '进行中' : i < 16 ? '待分配' : '暂停';
+  const taskStatus = i < 4 ? '已完成' : i < 16 ? '进行中' : '暂停';
   const deviceType = DEVICE_TYPES[i % DEVICE_TYPES.length];
   const collectionMode = COLLECTION_MODES[i % COLLECTION_MODES.length];
   const remoteControlType = REMOTE_CONTROL_TYPES[i % REMOTE_CONTROL_TYPES.length];
@@ -408,7 +408,6 @@ export default function AnnotationAuditPage() {
         title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>标注列表</span>}
         tabList={[
           { key: 'all', tab: `全部 (${tableData.length})` },
-          { key: 'pending', tab: `待分配 (${tableData.filter(t => t.taskStatus === '待分配').length})` },
           { key: 'running', tab: `进行中 (${tableData.filter(t => t.taskStatus === '进行中').length})` },
           { key: 'completed', tab: `已完成 (${tableData.filter(t => t.taskStatus === '已完成').length})` },
           { key: 'paused', tab: `暂停 (${tableData.filter(t => t.taskStatus === '暂停').length})` }

@@ -59,24 +59,33 @@
                 <!-- Dropdowns Row -->
                 <div style="flex: 1;">
                   <a-row :gutter="[8, 8]">
-                    <a-col :span="6">
+                    <a-col :span="5">
                       <div class="dropdown-label">执行末端类型</div>
                       <a-select v-model:value="item.arm" size="small" style="width: 100%;" :options="armOptions" />
                     </a-col>
 
-                    <a-col :span="6">
+                    <a-col :span="4">
                       <div class="dropdown-label">原子技能</div>
                       <a-select v-model:value="item.skill" size="small" style="width: 100%;" :options="skillOptions" />
                     </a-col>
 
-                    <a-col :span="6">
+                    <a-col :span="4">
                       <div class="dropdown-label">操作对象</div>
                       <a-select v-model:value="item.object" size="small" style="width: 100%;" :options="objectOptions" />
                     </a-col>
 
-                    <a-col :span="6">
+                    <a-col :span="5">
                       <div class="dropdown-label">操作目标</div>
                       <a-select v-model:value="item.goal" size="small" style="width: 100%;" :options="goalOptions" />
+                    </a-col>
+
+                    <a-col :span="6">
+                      <div class="dropdown-label">默认帧数区间</div>
+                      <div style="display: flex; align-items: center; gap: 4px;">
+                        <a-input-number v-model:value="item.startFrame" :min="0" size="small" placeholder="起始帧" style="width: 48%;" />
+                        <span style="font-size: 10px; color: #94a3b8;">-</span>
+                        <a-input-number v-model:value="item.endFrame" :min="0" size="small" placeholder="结束帧" style="width: 48%;" />
+                      </div>
                     </a-col>
                   </a-row>
                 </div>
@@ -203,18 +212,28 @@ const formState = reactive({
 
 const inputMode = ref('structured');
 const naturalText = ref(
-  "1. 右手 (Right Arm) 识别 目标物品 (确认位置)\n2. 右手 (Right Arm) 靠近 目标物品 (避障靠近)\n3. 右手 (Right Arm) 抓取 目标物品 (牢固夹紧)"
+  "1. 右手 (Right Arm) 识别 目标物品 (确认位置) [0 - 30 帧]\n2. 右手 (Right Arm) 靠近 目标物品 (避障靠近) [30 - 60 帧]\n3. 右手 (Right Arm) 抓取 目标物品 (牢固夹紧) [60 - 90 帧]"
 );
 
 const steps = ref([
-  { key: '1', arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' },
-  { key: '2', arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近' },
-  { key: '3', arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧' }
+  { key: '1', arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置', startFrame: 0, endFrame: 30 },
+  { key: '2', arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近', startFrame: 30, endFrame: 60 },
+  { key: '3', arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧', startFrame: 60, endFrame: 90 }
 ]);
 
 const addStep = () => {
   const newKey = (steps.value.length + 1).toString();
-  steps.value.push({ key: newKey, arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' });
+  const lastStep = steps.value[steps.value.length - 1];
+  const prevEnd = lastStep ? (lastStep.endFrame ?? 0) : 0;
+  steps.value.push({ 
+    key: newKey, 
+    arm: '右手 (Right Arm)', 
+    skill: '识别', 
+    object: '目标物品', 
+    goal: '确认位置',
+    startFrame: prevEnd,
+    endFrame: prevEnd + 30
+  });
 };
 
 const removeStep = (key) => {

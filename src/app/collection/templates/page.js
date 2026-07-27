@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Button, Space, Card, Typography, Breadcrumb, Tag, 
-  App, Row, Col, Avatar, Tooltip, Input, Divider, Form, Select, Tabs, Radio, Modal
+  App, Row, Col, Avatar, Tooltip, Input, Divider, Form, Select, Tabs, Radio, Modal, InputNumber
 } from 'antd';
 import { 
   PlusOutlined, SearchOutlined, LayoutOutlined,
@@ -23,36 +23,38 @@ const defaultAnnoTemplates = [
   {
     id: 'tpl_default_1',
     name: '🍽️ 餐厅餐盘整理标准标注模版',
-    desc: '覆盖完整的双臂就餐收拾工序，包括托盘抓取、餐盘理顺、餐叉摆放，适配鹿鸣双臂机器人。',
+    desc: '覆盖完整的双臂就餐收拾工序，包含300帧完整动作序列，适配鹿鸣双臂机器人。',
     stepCount: 9,
     creator: '系统内置',
     createTime: '2026-07-12 10:15:30',
+    totalFrames: 300,
     steps: [
-      { text: '右手从置物架抓取托盘并放置在餐桌上', startFrame: 0, endFrame: 15 },
-      { text: '左手拿起杯子平稳放置到托盘边缘', startFrame: 15, endFrame: 30 },
-      { text: '右手从餐桌抓取待收碗盘并叠放', startFrame: 30, endFrame: 45 },
-      { text: '双手端起装载碗盘的托盘至工作区', startFrame: 45, endFrame: 60 },
-      { text: '右手取消毒布快速擦拭餐桌残留油渍', startFrame: 60, endFrame: 75 },
-      { text: '右手放置餐盘到清洗机架格内', startFrame: 75, endFrame: 90 },
-      { text: '右手拿起备用刀叉整理归置', startFrame: 90, endFrame: 100 },
-      { text: '左手协助校正主干刀叉位置', startFrame: 100, endFrame: 110 },
-      { text: '双手清洁理顺并退回初始安全点', startFrame: 110, endFrame: 120 }
+      { text: '右手从置物架抓取托盘并放置在餐桌上', startFrame: 0, endFrame: 35 },
+      { text: '左手拿起杯子平稳放置到托盘边缘', startFrame: 35, endFrame: 70 },
+      { text: '右手从餐桌抓取待收碗盘并叠放', startFrame: 70, endFrame: 105 },
+      { text: '双手端起装载碗盘的托盘至工作区', startFrame: 105, endFrame: 140 },
+      { text: '右手取消毒布快速擦拭餐桌残留油渍', startFrame: 140, endFrame: 175 },
+      { text: '右手放置餐盘到清洗机架格内', startFrame: 175, endFrame: 210 },
+      { text: '右手拿起备用刀叉整理归置', startFrame: 210, endFrame: 240 },
+      { text: '左手协助校正主干刀叉位置', startFrame: 240, endFrame: 270 },
+      { text: '双手清洁理顺并退回初始安全点', startFrame: 270, endFrame: 300 }
     ]
   },
   {
     id: 'tpl_default_2',
     name: '📦 工业打包贴标标准标注模版',
-    desc: '标准的6工步纸箱开箱封底及贴标工段步骤，适配Galbot真机采集数据。',
+    desc: '标准的6工步纸箱开箱封底及贴标工段步骤（总长300帧），适配Galbot真机数据。',
     stepCount: 6,
     creator: '系统内置',
     createTime: '2026-07-14 16:40:00',
+    totalFrames: 300,
     steps: [
-      { text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 20 },
-      { text: '右手取底部泡沫垫并放入纸箱', startFrame: 20, endFrame: 40 },
-      { text: '右手抓取核心金属支架入箱', startFrame: 40, endFrame: 65 },
-      { text: '左手取顶部泡沫垫覆盖定位', startFrame: 65, endFrame: 80 },
-      { text: '双手折叠两侧箱盖合拢', startFrame: 80, endFrame: 100 },
-      { text: '双手持胶带机封口封箱', startFrame: 100, endFrame: 120 }
+      { text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 50 },
+      { text: '右手取底部泡沫垫并放入纸箱', startFrame: 50, endFrame: 100 },
+      { text: '右手抓取核心金属支架入箱', startFrame: 100, endFrame: 150 },
+      { text: '左手取顶部泡沫垫覆盖定位', startFrame: 150, endFrame: 200 },
+      { text: '双手折叠两侧箱盖合拢', startFrame: 200, endFrame: 250 },
+      { text: '双手持胶带机封口封箱', startFrame: 250, endFrame: 300 }
     ]
   }
 ];
@@ -69,17 +71,31 @@ export default function TaskTemplatesPage() {
   const [actionForm] = Form.useForm();
   const [actionInputMode, setActionInputMode] = useState('structured');
   const [actionSteps, setActionSteps] = useState([
-    { key: '1', arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' },
-    { key: '2', arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近' },
-    { key: '3', arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧' }
+    { key: '1', arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置', startFrame: 0, endFrame: 300 },
+    { key: '2', arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近', startFrame: 301, endFrame: 600 },
+    { key: '3', arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧', startFrame: 601, endFrame: 900 }
   ]);
   const [actionNaturalText, setActionNaturalText] = useState(
-    "1. 右手 (Right Arm) 识别 目标物品 (确认位置)\n2. 右手 (Right Arm) 靠近 目标物品 (避障靠近)\n3. 右手 (Right Arm) 抓取 目标物品 (牢固夹紧)"
+    "1. 右手 (Right Arm) 识别 目标物品 (确认位置) [0 - 300 帧]\n2. 右手 (Right Arm) 靠近 目标物品 (避障靠近) [301 - 600 帧]\n3. 右手 (Right Arm) 抓取 目标物品 (牢固夹紧) [601 - 900 帧]"
   );
 
   const addActionStep = () => {
     const newKey = (actionSteps.length + 1).toString();
-    setActionSteps([...actionSteps, { key: newKey, arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' }]);
+    const lastStep = actionSteps[actionSteps.length - 1];
+    const prevEnd = lastStep ? (lastStep.endFrame ?? 0) : 0;
+    const startF = prevEnd > 0 ? prevEnd + 1 : 0;
+    setActionSteps([
+      ...actionSteps, 
+      { 
+        key: newKey, 
+        arm: '右手 (Right Arm)', 
+        skill: '识别', 
+        object: '目标物品', 
+        goal: '确认位置',
+        startFrame: startF,
+        endFrame: startF + 299
+      }
+    ]);
   };
 
   const removeActionStep = (key) => {
@@ -94,7 +110,11 @@ export default function TaskTemplatesPage() {
     actionForm.validateFields().then(values => {
       let stepTexts = [];
       if (actionInputMode === 'structured') {
-        stepTexts = actionSteps.map(s => `${s.arm} ${s.skill} ${s.object} (${s.goal})`);
+        stepTexts = actionSteps.map(s => {
+          const sFrame = s.startFrame ?? 0;
+          const eFrame = s.endFrame ?? (sFrame + 30);
+          return `${s.arm} ${s.skill} ${s.object} (${s.goal}) [${sFrame} - ${eFrame} 帧]`;
+        });
       } else {
         stepTexts = actionNaturalText.split('\n').map(line => line.replace(/^\d+[\.\、\s]*/, '').trim()).filter(Boolean);
       }
@@ -462,14 +482,23 @@ export default function TaskTemplatesPage() {
                 <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                   <Text strong style={{ fontSize: 12, color: '#334155', display: 'block', marginBottom: 8, flexShrink: 0 }}>预设SOP动作序列流程：</Text>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #f1f5f9', flex: 1, overflowY: 'auto' }}>
-                    {tpl.steps.map((st, idx) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                        <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold', flexShrink: 0 }}>
-                          {idx + 1}
-                        </span>
-                        <span style={{ color: '#1e293b', fontWeight: 500 }}>{st}</span>
-                      </div>
-                    ))}
+                    {tpl.steps.map((st, idx) => {
+                      const startFrame = idx === 0 ? 0 : (idx * 301);
+                      const endFrame = (idx + 1) * 300;
+                      return (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 12, padding: '2px 0' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                            <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold', flexShrink: 0 }}>
+                              {idx + 1}
+                            </span>
+                            <span style={{ color: '#1e293b', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{st}</span>
+                          </div>
+                          <Tag color="blue" style={{ margin: 0, fontSize: 11, flexShrink: 0, borderRadius: 4, background: '#eff6ff', borderColor: '#bfdbfe', color: '#1d4ed8', fontWeight: 'bold' }}>
+                            {startFrame} - {endFrame} 帧
+                          </Tag>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </Card>
@@ -647,7 +676,7 @@ export default function TaskTemplatesPage() {
                         {/* Dropdowns row */}
                         <div style={{ flex: 1 }}>
                           <Row gutter={[8, 8]}>
-                            <Col span={6}>
+                            <Col span={5}>
                               <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>执行末端类型</div>
                               <Select 
                                 value={item.arm} 
@@ -663,7 +692,7 @@ export default function TaskTemplatesPage() {
                               </Select>
                             </Col>
 
-                            <Col span={6}>
+                            <Col span={4}>
                               <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>原子技能</div>
                               <Select 
                                 value={item.skill} 
@@ -681,7 +710,7 @@ export default function TaskTemplatesPage() {
                               </Select>
                             </Col>
 
-                            <Col span={6}>
+                            <Col span={4}>
                               <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>操作对象</div>
                               <Select 
                                 value={item.object} 
@@ -703,7 +732,7 @@ export default function TaskTemplatesPage() {
                               </Select>
                             </Col>
 
-                            <Col span={6}>
+                            <Col span={5}>
                               <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>操作目标</div>
                               <Select 
                                 value={item.goal} 
@@ -719,6 +748,29 @@ export default function TaskTemplatesPage() {
                                 <Select.Option value="对齐插槽">对齐插槽</Select.Option>
                                 <Select.Option value="推拉合拢">推拉合拢</Select.Option>
                               </Select>
+                            </Col>
+
+                            <Col span={6}>
+                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>默认帧数区间</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <InputNumber 
+                                  value={item.startFrame ?? 0} 
+                                  onChange={(val) => updateActionStepField(item.key, 'startFrame', val ?? 0)}
+                                  min={0}
+                                  size="small"
+                                  placeholder="起始帧"
+                                  style={{ width: '48%' }}
+                                />
+                                <span style={{ fontSize: 10, color: '#94a3b8' }}>-</span>
+                                <InputNumber 
+                                  value={item.endFrame ?? 30} 
+                                  onChange={(val) => updateActionStepField(item.key, 'endFrame', val ?? 30)}
+                                  min={0}
+                                  size="small"
+                                  placeholder="结束帧"
+                                  style={{ width: '48%' }}
+                                />
+                              </div>
                             </Col>
                           </Row>
                         </div>

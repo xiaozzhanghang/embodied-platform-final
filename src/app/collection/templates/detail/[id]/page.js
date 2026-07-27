@@ -53,7 +53,7 @@ export default function TemplateDetailPage({ params }) {
         <Breadcrumb 
           items={[
             { title: '数据采集' },
-            { title: '任务模板', href: '/collection/templates' },
+            { title: '模版中心', href: '/collection/templates' },
             { title: '模板详情' }
           ]} 
           style={{ marginBottom: 16 }}

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Radio, Progress, List, Upload, InputNumber } from 'antd';
 import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
@@ -35,8 +35,16 @@ export default function AnnotationAuditEpisodeListPage() {
   const router = useRouter();
   const params = useParams();
   const instanceId = params.id;
-  const [activeAnnoTab, setActiveAnnoTab] = useState('all');
+  const searchParams = useSearchParams();
+  const [activeAnnoTab, setActiveAnnoTab] = useState('unannotated');
   const { message } = App.useApp();
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl) {
+      setActiveAnnoTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   const [filterAnnoStatus, setFilterAnnoStatus] = useState(null);
   const [filterAuditStatus, setFilterAuditStatus] = useState(null);
@@ -222,7 +230,7 @@ export default function AnnotationAuditEpisodeListPage() {
             setSelectedRowKeys([]);
             setSelectedRows([]);
             setActiveAnnoTab('to_verify');
-            message.success(`已批量适配复制 ${activeBatchType} 标注数据！`);
+            message.success(`✨ 批量标注完成！已自动为您切换至【待校验】页签等待审核。`);
           }, 300);
 
           return 100;
@@ -357,14 +365,15 @@ export default function AnnotationAuditEpisodeListPage() {
             return {
               ...ep,
               auditStatus: '通过',
-              annoStatus: ep.annoStatus === '未标注' ? '已标注' : ep.annoStatus
+              annoStatus: '已标注'
             };
           }
           return ep;
         }));
         setSelectedRowKeys([]);
         setSelectedRows([]);
-        message.success('批量审核通过操作成功！');
+        setActiveAnnoTab('annotated');
+        message.success('🎉 批量审核通过成功！数据已流转完成并归档至【已标注 / 完成】页签。');
       }
     });
   };
@@ -497,7 +506,7 @@ export default function AnnotationAuditEpisodeListPage() {
               size="small" 
               icon={<EditOutlined />}
               style={{ padding: '0 4px' }}
-              disabled={r.annoStatus === '已标注'}
+              disabled={r.annoStatus === '已标注' || r.annoStatus === '待校验' || activeAnnoTab === 'to_verify'}
               onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=annotate`)}
             >
               标注
@@ -713,11 +722,11 @@ export default function AnnotationAuditEpisodeListPage() {
         <Card
           title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>数据列表</span>}
           tabList={[
-            { key: 'all', tab: `全部 (${episodes.length})` },
-            { key: 'annotated', tab: `已标注 (${episodes.filter(e => e.annoStatus === '已标注').length})` },
             { key: 'unannotated', tab: `未标注 (${episodes.filter(e => e.annoStatus === '未标注').length})` },
             { key: 'to_verify', tab: `待校验 (${episodes.filter(e => e.annoStatus === '待校验').length})` },
+            { key: 'annotated', tab: `已标注 / 完成 (${episodes.filter(e => e.annoStatus === '已标注').length})` },
             { key: 'processing', tab: `标注中 (${episodes.filter(e => e.annoStatus === '标注中').length})` },
+            { key: 'all', tab: `全部 (${episodes.length})` },
           ]}
           activeTabKey={activeAnnoTab}
           onTabChange={(key) => setActiveAnnoTab(key)}

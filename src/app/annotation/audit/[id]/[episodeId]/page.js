@@ -85,9 +85,17 @@ useEffect(() => {
     } else {
       message.success('所有数据标注完成！返回列表页');
       setTimeout(() => {
-        router.push(`/annotation/audit/${instanceId}`);
+        router.push(`/annotation/audit/${instanceId}?tab=annotated`);
       }, 600);
     }
+  };
+
+  // Pass Audit and auto-navigate to completed (annotated) tab
+  const handlePassAudit = () => {
+    message.success('🎉 抽检审核通过！数据已完成审核，自动跳转至【已标注 / 完成】页签...');
+    setTimeout(() => {
+      router.push(`/annotation/audit/${instanceId}?tab=annotated`);
+    }, 600);
   };
 
   // Video State
@@ -96,7 +104,7 @@ useEffect(() => {
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenCamera, setFullscreenCamera] = useState('camera_head_left_color');
-  const totalFrames = 120; 
+  const totalFrames = 1200; 
 
   // Playback timer simulation
   useEffect(() => {
@@ -158,17 +166,12 @@ useEffect(() => {
   const [drawCurrent, setDrawCurrent] = useState({ x: 0, y: 0 });
 
   // 3. Range Annotation specific states
-  const [selectedStepId, setSelectedStepId] = useState(1); 
+  const [selectedStepId, setSelectedStepId] = useState(null); 
   const [steps, setSteps] = useState([
-    { id: 1, text: '右手从置物架抓取药品到药房工作台', startFrame: 0, endFrame: 15, total: 16, status: 'success', color: '#13c2c2' },
-    { id: 2, text: '右手从置物架侧医疗废弃物垃圾桶到医疗废弃物垃圾棚', startFrame: 15, endFrame: 30, total: 16, status: 'success', color: '#722ed1' },
-    { id: 3, text: '双手从台面上方放置托盘到桌子', startFrame: 30, endFrame: 45, total: 16, status: 'success', color: '#1890ff' },
-    { id: 4, text: '双手从桌子拿起托盘到台面上方', startFrame: 45, endFrame: 60, total: 16, status: 'success', color: '#52c41a' },
-    { id: 5, text: '右手从桌子拿起盘子到台面上方', startFrame: 60, endFrame: 75, total: 16, status: 'success', color: '#faad14' },
-    { id: 6, text: '右手从台面上方放置盘子到托盘正中', startFrame: 75, endFrame: 90, total: 16, status: 'success', color: '#ff4d4f' },
-    { id: 7, text: '右手从桌子拿起叉子到台面上方', startFrame: 90, endFrame: 100, total: 11, status: 'success', color: '#eb2f96' },
-    { id: 8, text: '右手从台面上方放置叉子到盘子右侧', startFrame: 100, endFrame: 110, total: 11, status: 'success', color: '#13c2c2' },
-    { id: 9, text: '左手从桌子拿起餐刀到台面上方', startFrame: 110, endFrame: 120, total: 11, status: 'success', color: '#722ed1' }
+    { id: 1, text: '右手从置物架抓取药品到药房工作台', startFrame: 0, endFrame: 300, total: 300, status: 'success', color: '#13c2c2' },
+    { id: 2, text: '右手从置物架侧医疗废弃物垃圾桶到医疗废弃物垃圾棚', startFrame: 301, endFrame: 600, total: 300, status: 'success', color: '#722ed1' },
+    { id: 3, text: '双手从台面上方放置托盘到桌子', startFrame: 601, endFrame: 900, total: 300, status: 'success', color: '#1890ff' },
+    { id: 4, text: '双手从桌子拿起托盘到台面上方', startFrame: 901, endFrame: 1200, total: 300, status: 'success', color: '#52c41a' }
   ]);
   const [controllerQuality, setControllerQuality] = useState('success');
   const [activeTabKey, setActiveTabKey] = useState('1');
@@ -561,14 +564,102 @@ useEffect(() => {
     }
   }, [isAddModalOpen]);
 
-  // Immediate Action when Stop is Clicked/Pressed: Set End point AND open Modal Dialog!
+  // Direct Start Action (Set Start Frame of active step & start video playback)
+  const handleStartAction = (frameVal) => {
+    if (selectedStepId === null) {
+      message.warning('请先在下方列表中选中某一个动作步骤！');
+      return;
+    }
+    const startVal = frameVal !== undefined ? frameVal : currentFrame;
+    setSteps(prev => prev.map(s => {
+      if (s.id === selectedStepId) {
+        const newEnd = startVal >= s.endFrame ? Math.min(totalFrames, startVal + 20) : s.endFrame;
+        return {
+          ...s,
+          startFrame: startVal,
+          endFrame: newEnd,
+          total: Math.max(0, newEnd - startVal)
+        };
+      }
+      return s;
+    }));
+
+    // Auto play video
+    setIsPlaying(true);
+    setIsRecording(true);
+
+    const activeStep = steps.find(s => s.id === selectedStepId);
+    message.success(`🚩 已锁定步骤「${activeStep?.text || ''}」起始帧为 ${startVal} 帧，视频开始播放▶️`);
+  };
+
+  // Direct Stop/Annotate Action (Set End Frame of active step & pause video playback)
   const handleStopAction = (frameVal) => {
+    if (selectedStepId === null) {
+      message.warning('请先在下方列表中选中某一个动作步骤！');
+      return;
+    }
     const endVal = frameVal !== undefined ? frameVal : currentFrame;
-    setNewRangeEnd(endVal);
-    setIsAddModalOpen(true);
+
+    // Auto pause video
     setIsPlaying(false);
     setIsRecording(false);
-    message.info(`🏁 动作停止在 ${endVal} 帧，已唤起新增语义段弹窗`);
+
+    setSteps(prev => prev.map(s => {
+      if (s.id === selectedStepId) {
+        const newStart = endVal <= s.startFrame ? Math.max(0, endVal - 15) : s.startFrame;
+        return {
+          ...s,
+          startFrame: newStart,
+          endFrame: endVal,
+          total: Math.max(0, endVal - newStart)
+        };
+      }
+      return s;
+    }));
+
+    const activeStep = steps.find(s => s.id === selectedStepId);
+    message.success(`✅ 视频已暂停⏸️！已锁定步骤「${activeStep?.text || ''}」结束帧为 ${endVal} 帧`);
+  };
+
+  const handleStepTextChange = (id, newText) => {
+    setSteps(prev => prev.map(s => s.id === id ? { ...s, text: newText } : s));
+  };
+
+  const handleImportActionTemplate = (tplKey) => {
+    const templatesMap = {
+      act_1: [
+        { text: '双手开箱并放置底泡沫垫', startFrame: 0, endFrame: 300 },
+        { text: '右手取零部件放入纸箱', startFrame: 301, endFrame: 600 },
+        { text: '左手取顶泡沫垫覆盖定位', startFrame: 601, endFrame: 900 },
+        { text: '双手折叠两侧箱盖并封箱', startFrame: 901, endFrame: 1200 }
+      ],
+      act_2: [
+        { text: '右手识别定位目标书籍', startFrame: 0, endFrame: 300 },
+        { text: '右手避障靠近目标书籍', startFrame: 301, endFrame: 600 },
+        { text: '右手牢固抓取目标书籍', startFrame: 601, endFrame: 900 },
+        { text: '右手平稳放置在目标桌面上', startFrame: 901, endFrame: 1200 }
+      ],
+      act_3: [
+        { text: '双手识别并定位餐盘位置', startFrame: 0, endFrame: 300 },
+        { text: '双手避障靠近餐盘两端', startFrame: 301, endFrame: 600 },
+        { text: '双手牢固夹紧并抬起餐盘', startFrame: 601, endFrame: 900 },
+        { text: '双手平稳移动至指定收拾区', startFrame: 901, endFrame: 1200 }
+      ]
+    };
+    const templateSteps = templatesMap[tplKey] || templatesMap.act_2;
+    const colors = ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#eb2f96', '#722ed1', '#13c2c2'];
+    const newSteps = templateSteps.map((st, idx) => ({
+      id: idx + 1,
+      text: st.text,
+      startFrame: st.startFrame,
+      endFrame: st.endFrame,
+      total: st.endFrame - st.startFrame,
+      status: 'success',
+      color: colors[idx % colors.length]
+    }));
+    setSteps(newSteps);
+    setSelectedStepId(1);
+    message.success('已成功从动作模版套用步骤及默认帧区间！可直接在线修改描述文字');
   };
 
   const handleSaveSemanticSegment = () => {
@@ -610,34 +701,26 @@ useEffect(() => {
     setNewRangeEnd(Math.min(totalFrames, newRangeEnd + 20));
   };
 
-  // Keyboard Event Listener for Pipeline Annotation (Q / R / Enter / Space / Ctrl+S)
+  // Keyboard Event Listener for Pipeline Annotation (Q / R / W / Space / Ctrl+S)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (annoType !== '语义标注') return;
-      
-      // If typing in input, don't trigger shortcuts
+      // If typing in input or textarea, don't trigger global hotkeys
       if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
         return;
       }
 
       if (e.key === 'q' || e.key === 'Q') {
         e.preventDefault();
-        setNewRangeStart(currentFrame);
-        setIsRecording(true);
-        setIsPlaying(true);
-        message.info(`🚩 [快捷键 Q] 记录动作起始帧: ${currentFrame}f，视频已开始播放`);
-      } else if (e.key === 'r' || e.key === 'R') {
+        handleStartAction(currentFrame);
+      } else if (e.key === 'r' || e.key === 'R' || e.key === 'w' || e.key === 'W') {
         e.preventDefault();
         handleStopAction(currentFrame);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        setIsAddModalOpen(true);
       } else if (e.key === ' ') {
         e.preventDefault();
         setIsPlaying(prev => !prev);
       } else if (e.ctrlKey && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
-        message.success('时序语义标注数据已上传至服务器并保存！');
+        message.success('标注数据已保存到服务器！');
       }
     };
 
@@ -645,7 +728,7 @@ useEffect(() => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [annoType, currentFrame, newRangeStart, newRangeEnd, semanticSegments]);
+  }, [currentFrame, selectedStepId, steps]);
 
   const handleGridCameraChange = (gridKey, value) => {
     setGridCameras(prev => ({ ...prev, [gridKey]: value }));
@@ -663,10 +746,8 @@ useEffect(() => {
       const currentSegmentId = draggingSegmentIdRef.current;
       if (!currentHandle && !currentSegmentId) return;
 
-      // Determine which timeline rect to use based on mode
-      const rect = annoType === '语义标注'
-        ? semanticTimelineRef.current?.getBoundingClientRect()
-        : timelineRef.current?.getBoundingClientRect();
+      // Determine timeline rect from active timelineRef or fallback
+      const rect = (timelineRef.current || semanticTimelineRef.current)?.getBoundingClientRect();
       if (!rect) return;
 
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -674,27 +755,9 @@ useEffect(() => {
       let frame = Math.round(pct * totalFrames);
       frame = Math.max(0, Math.min(totalFrames, frame));
 
-      // Handle based on annotation mode
-      // 语义标注 mode: timeline uses semanticTimelineRef and renders semanticSegments
-      // 范围标注 mode: timeline uses timelineRef and renders steps
-      if (annoType === '语义标注' && currentSegmentId) {
-        // Semantic mode - update semanticSegments array (rendered on semanticTimelineRef)
-        setSemanticSegments(prev => prev.map(seg => {
-          if (seg.id !== currentSegmentId) return seg;
-          if (currentHandle === 'start') {
-            return { ...seg, start: Math.max(0, Math.min(frame, seg.end - 1)) };
-          } else if (currentHandle === 'end') {
-            return { ...seg, end: Math.min(totalFrames, Math.max(frame, seg.start + 1)) };
-          } else if (currentHandle === 'move') {
-            const len = seg.end - seg.start;
-            const newStart = Math.max(0, Math.min(frame, totalFrames - len));
-            return { ...seg, start: newStart, end: newStart + len };
-          }
-          return seg;
-        }));
-      } else if (annoType === '范围标注') {
-        // Range annotation mode - update steps array (rendered on timelineRef)
-        const targetId = currentSegmentId || selectedStepIdRef.current;
+      // Update steps array (rendered on timelineRef) for both 范围标注 and 语义标注
+      const targetId = currentSegmentId || selectedStepIdRef.current;
+      if (targetId) {
         setSteps(prevSteps => prevSteps.map(step => {
           if (step.id !== targetId) return step;
           const updated = { ...step };
@@ -952,6 +1015,53 @@ useEffect(() => {
             pointerEvents: 'none'
           }} 
         />
+        
+        {/* Video OSD Time HUD Overlay */}
+        <div style={{
+          position: 'absolute',
+          bottom: 10,
+          left: 10,
+          background: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(4px)',
+          border: '1px solid rgba(255,255,255,0.15)',
+          borderRadius: 6,
+          padding: '4px 10px',
+          color: '#fff',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          zIndex: 10,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          pointerEvents: 'none'
+        }}>
+          <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>
+            ⏱️ 00:00:{String(Math.floor(currentFrame * 0.0333)).padStart(2, '0')}.{String(Math.floor((currentFrame * 33.33) % 1000)).padStart(3, '0')}s
+          </span>
+          <span style={{ color: '#64748b' }}>|</span>
+          <span style={{ color: '#facc15' }}>30 FPS</span>
+          <span style={{ color: '#64748b' }}>|</span>
+          <span style={{ color: '#f43f5e' }}>{currentFrame} / {totalFrames} 帧</span>
+        </div>
+
+        {/* Absolute Epoch Timestamp Overlay */}
+        <div style={{
+          position: 'absolute',
+          top: 8,
+          right: 10,
+          background: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(4px)',
+          borderRadius: 4,
+          padding: '2px 8px',
+          color: '#e2e8f0',
+          fontFamily: 'monospace',
+          fontSize: '10px',
+          zIndex: 10,
+          pointerEvents: 'none'
+        }}>
+          📅 {getDynamicTimestamp(currentFrame)}
+        </div>
       </div>
     );
   };
@@ -959,7 +1069,7 @@ useEffect(() => {
   // ----------------------------------------------------
   // RENDER METHOD 1: 语义时序标注工作台 (Left Control, Right 2x2 Grid)
   // ----------------------------------------------------
-  if (annoType === '语义标注') {
+  if (false && annoType === '语义标注') {
     return (
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f4f5f7', color: '#0f172a', overflow: 'hidden', fontFamily: 'monospace' }}>
         
@@ -1042,42 +1152,26 @@ useEffect(() => {
               {semanticActiveTab === '标注' && (
                 <>
 
-                  {/* Action Buttons to Start & Stop */}
-                  <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#4b5563', marginBottom: 6 }}>操作手柄录制：</div>
+                  <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#4b5563', marginBottom: 6 }}>帧区间设定 (直接记录不弹框)：</div>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                     <Button
                       type="primary"
                       style={{ flex: 1, fontSize: '11px', height: 32, background: '#2563eb', borderColor: '#2563eb', fontWeight: 'bold' }}
-                      onClick={() => {
-                        setNewRangeStart(currentFrame);
-                        setIsRecording(true);
-                        setIsPlaying(true);
-                        message.success(`🚩 已记录开始帧: ${currentFrame}f，视频开始播放`);
-                      }}
+                      onClick={() => handleStartAction(currentFrame)}
                     >
                       开始 [Q]
                     </Button>
-                    
-                    <style>{`
-                      @keyframes pulseOpacity {
-                        0% { opacity: 0.3; }
-                        50% { opacity: 0.8; }
-                        100% { opacity: 0.3; }
-                      }
-                    `}</style>
 
                     <Button
                       type="primary"
                       style={{ flex: 1, fontSize: '11px', height: 32, fontWeight: 'bold', background: '#fa8c16', borderColor: '#fa8c16' }}
-                      onClick={() => {
-                        handleStopAction(currentFrame);
-                      }}
+                      onClick={() => handleStopAction(currentFrame)}
                     >
-                      标记 [R]
+                      标注 [W/R]
                     </Button>
                   </div>
 
-                  {/* User Guide Banner replacing redundant manual add button */}
+                  {/* User Guide Banner */}
                   <div style={{ 
                     padding: '8px 10px', 
                     background: '#f8fafc', 
@@ -1088,9 +1182,10 @@ useEffect(() => {
                     marginBottom: 16,
                     lineHeight: '1.5'
                   }}>
-                    💡 <strong>录制操作流</strong>：<br />
-                    1. 播放/拖拽定位到起始位置，按 <strong>Q</strong> / 点击“开始”<br />
-                    2. 继续播放/拖拽定位到结束位置，按 <strong>R</strong> / 点击“标记”
+                    💡 <strong>零弹框操作流</strong>：<br />
+                    1. 点击右侧某个步骤设为当前选中态。<br />
+                    2. 按 <strong>Q</strong> 或点击“开始”设置起始帧，按 <strong>W/R</strong> 或点击“标注”设置结束帧。<br />
+                    3. 在底部播放轴按住手柄自由拖拽微调帧区间。
                   </div>
 
                   {/* List of segment blocks in sidebar */}
@@ -2359,6 +2454,76 @@ useEffect(() => {
                     </span>
                   </div>
                 ))}
+                {/* Video OSD Time HUD Overlay */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: 12,
+                  left: 12,
+                  background: 'rgba(15, 23, 42, 0.85)',
+                  backdropFilter: 'blur(4px)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 6,
+                  padding: '4px 10px',
+                  color: '#fff',
+                  fontFamily: 'monospace',
+                  fontSize: '11px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  zIndex: 20,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                  pointerEvents: 'none'
+                }}>
+                  <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>
+                    ⏱️ 00:00:{String(Math.floor(currentFrame * 0.0333)).padStart(2, '0')}.{String(Math.floor((currentFrame * 33.33) % 1000)).padStart(3, '0')}s
+                  </span>
+                  <span style={{ color: '#64748b' }}>|</span>
+                  <span style={{ color: '#facc15' }}>30 FPS</span>
+                  <span style={{ color: '#64748b' }}>|</span>
+                  <span style={{ color: '#f43f5e' }}>{currentFrame} / {totalFrames} 帧</span>
+                </div>
+
+                {/* Absolute Epoch Timestamp Overlay */}
+                <div style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  background: 'rgba(0, 0, 0, 0.65)',
+                  backdropFilter: 'blur(4px)',
+                  borderRadius: 4,
+                  padding: '2px 8px',
+                  color: '#e2e8f0',
+                  fontFamily: 'monospace',
+                  fontSize: '10px',
+                  zIndex: 20,
+                  pointerEvents: 'none'
+                }}>
+                  📅 {getDynamicTimestamp(currentFrame)}
+                </div>
+
+                {/* REC Recording Status Badge */}
+                {isPlaying && selectedStepId !== null && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 12,
+                    left: 12,
+                    background: 'rgba(239, 68, 68, 0.9)',
+                    backdropFilter: 'blur(4px)',
+                    color: '#ffffff',
+                    fontSize: '11px',
+                    padding: '3px 10px',
+                    borderRadius: 16,
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    zIndex: 25,
+                    boxShadow: '0 2px 10px rgba(239, 68, 68, 0.5)'
+                  }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />
+                    🔴 REC 正在动态打标录制中... [按 R 结束锁定]
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -2417,67 +2582,146 @@ useEffect(() => {
                   </div>
                 )}
 
-                {annoType.includes('框') && (
-                  <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
-                    <Button size="small" block style={{ background: activeHand === 'left' ? '#faad14' : '#fff', color: activeHand === 'left' ? '#fff' : '#64748b' }} onClick={() => setActiveHand('left')}>左手框(黄)</Button>
-                    <Button size="small" block style={{ background: activeHand === 'right' ? '#52c41a' : '#fff', color: activeHand === 'right' ? '#fff' : '#64748b' }} onClick={() => setActiveHand('right')}>右手框(绿)</Button>
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <Space>
-                    <span style={{ fontSize: 12, color: '#64748b' }}>动作步骤 ({steps.length})</span>
-                    {showDevNotes && (
-                      <Badge 
-                        count="交互 ①" 
-                        style={{ backgroundColor: '#1677ff', fontSize: 9, transform: 'scale(0.8)', margin: 0, cursor: 'pointer' }} 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          Modal.info({
-                            title: '💡 交互点 ①: 动作步骤选择与高亮规范',
-                            width: 520,
-                            content: (
-                              <div style={{ fontSize: '12px', lineHeight: '1.6', marginTop: 10, fontFamily: 'sans-serif' }}>
-                                <p style={{ marginBottom: 8 }}><strong>1. 选中卡片样式增强：</strong> 选中卡片拥有 <code>5px</code> 宽度的蓝色左边框（<code>border-left</code>）及浅蓝色渐变底色，同时伴有外阴影和文字加粗，确保在长列表中醒目可见。</p>
-                                <p style={{ marginBottom: 8 }}><strong>2. 选中时序段反馈：</strong> 点击右侧卡片后，底部时序轴对应片段自动变高浮起并带有蓝色发光投影，提供极佳的组件间双向反馈感。</p>
-                                <p style={{ marginBottom: 0 }}><strong>3. 时序段反向选中：</strong> 直接点击时序轴上的色块，右侧列表对应卡片会自动被设为选中状态，并触发卡片高亮及自动滚屏。</p>
-                              </div>
-                            ),
-                            okText: '已了解'
-                          });
-                        }}
-                      />
+                {/* 操作手柄录制: 开始 [Q] & 标记 [R] */}
+                <div style={{ marginBottom: 16, padding: '12px', background: '#ffffff', borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#334155' }}>操作手柄录制：</span>
+                    {selectedStepId !== null ? (
+                      <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>
+                        已选中步骤 #{selectedStepId}
+                      </Tag>
+                    ) : (
+                      <Tag color="default" style={{ margin: 0, fontSize: 10 }}>
+                        未选中步骤 (按钮已致灰)
+                      </Tag>
                     )}
-                  </Space>
-                  <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={handleAddRecordedRange} style={{ fontSize: 10 }}>增加步骤</Button>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, marginBottom: selectedStepId === null ? 6 : 0 }}>
+                    <Button
+                      type="primary"
+                      disabled={selectedStepId === null}
+                      style={{
+                        flex: 1,
+                        fontSize: '13px',
+                        height: 38,
+                        borderRadius: 10,
+                        background: selectedStepId === null ? undefined : '#2563eb',
+                        borderColor: selectedStepId === null ? undefined : '#2563eb',
+                        fontWeight: 'bold',
+                        boxShadow: selectedStepId === null ? undefined : '0 2px 6px rgba(37, 99, 235, 0.25)'
+                      }}
+                      onClick={() => handleStartAction(currentFrame)}
+                    >
+                      开始 [Q]
+                    </Button>
+
+                    <Button
+                      type="primary"
+                      disabled={selectedStepId === null}
+                      style={{
+                        flex: 1,
+                        fontSize: '13px',
+                        height: 38,
+                        borderRadius: 10,
+                        background: selectedStepId === null ? undefined : '#f97316',
+                        borderColor: selectedStepId === null ? undefined : '#f97316',
+                        fontWeight: 'bold',
+                        boxShadow: selectedStepId === null ? undefined : '0 2px 6px rgba(249, 115, 22, 0.25)'
+                      }}
+                      onClick={() => handleStopAction(currentFrame)}
+                    >
+                      标记 [R]
+                    </Button>
+                  </div>
+                  {selectedStepId === null && (
+                    <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', marginTop: 4 }}>
+                      💡 请先在右侧或底部列表中点击选中某一个动作步骤
+                    </div>
+                  )}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 'bold', color: '#1e293b' }}>动作模版步骤 ({steps.length})</span>
+                  <Space size={6}>
+                    <Select
+                      placeholder="动作模版"
+                      size="small"
+                      style={{ width: 110, fontSize: 11 }}
+                      onChange={handleImportActionTemplate}
+                      options={[
+                        { value: 'act_1', label: '📦 工业打包模版' },
+                        { value: 'act_2', label: '📚 桌面整理模版' },
+                        { value: 'act_3', label: '🍽️ 餐盘收拾模版' }
+                      ]}
+                      allowClear
+                    />
+                    <Button 
+                      size="small" 
+                      type="primary" 
+                      ghost 
+                      icon={<PlusOutlined />} 
+                      onClick={handleAddRecordedRange} 
+                      style={{ fontSize: 11 }}
+                    >
+                      增加步骤
+                    </Button>
+                  </Space>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 560, overflowY: 'auto', paddingRight: 2 }}>
                   {steps.map((step, idx) => {
                     const isSelected = selectedStepId === step.id;
                     return (
                       <div 
                         key={step.id} 
                         onClick={() => handleStepSelect(step.id)}
+                        onFocus={() => handleStepSelect(step.id)}
                         style={{ 
-                          border: isSelected ? '1px solid #1677ff' : '1px solid #e2e8f0', 
-                          borderLeft: isSelected ? '5px solid #1677ff' : '1px solid #e2e8f0', 
-                          borderRadius: 6, 
-                          background: isSelected ? 'linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%)' : '#fafafa',
-                          padding: isSelected ? '12px 12px 12px 8px' : '12px',
+                          border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0', 
+                          borderLeft: isSelected ? '6px solid #2563eb' : '4px solid #cbd5e1', 
+                          borderRadius: 8, 
+                          background: isSelected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#fafafa',
+                          padding: '10px 12px',
                           cursor: 'pointer',
-                          boxShadow: isSelected ? '0 4px 12px rgba(22, 119, 255, 0.15)' : 'none',
-                          transition: 'all 0.2s'
+                          boxShadow: isSelected ? '0 4px 14px rgba(37, 99, 235, 0.2)' : 'none',
+                          transition: 'all 0.15s ease'
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                          <span style={{ fontSize: 12, fontWeight: isSelected ? 700 : 600, color: isSelected ? '#0958d9' : '#1f2937' }}>
-                            {step.id}. {step.text}
-                          </span>
-                          <Space size={8}>
-                            <Tag color="success" style={{ margin: 0 }}>正确</Tag>
+                        {/* Header: Number, Editable Text Input, Frame Tag & Delete */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                            <span style={{ 
+                              fontSize: 11, 
+                              fontWeight: 'bold', 
+                              color: isSelected ? '#1d4ed8' : '#64748b',
+                              background: isSelected ? '#bfdbfe' : '#e2e8f0',
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                              flexShrink: 0
+                            }}>
+                              {String(step.id).padStart(2, '0')}
+                            </span>
+                            <Input 
+                              size="small"
+                              value={step.text}
+                              onChange={(e) => handleStepTextChange(step.id, e.target.value)}
+                              onFocus={() => handleStepSelect(step.id)}
+                              placeholder="请输入/编辑动作描述..."
+                              style={{
+                                fontSize: 12,
+                                fontWeight: isSelected ? 600 : 400,
+                                color: isSelected ? '#1e40af' : '#1e293b',
+                                borderColor: isSelected ? '#60a5fa' : '#d9d9d9',
+                                background: '#ffffff'
+                              }}
+                            />
+                          </div>
+                          <Space size={4} style={{ flexShrink: 0 }}>
+                            <Tag color={isSelected ? "blue" : "default"} style={{ margin: 0, fontSize: 11, fontWeight: isSelected ? 'bold' : 'normal' }}>
+                              {step.startFrame} - {step.endFrame} 帧
+                            </Tag>
                             <DeleteOutlined
-                              style={{ color: '#ef4444', cursor: 'pointer', fontSize: 13 }}
+                              style={{ color: '#ef4444', cursor: 'pointer', fontSize: 13, marginLeft: 4 }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const filtered = steps.filter(x => x.id !== step.id);
@@ -2491,31 +2735,35 @@ useEffect(() => {
                             />
                           </Space>
                         </div>
-                        <Row gutter={8} style={{ fontSize: 11 }} onClick={(e) => e.stopPropagation()}>
+
+                        {/* Numeric Inputs for Start/End frame */}
+                        <Row gutter={8} style={{ fontSize: 11 }}>
                           <Col span={8}>
-                            <div>开始帧</div>
+                            <div style={{ fontSize: 10, color: '#64748b', marginBottom: 2 }}>起始帧</div>
                             <InputNumber 
                               size="small" 
                               value={step.startFrame} 
                               min={0}
                               max={step.endFrame - 1}
                               onChange={(val) => handleStepFrameChange(idx, 'startFrame', val)} 
+                              onFocus={() => handleStepSelect(step.id)}
                               style={{ width: '100%' }}
                             />
                           </Col>
                           <Col span={8}>
-                            <div>结束帧</div>
+                            <div style={{ fontSize: 10, color: '#64748b', marginBottom: 2 }}>结束帧</div>
                             <InputNumber 
                               size="small" 
                               value={step.endFrame} 
                               min={step.startFrame + 1}
                               max={totalFrames}
                               onChange={(val) => handleStepFrameChange(idx, 'endFrame', val)} 
+                              onFocus={() => handleStepSelect(step.id)}
                               style={{ width: '100%' }}
                             />
                           </Col>
                           <Col span={8}>
-                            <div>总共</div>
+                            <div style={{ fontSize: 10, color: '#64748b', marginBottom: 2 }}>帧时长</div>
                             <InputNumber size="small" disabled value={step.total} style={{ width: '100%' }} />
                           </Col>
                         </Row>
@@ -2524,24 +2772,7 @@ useEffect(() => {
                   })}
                 </div>
 
-                {/* 交互开发说明 (Developer Design Notes) */}
-                <div style={{ 
-                  marginTop: 20, 
-                  background: '#f8fafc', 
-                  border: '1px dashed #cbd5e1', 
-                  borderRadius: 6, 
-                  padding: '12px' 
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 'bold', color: '#1e293b', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    📖 交互设计开发说明
-                  </div>
-                  <ul style={{ paddingLeft: 16, margin: 0, fontSize: 10, color: '#64748b', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <li><strong>选中态增强</strong>: 右侧选中卡片带有蓝色厚边与浅蓝渐变；播放轴对应动作块自动浮起并带有外发光。</li>
-                    <li><strong>时序轴双滑块微调</strong>: 选中步骤后，播放条两端生成蓝色垂直微调手柄，支持鼠标/手势按住直接拖动。</li>
-                    <li><strong>键盘流支持</strong>: 支持空格播放/暂停，左右键单帧微调，结合 Alt/Shift 键可变速跳转。</li>
-                    <li><strong>双向数据绑定</strong>: 修改右侧「开始帧/结束帧」输入框后，底部播放轴滑块坐标实时计算重绘，反之亦然。</li>
-                  </ul>
-                </div>
+
               </div>
             )}
           </div>
@@ -2570,13 +2801,13 @@ useEffect(() => {
                   setCurrentFrame(step.startFrame);
                 }}
                 onMouseDown={(e) => {
-                  if (!isSelected) return;
                   e.stopPropagation();
+                  setSelectedStepId(step.id);
                   startDrag(step.id, 'move');
                 }}
                 onTouchStart={(e) => {
-                  if (!isSelected) return;
                   e.stopPropagation();
+                  setSelectedStepId(step.id);
                   startDrag(step.id, 'move');
                 }}
                 style={{
@@ -2712,13 +2943,53 @@ useEffect(() => {
               </div>
             );
           })}
-          <div style={{ position: 'absolute', left: `${(currentFrame / totalFrames) * 100}%`, top: -4, width: 2, height: '32px', background: '#ef4444', borderRadius: 1, zIndex: 30, pointerEvents: 'none' }} />
+          {/* Active Recording Progress Overlay when video is playing */}
+          {isPlaying && selectedStepId !== null && (
+            (() => {
+              const activeStep = steps.find(s => s.id === selectedStepId);
+              if (!activeStep) return null;
+              const startPct = (activeStep.startFrame / totalFrames) * 100;
+              const currentPct = (currentFrame / totalFrames) * 100;
+              const widthPct = Math.max(0, currentPct - startPct);
+              return (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: `${startPct}%`,
+                    width: `${widthPct}%`,
+                    height: '100%',
+                    top: 0,
+                    background: 'linear-gradient(90deg, rgba(37, 99, 235, 0.35) 0%, rgba(249, 115, 22, 0.75) 100%)',
+                    border: '2px dashed #f97316',
+                    borderRadius: 4,
+                    zIndex: 15,
+                    pointerEvents: 'none',
+                    boxShadow: '0 0 12px rgba(249, 115, 22, 0.6)'
+                  }}
+                />
+              );
+            })()
+          )}
+
+          {/* Red Playhead line & glowing top cursor */}
+          <div style={{ position: 'absolute', left: `${(currentFrame / totalFrames) * 100}%`, top: -6, height: '36px', zIndex: 30, pointerEvents: 'none', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '7px solid #ef4444' }} />
+            <div style={{ width: 2, flex: 1, background: '#ef4444', boxShadow: isPlaying ? '0 0 8px #ef4444' : 'none' }} />
+          </div>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Space>
-            <Button type="text" icon={<LeftOutlined />} onClick={() => message.info('上一条标注数据')} />
-            <Button type="text" icon={<RightOutlined />} onClick={() => message.info('下一条标注数据')} />
+          <Space size={16} align="center">
+            <Button type="text" icon={<LeftOutlined />} onClick={() => setCurrentFrame(0)} title="跳至首帧" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#0f172a', fontFamily: 'monospace' }}>
+                ⏱️ 00:00:{String(Math.floor(currentFrame * 0.0333)).padStart(2, '0')}.{String(Math.floor((currentFrame * 33.33) % 1000)).padStart(3, '0')} / 00:00:10.000
+              </div>
+              <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>
+                当前: {currentFrame}f / {totalFrames}f (30 FPS)
+              </div>
+            </div>
+            <Button type="text" icon={<RightOutlined />} onClick={() => setCurrentFrame(totalFrames)} title="跳至尾帧" />
           </Space>
 
           {/* Center: Playback Controls */}
@@ -2783,7 +3054,7 @@ useEffect(() => {
                 color: '#52c41a',
                 borderRadius: 4,
               }}
-              onClick={() => message.success('抽检通过')}
+              onClick={handlePassAudit}
             >
               抽检通过
             </Button>

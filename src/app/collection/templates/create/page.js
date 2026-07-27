@@ -215,7 +215,7 @@ function TemplateForm() {
         <Breadcrumb 
           items={[
             { title: '数据采集' },
-            { title: '任务模板', href: '/collection/templates' },
+            { title: '模版中心', href: '/collection/templates' },
             { title: isEdit ? '编辑模板' : '新建模板' }
           ]} 
           style={{ marginBottom: 16 }}

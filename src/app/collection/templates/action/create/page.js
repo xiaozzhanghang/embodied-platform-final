@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Button, Typography, Space, Input, Select, Form, Row, Col, 
-  Card, App, Breadcrumb, Divider, List, Radio
+  Card, App, Breadcrumb, Divider, List, Radio, InputNumber
 } from 'antd';
 import { 
   ArrowLeftOutlined, PlusOutlined, DeleteOutlined, 
@@ -25,18 +25,32 @@ export default function CreateActionTemplatePage() {
   
   // List of structured steps matching the audit/create page
   const [steps, setSteps] = useState([
-    { key: '1', arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' },
-    { key: '2', arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近' },
-    { key: '3', arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧' }
+    { key: '1', arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置', startFrame: 0, endFrame: 300 },
+    { key: '2', arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近', startFrame: 301, endFrame: 600 },
+    { key: '3', arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧', startFrame: 601, endFrame: 900 }
   ]);
 
   const [naturalText, setNaturalText] = useState(
-    "1. 右手 (Right Arm) 识别 目标物品 (确认位置)\n2. 右手 (Right Arm) 靠近 目标物品 (避障靠近)\n3. 右手 (Right Arm) 抓取 目标物品 (牢固夹紧)"
+    "1. 右手 (Right Arm) 识别 目标物品 (确认位置) [0 - 300 帧]\n2. 右手 (Right Arm) 靠近 目标物品 (避障靠近) [301 - 600 帧]\n3. 右手 (Right Arm) 抓取 目标物品 (牢固夹紧) [601 - 900 帧]"
   );
 
   const addStep = () => {
     const newKey = (steps.length + 1).toString();
-    setSteps([...steps, { key: newKey, arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置' }]);
+    const lastStep = steps[steps.length - 1];
+    const prevEnd = lastStep ? (lastStep.endFrame ?? 0) : 0;
+    const startF = prevEnd > 0 ? prevEnd + 1 : 0;
+    setSteps([
+      ...steps, 
+      { 
+        key: newKey, 
+        arm: '右手 (Right Arm)', 
+        skill: '识别', 
+        object: '目标物品', 
+        goal: '确认位置',
+        startFrame: startF,
+        endFrame: startF + 299
+      }
+    ]);
   };
 
   const removeStep = (key) => {
@@ -50,7 +64,11 @@ export default function CreateActionTemplatePage() {
   const onFinish = (values) => {
     let stepTexts = [];
     if (inputMode === 'structured') {
-      stepTexts = steps.map(s => `${s.arm} ${s.skill} ${s.object} (${s.goal})`);
+      stepTexts = steps.map(s => {
+        const sFrame = s.startFrame ?? 0;
+        const eFrame = s.endFrame ?? (sFrame + 30);
+        return `${s.arm} ${s.skill} ${s.object} (${s.goal}) [${sFrame} - ${eFrame} 帧]`;
+      });
     } else {
       stepTexts = naturalText.split('\n').map(line => line.replace(/^\d+[\.\、\s]*/, '').trim()).filter(Boolean);
     }
@@ -206,7 +224,7 @@ export default function CreateActionTemplatePage() {
                         {/* Dropdowns row */}
                         <div style={{ flex: 1 }}>
                           <Row gutter={[12, 12]}>
-                            <Col span={6}>
+                            <Col span={5}>
                               <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>执行末端类型</div>
                               <Select 
                                 value={item.arm} 
@@ -222,7 +240,7 @@ export default function CreateActionTemplatePage() {
                               </Select>
                             </Col>
 
-                            <Col span={6}>
+                            <Col span={4}>
                               <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>原子技能</div>
                               <Select 
                                 value={item.skill} 
@@ -240,7 +258,7 @@ export default function CreateActionTemplatePage() {
                               </Select>
                             </Col>
 
-                            <Col span={6}>
+                            <Col span={4}>
                               <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>操作对象</div>
                               <Select 
                                 value={item.object} 
@@ -262,7 +280,7 @@ export default function CreateActionTemplatePage() {
                               </Select>
                             </Col>
 
-                            <Col span={6}>
+                            <Col span={5}>
                               <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>操作目标</div>
                               <Select 
                                 value={item.goal} 
@@ -278,6 +296,29 @@ export default function CreateActionTemplatePage() {
                                 <Option value="对齐插槽">对齐插槽</Option>
                                 <Option value="推拉合拢">推拉合拢</Option>
                               </Select>
+                            </Col>
+
+                            <Col span={6}>
+                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>默认帧数区间</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <InputNumber 
+                                  value={item.startFrame ?? 0} 
+                                  onChange={(val) => updateStepField(item.key, 'startFrame', val ?? 0)}
+                                  min={0}
+                                  size="middle"
+                                  placeholder="起始帧"
+                                  style={{ width: '48%' }}
+                                />
+                                <span style={{ fontSize: 11, color: '#94a3b8' }}>-</span>
+                                <InputNumber 
+                                  value={item.endFrame ?? 30} 
+                                  onChange={(val) => updateStepField(item.key, 'endFrame', val ?? 30)}
+                                  min={0}
+                                  size="middle"
+                                  placeholder="结束帧"
+                                  style={{ width: '48%' }}
+                                />
+                              </div>
                             </Col>
                           </Row>
                         </div>
