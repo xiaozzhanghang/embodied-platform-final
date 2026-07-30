@@ -7,7 +7,7 @@ import {
   Input, Row, Col, Progress, Switch, Tooltip, Radio, Card, List, Form, Modal, Checkbox, InputNumber
 } from 'antd';
 import { 
-  CloseOutlined, SearchOutlined, ReloadOutlined, AuditOutlined, EyeOutlined,
+  CloseOutlined, CloseCircleOutlined, SearchOutlined, ReloadOutlined, AuditOutlined, EyeOutlined,
   CheckCircleOutlined, CheckCircleFilled, FullscreenOutlined, FullscreenExitOutlined, PlayCircleOutlined, 
   CheckOutlined, InfoCircleOutlined, SelectOutlined, BorderOutlined, AimOutlined, 
   VideoCameraOutlined, LeftOutlined, RightOutlined, PauseOutlined, StepBackwardOutlined, 
