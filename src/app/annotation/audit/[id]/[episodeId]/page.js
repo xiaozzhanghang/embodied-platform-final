@@ -132,6 +132,34 @@ useEffect(() => {
   const [fullscreenCamera, setFullscreenCamera] = useState('camera_head_left_color');
   const totalFrames = 1200; 
 
+  // Red Line Playhead State (Decoupled from video playback, independently draggable with mouse)
+  const [redLineFrame, setRedLineFrame] = useState(180);
+  const [isDraggingRedLine, setIsDraggingRedLine] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isDraggingRedLine && timelineRef.current) {
+        const rect = timelineRef.current.getBoundingClientRect();
+        const pct = (e.clientX - rect.left) / rect.width;
+        const frame = Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames)));
+        setRedLineFrame(frame);
+      }
+    };
+    const handleMouseUp = () => {
+      if (isDraggingRedLine) {
+        setIsDraggingRedLine(false);
+      }
+    };
+    if (isDraggingRedLine) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingRedLine, totalFrames]);
+
   // Playback timer simulation
   useEffect(() => {
     let intervalId;
@@ -2839,7 +2867,7 @@ useEffect(() => {
           onClick={(e) => {
             const rect = timelineRef.current.getBoundingClientRect();
             const pct = (e.clientX - rect.left) / rect.width;
-            setCurrentFrame(Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames))));
+            setRedLineFrame(Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames))));
           }}
         >
           {steps.map(step => {
@@ -2850,7 +2878,7 @@ useEffect(() => {
                 onClick={(e) => {
                   e.stopPropagation();
                   handleStepSelect(step.id);
-                  setCurrentFrame(step.startFrame);
+                  setRedLineFrame(step.startFrame);
                 }}
                 onMouseDown={(e) => {
                   e.stopPropagation();
@@ -3023,10 +3051,32 @@ useEffect(() => {
             })()
           )}
 
-          {/* Red Playhead line & glowing top cursor */}
-          <div style={{ position: 'absolute', left: `${(currentFrame / totalFrames) * 100}%`, top: -6, height: '36px', zIndex: 30, pointerEvents: 'none', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '7px solid #ef4444' }} />
-            <div style={{ width: 2, flex: 1, background: '#ef4444', boxShadow: isPlaying ? '0 0 8px #ef4444' : 'none' }} />
+          {/* Red Playhead line & glowing top cursor (Decoupled from video playback, independently draggable with mouse) */}
+          <div 
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              setIsDraggingRedLine(true);
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+              setIsDraggingRedLine(true);
+            }}
+            style={{ 
+              position: 'absolute', 
+              left: `${(redLineFrame / totalFrames) * 100}%`, 
+              top: -8, 
+              height: '38px', 
+              zIndex: 40, 
+              cursor: 'ew-resize', 
+              transform: 'translateX(-50%)', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center' 
+            }}
+            title={`标注游标: ${redLineFrame} 帧 (按住鼠标可左右拖拽调动游标)`}
+          >
+            <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '8px solid #ef4444', filter: 'drop-shadow(0 2px 4px rgba(239,68,68,0.6))' }} />
+            <div style={{ width: 2, flex: 1, background: '#ef4444', boxShadow: isDraggingRedLine ? '0 0 10px #ef4444' : '0 0 4px rgba(239, 68, 68, 0.5)' }} />
           </div>
         </div>
 
