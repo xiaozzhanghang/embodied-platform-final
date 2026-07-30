@@ -208,11 +208,11 @@ useEffect(() => {
 
   // Red Line Playhead State (Decoupled from video playback, independently draggable with mouse)
   const [redLineFrame, setRedLineFrame] = useState(180);
-  const [isDraggingRedLine, setIsDraggingRedLine] = useState(false);
+  const isDraggingRedLineRef = useRef(false);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (isDraggingRedLine && timelineRef.current) {
+      if (isDraggingRedLineRef.current && timelineRef.current) {
         const rect = timelineRef.current.getBoundingClientRect();
         const pct = (e.clientX - rect.left) / rect.width;
         const frame = Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames)));
@@ -220,19 +220,17 @@ useEffect(() => {
       }
     };
     const handleMouseUp = () => {
-      if (isDraggingRedLine) {
-        setIsDraggingRedLine(false);
+      if (isDraggingRedLineRef.current) {
+        isDraggingRedLineRef.current = false;
       }
     };
-    if (isDraggingRedLine) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDraggingRedLine, totalFrames]);
+  }, [totalFrames]);
   const [draggingHandle, setDraggingHandle] = useState(null);
   const [draggingSegmentId, setDraggingSegmentId] = useState(null);
   const [showDevNotes, setShowDevNotes] = useState(false);
@@ -2867,9 +2865,11 @@ useEffect(() => {
           ref={timelineRef}
           style={{ position: 'relative', height: 24, background: '#e2e8f0', borderRadius: 4, cursor: 'pointer', overflow: 'visible' }}
           onClick={(e) => {
-            const rect = timelineRef.current.getBoundingClientRect();
-            const pct = (e.clientX - rect.left) / rect.width;
-            setRedLineFrame(Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames))));
+            if (timelineRef.current) {
+              const rect = timelineRef.current.getBoundingClientRect();
+              const pct = (e.clientX - rect.left) / rect.width;
+              setRedLineFrame(Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames))));
+            }
           }}
         >
           {steps.map(step => {
@@ -2880,7 +2880,11 @@ useEffect(() => {
                 onClick={(e) => {
                   e.stopPropagation();
                   handleStepSelect(step.id);
-                  setRedLineFrame(step.startFrame);
+                  if (timelineRef.current) {
+                    const rect = timelineRef.current.getBoundingClientRect();
+                    const pct = (e.clientX - rect.left) / rect.width;
+                    setRedLineFrame(Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames))));
+                  }
                 }}
                 onMouseDown={(e) => {
                   e.stopPropagation();
@@ -3057,11 +3061,13 @@ useEffect(() => {
           <div 
             onMouseDown={(e) => {
               e.stopPropagation();
-              setIsDraggingRedLine(true);
+              e.preventDefault();
+              isDraggingRedLineRef.current = true;
             }}
             onTouchStart={(e) => {
               e.stopPropagation();
-              setIsDraggingRedLine(true);
+              e.preventDefault();
+              isDraggingRedLineRef.current = true;
             }}
             style={{ 
               position: 'absolute', 
@@ -3069,16 +3075,17 @@ useEffect(() => {
               top: -8, 
               height: '38px', 
               zIndex: 40, 
-              cursor: 'ew-resize', 
+              cursor: 'grab', 
               transform: 'translateX(-50%)', 
               display: 'flex', 
               flexDirection: 'column', 
-              alignItems: 'center' 
+              alignItems: 'center',
+              userSelect: 'none'
             }}
-            title={`标注游标: ${redLineFrame} 帧 (按住鼠标可左右拖拽调动游标)`}
+            title={`标注游标: ${redLineFrame} 帧 (在时序轴上随意点击或按住鼠标可左右拖动游标)`}
           >
-            <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '8px solid #ef4444', filter: 'drop-shadow(0 2px 4px rgba(239,68,68,0.6))' }} />
-            <div style={{ width: 2, flex: 1, background: '#ef4444', boxShadow: isDraggingRedLine ? '0 0 10px #ef4444' : '0 0 4px rgba(239, 68, 68, 0.5)' }} />
+            <div style={{ width: 0, height: 0, borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: '9px solid #ef4444', filter: 'drop-shadow(0 2px 4px rgba(239,68,68,0.6))', cursor: 'grab' }} />
+            <div style={{ width: 2, flex: 1, background: '#ef4444', boxShadow: '0 0 6px rgba(239, 68, 68, 0.6)' }} />
           </div>
         </div>
 
