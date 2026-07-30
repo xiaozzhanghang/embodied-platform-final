@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Radio, Progress, List, Upload, InputNumber } from 'antd';
-import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
+import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 
@@ -19,9 +19,8 @@ const annoTypeColors = {
 
 const annoStatusConfig = {
   '已标注': { color: 'success', icon: <CheckCircleOutlined /> },
-  '未标注': { color: 'default', icon: null },
+  '未标注': { color: 'default', icon: <MinusCircleOutlined /> },
   '待校验': { color: 'warning', icon: <ClockCircleOutlined /> },
-  '标注中': { color: 'processing', icon: <ClockCircleOutlined /> },
 };
 
 const auditStatusConfig = {
@@ -58,9 +57,9 @@ export default function AnnotationAuditEpisodeListPage() {
       const device = isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)';
       const annoType = isDual ? '语义标注' : '范围标注';
 
-      const annoStatuses = ['已标注', '未标注', '待校验', '标注中'];
+      const annoStatuses = ['已标注', '未标注', '待校验'];
       const auditStatuses = ['未审核', '审核中', '通过', '不通过'];
-      const annoStatus = i < 6 ? '已标注' : i < 16 ? annoStatuses[i % 5] : '未标注';
+      const annoStatus = i < 6 ? '已标注' : i < 16 ? annoStatuses[i % 3] : '未标注';
       const auditStatus = (annoStatus === '已标注' || annoStatus === '待校验') ? auditStatuses[i % 4] : '未审核';
       const totalFrames = 120 + (i * 12);
 
@@ -406,9 +405,9 @@ export default function AnnotationAuditEpisodeListPage() {
     const list = episodes.filter(item => {
       // 标注状态页签过滤
       if (activeAnnoTab === 'unannotated' && item.annoStatus !== '未标注') return false;
-      if (activeAnnoTab === 'processing' && item.annoStatus !== '标注中') return false;
       if (activeAnnoTab === 'annotated' && item.annoStatus !== '已标注') return false;
       if (activeAnnoTab === 'to_verify' && item.annoStatus !== '待校验') return false;
+      if (activeAnnoTab === 'qc_failed' && item.auditStatus !== '不通过') return false;
 
       const idMatch = !filterId || String(item.id).includes(filterId);
       const annoMatch = !filterAnnoStatus || item.annoStatus === filterAnnoStatus;
@@ -568,7 +567,7 @@ export default function AnnotationAuditEpisodeListPage() {
            <Space size={12}>
              <Button type="text" icon={<LeftOutlined />} onClick={() => router.push('/annotation/audit')} style={{ fontWeight: 500 }}>返回列表</Button>
              <Divider orientation="vertical" />
-             <Text strong style={{ fontSize: '14px' }}>标注审核 — 实例 #{instanceId}</Text>
+             <Text strong style={{ fontSize: '14px' }}>标注工作台 — 实例 #{instanceId}</Text>
            </Space>
            <Space>
              <Button 
@@ -631,7 +630,7 @@ export default function AnnotationAuditEpisodeListPage() {
               <Col><Input placeholder="ID" style={{ width: 140 }} value={filterId} onChange={e => setFilterId(e.target.value)} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear /></Col>
               <Col>
                 <Select placeholder="标注状态" style={{ width: 160 }} allowClear value={filterAnnoStatus} onChange={setFilterAnnoStatus}
-                  options={['已标注', '未标注', '待校验', '标注中'].map(s => ({ label: s, value: s }))}
+                  options={['已标注', '未标注', '待校验'].map(s => ({ label: s, value: s }))}
                 />
               </Col>
               <Col>
@@ -725,7 +724,8 @@ export default function AnnotationAuditEpisodeListPage() {
             { key: 'unannotated', tab: `未标注 (${episodes.filter(e => e.annoStatus === '未标注').length})` },
             { key: 'to_verify', tab: `待校验 (${episodes.filter(e => e.annoStatus === '待校验').length})` },
             { key: 'annotated', tab: `已标注 / 完成 (${episodes.filter(e => e.annoStatus === '已标注').length})` },
-            { key: 'processing', tab: `标注中 (${episodes.filter(e => e.annoStatus === '标注中').length})` },
+
+            { key: 'qc_failed', tab: `❌ 质检不通过 (${episodes.filter(e => e.auditStatus === '不通过').length})` },
             { key: 'all', tab: `全部 (${episodes.length})` },
           ]}
           activeTabKey={activeAnnoTab}

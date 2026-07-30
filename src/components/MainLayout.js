@@ -8,6 +8,8 @@ import { SpecProvider, useSpec } from './SpecContext';
 import {
   DashboardOutlined,
   TagsOutlined,
+  FormOutlined,
+  CameraOutlined,
   SettingOutlined,
   BellOutlined,
   UserOutlined,
@@ -75,16 +77,22 @@ const menuItems = [
   {
     key: 'data_collection',
     icon: <DatabaseOutlined />,
-    label: '数据采集',
+    label: '任务管理',
     roles: [ROLES.ADMIN, ROLES.QA, ROLES.COLLECTOR],
     children: [
-      { key: '/collection/tasks', icon: <SolutionOutlined />, label: '任务派发', roles: [ROLES.ADMIN] },
-      { key: '/collection/collect', icon: <VideoCameraOutlined />, label: '任务中心（采集端）', roles: [ROLES.ADMIN, ROLES.COLLECTOR] },
+      { key: '/collection/collection-tasks', icon: <CameraOutlined />, label: '数据采集', roles: [ROLES.ADMIN] },
+      { key: '/collection/annotation-tasks', icon: <FormOutlined />, label: '数据标注', roles: [ROLES.ADMIN] },
+      { key: '/annotation/audit', icon: <EyeOutlined />, label: '标注工作台', roles: [ROLES.ADMIN, ROLES.QA] },
       { key: '/collection/qa', icon: <FileSearchOutlined />, label: '数据质检', roles: [ROLES.ADMIN, ROLES.QA] },
-      { key: '/annotation/audit', icon: <EyeOutlined />, label: '标注审核', roles: [ROLES.ADMIN, ROLES.QA] },
       { key: '/collection/templates', icon: <LayoutOutlined />, label: '模版中心', roles: [ROLES.ADMIN] },
       { key: '/collection/taskbooks', icon: <ReadOutlined />, label: '任务书', roles: [ROLES.ADMIN] },
     ],
+  },
+  {
+    key: '/collection/collect',
+    icon: <VideoCameraOutlined />,
+    label: '任务中心（采集端）',
+    roles: [ROLES.ADMIN, ROLES.COLLECTOR],
   },
   {
     key: 'data_assets',
@@ -116,13 +124,17 @@ const breadcrumbMap = {
   '/collection/object-labels': ['基础数据', '物体标签'],
   '/collection/devices': ['设备管理', '设备列表'],
   '/collection/device-types': ['设备管理', '设备类型'],
-  '/collection/tasks': ['数据采集', '任务派发'],
-  '/collection/collect': ['数据采集', '任务中心（采集端）'],
+  '/collection/tasks': ['任务管理', '数据采集'],
+  '/collection/annotation-tasks': ['数据标注'],
+  '/collection/annotation-tasks/create': ['数据标注', '新建数据标注'],
+  '/collection/collection-tasks': ['数据采集'],
+  '/collection/collection-tasks/create': ['数据采集', '新建数据采集'],
+  '/collection/collect': ['任务中心（采集端）'],
   '/collection/collect-home': ['首页'],
-  '/collection/qa': ['数据采集', '数据质检'],
-  '/annotation/audit': ['数据采集', '标注审核'],
-  '/collection/templates': ['数据采集', '模版中心'],
-  '/collection/taskbooks': ['数据采集', '任务书'],
+  '/collection/qa': ['数据质检'],
+  '/annotation/audit': ['标注工作台'],
+  '/collection/templates': ['模版中心'],
+  '/collection/taskbooks': ['任务书'],
   '/data/raw': ['数据资产', '原始数据'],
   '/data/catalog': ['数据资产', '数据资产目录'],
   '/data/datasets': ['数据资产', '高质量数据集'],
@@ -304,6 +316,8 @@ function MainLayoutContent({ children }) {
           mode="inline"
           selectedKeys={[
             pathname === '/collection/collect-home' ? '/collection/collect-home' :
+            pathname.includes('/collection/collection-tasks') ? '/collection/collection-tasks' : 
+            pathname.includes('/collection/annotation-tasks') ? '/collection/annotation-tasks' : 
             pathname.includes('/collection/collect') ? '/collection/collect' : 
             pathname.includes('/collection/tasks') ? '/collection/tasks' : 
             pathname.includes('/collection/qa') ? '/collection/qa' : 
@@ -483,7 +497,7 @@ function MainLayoutContent({ children }) {
       <Drawer
         title={activeSpec ? `需求逻辑明细 #${activeSpec.number || ''}` : '需求逻辑明细'}
         placement="right"
-        width={420}
+        size={420}
         onClose={() => setActiveSpec(null)}
         open={!!activeSpec}
         styles={{ body: { padding: '24px' } }}

@@ -407,7 +407,7 @@ export default function CreateAnnotationTaskPage() {
         {/* Breadcrumb Navigation */}
         <div style={{ marginBottom: 16 }}>
           <Breadcrumb items={[
-            { title: <a onClick={() => router.push('/annotation/audit')}>标注审核</a> },
+            { title: <a onClick={() => router.push('/annotation/audit')}>标注工作台</a> },
             { title: '新建标注任务' }
           ]} />
         </div>

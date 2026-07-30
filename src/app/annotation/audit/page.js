@@ -373,7 +373,7 @@ export default function AnnotationAuditPage() {
   return (
     <MainLayout>
       <div style={{ marginBottom: 16 }}>
-        <Breadcrumb items={[{ title: '数据采集' }, { title: '标注审核' }]} style={{ marginBottom: 16 }} />
+        <Breadcrumb items={[{ title: '数据采集' }, { title: '标注工作台' }]} style={{ marginBottom: 16 }} />
       </div>
 
       <Card 

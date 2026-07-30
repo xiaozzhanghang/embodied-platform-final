@@ -58,16 +58,21 @@ export default function TaskInstancePage() {
   const [annoForm] = Form.useForm();
   
   const typeParam = searchParams ? searchParams.get('type') : null;
-  const initialMode = typeParam === 'asset' || id === '12854' ? 'asset' : 'collect';
+  const needCollectParam = searchParams ? searchParams.get('needCollect') : null;
+
+  const isAnno = typeParam === 'asset' || id === '12854' || (typeof id === 'string' && (id.startsWith('ANNO') || id.startsWith('asset')));
+  const isNoCollectTask = needCollectParam === 'false' || id === 'COLL-20260415-002' || (typeof id === 'string' && (id.includes('NOCOLLECT') || id.includes('ASSET_COLLECT')));
+  
+  const initialMode = isAnno ? 'asset' : 'collect';
   const [taskMode, setTaskMode] = useState(initialMode);
 
   useEffect(() => {
-    if (typeParam === 'asset' || id === '12854') {
+    if (isAnno) {
       setTaskMode('asset');
-    } else if (typeParam === 'collect' || id === '12853') {
+    } else {
       setTaskMode('collect');
     }
-  }, [typeParam, id]);
+  }, [typeParam, id, isAnno]);
   const [activeTab, setActiveTab] = useState('all');
   const [infoExpanded, setInfoExpanded] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -97,6 +102,7 @@ export default function TaskInstancePage() {
       content: `确认后，该包将结束流程并自动打包解析，数据将流转至质检中心。`,
       okText: '确认完成',
       cancelText: '取消',
+      okButtonProps: { danger: true },
       onOk: () => message.success(`包 ${record.instanceId} 已完成`),
     });
   };
@@ -129,15 +135,13 @@ export default function TaskInstancePage() {
 
   const columnsCollect = [
     { title: '分包实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 110 },
-    { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 120 },
-    { title: '采集人员', dataIndex: 'collector', key: 'collector', width: 100 },
-    { title: '指派标注员', dataIndex: 'annotator', key: 'annotator', width: 100 },
-    { title: '指派审核员', dataIndex: 'auditor', key: 'auditor', width: 100 },
+    { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 140 },
+    { title: '采集人员', dataIndex: 'collector', key: 'collector', width: 110 },
     { title: '分包数/计划数', key: 'planCount', width: 120, render: (_, r) => <span>{r.singlePack} / {r.planCount} 条</span> },
     { title: '分配设备实例', dataIndex: 'deviceInstance', key: 'deviceInstance', width: 140 },
     { title: '开始时间', dataIndex: 'startTime', key: 'startTime', width: 150 },
     {
-      title: '采集/标注进度', key: 'collectProgress', width: 140,
+      title: '采集进度', key: 'collectProgress', width: 140,
       render: (_, record) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Progress percent={record.collectProgress} size="small" showInfo={false} style={{ flex: 1 }} strokeColor="#1677ff" />
@@ -170,29 +174,41 @@ export default function TaskInstancePage() {
     { title: '操作', key: 'action', width: 180, fixed: 'right', render: (_, record) => getStatusActions(record) },
   ];
 
+  const mockInstancesNoCollect = [
+    { key: '1', instanceId: 'AST-AUTO-844101', taskName: '关联数据资产包导入', autoDataset: true, planCount: 100, singlePack: 100, collector: '外部导入 (自动归档)', deviceInstance: '资产包 - Lumos_FastUMI_202606', startTime: '2026-04-15 10:00', collectProgress: 100, status: '已完成' },
+  ];
+
   const currentColumns = taskMode === 'collect' ? columnsCollect : columnsAsset;
-  const currentMockData = taskMode === 'collect' ? mockInstancesCollect : mockInstancesAsset;
+  const rawMockData = taskMode === 'collect' 
+    ? (isNoCollectTask ? mockInstancesNoCollect : mockInstancesCollect) 
+    : mockInstancesAsset;
+
+  const currentMockData = rawMockData.filter(item => {
+    if (activeTab === 'pending') return item.status === '待分配';
+    if (activeTab === 'collecting') return taskMode === 'collect' ? item.status === '采集中' : item.status.includes('标注');
+    if (activeTab === 'done') return item.status === '已完成';
+    return true;
+  });
 
   return (
     <MainLayout>
       <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '任务详情' }]} style={{ marginBottom: 16 }} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <Button type="link" icon={<ArrowLeftOutlined />} onClick={() => router.push('/collection/tasks')} style={{ padding: 0 }}>
+        <Button type="link" icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ padding: 0 }}>
           返回任务列表
         </Button>
       </div>
 
       {/* High-Fidelity Header Card */}
       <Card style={{ marginBottom: 24, borderRadius: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', background: '#f8f9fc' }} styles={{ body: { padding: '24px 28px' } }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <Title level={4} style={{ margin: 0 }}>
             {taskMode === 'collect' ? '任务详情：餐具摆放数采任务' : '任务详情：工业纸箱打包封装关联标注任务'} ({id})
           </Title>
-          <Tag color={taskMode === 'collect' ? 'blue' : 'purple'} bordered={false} style={{ borderRadius: 10, padding: '2px 12px' }}>
-            {taskMode === 'collect' ? '需要采集数据模式' : '关联数据资产模式'}
+          <Tag color={taskMode === 'collect' ? (isNoCollectTask ? 'cyan' : 'blue') : 'purple'} variant="borderless" style={{ borderRadius: 10, padding: '2px 12px' }}>
+            {taskMode === 'collect' ? (isNoCollectTask ? '采集模式：不需要采集 (外部导入/关联资产)' : '采集模式：需要采集数据') : '标注任务模式'}
           </Tag>
-          <Tag color="processing" bordered={false} style={{ borderRadius: 10, padding: '2px 12px', background: '#e6f4ff', color: '#1677ff' }}>进行中</Tag>
         </div>
 
         {/* Basic Info Bar - Collapsible */}
@@ -226,8 +242,8 @@ export default function TaskInstancePage() {
                 </Col>
                 <Col span={6}>
                   <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>任务模式类型</div>
-                  <Tag color={taskMode === 'collect' ? 'blue' : 'purple'}>
-                    {taskMode === 'collect' ? '需要采集数据' : '关联数据资产'}
+                  <Tag color={taskMode === 'collect' ? (isNoCollectTask ? 'cyan' : 'blue') : 'purple'}>
+                    {taskMode === 'collect' ? (isNoCollectTask ? '不需要采集 (外部导入/关联资产)' : '需要采集数据') : '关联数据资产 / 外部导入'}
                   </Tag>
                 </Col>
                 <Col span={6}>
@@ -276,15 +292,25 @@ export default function TaskInstancePage() {
         <div style={{ background: '#fff', borderRadius: 8, padding: '16px 20px', border: '1px solid #f0f0f0', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space size={16} align="bottom">
             <Form.Item label="分包ID" style={{ marginBottom: 0 }}><Input placeholder="分包ID" style={{ width: 140 }} /></Form.Item>
-            <Form.Item label="标注员" style={{ marginBottom: 0 }}><Select placeholder="请选择标注员" style={{ width: 140 }} options={[{value:'李四', label:'李四'}, {value:'张三', label:'张三'}]} /></Form.Item>
-            <Form.Item label="审核员" style={{ marginBottom: 0 }}><Select placeholder="请选择审核员" style={{ width: 140 }} options={[{value:'王五', label:'王五'}, {value:'天奇管理员', label:'天奇管理员'}]} /></Form.Item>
+            {taskMode !== 'collect' && (
+              <>
+                <Form.Item label="标注员" style={{ marginBottom: 0 }}><Select placeholder="请选择标注员" style={{ width: 140 }} options={[{value:'李四', label:'李四'}, {value:'张三', label:'张三'}]} /></Form.Item>
+                <Form.Item label="审核员" style={{ marginBottom: 0 }}><Select placeholder="请选择审核员" style={{ width: 140 }} options={[{value:'王五', label:'王五'}, {value:'天奇管理员', label:'天奇管理员'}]} /></Form.Item>
+              </>
+            )}
             {taskMode === 'collect' && (
               <Form.Item label="采集员" style={{ marginBottom: 0 }}><Select placeholder="采集人员" style={{ width: 140 }} options={[{value:'张三', label:'张三'}, {value:'李四', label:'李四'}]} /></Form.Item>
             )}
             <Form.Item style={{ marginBottom: 0 }}><Button type="primary" icon={<SearchOutlined />}>搜索</Button></Form.Item>
           </Space>
             <Space size={12}>
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddPackVisible(true)}>新建分包</Button>
+              {isNoCollectTask ? (
+                <Tooltip title="关联资产数据/外部导入无需人工采集，系统已自动解析归档，新建分包按钮已置灰">
+                  <Button type="primary" disabled icon={<PlusOutlined />}>新建分包</Button>
+                </Tooltip>
+              ) : (
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddPackVisible(true)}>新建分包</Button>
+              )}
               <Button 
                 icon={<PauseOutlined />} 
                 disabled={selectedRowKeys.length === 0} 
@@ -293,14 +319,6 @@ export default function TaskInstancePage() {
               >
                 暂停分包
               </Button>
-              <Button 
-                icon={<PlusOutlined />} 
-                disabled={selectedRowKeys.length === 0}
-                onClick={() => setIsAddAnnoVisible(true)}
-                style={{ borderRadius: 6, background: selectedRowKeys.length > 0 ? '#e6f7ff' : '#f5f5f5', color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf', border: 'none' }}
-              >
-                指派标注审核流
-              </Button>
             </Space>
           </div>
 
@@ -308,7 +326,7 @@ export default function TaskInstancePage() {
           activeKey={activeTab}
           onChange={setActiveTab}
           items={[
-            { key: 'all', label: <span>全部 <Badge count={currentMockData.length} style={{ backgroundColor: '#e6f4ff', color: '#1677ff', boxShadow: 'none', marginLeft: 4 }} /></span> },
+            { key: 'all', label: <span>全部 <Badge count={rawMockData.length} style={{ backgroundColor: '#e6f4ff', color: '#1677ff', boxShadow: 'none', marginLeft: 4 }} /></span> },
             { key: 'pending', label: '待分配' },
             { key: 'collecting', label: taskMode === 'collect' ? '采集中' : '标注中' },
             { key: 'done', label: '已完成' },
@@ -352,27 +370,22 @@ export default function TaskInstancePage() {
           {taskMode === 'collect' ? (
             <>
               <Row gutter={16}>
-                <Col span={8}>
+                <Col span={12}>
                   <Form.Item label="选择采集员" name="collector" required rules={[{ required: true, message: '请选择采集员' }]}>
-                    <Select placeholder="请选择采集员" options={[{ value: 'u1', label: '张三 (采集员)' }, { value: 'u2', label: '李四 (采集员)' }]} defaultValue="u1" />
+                    <Select placeholder="请选择采集员" options={[{ value: 'u1', label: '张三 (采集员)' }, { value: 'u2', label: '李四 (采集员)' }, { value: 'u3', label: 'cy00831' }]} defaultValue="u3" />
                   </Form.Item>
                 </Col>
-                <Col span={8}>
-                  <Form.Item label="选择标注员" name="annotator" required rules={[{ required: true, message: '请选择标注员' }]}>
-                    <Select placeholder="请选择标注员" options={[{ value: 'a1', label: '李四 (标注员)' }, { value: 'a2', label: '赵六 (标注员)' }]} defaultValue="a1" />
-                  </Form.Item>
-                </Col>
-                <Col span={8}>
-                  <Form.Item label="选择审核员" name="auditor" required rules={[{ required: true, message: '请选择审核员' }]}>
-                    <Select placeholder="请选择审核员" options={[{ value: 'v1', label: '王五 (审核员)' }, { value: 'v2', label: '天奇管理员' }]} defaultValue="v1" />
+                <Col span={12}>
+                  <Form.Item label="采集数量" name="planCount" required initialValue={100} rules={[{ required: true, message: '请输入采集数量' }]}>
+                    <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入采集数量" addonAfter="条" />
                   </Form.Item>
                 </Col>
               </Row>
 
               <Row gutter={16}>
                 <Col span={24}>
-                  <Form.Item label="分包数 / 计划采集量 (条)" name="planCount" required initialValue={100}>
-                    <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入该分包计划采集条数" addonAfter="条" />
+                  <Form.Item label="分配设备实例" name="deviceInstance">
+                    <Select placeholder="请选择设备" options={[{ value: 'R002GB-RGB-101', label: 'R002GB-RGB-101 (Galbot RGB)' }, { value: 'DEV-FR-301', label: 'DEV-FR-301 (Franka Std)' }]} defaultValue="R002GB-RGB-101" />
                   </Form.Item>
                 </Col>
               </Row>
@@ -394,12 +407,11 @@ export default function TaskInstancePage() {
 
               <Row gutter={16}>
                 <Col span={24}>
-                  <Form.Item label="分包数 / 关联资产数据量 (条)" name="planCount" required initialValue={30}>
-                    <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入该分包关联资产数据条数" addonAfter="条" />
+                  <Form.Item label="标注数量" name="planCount" required initialValue={30} rules={[{ required: true, message: '请输入标注数量' }]}>
+                    <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入标注数量" addonAfter="条" />
                   </Form.Item>
                 </Col>
               </Row>
-
             </>
           )}
 

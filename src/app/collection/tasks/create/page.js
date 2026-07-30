@@ -231,11 +231,11 @@ function CreateTaskContent() {
 
   const addNaturalStep = () => {
     const newKey = String(Date.now());
-    setNaturalStepsList(prev => [...prev, { key: newKey, text: '' }]);
+    setNaturalStepsList(prev => [...prev, { key: newKey, text: '', frames: 120 }]);
   };
 
-  const updateNaturalStep = (key, text) => {
-    setNaturalStepsList(prev => prev.map(item => item.key === key ? { ...item, text } : item));
+  const updateNaturalStep = (key, field, value) => {
+    setNaturalStepsList(prev => prev.map(item => item.key === key ? { ...item, [field]: value } : item));
   };
 
   const removeNaturalStep = (key) => {
@@ -628,7 +628,7 @@ function CreateTaskContent() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32, padding: '0 100px' }}>
-        <Steps current={currentStep} labelPlacement="horizontal" style={{ width: '100%', maxWidth: 800 }}
+        <Steps current={currentStep} titlePlacement="horizontal" style={{ width: '100%', maxWidth: 800 }}
           items={[
             { title: <Text strong style={{ fontSize: 15 }}>{taskFormType === 'collect' ? '基础参数' : '基础参数 & 关联资产'}</Text> }, 
             { title: <Text strong style={{ fontSize: 15 }}>{taskFormType === 'collect' ? '动作预设' : '动作与标注审核预设'}</Text> }
@@ -657,8 +657,22 @@ function CreateTaskContent() {
               style={{ marginBottom: 24, borderRadius: 8 }}
             />
 
-            {/* 1. Card 1: 基础信息 (Top Fixed Card) */}
             <Card title="基础信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+              <div style={{ marginBottom: 24, padding: '16px', background: '#f8f9fc', borderRadius: 8, border: '1px solid #e8e8e8' }}>
+                <Form.Item label={<Text strong style={{ fontSize: 14, color: '#1f1f1f' }}>请选择任务类型模式</Text>} style={{ marginBottom: 0 }}>
+                  <Radio.Group 
+                    value={taskFormType} 
+                    onChange={(e) => setTaskFormType(e.target.value)} 
+                    optionType="button" 
+                    buttonStyle="solid" 
+                    size="middle"
+                  >
+                    <Radio.Button value="collect">🎥 新建采集任务 (物理/仿真设备数据采集)</Radio.Button>
+                    <Radio.Button value="asset">🏷️ 新建标注任务 (关联资产包进行标注)</Radio.Button>
+                  </Radio.Group>
+                </Form.Item>
+              </div>
+
               <Row gutter={24}>
                 <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
@@ -1103,10 +1117,11 @@ function CreateTaskContent() {
                     columns={[
                       { title: '排序', width: 60, align: 'center', render: () => <DragOutlined style={{ color: '#bfbfbf', cursor: 'grab' }} /> },
                       { title: '执行末端类型', width: 200, render: (_, r) => <Select value={r.effector} onChange={v => updateStep(r.id, 'effector', v)} style={{ width: '100%' }} options={[{value: '右手 (Right Arm)', label: '右手 (Right Arm)'}, {value: '左手 (Left Arm)', label: '左手 (Left Arm)'}, {value: '双手 (Dual Arms)', label: '双手 (Dual Arms)'}, {value: '底盘 (Base)', label: '底盘 (Base)'}, {value: '相机 (Camera)', label: '相机 (Camera)'}]} /> },
-                      { title: '原子技能', render: (_, r) => <Select value={r.skill} onChange={v => updateStep(r.id, 'skill', v)} style={{ width: '100%' }} options={[{value:'识别', label:'识别'}, {value:'抓取', label:'抓取'}, {value:'移动', label:'移动'}, {value:'放置', label:'放置'}, {value:'靠近', label:'靠近'}, {value:'对准', label:'对准'}, {value:'松开', label:'松开'}]} /> },
-                      { title: '操作对象', render: (_, r) => <Select value={r.object} onChange={v => updateStep(r.id, 'object', v)} style={{ width: '100%' }} options={[{value:'目标物品', label:'目标物品'}, {value:'抽屉', label:'抽屉'}, {value:'门把手', label:'门把手'}, {value:'餐盘', label:'餐盘'}, {value:'桌面', label:'桌面'}, {value:'纸箱', label:'纸箱'}]} /> },
-                      { title: '操作目标', render: (_, r) => <Select value={r.target} onChange={v => updateStep(r.id, 'target', v)} style={{ width: '100%' }} options={[{value:'确认位置', label:'确认位置'}, {value:'避障靠近', label:'避障靠近'}, {value:'牢固夹紧', label:'牢固夹紧'}, {value:'稳定释放', label:'稳定释放'}]} /> },
-                      { title: '操作', width: 80, align: 'center', fixed: 'right', render: (_, r) => <Button type="text" danger icon={<DeleteOutlined />} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => removeStep(r.id) })} /> }
+                      { title: '原子技能', width: 130, render: (_, r) => <Select value={r.skill} onChange={v => updateStep(r.id, 'skill', v)} style={{ width: '100%' }} options={[{value:'识别', label:'识别'}, {value:'抓取', label:'抓取'}, {value:'移动', label:'移动'}, {value:'放置', label:'放置'}, {value:'靠近', label:'靠近'}, {value:'对准', label:'对准'}, {value:'松开', label:'松开'}]} /> },
+                      { title: '操作对象', width: 140, render: (_, r) => <Select value={r.object} onChange={v => updateStep(r.id, 'object', v)} style={{ width: '100%' }} options={[{value:'目标物品', label:'目标物品'}, {value:'抽屉', label:'抽屉'}, {value:'门把手', label:'门把手'}, {value:'餐盘', label:'餐盘'}, {value:'桌面', label:'桌面'}, {value:'纸箱', label:'纸箱'}]} /> },
+                      { title: '操作目标描述', render: (_, r) => <Select value={r.target} onChange={v => updateStep(r.id, 'target', v)} style={{ width: '100%' }} options={[{value:'确认位置', label:'确认位置'}, {value:'避障靠近', label:'避障靠近'}, {value:'牢固夹紧', label:'牢固夹紧'}, {value:'稳定释放', label:'稳定释放'}]} /> },
+                      { title: '动作帧数', width: 130, render: (_, r) => <InputNumber min={1} value={r.frames || 120} onChange={v => updateStep(r.id, 'frames', v)} addonAfter="帧" style={{ width: '100%' }} /> },
+                      { title: '操作', width: 70, align: 'center', fixed: 'right', render: (_, r) => <Button type="text" danger icon={<DeleteOutlined />} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => removeStep(r.id) })} /> }
                     ]} 
                   />
                 </>
@@ -1167,7 +1182,7 @@ function CreateTaskContent() {
                         <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>自然语言动作描述</div>
                         <Input
                           value={item.text}
-                          onChange={(e) => updateNaturalStep(item.key, e.target.value)}
+                          onChange={(e) => updateNaturalStep(item.key, 'text', e.target.value)}
                           placeholder="在此描述具体的机器人动作步骤，例如：双手抓取底部泡沫填充纸放入箱内"
                           size="large"
                           style={{
@@ -1176,6 +1191,19 @@ function CreateTaskContent() {
                             borderColor: '#cbd5e1'
                           }}
                           prefix={<EditOutlined style={{ color: '#94a3b8', marginRight: 4 }} />}
+                        />
+                      </div>
+
+                      {/* Frames Input */}
+                      <div style={{ width: 140 }}>
+                        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>动作帧数</div>
+                        <InputNumber
+                          min={1}
+                          value={item.frames || 120}
+                          onChange={(v) => updateNaturalStep(item.key, 'frames', v)}
+                          addonAfter="帧"
+                          size="large"
+                          style={{ width: '100%' }}
                         />
                       </div>
 
