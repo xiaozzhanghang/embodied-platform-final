@@ -132,33 +132,7 @@ useEffect(() => {
   const [fullscreenCamera, setFullscreenCamera] = useState('camera_head_left_color');
   const totalFrames = 1200; 
 
-  // Red Line Playhead State (Decoupled from video playback, independently draggable with mouse)
-  const [redLineFrame, setRedLineFrame] = useState(180);
-  const [isDraggingRedLine, setIsDraggingRedLine] = useState(false);
 
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (isDraggingRedLine && timelineRef.current) {
-        const rect = timelineRef.current.getBoundingClientRect();
-        const pct = (e.clientX - rect.left) / rect.width;
-        const frame = Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames)));
-        setRedLineFrame(frame);
-      }
-    };
-    const handleMouseUp = () => {
-      if (isDraggingRedLine) {
-        setIsDraggingRedLine(false);
-      }
-    };
-    if (isDraggingRedLine) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDraggingRedLine, totalFrames]);
 
   // Playback timer simulation
   useEffect(() => {
@@ -231,6 +205,34 @@ useEffect(() => {
   const [activeTabKey, setActiveTabKey] = useState('1');
   const timelineRef = useRef(null);
   const semanticTimelineRef = useRef(null);
+
+  // Red Line Playhead State (Decoupled from video playback, independently draggable with mouse)
+  const [redLineFrame, setRedLineFrame] = useState(180);
+  const [isDraggingRedLine, setIsDraggingRedLine] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isDraggingRedLine && timelineRef.current) {
+        const rect = timelineRef.current.getBoundingClientRect();
+        const pct = (e.clientX - rect.left) / rect.width;
+        const frame = Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames)));
+        setRedLineFrame(frame);
+      }
+    };
+    const handleMouseUp = () => {
+      if (isDraggingRedLine) {
+        setIsDraggingRedLine(false);
+      }
+    };
+    if (isDraggingRedLine) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingRedLine, totalFrames]);
   const [draggingHandle, setDraggingHandle] = useState(null);
   const [draggingSegmentId, setDraggingSegmentId] = useState(null);
   const [showDevNotes, setShowDevNotes] = useState(false);
