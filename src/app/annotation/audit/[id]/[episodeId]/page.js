@@ -90,12 +90,38 @@ useEffect(() => {
     }
   };
 
-  // Pass Audit and auto-navigate to completed (annotated) tab
-  const handlePassAudit = () => {
-    message.success('🎉 抽检审核通过！数据已完成审核，自动跳转至【已标注 / 完成】页签...');
-    setTimeout(() => {
-      router.push(`/annotation/audit/${instanceId}?tab=annotated`);
-    }, 600);
+  // QC Pass action: auto-navigate to next episode or QA detail page
+  const handlePassQc = () => {
+    const currentIdx = allEpisodeIds.findIndex(ep => String(ep.id) === String(episodeId));
+    const nextEp = currentIdx >= 0 ? allEpisodeIds[currentIdx + 1] : null;
+    if (nextEp) {
+      message.success(`✅ 质检通过！自动跳转到下一条数据 #${nextEp.id}...`);
+      setTimeout(() => {
+        router.push(`/annotation/audit/${instanceId}/${nextEp.id}?type=${encodeURIComponent(nextEp.annoType)}&mode=audit`);
+      }, 600);
+    } else {
+      message.success('✅ 该数据包全部数据质检完成！返回质检列表');
+      setTimeout(() => {
+        router.push(`/collection/qa/${instanceId}`);
+      }, 600);
+    }
+  };
+
+  // QC Reject action: auto-navigate to next episode or QA detail page
+  const handleRejectQc = () => {
+    const currentIdx = allEpisodeIds.findIndex(ep => String(ep.id) === String(episodeId));
+    const nextEp = currentIdx >= 0 ? allEpisodeIds[currentIdx + 1] : null;
+    if (nextEp) {
+      message.warning(`❌ 质检不通过！标记为缺陷数据，跳转到下一条数据 #${nextEp.id}...`);
+      setTimeout(() => {
+        router.push(`/annotation/audit/${instanceId}/${nextEp.id}?type=${encodeURIComponent(nextEp.annoType)}&mode=audit`);
+      }, 600);
+    } else {
+      message.warning('❌ 质检驳回操作完成！返回质检列表');
+      setTimeout(() => {
+        router.push(`/collection/qa/${instanceId}`);
+      }, 600);
+    }
   };
 
   // Video State
@@ -3013,58 +3039,59 @@ useEffect(() => {
             </Select>
           </div>
 
-          <Space size={8}>
+          <Space size={12}>
+            {workMode === 'annotate' && (
+              <>
+                <Button
+                  size="small"
+                  style={{
+                    background: '#f9f0ff',
+                    borderColor: '#d3adf7',
+                    color: '#722ed1',
+                    borderRadius: 4,
+                  }}
+                  onClick={openSaveTplModal}
+                >
+                  生成标注模版
+                </Button>
+                <Button
+                  size="small"
+                  type="primary"
+                  style={{ borderRadius: 4 }}
+                  onClick={handleCompleteAnnotation}
+                >
+                  完成标注(T)
+                </Button>
+              </>
+            )}
             <Button
-              size="small"
-              style={{
-                background: '#f9f0ff',
-                borderColor: '#d3adf7',
-                color: '#722ed1',
-                borderRadius: 4,
-              }}
-              onClick={openSaveTplModal}
-            >
-              生成标注模版
-            </Button>
-            <Button
-              size="small"
+              size="middle"
               type="primary"
-              style={{ borderRadius: 4 }}
-              onClick={handleCompleteAnnotation}
-            >
-              完成标注(T)
-            </Button>
-            <Button
-              size="small"
+              icon={<CheckCircleOutlined />}
               style={{
-                background: '#fff2e8',
-                borderColor: '#ffbb96',
-                color: '#d48806',
-                borderRadius: 4,
+                background: '#52c41a',
+                borderColor: '#52c41a',
+                fontWeight: 'bold',
+                borderRadius: 6,
+                padding: '0 20px',
               }}
-              onClick={() => message.warning('已标记为质检不合格')}
+              onClick={handlePassQc}
             >
-              质检不合格
+              通过
             </Button>
             <Button
-              size="small"
-              style={{
-                background: '#f6ffed',
-                borderColor: '#b7eb8f',
-                color: '#52c41a',
-                borderRadius: 4,
-              }}
-              onClick={handlePassAudit}
-            >
-              抽检通过
-            </Button>
-            <Button
-              size="small"
+              size="middle"
+              type="primary"
               danger
-              style={{ borderRadius: 4 }}
-              onClick={() => message.error('抽检不通过')}
+              icon={<CloseCircleOutlined />}
+              style={{
+                fontWeight: 'bold',
+                borderRadius: 6,
+                padding: '0 20px',
+              }}
+              onClick={handleRejectQc}
             >
-              抽检不通过
+              不通过
             </Button>
           </Space>
         </div>
