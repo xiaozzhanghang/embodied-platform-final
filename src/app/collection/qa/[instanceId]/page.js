@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal } from 'antd';
-import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, AuditOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, AuditOutlined, CloseCircleOutlined, DeleteOutlined, FileSearchOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 
 const { Title, Text } = Typography;
@@ -202,46 +202,41 @@ export default function QaDetailPage() {
       }
     },
     {
-      title: '操作', key: 'action', width: 220, fixed: 'right',
+      title: '操作', key: 'action', width: 140, fixed: 'right',
       render: (_, r) => {
         const typeParam = encodeURIComponent(r.annoType);
         return (
-          <Space size={4}>
+          <Space size="middle">
             <Button 
               type="link" 
               size="small" 
-              icon={<CheckCircleOutlined />}
-              style={{ padding: '0 4px', color: '#52c41a' }}
-              disabled={r.qcStatus === '已通过'}
-              onClick={() => {
-                setEpisodes(prev => prev.map(ep => ep.id === r.id ? { ...ep, qcStatus: '已通过', qcRemark: '' } : ep));
-                message.success(`实例 #${r.id} 质检通过`);
-              }}
+              icon={<FileSearchOutlined />}
+              style={{ padding: 0 }}
+              onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=audit`)}
             >
-              通过
+              质检
             </Button>
             <Button 
               type="link" 
               size="small" 
-              icon={<CloseCircleOutlined />}
-              style={{ padding: '0 4px' }}
               danger
-              disabled={r.qcStatus === '未通过'}
+              icon={<DeleteOutlined />}
+              style={{ padding: 0 }}
               onClick={() => {
-                setEpisodes(prev => prev.map(ep => ep.id === r.id ? { ...ep, qcStatus: '未通过', qcRemark: '质检驳回' } : ep));
-                message.warning(`实例 #${r.id} 质检驳回`);
+                Modal.confirm({
+                  title: '确认删除',
+                  content: `确定要删除数据条目 #${r.id} (${r.taskName}) 吗？删除后不可恢复。`,
+                  okText: '确定删除',
+                  okType: 'danger',
+                  cancelText: '取消',
+                  onOk() {
+                    setEpisodes(prev => prev.filter(ep => ep.id !== r.id));
+                    message.success(`已成功删除数据条目 #${r.id}`);
+                  }
+                });
               }}
             >
-              驳回
-            </Button>
-            <Button 
-              type="link" 
-              size="small" 
-              icon={<EyeOutlined />}
-              style={{ padding: '0 4px' }}
-              onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=view`)}
-            >
-              查看
+              删除
             </Button>
           </Space>
         );
