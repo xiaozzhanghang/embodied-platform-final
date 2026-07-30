@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { 
   Button, Tag, Space, Typography, App, Badge, Divider, Select, 
-  Input, Row, Col, Progress, Switch, Tooltip, Radio, Card, List, Form, Modal, Checkbox, InputNumber
+  Input, Row, Col, Progress, Switch, Tooltip, Radio, Card, List, Form, Modal, Checkbox, InputNumber, Slider
 } from 'antd';
 import { 
   CloseOutlined, CloseCircleOutlined, SearchOutlined, ReloadOutlined, AuditOutlined, EyeOutlined,
@@ -2805,8 +2805,34 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Playback Controls */}
-      <div style={{ background: '#fff', borderTop: '1px solid #e2e8f0', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* Playback Controls & Video Playback Axis */}
+      <div style={{ background: '#fff', borderTop: '1px solid #e2e8f0', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        
+        {/* Dedicated Video Playback Slider Axis (视频播放轴) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 4px' }}>
+          <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 'bold', fontFamily: 'monospace', minWidth: 65 }}>
+            ▶ 播放轴
+          </span>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Slider
+              min={0}
+              max={totalFrames}
+              value={currentFrame}
+              onChange={(val) => setCurrentFrame(val)}
+              tooltip={{ formatter: (val) => `${val}f (00:00:${String(Math.floor(val * 0.0333)).padStart(2, '0')})` }}
+              styles={{
+                track: { background: '#2563eb', height: 6 },
+                rail: { background: '#cbd5e1', height: 6 },
+                handle: { borderColor: '#2563eb', width: 14, height: 14 }
+              }}
+              style={{ margin: '0' }}
+            />
+          </div>
+          <span style={{ fontSize: 11, color: '#64748b', fontWeight: 'bold', fontFamily: 'monospace', minWidth: 90, textAlign: 'right' }}>
+            {currentFrame} / {totalFrames} f
+          </span>
+        </div>
+
         <div 
           ref={timelineRef}
           style={{ position: 'relative', height: 24, background: '#e2e8f0', borderRadius: 4, cursor: 'pointer', overflow: 'visible' }}
