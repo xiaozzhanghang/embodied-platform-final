@@ -217,6 +217,7 @@ useEffect(() => {
         const pct = (e.clientX - rect.left) / rect.width;
         const frame = Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames)));
         setRedLineFrame(frame);
+        setCurrentFrame(frame);
       }
     };
     const handleMouseUp = () => {
@@ -982,7 +983,8 @@ useEffect(() => {
     const activeStep = steps.find(s => s.id === id);
     if (activeStep) {
       setCurrentFrame(activeStep.startFrame);
-      message.info(`已切换至步骤 ${id}`);
+      setRedLineFrame(activeStep.startFrame);
+      message.info(`已切换至步骤 ${id} (对齐首帧 ${activeStep.startFrame}f)`);
     }
   };
 
@@ -3110,7 +3112,13 @@ useEffect(() => {
             <Button
               type="primary"
               icon={isPlaying ? <PauseOutlined /> : <PlayCircleOutlined />}
-              onClick={() => setIsPlaying(!isPlaying)}
+              onClick={() => {
+                if (!isPlaying) {
+                  // When clicking Play, start video playback from current redLineFrame position
+                  setCurrentFrame(redLineFrame);
+                }
+                setIsPlaying(!isPlaying);
+              }}
               style={{ borderRadius: '50%', width: 36, height: 36, minWidth: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(37, 99, 235, 0.3)' }}
             />
             <Button type="text" icon={<StepForwardOutlined />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + 1))} />
