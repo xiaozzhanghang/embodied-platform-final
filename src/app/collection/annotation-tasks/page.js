@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Table, Button, Tag, Space, Card, Typography, 
@@ -12,11 +12,12 @@ import {
   SettingOutlined, ColumnHeightOutlined, CopyOutlined, EditOutlined, 
   DeleteOutlined, EyeOutlined, TagsOutlined, 
   NodeIndexOutlined, CheckCircleOutlined, ExclamationCircleOutlined,
-  FormOutlined
+  FormOutlined, FileSearchOutlined
 } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { syncCompletedAnnotationTasks } from '@/lib/annotationQaFlow.mjs';
 
 const { Text } = Typography;
 
@@ -28,6 +29,7 @@ export default function AnnotationTasksPage() {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [isAssignModalVisible, setIsAssignModalVisible] = useState(false);
   const [assignForm] = Form.useForm();
+  const [qaPackagesByTask, setQaPackagesByTask] = useState({});
   
   const [selectedTypes, setSelectedTypes] = useState(['point']);
 
@@ -91,6 +93,16 @@ export default function AnnotationTasksPage() {
     },
   ];
 
+  useEffect(() => {
+    const result = syncCompletedAnnotationTasks(window.localStorage, mockData);
+    setQaPackagesByTask(Object.fromEntries(
+      result.packages.map(item => [item.annotationTaskId, item]),
+    ));
+    if (result.createdPackageIds.length > 0) {
+      message.success(`标注已完成，系统自动生成 ${result.createdPackageIds.length} 个待质检包`);
+    }
+  }, []);
+
   const columns = [
     { title: '任务ID', dataIndex: 'taskId', key: 'taskId', width: 170, fixed: 'left' },
     { 
@@ -115,6 +127,29 @@ export default function AnnotationTasksPage() {
       width: 100,
       render: (s) => <Tag color={s === '已完成' ? 'success' : 'processing'}>{s}</Tag>
     },
+    {
+      title: '质检包',
+      key: 'qaPackage',
+      width: 220,
+      render: (_, record) => {
+        const qaPackage = qaPackagesByTask[record.taskId];
+        if (!qaPackage) return <Text type="secondary">标注完成后自动生成</Text>;
+        return (
+          <Space size={4}>
+            <Button
+              type="link"
+              size="small"
+              icon={<FileSearchOutlined />}
+              style={{ padding: 0, fontFamily: 'monospace' }}
+              onClick={() => router.push(`/collection/qa/${encodeURIComponent(qaPackage.qaPackageId)}`)}
+            >
+              {qaPackage.qaPackageId}
+            </Button>
+            <Tag color="warning">第{qaPackage.currentRound}轮 · {qaPackage.qcStatus}</Tag>
+          </Space>
+        );
+      },
+    },
     { title: '创建人', dataIndex: 'createBy', key: 'createBy', width: 120 },
     { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170, ellipsis: true },
     { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: 170, ellipsis: true },
@@ -127,7 +162,7 @@ export default function AnnotationTasksPage() {
       render: (p) => <Tag color="cyan">{p}</Tag>
     },
     {
-      title: '操作', key: 'action', width: 240, fixed: 'right', align: 'center',
+      title: '操作', key: 'action', width: 320, fixed: 'right', align: 'center',
       render: (_, record) => (
         <Space separator={<Divider orientation="vertical" />} size={0}>
           <Button 
@@ -139,6 +174,17 @@ export default function AnnotationTasksPage() {
           >
             查看
           </Button>
+          {qaPackagesByTask[record.taskId] && (
+            <Button
+              type="link"
+              size="small"
+              icon={<FileSearchOutlined />}
+              onClick={() => router.push(`/collection/qa/${encodeURIComponent(qaPackagesByTask[record.taskId].qaPackageId)}`)}
+              style={{ padding: '0 4px' }}
+            >
+              查看质检
+            </Button>
+          )}
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
           <Button type="link" size="small" icon={<DeleteOutlined />} danger style={{ padding: '0 4px' }} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>删除</Button>

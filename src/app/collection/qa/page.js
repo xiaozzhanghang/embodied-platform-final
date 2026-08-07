@@ -6,6 +6,7 @@ import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progres
 import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { assignQaer, loadQaPackages } from '@/lib/annotationQaFlow.mjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -58,7 +59,7 @@ const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
     qcPassCount,
     qcFailCount,
     qcTotal: dataCount,
-    qcProgress: qcStatus === '已通过' ? 100 : qcStatus === '质检中' ? Math.floor(60 + Math.random() * 30) : qcStatus === '未通过' ? 100 : 0,
+    qcProgress: qcStatus === '已通过' ? 100 : qcStatus === '质检中' ? 60 + ((i * 7) % 30) : qcStatus === '未通过' ? 100 : 0,
     annoType,
     taskDesc: `${taskTypes[i % taskTypes.length]}场景数据质检`,
     creator: people[(i + 4) % people.length],
@@ -78,6 +79,16 @@ export default function QaPage() {
 
   const [tableData, setTableData] = useState(instanceMockData);
 
+  useEffect(() => {
+    const generatedPackages = loadQaPackages(window.localStorage);
+    setTableData([
+      ...generatedPackages,
+      ...instanceMockData.filter(mock => (
+        !generatedPackages.some(item => String(item.instanceId) === String(mock.instanceId))
+      )),
+    ]);
+  }, []);
+
   const handleReassign = (record) => {
     setReassignRecord(record);
     reassignForm.setFieldsValue({
@@ -88,6 +99,7 @@ export default function QaPage() {
 
   const handleReassignSubmit = () => {
     reassignForm.validateFields().then(values => {
+      assignQaer(window.localStorage, reassignRecord.qaPackageId, values.qaer);
       setTableData(prev => prev.map(item => {
         if (item.key === reassignRecord.key) {
           return { ...item, qaer: values.qaer };
@@ -135,9 +147,17 @@ export default function QaPage() {
   const columns = [
     { title: '项目', dataIndex: 'project', key: 'project', width: 200, ellipsis: true, fixed: 'left' },
     { title: '任务书', dataIndex: 'taskbook', key: 'taskbook', width: 140, ellipsis: true },
-    { title: '标注ID', dataIndex: 'annoId', key: 'annoId', width: 80, render: (t) => <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{t}</Text> },
-    { title: '任务ID', dataIndex: 'taskId', key: 'taskId', width: 80, render: (t) => <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{t}</Text> },
-    { title: '实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 80, render: (t) => <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{t}</Text> },
+    { title: '标注任务ID', dataIndex: 'annoId', key: 'annoId', width: 170, render: (t) => <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{t}</Text> },
+    { title: '来源任务ID', dataIndex: 'taskId', key: 'taskId', width: 170, render: (t) => <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{t}</Text> },
+    {
+      title: '质检包/实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 220,
+      render: (t, record) => (
+        <Space size={4}>
+          <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{t}</Text>
+          {record.generatedBy === 'annotation-completed' && <Tag color="cyan">自动生成</Tag>}
+        </Space>
+      ),
+    },
     { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 180, ellipsis: true },
     { title: '标注任务名称', dataIndex: 'annoTaskName', width: 180, ellipsis: true },
     { title: '数据量', dataIndex: 'dataCount', width: 70, align: 'right', render: (v) => <Text strong>{v}</Text> },
@@ -173,6 +193,7 @@ export default function QaPage() {
     },
     { title: '任务描述', dataIndex: 'taskDesc', width: 160, ellipsis: true },
     { title: '创建人', dataIndex: 'creator', width: 80 },
+    { title: '质检轮次', dataIndex: 'currentRound', width: 90, align: 'center', render: (v) => v ? `第 ${v} 轮` : '-' },
     { title: '创建时间', dataIndex: 'createTime', width: 160 },
     {
       title: '操作', key: 'action', width: 180, fixed: 'right',
