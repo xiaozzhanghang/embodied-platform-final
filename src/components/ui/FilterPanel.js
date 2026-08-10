@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 export default function FilterPanel({ children, actions, collapsible = false, defaultExpanded = true }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const isExpanded = !collapsible || expanded;
 
   return (
     <section className="ui-filter-panel">
@@ -21,7 +22,7 @@ export default function FilterPanel({ children, actions, collapsible = false, de
           </Button>
         </div>
       ) : null}
-      {expanded ? children : null}
+      {isExpanded ? children : null}
       {actions ? <Space>{actions}</Space> : null}
     </section>
   );

@@ -8,7 +8,16 @@ const MODAL_WIDTHS = {
   large: 960,
 };
 
-export default function AppModal({ widthSize = 'medium', dirty = false, onCancel, ...modalProps }) {
+const mergeClassNames = (...classNames) => classNames.filter(Boolean).join(' ');
+
+export default function AppModal({
+  widthSize = 'medium',
+  dirty = false,
+  onCancel,
+  className,
+  rootClassName,
+  ...modalProps
+}) {
   const handleCancel = (event) => {
     if (!dirty) {
       onCancel?.(event);
@@ -24,5 +33,5 @@ export default function AppModal({ widthSize = 'medium', dirty = false, onCancel
     });
   };
 
-  return <Modal {...modalProps} centered width={MODAL_WIDTHS[widthSize] || MODAL_WIDTHS.medium} onCancel={handleCancel} />;
+  return <Modal {...modalProps} centered width={MODAL_WIDTHS[widthSize] || MODAL_WIDTHS.medium} className={mergeClassNames('ui-app-modal', className)} rootClassName={mergeClassNames('ui-app-modal', rootClassName)} onCancel={handleCancel} />;
 }

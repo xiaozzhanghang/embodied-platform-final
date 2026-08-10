@@ -17,6 +17,17 @@ const STATUS_COLORS = {
   '已取消': 'default',
 };
 
-export default function StatusTag({ status, children }) {
-  return <Tag color={STATUS_COLORS[status] || 'default'}>{children || status}</Tag>;
+const mergeClassNames = (...classNames) => classNames.filter(Boolean).join(' ');
+
+export default function StatusTag({ status, children, className, rootClassName, ...tagProps }) {
+  return (
+    <Tag
+      {...tagProps}
+      color={STATUS_COLORS[status] || 'default'}
+      className={mergeClassNames('ui-status-tag', className)}
+      rootClassName={mergeClassNames('ui-status-tag', rootClassName)}
+    >
+      {children || status}
+    </Tag>
+  );
 }

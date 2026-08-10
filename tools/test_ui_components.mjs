@@ -11,6 +11,8 @@ const statusSource = await readFile('src/components/ui/StatusTag.js', 'utf8');
 for (const status of ['进行中', '已完成', '待审核', '失败', '已取消']) {
   assert.ok(statusSource.includes(status), `缺少状态映射: ${status}`);
 }
+assert.match(statusSource, /className=\{mergeClassNames\('ui-status-tag', className\)\}/);
+assert.match(statusSource, /rootClassName=\{mergeClassNames\('ui-status-tag', rootClassName\)\}/);
 
 const modalSource = await readFile('src/components/ui/AppModal.js', 'utf8');
 assert.ok(modalSource.includes('520'));
@@ -18,6 +20,12 @@ assert.ok(modalSource.includes('720'));
 assert.ok(modalSource.includes('960'));
 assert.ok(modalSource.includes('centered'));
 assert.match(modalSource, /<Modal \{\.\.\.modalProps\} centered width=/);
+assert.match(modalSource, /className=\{mergeClassNames\('ui-app-modal', className\)\}/);
+assert.match(modalSource, /rootClassName=\{mergeClassNames\('ui-app-modal', rootClassName\)\}/);
+
+const filterSource = await readFile('src/components/ui/FilterPanel.js', 'utf8');
+assert.match(filterSource, /const isExpanded = !collapsible \|\| expanded;/);
+assert.match(filterSource, /\{isExpanded \? children : null\}/);
 
 const stateSource = await readFile('src/components/ui/StateView.js', 'utf8');
 assert.match(stateSource, /title \|\| defaults\.title/);
