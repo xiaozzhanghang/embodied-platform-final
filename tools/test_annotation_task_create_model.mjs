@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {
   canPublishTask,
   filterEpisodes,
-  getTemplateField,
   summarizeReadyPool,
 } from '../src/lib/annotationTaskCreateModel.mjs';
 
@@ -33,10 +32,6 @@ assert.deepEqual(
   filterEpisodes(episodes, { scene: '厨房', keyword: '实采' }).map(item => item.id),
   ['EP-001'],
 );
-
-assert.equal(getTemplateField('none'), null);
-assert.equal(getTemplateField('action'), 'actionTemplateId');
-assert.equal(getTemplateField('sample'), 'sampleTemplateId');
 
 assert.deepEqual(summarizeReadyPool(episodes), {
   total: 2,

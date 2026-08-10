@@ -447,7 +447,9 @@ function CreateAnnotationTaskContent() {
             boxShadow: '0 15px 38px rgba(15,23,42,.12)',
           }}>
             <div>
-              <Text strong style={{ color: '#0f172a' }}>任务已具备发布条件</Text>
+              <Text strong style={{ color: '#0f172a' }}>
+                {publishable ? '任务已具备发布条件' : '请完善必填信息并至少选择一条 Episode'}
+              </Text>
               <Text type="secondary" style={{ marginLeft: 10 }}>
                 来源：可标注数据池 · {selectedRowKeys.length} 条 Episode · {templateMode === 'none' ? '无模板开始' : templateMode === 'action' ? '动作模板模式' : '样例模板模式'}
               </Text>

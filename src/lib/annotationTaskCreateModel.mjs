@@ -1,12 +1,3 @@
-const templateFields = {
-  action: 'actionTemplateId',
-  sample: 'sampleTemplateId',
-};
-
-export function getTemplateField(mode) {
-  return templateFields[mode] || null;
-}
-
 export function filterEpisodes(episodes, filters = {}) {
   const {
     sourceType = 'all',

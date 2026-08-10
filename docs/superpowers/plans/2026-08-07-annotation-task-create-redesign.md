@@ -14,7 +14,7 @@
 - 不修改其它业务页面。
 - 保留现有路由 `/collection/annotation-tasks/create`。
 - 动作模板和标注样例模板均为选填。
-- 数据来源筛选不得强制先选择采集任务。
+- 数据来源固定为唯一的统一可标注数据池，不得提供来源类型切换条、标签页或 `sourceType` 筛选状态；原始来源类型和名称仅作为追溯列。
 
 ---
 
@@ -25,11 +25,11 @@
 - Create: `tools/test_annotation_task_create_model.mjs`
 
 **Interfaces:**
-- Produces: `filterEpisodes(episodes, filters)`、`getTemplateField(mode)`、`canPublishTask(state)`。
+- Produces: `filterEpisodes(episodes, filters)`、`summarizeReadyPool(episodes)`、`canPublishTask(state)`。
 
 - [ ] **Step 1: Write the failing test**
 
-测试以下行为：空筛选返回全部数据；资产来源不需要采集任务；不同模板模式返回对应字段；发布资格只依赖名称、类型和数据选择。
+测试以下行为：空筛选返回全部数据；场景、子场景和关键词可筛选统一数据池；数据池汇总正确；发布资格只依赖名称、类型和数据选择。
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -53,7 +53,7 @@ Expected: 输出 `annotation task create model: all checks passed`，退出码�
 - Modify: `src/app/collection/annotation-tasks/create/page.js`
 
 **Interfaces:**
-- Consumes: `filterEpisodes`、`getTemplateField`、`canPublishTask`。
+- Consumes: `filterEpisodes`、`summarizeReadyPool`、`canPublishTask`。
 
 - [ ] **Step 1: Implement page sections**
 
@@ -61,7 +61,7 @@ Expected: 输出 `annotation task create model: all checks passed`，退出码�
 
 - [ ] **Step 2: Wire interactions**
 
-来源类型、场景和关键词筛选更新 Episode 表；模板卡片控制对应选择框；表格复选框控制发布按钮状态。
+场景、子场景和关键词筛选更新 Episode 表；原始来源类型和名称仅显示为追溯列；模板卡片控制对应选择框；表格复选框控制发布按钮状态和资格文案。
 
 - [ ] **Step 3: Run focused model test**
 
