@@ -66,6 +66,33 @@ for (const page of coreTaskPages) {
   }
 }
 
+for (const pagePath of [
+  'src/app/collection/taskbooks/page.js',
+  'src/app/collection/collection-tasks/create/page.js',
+]) {
+  const source = await readFile(pagePath, 'utf8');
+  assert.match(
+    source,
+    /import\s*{[^}]*\bStatusTag\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
+    `${pagePath} 未从公共 UI 入口导入 StatusTag`,
+  );
+  assert.match(source, /<StatusTag(?:\s|\/|>)/, `${pagePath} 未使用统一状态标签`);
+}
+
+for (const pagePath of [
+  'src/app/collection/annotation-tasks/page.js',
+  'src/app/collection/projects/page.js',
+  'src/app/collection/templates/page.js',
+]) {
+  const source = await readFile(pagePath, 'utf8');
+  assert.match(
+    source,
+    /import\s*{[^}]*\bAppModal\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
+    `${pagePath} 未从公共 UI 入口导入 AppModal`,
+  );
+  assert.match(source, /<AppModal(?:\s|\/|>)/, `${pagePath} 覆盖式创建/编辑/配置弹窗未使用 AppModal`);
+}
+
 const annotationCreate = await readFile('src/app/collection/annotation-tasks/create/page.js', 'utf8');
 assert.equal(annotationCreate.includes('<Segmented'), false, '标注任务创建页不应恢复来源切换条');
 assert.equal(annotationCreate.includes('message='), false, '标注任务创建页不应使用 Ant Design 6 已弃用的 Alert message');

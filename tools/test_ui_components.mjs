@@ -11,6 +11,9 @@ const statusSource = await readFile('src/components/ui/StatusTag.js', 'utf8');
 for (const status of ['进行中', '已完成', '待审核', '失败', '已取消']) {
   assert.ok(statusSource.includes(status), `缺少状态映射: ${status}`);
 }
+assert.match(statusSource, /'已发布':\s*'success'/, '已发布应使用 success 状态色');
+assert.match(statusSource, /'审核中':\s*'processing'/, '审核中应使用 processing 状态色');
+assert.match(statusSource, /'机检通过':\s*'success'/, '机检通过迁移到 StatusTag 后应保留 success 状态色');
 assert.match(statusSource, /className=\{mergeClassNames\('ui-status-tag', className\)\}/);
 assert.match(statusSource, /rootClassName=\{mergeClassNames\('ui-status-tag', rootClassName\)\}/);
 

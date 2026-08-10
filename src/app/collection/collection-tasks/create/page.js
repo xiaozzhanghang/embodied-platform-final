@@ -18,7 +18,7 @@ import {
   UnorderedListOutlined, InfoCircleFilled, EditOutlined, MinusCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { ActionFooter, AppModal, FormSection, PageHeader } from '@/components/ui';
+import { ActionFooter, AppModal, FormSection, PageHeader, StatusTag } from '@/components/ui';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -818,7 +818,7 @@ function CreateCollectionTaskContent() {
                       { title: '采集时间', dataIndex: 'collectTime', key: 'collectTime', width: 180 },
                       { title: '帧数', dataIndex: 'frames', key: 'frames', width: 90 },
                       { title: '尺寸 (MB)', dataIndex: 'size', key: 'size', width: 100 },
-                      { title: '质检状态', dataIndex: 'status', key: 'status', width: 110, render: s => <Tag color="success">{s}</Tag> }
+                      { title: '质检状态', dataIndex: 'status', key: 'status', width: 110, render: s => <StatusTag status={s} /> }
                     ]}
                     dataSource={episodesList.length > 0 ? episodesList : [
                       { key: '844101', id: 844101, episodeName: 'organize_books_ep_001', collectTime: '2026-06-12 15:10:20', frames: 450, size: '128MB', status: '机检通过' },
