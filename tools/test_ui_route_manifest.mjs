@@ -8,7 +8,7 @@ async function findPages(dir) {
   const nested = await Promise.all(entries.map(async (entry) => {
     const target = path.join(dir, entry.name);
     if (entry.isDirectory()) return findPages(target);
-    return entry.name === 'page.js' ? [target.replaceAll('\\\\', '/')] : [];
+    return entry.name === 'page.js' ? [target.replaceAll('\\', '/')] : [];
   }));
   return nested.flat();
 }
