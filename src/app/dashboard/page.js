@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Row, Col, Card, Statistic, Table, Tag, Progress, Typography, Space, Timeline, Avatar, Button, Divider } from 'antd';
+import { Row, Col, Card, Statistic, Table, Tag, Progress, Typography, Space, Timeline, Button } from 'antd';
 import {
     CloudUploadOutlined,
     DatabaseOutlined,
@@ -10,15 +10,14 @@ import {
     RobotOutlined,
     ArrowUpOutlined,
     ArrowDownOutlined,
-    ClockCircleOutlined,
-    TeamOutlined,
     PlusOutlined,
     ThunderboltOutlined,
     EyeOutlined,
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { PageHeader } from '@/components/ui';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 const recentTasks = [
     { key: '1', name: 'FRANKA-FR3-抓取任务-001', status: '采集中', robot: 'FRANKA-FR3-1号', progress: 65, time: '2025-03-06 10:30:00' },
@@ -58,94 +57,94 @@ const statCards = [
 export default function DashboardPage() {
     return (
         <MainLayout>
-            {/* Welcome Banner */}
-            <div className="welcome-banner">
-                <div className="welcome-banner-left">
-                    <h2>你好，管理员，开始新的一天！</h2>
-                    <p>具身智能数据平台 — 高效采集、智能标注、快速迭代</p>
-                </div>
-                <div className="quick-action-group">
-                    <Button type="primary" icon={<PlusOutlined />}>新建采集任务</Button>
-                    <Button icon={<ThunderboltOutlined />}>数据解析</Button>
-                    <Button icon={<EyeOutlined />}>查看报告</Button>
-                </div>
-            </div>
+            <div className="ui-page">
+                <PageHeader
+                    title="你好，管理员，开始新的一天！"
+                    description="具身智能数据平台 — 高效采集、智能标注、快速迭代"
+                    extra={[
+                        <Button key="create" type="primary" icon={<PlusOutlined />}>新建采集任务</Button>,
+                        <Button key="parse" icon={<ThunderboltOutlined />}>数据解析</Button>,
+                        <Button key="report" icon={<EyeOutlined />}>查看报告</Button>,
+                    ]}
+                />
 
-            {/* Statistics Cards */}
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-                {statCards.map((item, index) => (
-                    <Col xs={24} sm={12} lg={6} key={index}>
+                {/* Statistics Cards */}
+                <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                    {statCards.map((item, index) => (
+                        <Col xs={24} sm={12} lg={6} key={index}>
+                            <Card
+                                className="stat-card-hoverable"
+                                styles={{ body: { padding: '20px 24px' } }}
+                                style={{ borderTop: `3px solid ${item.color}` }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div className="stat-card-inner">
+                                        <Statistic
+                                            title={item.title}
+                                            value={item.value}
+                                            suffix={item.suffix}
+                                        />
+                                    </div>
+                                    <div style={{
+                                        width: 48, height: 48, borderRadius: 12,
+                                        background: item.bg,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: 22, color: item.color,
+                                    }}>
+                                        {item.icon}
+                                    </div>
+                                </div>
+                                <div className="stat-card-footer">
+                                    <Space>
+                                        <Text style={{ color: item.trendUp ? '#52c41a' : '#ff4d4f', fontSize: 13 }}>
+                                            {item.trendUp ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {item.trend}
+                                        </Text>
+                                        <Text type="secondary" style={{ fontSize: 13 }}>{item.desc}</Text>
+                                    </Space>
+                                </div>
+                            </Card>
+                        </Col>
+                    ))}
+                </Row>
+
+                {/* Main Content: Task Table + Activity Timeline */}
+                <Row gutter={[16, 16]}>
+                    <Col xs={24} lg={16}>
                         <Card
-                            className="stat-card-hoverable"
-                            styles={{ body: { padding: '20px 24px' } }}
-                            style={{ borderTop: `3px solid ${item.color}` }}
+                            className="ui-table-card"
+                            title="最近采集任务"
+                            extra={<Button type="link">查看全部 →</Button>}
+                            styles={{ body: { padding: '0 0 8px' } }}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div className="stat-card-inner">
-                                    <Statistic
-                                        title={item.title}
-                                        value={item.value}
-                                        suffix={item.suffix}
-                                    />
-                                </div>
-                                <div style={{
-                                    width: 48, height: 48, borderRadius: 12,
-                                    background: item.bg,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: 22, color: item.color,
-                                }}>
-                                    {item.icon}
-                                </div>
-                            </div>
-                            <div className="stat-card-footer">
-                                <Space>
-                                    <Text style={{ color: item.trendUp ? '#52c41a' : '#ff4d4f', fontSize: 13 }}>
-                                        {item.trendUp ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {item.trend}
-                                    </Text>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>{item.desc}</Text>
-                                </Space>
-                            </div>
+                            <Table
+                                columns={columns}
+                                dataSource={recentTasks}
+                                pagination={false}
+                                size="middle"
+                            />
                         </Card>
                     </Col>
-                ))}
-            </Row>
-
-            {/* Main Content: Task Table + Activity Timeline */}
-            <Row gutter={[16, 16]}>
-                <Col xs={24} lg={16}>
-                    <Card
-                        title={<span className="section-title" style={{ padding: 0, margin: 0, paddingLeft: 12 }}>最近采集任务</span>}
-                        extra={<Button type="link">查看全部 →</Button>}
-                        styles={{ header: { borderBottom: '1px solid #f0f0f0' }, body: { padding: '0 0 8px' } }}
-                    >
-                        <Table
-                            columns={columns}
-                            dataSource={recentTasks}
-                            pagination={false}
-                            size="middle"
-                            style={{ margin: '0' }}
-                        />
-                    </Card>
-                </Col>
-                <Col xs={24} lg={8}>
-                    <Card
-                        title={<span className="section-title" style={{ padding: 0, margin: 0, paddingLeft: 12 }}>系统动态</span>}
-                        styles={{ header: { borderBottom: '1px solid #f0f0f0' }, body: { paddingTop: 16 } }}
-                        style={{ height: '100%' }}
-                    >
-                        <Timeline
-                            items={[
-                                { color: 'blue', content: <><Text strong>张三</Text> <Text type="secondary">完成了采集任务</Text> FRANKA-FR3-001<br /><Text type="secondary" style={{ fontSize: 12 }}>3分钟前</Text></> },
-                                { color: 'green', content: <><Text strong>系统</Text> <Text type="secondary">数据解析任务完成</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>15分钟前</Text></> },
-                                { color: 'orange', content: <><Text strong>李四</Text> <Text type="secondary">提交了标注数据审核</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>30分钟前</Text></> },
-                                { color: 'blue', content: <><Text strong>王五</Text> <Text type="secondary">创建了新的工作流</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>1小时前</Text></> },
-                                { color: 'green', content: <><Text strong>系统</Text> <Text type="secondary">FRANKA-FR3-2号设备上线</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>2小时前</Text></> },
-                                { color: 'red', content: <><Text strong>系统</Text> <Text type="secondary">工作流任务运行失败</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>3小时前</Text></> },
-                            ]}
-                        />
-                    </Card>
-                </Col>
-            </Row>
+                    <Col xs={24} lg={8}>
+                        <Card
+                            className="ui-table-card"
+                            title="系统动态"
+                            styles={{ body: { paddingTop: 16 } }}
+                            style={{ height: '100%' }}
+                        >
+                            <Timeline
+                                items={[
+                                    { color: 'blue', content: <><Text strong>张三</Text> <Text type="secondary">完成了采集任务</Text> FRANKA-FR3-001<br /><Text type="secondary" style={{ fontSize: 12 }}>3分钟前</Text></> },
+                                    { color: 'green', content: <><Text strong>系统</Text> <Text type="secondary">数据解析任务完成</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>15分钟前</Text></> },
+                                    { color: 'orange', content: <><Text strong>李四</Text> <Text type="secondary">提交了标注数据审核</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>30分钟前</Text></> },
+                                    { color: 'blue', content: <><Text strong>王五</Text> <Text type="secondary">创建了新的工作流</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>1小时前</Text></> },
+                                    { color: 'green', content: <><Text strong>系统</Text> <Text type="secondary">FRANKA-FR3-2号设备上线</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>2小时前</Text></> },
+                                    { color: 'red', content: <><Text strong>系统</Text> <Text type="secondary">工作流任务运行失败</Text><br /><Text type="secondary" style={{ fontSize: 12 }}>3小时前</Text></> },
+                                ]}
+                            />
+                        </Card>
+                    </Col>
+                </Row>
+            </div>
         </MainLayout>
     );
 }

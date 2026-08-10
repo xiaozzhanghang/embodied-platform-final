@@ -17,5 +17,19 @@ for (const className of [
   '.ui-state-view',
 ]) assert.ok(css.includes(className), `缺少语义样式: ${className}`);
 
+const mainLayout = await readFile('src/components/MainLayout.js', 'utf8');
+assert.ok(mainLayout.includes('className="main-layout"'), '主布局未使用 main-layout 语义类');
+assert.ok(mainLayout.includes('className="header-bar"'), '主布局未使用 header-bar 语义类');
+assert.ok(mainLayout.includes('className="content-wrapper"'), '主布局未使用 content-wrapper 语义类');
+assert.equal(mainLayout.includes("background: '#f0f2f5'"), false, '主内容区仍使用旧的硬编码背景');
+
+const dashboard = await readFile('src/app/dashboard/page.js', 'utf8');
+assert.match(
+  dashboard,
+  /import\s*{[^}]*\bPageHeader\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
+  '首页未从公共 UI 入口导入 PageHeader',
+);
+assert.match(dashboard, /<PageHeader(?:\s|\/|>)/, '首页未使用 PageHeader');
+
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');

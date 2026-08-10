@@ -269,7 +269,7 @@ function MainLayoutContent({ children }) {
   };
 
   return (
-    <Layout className="main-layout" style={{ minHeight: '100vh' }}>
+    <Layout className="main-layout">
       <Sider
         collapsible
         collapsed={effectiveCollapsed}
@@ -289,24 +289,12 @@ function MainLayoutContent({ children }) {
           borderRight: 'none',
         }}
       >
-        <div className="sidebar-logo" style={{
-          background: '#001529',
-          borderBottom: 'none',
-          height: 64,
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 24px',
-        }}>
-          <div className="logo-square" style={{ background: 'transparent' }}>
+        <div className="sidebar-logo">
+          <div className="logo-square">
             <img src={logoImg?.src || logoImg} alt="logo" style={{ width: 28, height: 28, objectFit: 'contain' }} />
           </div>
           {!effectiveCollapsed && (
-            <span className="logo-text" style={{ 
-              fontSize: 18, 
-              fontWeight: 600,
-              color: '#fff',
-              marginLeft: 12
-            }}>
+            <span className="logo-text">
               {userRole === ROLES.COLLECTOR ? '数据系统' : '天奇股份'}
             </span>
           )}
@@ -334,18 +322,7 @@ function MainLayoutContent({ children }) {
         />
       </Sider>
       <Layout style={{ marginLeft: effectiveCollapsed ? collapsedWidth : siderWidth, transition: 'margin-left 0.2s' }}>
-        <Header className="header-bar" style={{ 
-          position: 'sticky', 
-          top: 0, 
-          zIndex: 90,
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0',
-          padding: '0 24px',
-          height: 64,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
+        <Header className="header-bar" style={{ position: 'sticky', top: 0 }}>
           {userRole === ROLES.COLLECTOR ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -486,8 +463,8 @@ function MainLayoutContent({ children }) {
             </>
           )}
         </Header>
-        <Content style={{ background: '#f0f2f5' }}>
-          <div className="content-wrapper fade-in-up">
+        <Content>
+          <div className="content-wrapper">
             {children}
           </div>
         </Content>
