@@ -34,6 +34,7 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { ActionFooter, FilterPanel, FormSection, PageHeader, StatusTag } from '@/components/ui';
 import {
   canPublishTask,
   filterEpisodes,
@@ -86,32 +87,6 @@ const TEMPLATE_MODES = [
     background: '#fffbeb',
   },
 ];
-
-function SectionTitle({ step, title, description, icon }) {
-  return (
-    <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-      <div style={{
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        background: '#0f172a',
-        color: '#fff',
-        display: 'grid',
-        placeItems: 'center',
-        fontWeight: 800,
-        flexShrink: 0,
-      }}>
-        {step}
-      </div>
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#0f172a', fontSize: 17, fontWeight: 750 }}>
-          {icon}{title}
-        </div>
-        <Text type="secondary" style={{ display: 'block', marginTop: 3, fontSize: 13 }}>{description}</Text>
-      </div>
-    </div>
-  );
-}
 
 function CreateAnnotationTaskContent() {
   const router = useRouter();
@@ -178,7 +153,7 @@ function CreateAnnotationTaskContent() {
       width: 120,
       render: value => {
         const meta = SOURCE_META[value];
-        return <Tag color={meta.color} icon={meta.icon} bordered={false}>{meta.label}</Tag>;
+        return <Tag color={meta.color} icon={meta.icon} variant="filled">{meta.label}</Tag>;
       },
     },
     { title: '原始来源名称', dataIndex: 'sourceName', ellipsis: true },
@@ -190,67 +165,39 @@ function CreateAnnotationTaskContent() {
       title: '状态',
       dataIndex: 'status',
       width: 100,
-      render: value => <Tag color="success" bordered={false} icon={<CheckCircleFilled />}>{value}</Tag>,
+      render: value => <StatusTag status="已完成" icon={<CheckCircleFilled />}>{value}</StatusTag>,
     },
   ];
 
   return (
     <MainLayout>
-      <div style={{ minHeight: '100vh', background: '#f5f7fa', margin: '-24px', padding: '20px 24px 48px' }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-          <Breadcrumb
-            style={{ marginBottom: 14 }}
-            items={[
-              { title: '首页' },
-              { title: '数据标注' },
-              { title: '标注任务', href: '/collection/annotation-tasks' },
-              { title: '新建标注任务' },
-            ]}
-          />
+      <div className="ui-page">
+        <PageHeader
+          title="新建标注任务"
+          description="数据统一从可标注数据池选取，模板仅作为可选的效率工具。"
+          breadcrumbs={[
+            { title: '首页' },
+            { title: '数据标注' },
+            { title: '标注任务', href: '/collection/annotation-tasks' },
+            { title: '新建标注任务' },
+          ]}
+          back={() => router.push('/collection/annotation-tasks')}
+        />
 
-          <div style={{
-            background: 'linear-gradient(120deg, #0f172a 0%, #172554 58%, #0f766e 130%)',
-            borderRadius: 18,
-            padding: '24px 28px',
-            color: '#fff',
-            marginBottom: 18,
-            boxShadow: '0 16px 38px rgba(15, 23, 42, 0.14)',
-            overflow: 'hidden',
-            position: 'relative',
-          }}>
-            <div style={{ position: 'absolute', width: 220, height: 220, borderRadius: '50%', background: 'rgba(45, 212, 191, 0.11)', right: -70, top: -105 }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 24, alignItems: 'center', position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.push('/collection/annotation-tasks')} style={{ color: '#fff' }} />
-                <div>
-                  <Space size={10} align="center">
-                    <FormOutlined style={{ color: '#5eead4', fontSize: 21 }} />
-                    <Title level={3} style={{ color: '#fff', margin: 0, letterSpacing: 0.2 }}>新建标注任务</Title>
-                  </Space>
-                  <div style={{ color: 'rgba(255,255,255,.68)', marginTop: 6 }}>数据来源统一为可标注数据池，模板只是可选的效率工具</div>
-                </div>
-              </div>
-              <Space size={24} style={{ color: 'rgba(255,255,255,.78)', fontSize: 13 }}>
-                <span><b style={{ color: '#5eead4', marginRight: 6 }}>01</b>任务信息</span>
-                <span><b style={{ color: '#5eead4', marginRight: 6 }}>02</b>选择数据</span>
-                <span><b style={{ color: '#5eead4', marginRight: 6 }}>03</b>可选配置</span>
-              </Space>
-            </div>
-          </div>
-
-          <Card style={{ borderRadius: 14, marginBottom: 16, border: '1px solid #e7ebf0', boxShadow: '0 4px 16px rgba(15,23,42,.035)' }}>
-            <SectionTitle step="01" title="任务信息" description="只填写开始标注真正需要的信息，模板和采集任务都不是创建前置条件。" icon={<FileDoneOutlined style={{ color: '#0f766e' }} />} />
-            <Row gutter={20} style={{ marginTop: 20 }}>
+        <FormSection
+          title="01 · 任务信息"
+          description="只填写开始标注真正需要的信息，模板和采集任务都不是创建前置条件。"
+        >
+            <Row gutter={20}>
               <Col span={10}>
                 <Text strong><span style={{ color: '#ef4444' }}>* </span>标注任务名称</Text>
-                <Input value={taskName} onChange={event => setTaskName(event.target.value)} placeholder="请输入标注任务名称" size="large" style={{ marginTop: 8 }} />
+                <Input value={taskName} onChange={event => setTaskName(event.target.value)} placeholder="请输入标注任务名称" style={{ marginTop: 8 }} />
               </Col>
               <Col span={7}>
                 <Text strong><span style={{ color: '#ef4444' }}>* </span>标注类型</Text>
                 <Select
                   value={annotationType}
                   onChange={setAnnotationType}
-                  size="large"
                   style={{ width: '100%', marginTop: 8 }}
                   options={[
                     { value: 'action-segment', label: '动作切分 / 时间段标注' },
@@ -266,7 +213,6 @@ function CreateAnnotationTaskContent() {
                 <Select
                   value={usage}
                   onChange={setUsage}
-                  size="large"
                   style={{ width: '100%', marginTop: 8 }}
                   options={[
                     { value: 'training', label: '模型训练集' },
@@ -280,53 +226,36 @@ function CreateAnnotationTaskContent() {
               <Text strong>任务说明</Text>
               <TextArea value={description} onChange={event => setDescription(event.target.value)} autoSize={{ minRows: 2, maxRows: 3 }} style={{ marginTop: 8 }} />
             </div>
-          </Card>
+        </FormSection>
 
-          <Card style={{ borderRadius: 14, marginBottom: 16, border: '1px solid #e7ebf0', boxShadow: '0 4px 16px rgba(15,23,42,.035)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'flex-start' }}>
-              <SectionTitle step="02" title="从可标注数据池选择" description="采集完成数据、校验通过的资产数据和仿真数据统一汇入同一个数据池。" icon={<DatabaseOutlined style={{ color: '#2563eb' }} />} />
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#64748b', fontSize: 12 }}>已选择</div>
-                <div style={{ color: '#0f766e', fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{selectedRowKeys.length}<span style={{ fontSize: 12, fontWeight: 500, marginLeft: 4 }}>条</span></div>
-              </div>
-            </div>
-
-            <div style={{
-              marginTop: 18,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 18,
-              padding: '15px 18px',
-              borderRadius: 12,
-              background: 'linear-gradient(100deg, #ecfeff 0%, #f8fafc 62%, #eff6ff 100%)',
-              border: '1px solid #bae6fd',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 11, display: 'grid', placeItems: 'center', background: '#0f766e', color: '#fff', fontSize: 19 }}>
-                  <CloudServerOutlined />
-                </div>
-                <div>
-                  <Text strong style={{ color: '#0f172a', fontSize: 15 }}>数据来源：可标注数据池</Text>
-                  <div style={{ color: '#64748b', fontSize: 12, marginTop: 3 }}>数据在进入本池前已经完成采集、导入解析或仿真生成，并通过可用性校验。</div>
-                </div>
-              </div>
-              <Space size={18} split={<span style={{ width: 1, height: 24, background: '#cbd5e1' }} />}>
-                <Text><b style={{ color: '#0f766e', fontSize: 18 }}>{poolSummary.total}</b> 条就绪</Text>
-                <Text type="secondary">采集产出 {poolSummary.collection}</Text>
-                <Text type="secondary">资产数据 {poolSummary.asset}</Text>
-                <Text type="secondary">仿真数据 {poolSummary.simulation}</Text>
-              </Space>
-            </div>
+        <FormSection
+          title="02 · 从可标注数据池选择"
+          description="采集完成数据、校验通过的资产数据和仿真数据统一汇入同一个数据池。"
+        >
+            <Alert
+              type="info"
+              showIcon
+              icon={<CloudServerOutlined />}
+              title="数据来源：可标注数据池"
+              description={
+                <Space wrap size="large">
+                  <Text><b>{poolSummary.total}</b> 条就绪</Text>
+                  <Text type="secondary">采集产出 {poolSummary.collection}</Text>
+                  <Text type="secondary">资产数据 {poolSummary.asset}</Text>
+                  <Text type="secondary">仿真数据 {poolSummary.simulation}</Text>
+                  <Text type="secondary">已选择 {selectedRowKeys.length} 条</Text>
+                </Space>
+              }
+            />
 
             <Alert
               type="info"
               showIcon
-              style={{ marginTop: 12, marginBottom: 16, border: '1px solid #dbeafe', background: '#f8fbff' }}
-              message={<span><b>新建标注任务固定从可标注数据池取数。</b> 采集任务和资产包只作为原始来源保留，用于筛选和追溯。</span>}
+              style={{ marginTop: 12, marginBottom: 16 }}
+              title={<span><b>新建标注任务固定从可标注数据池取数。</b> 采集任务和资产包只作为原始来源保留，用于筛选和追溯。</span>}
             />
 
-            <div style={{ background: '#f8fafc', border: '1px solid #e5eaf0', padding: 14, borderRadius: 12, marginBottom: 14 }}>
+            <FilterPanel>
               <Row gutter={12} align="middle">
                 <Col flex="150px">
                   <Select allowClear value={scene} onChange={(value) => { setScene(value); setSubScene(undefined); }} placeholder="场景（选填）" style={{ width: '100%' }} options={sceneOptions} />
@@ -341,7 +270,7 @@ function CreateAnnotationTaskContent() {
                   <Button type="link" onClick={resetFilters}>重置</Button>
                 </Col>
               </Row>
-            </div>
+            </FilterPanel>
 
             <Table
               size="middle"
@@ -352,12 +281,15 @@ function CreateAnnotationTaskContent() {
               rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys, preserveSelectedRowKeys: true }}
               scroll={{ x: 1050 }}
             />
-          </Card>
+        </FormSection>
 
-          <Card style={{ borderRadius: 14, marginBottom: 16, border: '1px solid #e7ebf0', boxShadow: '0 4px 16px rgba(15,23,42,.035)' }}>
+        <FormSection
+          title="03 · 可选加速配置"
+          description="不选模板也能发布任务；需要提效时再选择一种模板。"
+        >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <SectionTitle step="03" title="可选加速配置" description="不选模板也能发布任务；需要提效时再选择一种模板。" icon={<ThunderboltOutlined style={{ color: '#b45309' }} />} />
-              <Tag color="default" bordered={false} style={{ background: '#f1f5f9', color: '#475569', padding: '3px 10px' }}>选填</Tag>
+              <Text type="secondary">模板不是必选条件</Text>
+              <Tag color="default" variant="filled" style={{ background: '#f1f5f9', color: '#475569', padding: '3px 10px' }}>选填</Tag>
             </div>
 
             <Radio.Group value={templateMode} onChange={event => setTemplateMode(event.target.value)} style={{ width: '100%', marginTop: 20 }}>
@@ -370,16 +302,14 @@ function CreateAnnotationTaskContent() {
                         <div style={{
                           minHeight: 116,
                           padding: '17px 18px',
-                          borderRadius: 12,
-                          border: selected ? `2px solid ${mode.tone}` : '1px solid #dfe5ec',
-                          background: selected ? mode.background : '#fff',
-                          boxShadow: selected ? `0 7px 20px ${mode.tone}18` : 'none',
-                          transition: 'all .18s ease',
+                          borderRadius: 8,
+                          border: selected ? '1px solid #1677ff' : '1px solid #e5e6eb',
+                          background: selected ? '#f0f7ff' : '#fff',
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Space size={10}>
-                              <span style={{ width: 32, height: 32, borderRadius: 9, display: 'grid', placeItems: 'center', background: selected ? mode.tone : '#eef2f6', color: selected ? '#fff' : '#64748b', fontSize: 16 }}>{mode.icon}</span>
-                              <Text strong style={{ color: selected ? mode.tone : '#0f172a' }}>{mode.title}</Text>
+                              <span style={{ color: selected ? '#1677ff' : '#646a73', fontSize: 16 }}>{mode.icon}</span>
+                              <Text strong>{mode.title}</Text>
                             </Space>
                             <Radio value={mode.value} />
                           </div>
@@ -393,9 +323,7 @@ function CreateAnnotationTaskContent() {
             </Radio.Group>
 
             {templateMode === 'none' && (
-              <div style={{ marginTop: 16, borderRadius: 10, background: '#f0fdfa', color: '#115e59', padding: '11px 14px', fontSize: 13 }}>
-                <CheckCircleFilled style={{ marginRight: 8 }} />进入工作台后先人工标注首条数据，审核通过后可一键创建样例模板并批量应用。
-              </div>
+              <Alert style={{ marginTop: 16 }} type="success" showIcon title="进入工作台后先人工标注首条数据，审核通过后可一键创建样例模板并批量应用。" />
             )}
             {templateMode === 'action' && (
               <div style={{ marginTop: 16 }}>
@@ -430,23 +358,10 @@ function CreateAnnotationTaskContent() {
                 />
               </div>
             )}
-          </Card>
+        </FormSection>
 
-          <div style={{
-            position: 'sticky',
-            bottom: 14,
-            zIndex: 5,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            background: 'rgba(255,255,255,.94)',
-            backdropFilter: 'blur(14px)',
-            border: '1px solid #dfe5ec',
-            borderRadius: 14,
-            padding: '13px 16px 13px 20px',
-            boxShadow: '0 15px 38px rgba(15,23,42,.12)',
-          }}>
-            <div>
+        <ActionFooter>
+            <div style={{ marginRight: 'auto' }}>
               <Text strong style={{ color: '#0f172a' }}>
                 {publishable ? '任务已具备发布条件' : '请完善必填信息并至少选择一条 Episode'}
               </Text>
@@ -455,13 +370,12 @@ function CreateAnnotationTaskContent() {
               </Text>
             </div>
             <Space>
-              <Button size="large" onClick={() => router.push('/collection/annotation-tasks')}>取消</Button>
-              <Button type="primary" size="large" icon={<CheckOutlined />} disabled={!publishable} onClick={handlePublish} style={{ minWidth: 170, background: publishable ? '#0f766e' : undefined }}>
+              <Button onClick={() => router.push('/collection/annotation-tasks')}>取消</Button>
+              <Button type="primary" icon={<CheckOutlined />} disabled={!publishable} onClick={handlePublish} style={{ minWidth: 150 }}>
                 发布标注任务
               </Button>
             </Space>
-          </div>
-        </div>
+        </ActionFooter>
       </div>
     </MainLayout>
   );

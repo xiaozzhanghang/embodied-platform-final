@@ -16,6 +16,7 @@ import {
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Text } = Typography;
 
@@ -167,11 +168,15 @@ export default function CollectionTasksPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '任务中心' }, { title: '采集任务' }]} style={{ marginBottom: 16 }} />
-      </div>
+      <div className="ui-page">
+        <PageHeader
+          title="采集任务"
+          description="统一查看采集计划、执行进度与数据交付状态。"
+          breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '任务中心' }, { title: '采集任务' }]}
+          extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/collection-tasks/create')}>新建任务</Button>}
+        />
 
-      <SpecMarker
+        <SpecMarker
         id="collection-tasks-query"
         number={1}
         title="采集任务多维度检索过滤"
@@ -182,11 +187,8 @@ export default function CollectionTasksPage() {
         remark="采集任务专属配置页面"
         style={{ width: '100%' }}
       >
-        <Card 
-          style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-          styles={{ body: { padding: '24px 24px 16px' } }}
-        >
-          <QueryFilter
+          <FilterPanel>
+            <QueryFilter
             submitter={{
               submitButtonProps: { icon: <SearchOutlined /> },
               resetButtonProps: { icon: <ReloadOutlined /> },
@@ -199,19 +201,27 @@ export default function CollectionTasksPage() {
             <ProFormSelect name="deviceType" label="设备类型" placeholder="请选择设备类型" options={[{label:'Galbot_2.2_RGBD', value:'Galbot_2.2_RGBD'}, {label:'Franka_FR3', value:'Franka_FR3'}, {label:'Lumos_FastUMI', value:'Lumos_FastUMI'}]} />
             <ProFormText name="taskName" label="任务名称" placeholder="请输入任务名称" />
             <ProFormText name="taskId" label="任务ID" placeholder="请输入任务ID" />
-          </QueryFilter>
-        </Card>
-      </SpecMarker>
+            </QueryFilter>
+          </FilterPanel>
+        </SpecMarker>
 
-      <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={setActiveTab} 
-          style={{ padding: '0 24px' }}
-          tabBarExtraContent={
-            <Space style={{ paddingBottom: 12 }}>
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/collection-tasks/create')}>新建任务</Button>
+        <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            style={{ padding: '0 16px' }}
+            items={[
+              { key: 'all', label: '全部采集任务' },
+              { key: 'doing', label: '进行中' },
+              { key: 'done', label: '已完成' },
+            ]}
+          />
+          <TableToolbar
+            count={filteredData.length}
+            selectedCount={selectedRowKeys.length}
+            actions={[
               <Button 
+                key="complete"
                 icon={<CheckCircleOutlined />} 
                 disabled={selectedRowKeys.length === 0}
                 onClick={() => {
@@ -236,26 +246,13 @@ export default function CollectionTasksPage() {
                     }
                   });
                 }}
-                style={{ 
-                  backgroundColor: selectedRowKeys.length > 0 ? '#fff' : '#f5f5f5',
-                  borderColor: selectedRowKeys.length > 0 ? '#52c41a' : '#d9d9d9',
-                  color: selectedRowKeys.length > 0 ? '#52c41a' : '#bfbfbf'
-                }}
               >
                 批量完成
-              </Button>
-              <Tooltip title="刷新"><Button icon={<ReloadOutlined />} type="text" /></Tooltip>
-              <Tooltip title="列设置"><Button icon={<SettingOutlined />} type="text" /></Tooltip>
-            </Space>
-          }
-          items={[
-            { key: 'all', label: '全部采集任务' },
-            { key: 'doing', label: '⚡ 进行中' },
-            { key: 'done', label: '✅ 已完成' },
-          ]} 
-        />
-        
-        <div style={{ padding: '0 24px' }}>
+              </Button>,
+              <Tooltip key="refresh" title="刷新"><Button icon={<ReloadOutlined />} /></Tooltip>,
+              <Tooltip key="columns" title="列设置"><Button icon={<SettingOutlined />} /></Tooltip>,
+            ]}
+          />
           <Table 
             rowSelection={{ 
               type: 'checkbox',
@@ -265,11 +262,11 @@ export default function CollectionTasksPage() {
             columns={columns} 
             dataSource={filteredData} 
             scroll={{ x: 1900 }}
-            style={{ marginBottom: 24 }}
+            size="middle"
             pagination={{ pageSize: 10 }} 
           />
-        </div>
-      </Card>
+        </Card>
+      </div>
     </MainLayout>
   );
 }

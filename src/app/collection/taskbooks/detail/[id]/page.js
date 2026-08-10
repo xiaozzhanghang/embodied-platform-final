@@ -11,6 +11,7 @@ import {
   ProjectOutlined, CheckCircleFilled
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { FormSection, PageHeader } from '@/components/ui';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -50,40 +51,34 @@ export default function TaskbookDetailPage({ params }) {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb 
-          items={[
+      <div className="ui-page ui-detail-page">
+        <PageHeader
+          title={taskbook.name}
+          description={`任务书版本 ${taskbook.version}`}
+          breadcrumbs={[
             { title: '数据采集' },
             { title: '任务书', href: '/collection/taskbooks' },
-            { title: '任务书详情' }
-          ]} 
-          style={{ marginBottom: 16 }}
+            { title: '任务书详情' },
+          ]}
+          back={() => router.back()}
+          extra={[
+            <Button key="pdf" icon={<FilePdfOutlined />} danger>下载 PDF</Button>,
+            <Button key="edit" type="primary" icon={<EditOutlined />}>编辑任务书</Button>,
+          ]}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-            <Title level={3} style={{ margin: 0 }}>{taskbook.name}</Title>
-            <Tag color="blue" style={{ marginLeft: 16 }}>{taskbook.version}</Tag>
-          </div>
-          <Space>
-            <Button icon={<FilePdfOutlined />} danger>下载 PDF</Button>
-            <Button type="primary" icon={<EditOutlined />}>编辑任务书</Button>
-          </Space>
-        </div>
-      </div>
 
-      <Row gutter={24}>
+        <Row gutter={24}>
         <Col span={16}>
-          <Card title="基础详情" bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
+          <FormSection title="基础详情">
             <Descriptions column={2} bordered size="small">
               <Descriptions.Item label="所属项目"><ProjectOutlined /> {taskbook.project}</Descriptions.Item>
               <Descriptions.Item label="创建人">{taskbook.creator}</Descriptions.Item>
               <Descriptions.Item label="创建时间">{taskbook.createTime}</Descriptions.Item>
               <Descriptions.Item label="核心指标" span={2}>{taskbook.goal}</Descriptions.Item>
             </Descriptions>
-          </Card>
+          </FormSection>
 
-          <Card title="正文内容" bordered={false} style={{ borderRadius: 8 }}>
+          <FormSection title="正文内容">
             <div style={{ padding: '0 16px', background: '#fafafa', borderRadius: 4, minHeight: 400 }}>
               <pre style={{ 
                 whiteSpace: 'pre-wrap', 
@@ -94,11 +89,11 @@ export default function TaskbookDetailPage({ params }) {
                 {taskbook.content}
               </pre>
             </div>
-          </Card>
+          </FormSection>
         </Col>
 
         <Col span={8}>
-          <Card title="质检必检项" bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
+          <FormSection title="质检必检项">
             <List
               dataSource={taskbook.checkpoints}
               renderItem={(item) => (
@@ -110,9 +105,9 @@ export default function TaskbookDetailPage({ params }) {
                 </List.Item>
               )}
             />
-          </Card>
+          </FormSection>
 
-          <Card title="附件预览" bordered={false} style={{ borderRadius: 8 }}>
+          <FormSection title="附件预览">
             <div style={{ 
               height: 200, 
               background: '#f0f2f5', 
@@ -127,9 +122,10 @@ export default function TaskbookDetailPage({ params }) {
               <Text type="secondary">PDF 文件预览占位</Text>
               <Button type="link" size="small">点击全屏查看</Button>
             </div>
-          </Card>
+          </FormSection>
         </Col>
-      </Row>
+        </Row>
+      </div>
     </MainLayout>
   );
 }

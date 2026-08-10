@@ -6,6 +6,7 @@ import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Breadcrumb, 
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined, ColumnHeightOutlined, SettingOutlined, RobotOutlined, DownOutlined, UpOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -35,7 +36,7 @@ export default function TaskbooksPage() {
       dataIndex: 'status', 
       key: 'status', 
       width: 120,
-      render: (s) => <Badge status={s === '已发布' ? 'success' : 'processing'} text={s} /> 
+      render: (s) => <StatusTag status={s} />
     },
     { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
     { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: 170 },
@@ -54,17 +55,16 @@ export default function TaskbooksPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '任务书' }]} style={{ marginBottom: 16 }} />
-        <Title level={3} style={{ margin: 0, marginBottom: 8 }}>任务书</Title>
-        <Text type="secondary">指导数据采集的标准作业程序(SOP)文档，支持上传 PDF/Word 或由 AI 智能生成。</Text>
-      </div>
+      <div className="ui-page">
+        <PageHeader
+          title="任务书"
+          description="指导数据采集的标准作业程序（SOP），支持 PDF / Word 上传与智能生成。"
+          breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '任务书' }]}
+          extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/taskbooks/create')}>手动新建</Button>}
+        />
 
-      <Card 
-        style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-        styles={{ body: { padding: '24px 24px 16px' } }}
-      >
-        <QueryFilter
+        <FilterPanel>
+          <QueryFilter
             submitter={{
                 submitButtonProps: { icon: <SearchOutlined /> },
                 resetButtonProps: { icon: <ReloadOutlined /> },
@@ -75,31 +75,31 @@ export default function TaskbooksPage() {
             <ProFormSelect name="status" label="状态" placeholder="全部" />
             <ProFormText name="createTime" label="创建时间" placeholder="请选择范围" />
             <ProFormText name="version" label="版本号" placeholder="请输入版本" />
-        </QueryFilter>
-      </Card>
+          </QueryFilter>
+        </FilterPanel>
 
-      <Card styles={{ body: { padding: '24px' } }} style={{ borderRadius: 8 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ fontWeight: 'bold', fontSize: 16 }}>任务书列表</div>
-          <Space>
-            <Button type="default" icon={<RobotOutlined />} style={{ color: '#722ed1', borderColor: '#d3adf7', backgroundColor: '#f9f0ff' }}>
-              AI 智能建书
-            </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/taskbooks/create')}>手动新建</Button>
-            <Tooltip title="刷新"><Button type="text" icon={<ReloadOutlined />} /></Tooltip>
-            <Tooltip title="密度"><Button type="text" icon={<ColumnHeightOutlined />} /></Tooltip>
-            <Tooltip title="列设置"><Button type="text" icon={<SettingOutlined />} /></Tooltip>
-          </Space>
-        </div>
+        <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
+          <TableToolbar
+            title="任务书列表"
+            count={mockData.length}
+            actions={[
+              <Button key="ai" icon={<RobotOutlined />}>AI 智能建书</Button>,
+              <Tooltip key="refresh" title="刷新"><Button icon={<ReloadOutlined />} /></Tooltip>,
+              <Tooltip key="density" title="密度"><Button icon={<ColumnHeightOutlined />} /></Tooltip>,
+              <Tooltip key="columns" title="列设置"><Button icon={<SettingOutlined />} /></Tooltip>,
+            ]}
+          />
 
-        <Table 
-          rowSelection={{ type: 'checkbox' }} 
-          columns={columns} 
-          dataSource={mockData} 
-          scroll={{ x: 1300 }}
-          pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} 
-        />
-      </Card>
+          <Table
+            rowSelection={{ type: 'checkbox' }}
+            columns={columns}
+            dataSource={mockData}
+            scroll={{ x: 1300 }}
+            size="middle"
+            pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }}
+          />
+        </Card>
+      </div>
     </MainLayout>
   );
 }

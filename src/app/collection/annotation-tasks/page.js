@@ -17,6 +17,7 @@ import {
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 import { syncCompletedAnnotationTasks } from '@/lib/annotationQaFlow.mjs';
 
 const { Text } = Typography;
@@ -125,7 +126,7 @@ export default function AnnotationTasksPage() {
       dataIndex: 'status', 
       key: 'status', 
       width: 100,
-      render: (s) => <Tag color={s === '已完成' ? 'success' : 'processing'}>{s}</Tag>
+      render: (s) => <StatusTag status={s} />
     },
     {
       title: '质检包',
@@ -201,73 +202,69 @@ export default function AnnotationTasksPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '任务中心' }, { title: '标注任务' }]} style={{ marginBottom: 16 }} />
-      </div>
+      <div className="ui-page">
+        <PageHeader
+          title="标注任务"
+          description="统一管理标注进度、人员分派与质检交付。"
+          breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '任务中心' }, { title: '标注任务' }]}
+          extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/annotation-tasks/create')}>新建任务</Button>}
+        />
 
-      <SpecMarker
-        id="annotation-tasks-query"
-        number={1}
-        title="标注任务检索与筛选"
-        rules={[
-          "支持按一级项目、二级项目、标注类型、任务书、任务名称及标注员/审核员多维度筛选。",
-          "一键重置筛选条件并更新表格数据。"
-        ]}
-        remark="标注任务专属配置页面"
-        style={{ width: '100%' }}
-      >
-        <Card 
-          style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-          styles={{ body: { padding: '24px 24px 16px' } }}
+        <SpecMarker
+          id="annotation-tasks-query"
+          number={1}
+          title="标注任务检索与筛选"
+          rules={[
+            "支持按一级项目、二级项目、标注类型、任务书、任务名称及标注员/审核员多维度筛选。",
+            "一键重置筛选条件并更新表格数据。"
+          ]}
+          remark="标注任务专属配置页面"
+          style={{ width: '100%' }}
         >
-          <QueryFilter
-            submitter={{
-              submitButtonProps: { icon: <SearchOutlined /> },
-              resetButtonProps: { icon: <ReloadOutlined /> },
-            }}
-          >
-            <ProFormSelect name="firstLevel" label="一级项目" placeholder="请选择一级项目" options={[{label:'InternalCommercial', value:'InternalCommercial'}, {label:'ExternalXupaosi', value:'ExternalXupaosi'}, {label:'InternalIndustrial', value:'InternalIndustrial'}]} />
-            <ProFormSelect name="secondLevel" label="二级项目" placeholder="请选择二级项目" options={[{label:'GroceryVLA', value:'GroceryVLA'}, {label:'FoundationModel', value:'FoundationModel'}]} />
-            <ProFormText name="taskName" label="任务名称" placeholder="请输入任务名称" />
-            <ProFormText name="taskId" label="任务ID" placeholder="请输入任务ID" />
-            <ProFormText name="assignee" label="标注员" placeholder="请输入标注员" />
-          </QueryFilter>
-        </Card>
-      </SpecMarker>
+          <FilterPanel>
+            <QueryFilter
+              submitter={{
+                submitButtonProps: { icon: <SearchOutlined /> },
+                resetButtonProps: { icon: <ReloadOutlined /> },
+              }}
+            >
+              <ProFormSelect name="firstLevel" label="一级项目" placeholder="请选择一级项目" options={[{label:'InternalCommercial', value:'InternalCommercial'}, {label:'ExternalXupaosi', value:'ExternalXupaosi'}, {label:'InternalIndustrial', value:'InternalIndustrial'}]} />
+              <ProFormSelect name="secondLevel" label="二级项目" placeholder="请选择二级项目" options={[{label:'GroceryVLA', value:'GroceryVLA'}, {label:'FoundationModel', value:'FoundationModel'}]} />
+              <ProFormText name="taskName" label="任务名称" placeholder="请输入任务名称" />
+              <ProFormText name="taskId" label="任务ID" placeholder="请输入任务ID" />
+              <ProFormText name="assignee" label="标注员" placeholder="请输入标注员" />
+            </QueryFilter>
+          </FilterPanel>
+        </SpecMarker>
 
-      <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
-        <Tabs 
-          activeKey={activeTab} 
-          onChange={setActiveTab} 
-          style={{ padding: '0 24px' }}
-          tabBarExtraContent={
-            <Space style={{ paddingBottom: 12 }}>
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/annotation-tasks/create')}>新建任务</Button>
-              <Button 
-                icon={<NodeIndexOutlined />} 
+        <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            style={{ padding: '0 16px' }}
+            items={[
+              { key: 'all', label: '全部数据标注' },
+              { key: 'doing', label: '进行中' },
+              { key: 'done', label: '已完成' },
+            ]}
+          />
+          <TableToolbar
+            count={filteredData.length}
+            selectedCount={selectedRowKeys.length}
+            actions={[
+              <Button
+                key="assign"
+                icon={<NodeIndexOutlined />}
                 disabled={selectedRowKeys.length === 0}
                 onClick={() => setIsAssignModalVisible(true)}
-                style={{ 
-                  backgroundColor: selectedRowKeys.length > 0 ? '#fff' : '#f5f5f5',
-                  borderColor: selectedRowKeys.length > 0 ? '#1677ff' : '#d9d9d9',
-                  color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf'
-                }}
               >
                 批量分派标注员
-              </Button>
-              <Tooltip title="刷新"><Button icon={<ReloadOutlined />} type="text" /></Tooltip>
-              <Tooltip title="列设置"><Button icon={<SettingOutlined />} type="text" /></Tooltip>
-            </Space>
-          }
-          items={[
-            { key: 'all', label: '全部数据标注' },
-            { key: 'doing', label: '⚡ 进行中' },
-            { key: 'done', label: '✅ 已完成' },
-          ]} 
-        />
-        
-        <div style={{ padding: '0 24px' }}>
-          <Table 
+              </Button>,
+              <Tooltip key="refresh" title="刷新"><Button icon={<ReloadOutlined />} /></Tooltip>,
+              <Tooltip key="columns" title="列设置"><Button icon={<SettingOutlined />} /></Tooltip>,
+            ]}
+          />
+          <Table
             rowSelection={{ 
               type: 'checkbox',
               selectedRowKeys,
@@ -276,33 +273,33 @@ export default function AnnotationTasksPage() {
             columns={columns} 
             dataSource={filteredData} 
             scroll={{ x: 1800 }}
-            style={{ marginBottom: 24 }}
+            size="middle"
             pagination={{ pageSize: 10 }} 
           />
-        </div>
-      </Card>
+        </Card>
 
-      {/* Modal for Batch Assignment */}
-      <Modal
-        title="批量分派标注员"
-        open={isAssignModalVisible}
-        onCancel={() => setIsAssignModalVisible(false)}
-        width={600}
-        onOk={() => {
-          message.success('已成功分配标注员');
-          setIsAssignModalVisible(false);
-          setSelectedRowKeys([]);
-        }}
-      >
-        <Form form={assignForm} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item label="标注员" name="assignee" rules={[{ required: true, message: '请选择标注员' }]}>
-            <Select placeholder="请选择标注员" options={[{label:'标注员00482', value:'00482'}, {label:'标注员00120', value:'00120'}, {label:'标注员00331', value:'00331'}]} />
-          </Form.Item>
-          <Form.Item label="审核员" name="auditor">
-            <Select placeholder="请选择审核员" defaultValue="admin" options={[{label:'天奇管理员', value:'admin'}, {label:'质检员00810', value:'00810'}]} />
-          </Form.Item>
-        </Form>
-      </Modal>
+        {/* Modal for Batch Assignment */}
+        <AppModal
+          title="批量分派标注员"
+          open={isAssignModalVisible}
+          onCancel={() => setIsAssignModalVisible(false)}
+          widthSize="medium"
+          onOk={() => {
+            message.success('已成功分配标注员');
+            setIsAssignModalVisible(false);
+            setSelectedRowKeys([]);
+          }}
+        >
+          <Form form={assignForm} layout="vertical" style={{ marginTop: 16 }}>
+            <Form.Item label="标注员" name="assignee" rules={[{ required: true, message: '请选择标注员' }]}>
+              <Select placeholder="请选择标注员" options={[{label:'标注员00482', value:'00482'}, {label:'标注员00120', value:'00120'}, {label:'标注员00331', value:'00331'}]} />
+            </Form.Item>
+            <Form.Item label="审核员" name="auditor">
+              <Select placeholder="请选择审核员" defaultValue="admin" options={[{label:'天奇管理员', value:'admin'}, {label:'质检员00810', value:'00810'}]} />
+            </Form.Item>
+          </Form>
+        </AppModal>
+      </div>
     </MainLayout>
   );
 }

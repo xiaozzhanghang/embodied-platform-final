@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -28,25 +29,22 @@ export default function CreateTaskbookPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb 
-          items={[
+      <div className="ui-page">
+        <PageHeader
+          title="新建任务书（SOP）"
+          description="定义采集目标、作业指引、附件与质检必检项。"
+          breadcrumbs={[
             { title: '数据采集' },
             { title: '任务书', href: '/collection/taskbooks' },
-            { title: '新建任务书' }
-          ]} 
-          style={{ marginBottom: 16 }}
+            { title: '新建任务书' },
+          ]}
+          back={() => router.back()}
         />
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-          <Title level={3} style={{ margin: 0 }}>新建任务书 (SOP)</Title>
-        </div>
-      </div>
 
-      <Form form={form} layout="vertical" onFinish={onFinish}>
+        <Form form={form} layout="vertical" onFinish={onFinish}>
         <Row gutter={24}>
           <Col span={16}>
-            <Card title="基础信息" bordered={false} style={{ marginBottom: 24, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+            <FormSection title="基础信息">
               <Row gutter={24}>
                 <Col span={12}>
                   <Form.Item label="任务书名称" name="name" rules={[{ required: true }]}>
@@ -65,7 +63,7 @@ export default function CreateTaskbookPage() {
               <Form.Item label="核心采集指标 (Goal)" name="goal">
                 <TextArea rows={3} placeholder="请简述该任务书期望达到的采集目标和核心质量指标" />
               </Form.Item>
-            </Card>
+            </FormSection>
 
             <SpecMarker
               id="taskbooks-content"
@@ -79,7 +77,7 @@ export default function CreateTaskbookPage() {
               remark="将图文作业规范与底层控制物理参数进行数字链路绑定，极大程度提高人机协同数采的精准度。"
               style={{ width: '100%' }}
             >
-              <Card title="详细指导说明 (Markdown)" bordered={false} style={{ marginBottom: 40, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <FormSection title="详细指导说明（Markdown）">
                 <Form.Item name="content" noStyle>
                   <TextArea 
                     rows={15} 
@@ -87,12 +85,12 @@ export default function CreateTaskbookPage() {
                     style={{ fontFamily: 'monospace', fontSize: 13 }}
                   />
                 </Form.Item>
-              </Card>
+              </FormSection>
             </SpecMarker>
           </Col>
 
           <Col span={8}>
-            <Card title="附件与要求" bordered={false} style={{ marginBottom: 24, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+            <FormSection title="附件与要求">
               <Form.Item label="上传标准 PDF 档" name="pdf">
                 <Upload maxCount={1} accept=".pdf">
                   <Button icon={<UploadOutlined />} block>上传任务书 PDF</Button>
@@ -123,7 +121,7 @@ export default function CreateTaskbookPage() {
                   <Text>Admin User</Text>
                 </div>
               </Space>
-            </Card>
+            </FormSection>
 
             <div style={{ background: '#e6f7ff', padding: 16, borderRadius: 8, border: '1px solid #91d5ff' }}>
               <Space align="start">
@@ -136,11 +134,12 @@ export default function CreateTaskbookPage() {
           </Col>
         </Row>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, paddingBottom: 60 }}>
+        <ActionFooter>
           <Button style={{ width: 120 }} onClick={() => router.back()}>取消</Button>
           <Button type="primary" htmlType="submit" icon={<SaveOutlined />} style={{ width: 160 }}>保存并发布</Button>
-        </div>
-      </Form>
+        </ActionFooter>
+        </Form>
+      </div>
     </MainLayout>
   );
 }

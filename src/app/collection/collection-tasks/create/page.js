@@ -18,6 +18,7 @@ import {
   UnorderedListOutlined, InfoCircleFilled, EditOutlined, MinusCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { ActionFooter, AppModal, FormSection, PageHeader } from '@/components/ui';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -502,12 +503,7 @@ function CreateCollectionTaskContent() {
 
   const renderSelection = () => (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ marginBottom: 32 }}>
-        <Title level={4} style={{ marginBottom: 8 }}>基于模版快速创建</Title>
-        <Text type="secondary">推荐选择预置的标准化任务模版，快速继承硬件与场景配置</Text>
-      </div>
-
-      <div style={{ marginBottom: 40 }}>
+      <FormSection title="基于模板快速创建" description="选择预置的标准化任务模板，快速继承硬件与场景配置。">
         <Row gutter={[20, 20]}>
           {mockTemplates.map((tpl) => (
             <Col span={6} key={tpl.id}>
@@ -547,10 +543,9 @@ function CreateCollectionTaskContent() {
             </Col>
           ))}
         </Row>
-      </div>
+      </FormSection>
 
-      <div>
-        <Title level={5} style={{ marginBottom: 16 }}>自定义新建</Title>
+      <FormSection title="自定义新建" description="从空白表单开始，自主配置全部采集参数。">
         <Card 
           hoverable 
           onClick={() => handleSelectTemplate({ id: 'blank', name: '空白采集任务', device: 'galbot_2.2_RGB', tele: 'Master-slaveArm' })}
@@ -565,24 +560,12 @@ function CreateCollectionTaskContent() {
             </div>
           </div>
         </Card>
-      </div>
+      </FormSection>
     </div>
   );
 
   const renderConfigFlow = () => (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, background: '#fff', padding: '16px 24px', borderRadius: 8, border: '1px solid #f0f0f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => setCreationStage('selection')} style={{ marginRight: 16 }} />
-          <div>
-            <Title level={4} style={{ margin: 0 }}>
-              {mode === 'edit' ? '编辑采集任务：' : mode === 'copy' ? '复制采集任务：' : '基于模版创建：'}
-              {selectedTemplate?.name}
-            </Title>
-          </div>
-        </div>
-      </div>
-
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32, padding: '0 100px' }}>
         <Steps current={currentStep} titlePlacement="horizontal" style={{ width: '100%', maxWidth: 800 }}
           items={[
@@ -613,7 +596,7 @@ function CreateCollectionTaskContent() {
               style={{ marginBottom: 24, borderRadius: 8 }}
             />
 
-            <Card title="基础信息" variant="borderless" styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+            <FormSection title="基础信息">
               <Row gutter={24}>
                 <Col span={8}><Form.Item label="一级项目" name="p1" required><Select placeholder="请选择" options={optionsMap.p1} popupRender={m => renderDropdown(m, 'p1')} onChange={() => form.setFieldsValue({ p2: undefined })} /></Form.Item></Col>
                 <Col span={8}><Form.Item label="二级项目" name="p2" required><Select placeholder="请先选择一级项目" options={optionsMap.p2.filter(o => !o.parent || o.parent === form.getFieldValue('p1'))} popupRender={m => renderDropdown(m, 'p2')} /></Form.Item></Col>
@@ -660,9 +643,9 @@ function CreateCollectionTaskContent() {
                   </Form.Item>
                 </Col>
               </Row>
-            </Card>
+            </FormSection>
 
-            <Card title="设备与采集配置" variant="borderless" styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+            <FormSection title="设备与采集配置">
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 14, fontWeight: 500, color: '#262626', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ color: '#ff4d4f' }}>*</span>
@@ -849,20 +832,16 @@ function CreateCollectionTaskContent() {
                   />
                 </>
               )}
-            </Card>
+            </FormSection>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
+            <ActionFooter>
               <Button type="primary" size="large" style={{ width: 140, borderRadius: 8 }} onClick={() => setCurrentStep(1)}>下一步</Button>
-            </div>
+            </ActionFooter>
           </>
         ) : (
-          <Card 
-            title={
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <UnorderedListOutlined style={{ color: '#1677ff' }} />
-                  动作步骤编排
-                </span>
+          <FormSection title="动作步骤编排" description="使用结构化步骤或自然语言描述任务 SOP。">
+              <div className="ui-toolbar" style={{ padding: '0 0 16px', minHeight: 0 }}>
+                <span />
                 <Radio.Group 
                   value={sopInputMode} 
                   onChange={e => setSopInputMode(e.target.value)}
@@ -877,15 +856,11 @@ function CreateCollectionTaskContent() {
                   </Radio.Button>
                 </Radio.Group>
               </div>
-            }
-            variant="borderless" 
-            style={{ marginBottom: 24, borderRadius: 12, border: '1px solid #e2e8f0' }}
-          >
             <div style={{
               display: 'flex',
               alignItems: 'center',
               marginBottom: 20,
-              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              background: '#f5f7fa',
               padding: '16px 20px',
               borderRadius: 12,
               border: '1px dashed #cbd5e1'
@@ -936,7 +911,7 @@ function CreateCollectionTaskContent() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {naturalStepsList.map((item, index) => (
                   <div key={item.key} style={{ display: 'flex', gap: 16, background: '#ffffff', border: '1px dashed #cbd5e1', borderRadius: 12, padding: '16px 20px', alignItems: 'center' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
                       {index + 1}
                     </div>
                     <Input 
@@ -971,18 +946,18 @@ function CreateCollectionTaskContent() {
                   onClick={addNaturalStep} 
                   block 
                   size="large"
-                  style={{ borderRadius: 8, height: 48, borderColor: '#10b981', color: '#059669', background: '#f0fdf4' }}
+                  style={{ height: 48 }}
                 >
                   添加自然语言步骤描述
                 </Button>
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
+            <ActionFooter>
               <Button size="large" onClick={() => setCurrentStep(0)}>上一步</Button>
               <Button type="primary" size="large" htmlType="submit">提交并发布任务</Button>
-            </div>
-          </Card>
+            </ActionFooter>
+          </FormSection>
         )}
       </Form>
     </div>
@@ -990,20 +965,26 @@ function CreateCollectionTaskContent() {
 
   return (
     <MainLayout>
-      <div style={{ background: '#fff', padding: '16px 24px', borderBottom: '1px solid #f0f0f0', marginBottom: 24 }}>
-        <Breadcrumb items={[
-          { title: '数据采集' },
-          { title: '任务中心' },
-          { title: '采集任务', href: '/collection/collection-tasks' },
-          { title: '新建采集任务' }
-        ]} />
-      </div>
+      <div className="ui-page">
+        <PageHeader
+          title={creationStage === 'selection'
+            ? '新建采集任务'
+            : `${mode === 'edit' ? '编辑采集任务' : mode === 'copy' ? '复制采集任务' : '基于模板创建'}：${selectedTemplate?.name || ''}`}
+          description="选择创建方式，配置基础信息、设备参数与动作步骤。"
+          breadcrumbs={[
+            { title: '数据采集' },
+            { title: '任务中心' },
+            { title: '采集任务', href: '/collection/collection-tasks' },
+            { title: '新建采集任务' },
+          ]}
+          back={() => creationStage === 'selection' ? router.back() : setCreationStage('selection')}
+        />
 
-      <div style={{ padding: '0 24px 24px' }}>
+        <div>
         {creationStage === 'selection' ? renderSelection() : renderConfigFlow()}
-      </div>
+        </div>
 
-      <Modal
+        <AppModal
         title={`快捷新增 - ${fieldLabels[currentField] || ''}`}
         open={modalVisible}
         onOk={handleCreateOption}
@@ -1014,6 +995,7 @@ function CreateCollectionTaskContent() {
         }}
         okText="确认创建"
         cancelText="取消"
+        widthSize="small"
       >
         <Form layout="vertical" style={{ marginTop: 16 }}>
           {currentField === 'p2' && (
@@ -1036,7 +1018,8 @@ function CreateCollectionTaskContent() {
             />
           </Form.Item>
         </Form>
-      </Modal>
+        </AppModal>
+      </div>
     </MainLayout>
   );
 }

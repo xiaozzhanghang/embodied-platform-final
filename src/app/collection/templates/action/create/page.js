@@ -11,6 +11,7 @@ import {
   SaveOutlined, UnorderedListOutlined, MinusCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -109,31 +110,23 @@ export default function CreateActionTemplatePage() {
 
   return (
     <MainLayout>
-      {/* Page Header */}
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb 
-          items={[
+      <div className="ui-page">
+        <PageHeader
+          title="新建动作模版"
+          description="定义动作模板的适配设备与可复用 SOP 步骤序列。"
+          breadcrumbs={[
             { title: '数据采集' },
             { title: '模板中心', href: '/collection/templates' },
-            { title: '新建动作模板' }
-          ]} 
-          style={{ marginBottom: 16 }}
+            { title: '新建动作模板' },
+          ]}
+          back={() => router.back()}
         />
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-          <Title level={3} style={{ margin: 0 }}>新建动作模版</Title>
-        </div>
-      </div>
 
-      <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ type: '服务数据', device: 'galbot' }}>
+        <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ type: '服务数据', device: 'galbot' }}>
         <Row gutter={24}>
           {/* Left Column: Form Config */}
           <Col span={8}>
-            <Card 
-              title={<span style={{ fontWeight: 'bold' }}>基础配置</span>} 
-              bordered={false} 
-              style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
-            >
+            <FormSection title="基础配置">
               <Form.Item label="动作模板名称" name="name" rules={[{ required: true, message: '请输入模板名称' }]}>
                 <Input placeholder="请输入模版名称，如：桌面书籍整理与摆放模版" />
               </Form.Item>
@@ -158,20 +151,12 @@ export default function CreateActionTemplatePage() {
                   动作模板用于定义**机器人执行特定动作的SOP流程**。在新建宏观任务模板或标注任务时，可以直接导入已建好的动作模板以自动填充原子动作编排步骤。
                 </Paragraph>
               </div>
-            </Card>
+            </FormSection>
           </Col>
 
           {/* Right Column: SOP Steps List */}
           <Col span={16}>
-            <Card 
-              title={
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                  <span style={{ fontWeight: 'bold' }}><UnorderedListOutlined style={{ marginRight: 8 }} />预设SOP动作步骤序列</span>
-                </div>
-              } 
-              bordered={false} 
-              style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
-            >
+            <FormSection title="预设 SOP 动作步骤序列">
               <div style={{ marginBottom: 20 }}>
                 <Radio.Group 
                   value={inputMode} 
@@ -392,14 +377,15 @@ export default function CreateActionTemplatePage() {
                 </Text>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 40 }}>
+              <ActionFooter>
                 <Button style={{ width: 120 }} onClick={() => router.back()}>取消</Button>
                 <Button type="primary" htmlType="submit" icon={<SaveOutlined />} style={{ width: 120 }}>保存模板</Button>
-              </div>
-            </Card>
+              </ActionFooter>
+            </FormSection>
           </Col>
         </Row>
-      </Form>
+        </Form>
+      </div>
     </MainLayout>
   );
 }

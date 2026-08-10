@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 
 import { Suspense } from 'react';
 
@@ -211,23 +212,20 @@ function TemplateForm() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb 
-          items={[
+      <div className="ui-page">
+        <PageHeader
+          title={isEdit ? '编辑任务模版' : '新建任务模版'}
+          description="配置模板基础属性，并编排可复用的 SOP 动作步骤。"
+          breadcrumbs={[
             { title: '数据采集' },
             { title: '模版中心', href: '/collection/templates' },
-            { title: isEdit ? '编辑模板' : '新建模板' }
-          ]} 
-          style={{ marginBottom: 16 }}
+            { title: isEdit ? '编辑模板' : '新建模板' },
+          ]}
+          back={() => router.back()}
         />
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-          <Title level={3} style={{ margin: 0 }}>{isEdit ? '编辑任务模版' : '新建任务模版'}</Title>
-        </div>
-      </div>
 
-      <Form form={form} layout="vertical" onFinish={onFinish}>
-        <Card title="基础配置" bordered={false} style={{ marginBottom: 24, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+        <Form form={form} layout="vertical" onFinish={onFinish}>
+        <FormSection title="基础配置">
           <Row gutter={48}>
             <Col span={8}>
               <Form.Item label="模版名称" name="name" rules={[{ required: true }]}>
@@ -263,7 +261,7 @@ function TemplateForm() {
               </Form.Item>
             </Col>
           </Row>
-        </Card>
+        </FormSection>
 
         <SpecMarker
           id="templates-sequence"
@@ -277,10 +275,9 @@ function TemplateForm() {
           remark="在前置阶段校验动作步骤设计的合理性，防止不规范的流程定义下发污染数采及质检池数据。"
           style={{ width: '100%' }}
         >
-          <Card 
-            title={
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: 12 }}>
-                <span>动作步骤编排 (SOP Steps)</span>
+          <FormSection title="动作步骤编排（SOP Steps）">
+              <div className="ui-toolbar" style={{ padding: '0 0 16px', minHeight: 0 }}>
+                <span />
                 <Space>
                   <span style={{ fontSize: 13, fontWeight: 'normal', color: '#595959' }}>导入动作模板:</span>
                   <Select 
@@ -299,10 +296,6 @@ function TemplateForm() {
                   <Button type="primary" ghost icon={<PlusOutlined />} onClick={addStep}>添加步骤</Button>
                 </Space>
               </div>
-            } 
-            bordered={false} 
-            style={{ marginBottom: 40, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
-          >
             <Table 
               dataSource={steps} 
               columns={columns} 
@@ -316,14 +309,15 @@ function TemplateForm() {
                 提示：编排后的动作步骤将在“新建任务”阶段作为预设值自动填充，采集员在工作台中将看到这些指引。
               </Text>
             </div>
-          </Card>
+          </FormSection>
         </SpecMarker>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, paddingBottom: 60 }}>
+        <ActionFooter>
           <Button style={{ width: 120 }} onClick={() => router.back()}>取消</Button>
           <Button type="primary" htmlType="submit" icon={<SaveOutlined />} style={{ width: 120 }}>{isEdit ? '保存更改' : '保存模版'}</Button>
-        </div>
-      </Form>
+        </ActionFooter>
+        </Form>
+      </div>
     </MainLayout>
   );
 }

@@ -11,6 +11,7 @@ import {
   SolutionOutlined, HistoryOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { FormSection, PageHeader } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -49,31 +50,25 @@ export default function TemplateDetailPage({ params }) {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb 
-          items={[
+      <div className="ui-page ui-detail-page">
+        <PageHeader
+          title={template.name}
+          description={`模板编码 ${template.code}`}
+          breadcrumbs={[
             { title: '数据采集' },
             { title: '模版中心', href: '/collection/templates' },
-            { title: '模板详情' }
-          ]} 
-          style={{ marginBottom: 16 }}
+            { title: '模板详情' },
+          ]}
+          back={() => router.back()}
+          extra={[
+            <Button key="clone" icon={<CopyOutlined />}>克隆模板</Button>,
+            <Button key="edit" type="primary" icon={<EditOutlined />} onClick={() => router.push(`/collection/templates/create?id=${template.id}`)}>编辑模板</Button>,
+          ]}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-            <Title level={3} style={{ margin: 0 }}>{template.name}</Title>
-            <Tag color="cyan" style={{ marginLeft: 16 }}>{template.code}</Tag>
-          </div>
-          <Space>
-            <Button icon={<CopyOutlined />}>克隆模板</Button>
-            <Button type="primary" icon={<EditOutlined />} onClick={() => router.push(`/collection/templates/create?id=${template.id}`)}>编辑模板</Button>
-          </Space>
-        </div>
-      </div>
 
-      <Row gutter={24} style={{ marginBottom: 24 }}>
+        <Row gutter={24}>
         <Col span={16}>
-          <Card title="基础信息" bordered={false} style={{ borderRadius: 8, height: '100%' }}>
+          <FormSection title="基础信息">
             <Descriptions column={2} bordered size="small">
               <Descriptions.Item label="适配设备">{template.device}</Descriptions.Item>
               <Descriptions.Item label="控制模式">{template.mode}</Descriptions.Item>
@@ -81,10 +76,10 @@ export default function TemplateDetailPage({ params }) {
               <Descriptions.Item label="创建时间">{template.createTime}</Descriptions.Item>
               <Descriptions.Item label="模板描述" span={2}>{template.desc}</Descriptions.Item>
             </Descriptions>
-          </Card>
+          </FormSection>
         </Col>
         <Col span={8}>
-          <Card title="使用统计" bordered={false} style={{ borderRadius: 8, height: '100%' }}>
+          <FormSection title="使用统计">
             <Row gutter={16}>
               <Col span={12}>
                 <Statistic title="累计关联任务" value={template.usageCount} prefix={<SolutionOutlined />} />
@@ -97,18 +92,19 @@ export default function TemplateDetailPage({ params }) {
             <div style={{ color: '#8c8c8c', fontSize: 12 }}>
               <HistoryOutlined /> 上次更新时间：2026-03-20 15:44
             </div>
-          </Card>
+          </FormSection>
         </Col>
-      </Row>
+        </Row>
 
-      <Card title="SOP 动作步骤" bordered={false} style={{ borderRadius: 8 }}>
+        <FormSection title="SOP 动作步骤">
         <Table 
           dataSource={steps} 
           columns={columns} 
           pagination={false} 
           size="middle" 
         />
-      </Card>
+        </FormSection>
+      </div>
     </MainLayout>
   );
 }

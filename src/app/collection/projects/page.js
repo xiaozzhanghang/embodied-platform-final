@@ -5,6 +5,7 @@ import { Typography, Breadcrumb, Button, Input, App, Tooltip, Modal, Form, Selec
 import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { AppModal, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Text, Title } = Typography;
 
@@ -164,9 +165,15 @@ export default function ProjectManagementPage() {
 
   return (
     <MainLayout>
-      <Breadcrumb items={[{ title: '首页' }, { title: '基础数据' }, { title: '项目管理' }]} style={{ marginBottom: 16 }} />
+      <div className="ui-page">
+        <PageHeader
+          title="项目管理"
+          description="统一维护项目分类、一级标签与二级标签的引用关系。"
+          breadcrumbs={[{ title: '首页' }, { title: '基础数据' }, { title: '项目管理' }]}
+          extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingCatKey(null); createCatForm.resetFields(); setCreateCatOpen(true); }}>创建分类</Button>}
+        />
 
-      <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 160px)' }}>
+        <div style={{ display: 'flex', gap: 16, minHeight: 'calc(100vh - 220px)' }}>
         {/* Left Category List */}
         <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: 16, overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -297,10 +304,9 @@ export default function ProjectManagementPage() {
         </div>
 
         {/* Right Tag Panel */}
-        <div style={{ flex: 1, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: 24, overflowY: 'auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 4, height: 16, background: '#ff4d4f', borderRadius: 2 }} />
+          <div className="ui-table-card" style={{ flex: 1, overflowY: 'auto' }}>
+            <TableToolbar
+              title={
               <SpecMarker
                 id="projects-list"
                 number={2}
@@ -313,13 +319,16 @@ export default function ProjectManagementPage() {
                 ]}
                 remark="列表展示需要与左侧分类高亮状态联动。以原型页面及基础数据管理逻辑为准。"
               >
-                <Text strong style={{ fontSize: 15 }}>自定义标签</Text>
+                <Space size="small">
+                  <span>自定义标签</span>
+                  <Tooltip title="点击标签右侧数字可进入二级标签管理"><InfoCircleOutlined style={{ color: '#bfbfbf', fontSize: 13 }} /></Tooltip>
+                </Space>
               </SpecMarker>
-              <Tooltip title="点击标签右侧数字可进入二级标签管理"><InfoCircleOutlined style={{ color: '#bfbfbf', fontSize: 13 }} /></Tooltip>
-            </div>
-            <Text type="secondary" style={{ fontSize: 13 }}>{total}/500</Text>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+              }
+              count={currentTags.length}
+              actions={<Text type="secondary" style={{ fontSize: 13 }}>{total}/500</Text>}
+            />
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', padding: 24 }}>
             {currentTags.map(tag => (
               <div key={tag.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px 6px 12px', background: '#fff1f0', border: '1px solid #ffccc7', borderRadius: 20, fontSize: 13, color: '#cf1322' }}>
                 <span style={{ fontWeight: 500 }}>{tag.name}</span>
@@ -335,20 +344,19 @@ export default function ProjectManagementPage() {
             ) : (
               <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={() => setAdding(true)} style={{ borderRadius: 20, color: '#8c8c8c', borderColor: '#d9d9d9' }}>添加一级标签</Button>
             )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Create Category Modal */}
-      <Modal
+        {/* Create Category Modal */}
+        <AppModal
         title={editingCatKey ? "编辑分类" : "创建分类"}
         open={createCatOpen}
         onOk={handleCreateCategory}
         onCancel={() => { setCreateCatOpen(false); createCatForm.resetFields(); setEditingCatKey(null); }}
         okText="确定"
         cancelText="取消"
-        width={520}
-        centered
+        widthSize="small"
       >
         <Form
           form={createCatForm}
@@ -396,10 +404,10 @@ export default function ProjectManagementPage() {
             <Input.TextArea placeholder="请输入描述" rows={3} />
           </Form.Item>
         </Form>
-      </Modal>
+        </AppModal>
 
-      {/* Sub-tag Modal */}
-      <Modal title="二级标签管理" open={subModal.open} onCancel={() => setSubModal({ open: false, parentTag: null })} footer={null} width={600} centered styles={{ body: { padding: '24px 32px' } }}>
+        {/* Sub-tag Modal */}
+        <AppModal title="二级标签管理" open={subModal.open} onCancel={() => setSubModal({ open: false, parentTag: null })} footer={null} widthSize="medium" styles={{ body: { padding: '24px 32px' } }}>
         {subModal.parentTag && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
@@ -429,7 +437,8 @@ export default function ProjectManagementPage() {
             </div>
           </div>
         )}
-      </Modal>
+        </AppModal>
+      </div>
     </MainLayout>
   );
 }

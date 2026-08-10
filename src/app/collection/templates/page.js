@@ -16,6 +16,7 @@ import {
 } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -336,17 +337,20 @@ export default function TaskTemplatesPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '模板中心' }]} style={{ marginBottom: 16 }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Title level={3} style={{ margin: 0 }}>模板中心</Title>
-          </div>
-        </div>
-      </div>
+      <div className="ui-page">
+        <PageHeader
+          title="模板中心"
+          description="统一管理任务模板、动作 SOP 模板与已审核的标注样例。"
+          breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '模板中心' }]}
+          extra={activeTab === 'task'
+            ? <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/templates/create')}>创建任务模板</Button>
+            : activeTab === 'action'
+              ? <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsActionModalOpen(true)}>创建动作模板</Button>
+              : null}
+        />
 
       {/* Tab 分类切换 */}
-      <div style={{ background: '#fff', borderRadius: 8, padding: '4px 16px', marginBottom: 24, border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+      <Card className="ui-table-card" styles={{ body: { padding: '0 16px' } }} style={{ marginBottom: 16 }}>
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
@@ -357,11 +361,11 @@ export default function TaskTemplatesPage() {
           ]}
           tabBarStyle={{ marginBottom: 0 }}
         />
-      </div>
+      </Card>
 
       {activeTab === 'task' && (
         <>
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <FilterPanel>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <Input placeholder="搜索模板名称..." style={{ width: 220 }} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear />
               <Select placeholder="全部类型" style={{ width: 150 }} allowClear options={[{label:'服务数据', value:'service'}, {label:'工业数据', value:'industry'}]} />
@@ -369,12 +373,10 @@ export default function TaskTemplatesPage() {
               <Button type="primary" icon={<SearchOutlined />}>查询</Button>
               <Button icon={<ReloadOutlined />}>重置</Button>
             </div>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/templates/create')}>
-              创建任务模板
-            </Button>
-          </div>
+          </FilterPanel>
+          <TableToolbar title="任务模板" count={mockTemplates.length} />
 
-          <Row gutter={[24, 24]}>
+          <Row gutter={[16, 16]}>
             {mockTemplates.map((tpl) => (
               <Col span={8} key={tpl.key}>
                 <Card 
@@ -439,16 +441,14 @@ export default function TaskTemplatesPage() {
 
       {activeTab === 'action' && (
         <>
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <FilterPanel>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <Input placeholder="搜索动作模板..." style={{ width: 220 }} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear />
               <Button type="primary" icon={<SearchOutlined />}>查询</Button>
             </div>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsActionModalOpen(true)}>
-              创建动作模板
-            </Button>
-          </div>
-          <Row gutter={[24, 24]}>
+          </FilterPanel>
+          <TableToolbar title="动作模板" count={actionTemplates.length} />
+          <Row gutter={[16, 16]}>
           {actionTemplates.map((tpl) => (
             <Col span={12} key={tpl.key}>
               <Card 
@@ -510,6 +510,7 @@ export default function TaskTemplatesPage() {
 
       {activeTab === 'annotation' && (
         <div>
+          <TableToolbar title="标注模板" count={annoTemplates.length} />
           {annoTemplates.length === 0 ? (
             <div style={{ padding: '60px 0', textAlign: 'center', background: '#fff', borderRadius: 12, border: '1px dashed #cbd5e1' }}>
               <FolderOpenOutlined style={{ fontSize: 40, color: '#94a3b8', marginBottom: 12 }} />
@@ -577,7 +578,7 @@ export default function TaskTemplatesPage() {
       )}
 
       {/* Create Action Template Modal */}
-      <Modal
+      <AppModal
         title={
           <span style={{ fontSize: 16, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 6 }}>
             <PlusOutlined style={{ color: '#1677ff' }} /> 新建动作模版
@@ -589,10 +590,10 @@ export default function TaskTemplatesPage() {
           setIsActionModalOpen(false);
           actionForm.resetFields();
         }}
-        width={800}
+        widthSize="large"
         okText="保存模板"
         cancelText="取消"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={actionForm} layout="vertical" initialValues={{ device: 'galbot' }}>
           {/* Top Section: Basic Config */}
@@ -837,7 +838,7 @@ export default function TaskTemplatesPage() {
             )}
           </div>
         </Form>
-      </Modal>
+      </AppModal>
 
       <style jsx>{`
         .hover-action:hover {
@@ -847,6 +848,7 @@ export default function TaskTemplatesPage() {
           color: #1677ff !important;
         }
       `}</style>
+      </div>
     </MainLayout>
   );
 }
