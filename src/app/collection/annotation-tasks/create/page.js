@@ -1,694 +1,465 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Button, Typography, Space, Input, Select, Form, Row, Col, 
-  Card, Table, Tag, Divider, Alert, App, Breadcrumb, InputNumber, Radio
+import {
+  Alert,
+  App,
+  Breadcrumb,
+  Button,
+  Card,
+  Col,
+  Input,
+  Radio,
+  Row,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Typography,
 } from 'antd';
-import { 
-  ArrowLeftOutlined, CheckCircleFilled, LinkOutlined,
-  FileTextOutlined, FormOutlined, CheckOutlined,
-  UnorderedListOutlined, InfoCircleOutlined, DatabaseOutlined,
-  FilterOutlined, QuestionCircleOutlined, PlusOutlined, DeleteOutlined,
-  MinusCircleOutlined, EditOutlined
+import {
+  ArrowLeftOutlined,
+  CheckCircleFilled,
+  CheckOutlined,
+  CloudServerOutlined,
+  DatabaseOutlined,
+  ExperimentOutlined,
+  FileDoneOutlined,
+  FileTextOutlined,
+  FormOutlined,
+  InboxOutlined,
+  RobotOutlined,
+  SearchOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import {
+  canPublishTask,
+  filterEpisodes,
+  summarizeReadyPool,
+} from '@/lib/annotationTaskCreateModel.mjs';
 
-const { Title, Text } = Typography;
+const { Text, Title } = Typography;
+const { TextArea } = Input;
 
-const p1Options = [
-  { value: 'InternalCommercial', label: 'InternalCommercial (商业仿真)' },
-  { value: 'SimulatedCollection', label: 'SimulatedCollection (仿真采集)' },
-  { value: 'ExternalXupaosi', label: 'ExternalXupaosi (外部资产)' }
-];
-
-const p2OptionsMap = {
-  InternalCommercial: [{ value: 'GroceryVLA', label: 'GroceryVLA (超市物品抓取)' }],
-  SimulatedCollection: [{ value: 'FoundationModel', label: 'FoundationModel (基座模型)' }],
-  ExternalXupaosi: [{ value: 'SubTag_X1', label: 'SubTag_X1 (子标签包)' }]
+const SOURCE_META = {
+  collection: { label: '采集任务产出', color: 'blue', icon: <RobotOutlined /> },
+  asset: { label: '资产数据', color: 'cyan', icon: <DatabaseOutlined /> },
+  simulation: { label: '仿真数据', color: 'geekblue', icon: <ExperimentOutlined /> },
 };
 
-const taskBookOptions = [
-  { value: 'sop_desk', label: '[3D 标注模版] 桌面整理 3D 边界框与轨迹标注规范 V1.0' },
-  { value: 'sop_cable', label: '[动作切分模版] 线缆管理原子动作时间戳切分规范 V2.0' },
-  { value: 'sop_kitchen', label: '[姿态标定模版] 厨房场景 6DoF 机械臂位姿标注规范 V1.5' }
+const EPISODES = [
+  { key: 'EP-20260807-001', id: 'EP-20260807-001', sourceType: 'asset', sourceName: '桌面整理高质量资产包 V2', scene: '厨房', subScene: '操作台', frames: 1860, duration: '01:02', status: '数据就绪' },
+  { key: 'EP-20260807-002', id: 'EP-20260807-002', sourceType: 'asset', sourceName: '桌面整理高质量资产包 V2', scene: '厨房', subScene: '操作台', frames: 1724, duration: '00:57', status: '数据就绪' },
+  { key: 'EP-20260807-003', id: 'EP-20260807-003', sourceType: 'collection', sourceName: '双臂桌面整理实采任务', scene: '客厅', subScene: '餐桌', frames: 2210, duration: '01:14', status: '数据就绪' },
+  { key: 'EP-20260807-004', id: 'EP-20260807-004', sourceType: 'simulation', sourceName: 'Isaac Sim 抓取放置数据集', scene: '仓储', subScene: '货架', frames: 1498, duration: '00:50', status: '数据就绪' },
+  { key: 'EP-20260807-005', id: 'EP-20260807-005', sourceType: 'collection', sourceName: '厨房台面收纳实采任务', scene: '厨房', subScene: '操作台', frames: 1942, duration: '01:05', status: '数据就绪' },
+  { key: 'EP-20260807-006', id: 'EP-20260807-006', sourceType: 'asset', sourceName: '历史双臂操作资产包', scene: '客厅', subScene: '餐桌', frames: 2056, duration: '01:09', status: '数据就绪' },
+  { key: 'EP-20260807-007', id: 'EP-20260807-007', sourceType: 'simulation', sourceName: '货架补货仿真数据 V1', scene: '仓储', subScene: '货架', frames: 1635, duration: '00:55', status: '数据就绪' },
+  { key: 'EP-20260807-008', id: 'EP-20260807-008', sourceType: 'asset', sourceName: '外部导入厨房操作数据', scene: '厨房', subScene: '水槽区', frames: 1788, duration: '00:59', status: '数据就绪' },
 ];
 
-const sceneCategories = [
-  { value: 'Kitchen', label: 'Kitchen (厨房场景)' },
-  { value: 'LivingRoom', label: 'LivingRoom (客厅场景)' },
-  { value: 'Supermarket', label: 'Supermarket (商超场景)' }
-];
-
-const subSceneOptionsMap = {
-  Kitchen: [
-    { value: 'Kitchen_Counter', label: 'Kitchen-台面烹饪区' },
-    { value: 'Kitchen_Cabinet', label: 'Kitchen-储物柜区' }
-  ],
-  LivingRoom: [
-    { value: 'LivingRoom_Table', label: 'LivingRoom-餐桌整理区' }
-  ],
-  Supermarket: [
-    { value: 'Supermarket_Shelf', label: 'Supermarket-货架摆放区' }
-  ]
-};
-
-const allCollectionTasks = [
+const TEMPLATE_MODES = [
   {
-    value: 'COLL-20260415-001',
-    label: '基于模版_桌面整理_数采任务 (COLL-20260415-001 | 共 850 条已采数据)',
-    p1: 'InternalCommercial',
-    p2: 'GroceryVLA',
-    sceneCat: 'Kitchen',
-    subScene: 'Kitchen_Counter',
-    taskName: '基于模版_桌面整理_标注任务',
-    taskNameEn: 'Tabletop_Book_Organize_AnnoTask',
-    taskBook: 'sop_desk',
-    usage: 'Training',
-    deviceType: 'Galbot_2.2_RGBD',
-    totalDataCount: 850,
-    steps: [
-      { id: 1, effector: '右手 (Right Arm)', skill: '识别', object: '目标物品', target: '确认位置', startFrame: 0, endFrame: 300 },
-      { id: 2, effector: '右手 (Right Arm)', skill: '靠近', object: '目标物品', target: '避障靠近', startFrame: 301, endFrame: 600 },
-      { id: 3, effector: '右手 (Right Arm)', skill: '抓取', object: '目标物品', target: '牢固夹紧', startFrame: 601, endFrame: 900 }
-    ]
+    value: 'none',
+    title: '无模板开始',
+    description: '适合新场景，先人工完成首条标注，再决定是否生成模板。',
+    icon: <InboxOutlined />,
+    tone: '#0f766e',
+    background: '#f0fdfa',
   },
   {
-    value: 'COLL-20260414-003',
-    label: 'Lumos-双手整理离线资产任务 (COLL-20260414-003 | 共 50 条已采数据)',
-    p1: 'ExternalXupaosi',
-    p2: 'SubTag_X1',
-    sceneCat: 'Kitchen',
-    subScene: 'Kitchen_Cabinet',
-    taskName: 'Lumos-双手整理离线资产标注任务',
-    taskNameEn: 'Lumos_Bimanual_Sorting_Anno',
-    taskBook: 'sop_cable',
-    usage: 'Valid',
-    deviceType: 'Lumos_FastUMI',
-    totalDataCount: 50,
-    steps: [
-      { id: 1, effector: '左手 (Left Arm)', skill: '识别', object: '门把手', target: '确认位置', startFrame: 0, endFrame: 300 },
-      { id: 2, effector: '左手 (Left Arm)', skill: '靠近', object: '柜门', target: '拉开打开', startFrame: 301, endFrame: 600 }
-    ]
+    value: 'action',
+    title: '使用动作模板 / SOP',
+    description: '预置动作步骤和帧段结构，标注员仍可在工作台调整。',
+    icon: <FileTextOutlined />,
+    tone: '#2563eb',
+    background: '#eff6ff',
   },
   {
-    value: 'COLL-20260415-002',
-    label: '桌面操作物理数采任务 (COLL-20260415-002 | 共 500 条已采数据)',
-    p1: 'SimulatedCollection',
-    p2: 'FoundationModel',
-    sceneCat: 'LivingRoom',
-    subScene: 'LivingRoom_Table',
-    taskName: '桌面操作物理数采标注任务',
-    taskNameEn: 'Tabletop_Operation_Physical_Anno',
-    taskBook: 'sop_desk',
-    usage: 'Training',
-    deviceType: 'Galbot_1.16_G2',
-    totalDataCount: 500,
-    steps: [
-      { id: 1, effector: '双手 (Dual Arms)', skill: '定位', object: '桌面杂物', target: '确认位置', startFrame: 0, endFrame: 300 },
-      { id: 2, effector: '右手 (Right Arm)', skill: '抓取', object: '目标书籍', target: '牢固夹紧', startFrame: 301, endFrame: 600 }
-    ]
-  }
+    value: 'sample',
+    title: '使用标注样例模板',
+    description: '套用已审核发布的样例结果，用于成熟任务批量提效。',
+    icon: <ThunderboltOutlined />,
+    tone: '#b45309',
+    background: '#fffbeb',
+  },
 ];
+
+function SectionTitle({ step, title, description, icon }) {
+  return (
+    <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+      <div style={{
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        background: '#0f172a',
+        color: '#fff',
+        display: 'grid',
+        placeItems: 'center',
+        fontWeight: 800,
+        flexShrink: 0,
+      }}>
+        {step}
+      </div>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#0f172a', fontSize: 17, fontWeight: 750 }}>
+          {icon}{title}
+        </div>
+        <Text type="secondary" style={{ display: 'block', marginTop: 3, fontSize: 13 }}>{description}</Text>
+      </div>
+    </div>
+  );
+}
 
 function CreateAnnotationTaskContent() {
   const router = useRouter();
   const { message } = App.useApp();
-  const [form] = Form.useForm();
-  
-  const [currentP1, setCurrentP1] = useState('InternalCommercial');
-  const [currentP2, setCurrentP2] = useState('GroceryVLA');
-  const [currentSceneCat, setCurrentSceneCat] = useState('Kitchen');
-  const [currentSubScene, setCurrentSubScene] = useState('Kitchen_Counter');
-  
-  const [filteredTasks, setFilteredTasks] = useState([]);
-  const [selectedTask, setSelectedTask] = useState(allCollectionTasks[0]);
-  const [episodesList, setEpisodesList] = useState([]);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [selectedDataCount, setSelectedDataCount] = useState(2);
+  const [taskName, setTaskName] = useState('桌面整理动作切分标注任务');
+  const [annotationType, setAnnotationType] = useState('action-segment');
+  const [usage, setUsage] = useState('training');
+  const [description, setDescription] = useState('对桌面整理过程进行动作阶段切分，并标记操作对象与关键帧。');
+  const [scene, setScene] = useState();
+  const [subScene, setSubScene] = useState();
+  const [keyword, setKeyword] = useState('');
+  const [templateMode, setTemplateMode] = useState('none');
+  const [actionTemplateId, setActionTemplateId] = useState();
+  const [sampleTemplateId, setSampleTemplateId] = useState();
+  const [selectedRowKeys, setSelectedRowKeys] = useState(['EP-20260807-001', 'EP-20260807-002', 'EP-20260807-003']);
 
-  const [sopInputMode, setSopInputMode] = useState('format');
+  const sceneOptions = useMemo(
+    () => [...new Set(EPISODES.map(item => item.scene))].map(value => ({ value, label: value })),
+    [],
+  );
+  const subSceneOptions = useMemo(
+    () => [...new Set(EPISODES.filter(item => !scene || item.scene === scene).map(item => item.subScene))]
+      .map(value => ({ value, label: value })),
+    [scene],
+  );
+  const filteredEpisodes = useMemo(
+    () => filterEpisodes(EPISODES, { scene, subScene, keyword }),
+    [scene, subScene, keyword],
+  );
+  const poolSummary = useMemo(() => summarizeReadyPool(EPISODES), []);
+  const publishable = canPublishTask({
+    name: taskName,
+    annotationType,
+    selectedEpisodeIds: selectedRowKeys,
+  });
 
-  // Editable SOP Action Steps state
-  const [sopSteps, setSopSteps] = useState([
-    { id: 1, effector: '右手 (Right Arm)', skill: '识别', object: '目标物品', target: '确认位置', startFrame: 0, endFrame: 300 },
-    { id: 2, effector: '右手 (Right Arm)', skill: '靠近', object: '目标物品', target: '避障靠近', startFrame: 301, endFrame: 600 },
-    { id: 3, effector: '右手 (Right Arm)', skill: '抓取', object: '目标物品', target: '牢固夹紧', startFrame: 601, endFrame: 900 }
-  ]);
-
-  const addSopStep = () => {
-    setSopSteps(prev => {
-      const last = prev[prev.length - 1];
-      const startF = last ? (last.endFrame || 0) + 1 : 0;
-      const endF = startF + 299;
-      return [
-        ...prev,
-        { id: Date.now(), effector: '右手 (Right Arm)', skill: '抓取', object: '目标物品', target: '确认位置', startFrame: startF, endFrame: endF }
-      ];
-    });
+  const resetFilters = () => {
+    setScene(undefined);
+    setSubScene(undefined);
+    setKeyword('');
   };
 
-  const updateSopStep = (id, field, value) => {
-    setSopSteps(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
-  };
-
-  const removeSopStep = (id) => {
-    if (sopSteps.length <= 1) return;
-    setSopSteps(prev => prev.filter(item => item.id !== id));
-  };
-
-  // Initialize form fields
-  useEffect(() => {
-    filterTasksCascade('InternalCommercial', 'GroceryVLA', 'Kitchen', 'Kitchen_Counter');
-  }, []);
-
-  const handleP1Change = (p1) => {
-    setCurrentP1(p1);
-    const p2Opts = p2OptionsMap[p1] || [];
-    const firstP2 = p2Opts[0]?.value || '';
-    setCurrentP2(firstP2);
-    form.setFieldsValue({ p1, p2: firstP2 });
-
-    filterTasksCascade(p1, firstP2, currentSceneCat, currentSubScene);
-  };
-
-  const handleP2Change = (p2) => {
-    setCurrentP2(p2);
-    filterTasksCascade(currentP1, p2, currentSceneCat, currentSubScene);
-  };
-
-  const handleSceneCatChange = (sceneCat) => {
-    setCurrentSceneCat(sceneCat);
-    const subOptions = subSceneOptionsMap[sceneCat] || [];
-    const firstSub = subOptions[0]?.value || '';
-    setCurrentSubScene(firstSub);
-    form.setFieldsValue({ sceneCat, subScene: firstSub });
-
-    filterTasksCascade(currentP1, currentP2, sceneCat, firstSub);
-  };
-
-  const handleSubSceneChange = (subScene) => {
-    setCurrentSubScene(subScene);
-    filterTasksCascade(currentP1, currentP2, currentSceneCat, subScene);
-  };
-
-  const filterTasksCascade = (p1, p2, sceneCat, subScene) => {
-    const matched = allCollectionTasks.filter(t => 
-      t.p1 === p1 && t.p2 === p2 && t.sceneCat === sceneCat && t.subScene === subScene
-    );
-
-    const available = matched.length > 0 ? matched : allCollectionTasks.filter(t => t.p1 === p1 || t.sceneCat === sceneCat);
-    setFilteredTasks(available);
-
-    if (available.length > 0) {
-      handleTaskSelect(available[0].value, available);
-    } else {
-      handleTaskSelect(allCollectionTasks[0].value, allCollectionTasks);
-    }
-  };
-
-  const handleTaskSelect = (taskId, taskList = filteredTasks) => {
-    const task = (taskList.length ? taskList : allCollectionTasks).find(t => t.value === taskId) || allCollectionTasks[0];
-    setSelectedTask(task);
-
-    const defaultCount = Math.min(2, task.totalDataCount);
-    setSelectedDataCount(defaultCount);
-
-    form.setFieldsValue({
-      p1: task.p1,
-      p2: task.p2,
-      taskBook: task.taskBook,
-      sceneCat: task.sceneCat,
-      subScene: task.subScene,
-      sourceTaskId: task.value,
-      name: task.taskName,
-      nameEn: task.taskNameEn,
-      usage: task.usage,
-      dataCount: defaultCount
-    });
-
-    if (task.steps) {
-      setSopSteps(task.steps);
-    }
-
-    generateEpisodesList(task, defaultCount);
-  };
-
-  const generateEpisodesList = (task, count) => {
-    const listLength = Math.max(count, Math.min(task.totalDataCount, 20));
-    const mockEpisodes = Array.from({ length: listLength }).map((_, idx) => {
-      const epId = 944101 + idx;
-      return {
-        key: String(epId),
-        id: epId,
-        episodeName: `${task.value}_ep_${String(idx + 1).padStart(3, '0')}`,
-        collectTime: `2026-04-${String(10 + (idx % 15)).padStart(2, '0')} 15:${String(idx % 60).padStart(2, '0')}:20`,
-        totalFrames: [150, 180, 220, 260, 320][idx % 5],
-        collectStatus: '已采集完成 (机检合格)'
-      };
-    });
-
-    setEpisodesList(mockEpisodes);
-    const initialSelectedKeys = mockEpisodes.slice(0, count).map(item => item.key);
-    setSelectedRowKeys(initialSelectedKeys);
-    setSelectedDataCount(initialSelectedKeys.length);
-  };
-
-  // Linkage Direction 1: InputNumber -> Table RowSelection
-  const handleDataCountChange = (val) => {
-    const num = Math.min(Math.max(0, val || 0), selectedTask.totalDataCount);
-    setSelectedDataCount(num);
-    form.setFieldsValue({ dataCount: num });
-
-    if (num > episodesList.length) {
-      generateEpisodesList(selectedTask, num);
-    } else {
-      const newKeys = episodesList.slice(0, num).map(item => item.key);
-      setSelectedRowKeys(newKeys);
-    }
-  };
-
-  // Linkage Direction 2: Table Checkbox -> InputNumber
-  const handleTableSelectionChange = (newSelectedKeys) => {
-    setSelectedRowKeys(newSelectedKeys);
-    setSelectedDataCount(newSelectedKeys.length);
-    form.setFieldsValue({ dataCount: newSelectedKeys.length });
-  };
-
-  const handleFinish = () => {
-    message.success(`新建标注任务成功！已关联 ${selectedRowKeys.length} 条 Episode 数据与 ${sopSteps.length} 步 SOP 动作序列，请前往详情页进行分包。`);
+  const handlePublish = () => {
+    if (!publishable) return;
+    const templateText = templateMode === 'none'
+      ? '无模板开始'
+      : templateMode === 'action'
+        ? '动作模板'
+        : '标注样例模板';
+    message.success(`标注任务已创建：${selectedRowKeys.length} 条 Episode，${templateText}`);
     router.push('/collection/annotation-tasks');
   };
 
+  const columns = [
+    {
+      title: 'Episode ID',
+      dataIndex: 'id',
+      width: 170,
+      render: value => <Text style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12, color: '#0f172a' }}>{value}</Text>,
+    },
+    {
+      title: '原始来源',
+      dataIndex: 'sourceType',
+      width: 120,
+      render: value => {
+        const meta = SOURCE_META[value];
+        return <Tag color={meta.color} icon={meta.icon} bordered={false}>{meta.label}</Tag>;
+      },
+    },
+    { title: '原始来源名称', dataIndex: 'sourceName', ellipsis: true },
+    { title: '场景', dataIndex: 'scene', width: 90 },
+    { title: '子场景', dataIndex: 'subScene', width: 100 },
+    { title: '帧数', dataIndex: 'frames', width: 90, align: 'right' },
+    { title: '时长', dataIndex: 'duration', width: 80, align: 'center' },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      width: 100,
+      render: value => <Tag color="success" bordered={false} icon={<CheckCircleFilled />}>{value}</Tag>,
+    },
+  ];
+
   return (
     <MainLayout>
-      <div style={{ marginBottom: 16 }}>
-        <Breadcrumb items={[
-          { title: '首页' }, 
-          { title: '数据采集' }, 
-          { title: '任务中心' }, 
-          { title: '标注任务', href: '/collection/annotation-tasks' },
-          { title: '新建标注任务' }
-        ]} />
-      </div>
+      <div style={{ minHeight: '100vh', background: '#f5f7fa', margin: '-24px', padding: '20px 24px 48px' }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto' }}>
+          <Breadcrumb
+            style={{ marginBottom: 14 }}
+            items={[
+              { title: '首页' },
+              { title: '数据标注' },
+              { title: '标注任务', href: '/collection/annotation-tasks' },
+              { title: '新建标注任务' },
+            ]}
+          />
 
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        {/* Page Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, background: '#fff', padding: '18px 24px', borderRadius: 12, border: '1px solid #f0f0f0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.push('/collection/annotation-tasks')} style={{ marginRight: 16 }} />
-            <div>
-              <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FormOutlined style={{ color: '#722ed1' }} />
-                新建标注任务
-              </Title>
+          <div style={{
+            background: 'linear-gradient(120deg, #0f172a 0%, #172554 58%, #0f766e 130%)',
+            borderRadius: 18,
+            padding: '24px 28px',
+            color: '#fff',
+            marginBottom: 18,
+            boxShadow: '0 16px 38px rgba(15, 23, 42, 0.14)',
+            overflow: 'hidden',
+            position: 'relative',
+          }}>
+            <div style={{ position: 'absolute', width: 220, height: 220, borderRadius: '50%', background: 'rgba(45, 212, 191, 0.11)', right: -70, top: -105 }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 24, alignItems: 'center', position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.push('/collection/annotation-tasks')} style={{ color: '#fff' }} />
+                <div>
+                  <Space size={10} align="center">
+                    <FormOutlined style={{ color: '#5eead4', fontSize: 21 }} />
+                    <Title level={3} style={{ color: '#fff', margin: 0, letterSpacing: 0.2 }}>新建标注任务</Title>
+                  </Space>
+                  <div style={{ color: 'rgba(255,255,255,.68)', marginTop: 6 }}>数据来源统一为可标注数据池，模板只是可选的效率工具</div>
+                </div>
+              </div>
+              <Space size={24} style={{ color: 'rgba(255,255,255,.78)', fontSize: 13 }}>
+                <span><b style={{ color: '#5eead4', marginRight: 6 }}>01</b>任务信息</span>
+                <span><b style={{ color: '#5eead4', marginRight: 6 }}>02</b>选择数据</span>
+                <span><b style={{ color: '#5eead4', marginRight: 6 }}>03</b>可选配置</span>
+              </Space>
             </div>
           </div>
-          <Tag color="purple" style={{ fontSize: 13, padding: '4px 14px', borderRadius: 20 }}>
-            采集关联模式
-          </Tag>
-        </div>
 
-        <Form form={form} layout="vertical" onFinish={handleFinish}>
-          {/* Card: 基础信息 (按截图精准对齐 2 列栅格) */}
-          <Card 
-            title={
-              <span style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>
-                基础信息
-              </span>
-            } 
-            variant="borderless" 
-            styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} 
-            style={{ marginBottom: 24, borderRadius: 8, border: '1px solid #f0f0f0' }}
-          >
-            {/* Row 1: 一级项目 & 二级项目 */}
-            <Row gutter={24}>
-              <Col span={12}>
-                <Form.Item label={<span style={{ fontWeight: 600 }}><span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>一级项目</span>} name="p1" required rules={[{ required: true, message: '请选择一级项目' }]}>
-                  <Select 
-                    placeholder="请选择" 
-                    options={p1Options} 
-                    onChange={handleP1Change} 
-                  />
-                </Form.Item>
+          <Card style={{ borderRadius: 14, marginBottom: 16, border: '1px solid #e7ebf0', boxShadow: '0 4px 16px rgba(15,23,42,.035)' }}>
+            <SectionTitle step="01" title="任务信息" description="只填写开始标注真正需要的信息，模板和采集任务都不是创建前置条件。" icon={<FileDoneOutlined style={{ color: '#0f766e' }} />} />
+            <Row gutter={20} style={{ marginTop: 20 }}>
+              <Col span={10}>
+                <Text strong><span style={{ color: '#ef4444' }}>* </span>标注任务名称</Text>
+                <Input value={taskName} onChange={event => setTaskName(event.target.value)} placeholder="请输入标注任务名称" size="large" style={{ marginTop: 8 }} />
               </Col>
-              <Col span={12}>
-                <Form.Item label={<span style={{ fontWeight: 600 }}><span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>二级项目</span>} name="p2" required rules={[{ required: true, message: '请选择二级项目' }]}>
-                  <Select 
-                    placeholder="服务数据" 
-                    options={p2OptionsMap[currentP1] || []} 
-                    onChange={handleP2Change} 
-                  />
-                </Form.Item>
+              <Col span={7}>
+                <Text strong><span style={{ color: '#ef4444' }}>* </span>标注类型</Text>
+                <Select
+                  value={annotationType}
+                  onChange={setAnnotationType}
+                  size="large"
+                  style={{ width: '100%', marginTop: 8 }}
+                  options={[
+                    { value: 'action-segment', label: '动作切分 / 时间段标注' },
+                    { value: 'object-box', label: '目标框标注' },
+                    { value: 'key-point', label: '关键点标注' },
+                    { value: 'trajectory', label: '轨迹标注' },
+                    { value: 'classification', label: '分类标注' },
+                  ]}
+                />
+              </Col>
+              <Col span={7}>
+                <Text strong>任务用途</Text>
+                <Select
+                  value={usage}
+                  onChange={setUsage}
+                  size="large"
+                  style={{ width: '100%', marginTop: 8 }}
+                  options={[
+                    { value: 'training', label: '模型训练集' },
+                    { value: 'validation', label: '验证评测集' },
+                    { value: 'research', label: '算法研究' },
+                  ]}
+                />
               </Col>
             </Row>
-
-            {/* Row 2: 标注任务名称 & 英文名称 */}
-            <Row gutter={24}>
-              <Col span={12}>
-                <Form.Item label={<span style={{ fontWeight: 600 }}><span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>标注任务名称</span>} name="name" required rules={[{ required: true, message: '请输入标注任务名称' }]}>
-                  <Input placeholder="请输入标注任务名称" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label={<span style={{ fontWeight: 600 }}><span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>英文名称</span>} name="nameEn" required rules={[{ required: true, message: '请输入英文名称' }]}>
-                  <Input placeholder="请输入" suffix={<QuestionCircleOutlined style={{ color: '#bfbfbf' }} />} />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            {/* Row 3: 任务用途 & 场景分类 */}
-            <Row gutter={24}>
-              <Col span={12}>
-                <Form.Item label={<span style={{ fontWeight: 600 }}><span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>任务用途</span>} name="usage" required rules={[{ required: true, message: '请选择任务用途' }]}>
-                  <Select placeholder="请选择" options={[
-                    { value: 'Training', label: 'Training (模型训练集数据)' },
-                    { value: 'Valid', label: 'Valid (验证评测集数据)' },
-                  ]} />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label={<span style={{ fontWeight: 600 }}><span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>场景分类</span>} name="sceneCat" required rules={[{ required: true, message: '请选择场景分类' }]}>
-                  <Select 
-                    placeholder="请选择" 
-                    options={sceneCategories} 
-                    onChange={handleSceneCatChange} 
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            {/* Row 4: 关联任务书 (SOP) / 标注模版 & 子场景分类 */}
-            <Row gutter={24}>
-              <Col span={12}>
-                <Form.Item label={
-                  <span style={{ fontWeight: 600 }}>
-                    <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>关联任务书 (SOP) / 标注模版 <QuestionCircleOutlined style={{ color: '#8c8c8c', marginLeft: 4 }} />
-                  </span>
-                } name="taskBook" required rules={[{ required: true, message: '请选择关联任务书/标注模版' }]}>
-                  <Select 
-                    placeholder="请选择标注模版/标准规范" 
-                    options={taskBookOptions} 
-                    allowClear
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label={<span style={{ fontWeight: 600 }}><span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>子场景分类</span>} name="subScene" required rules={[{ required: true, message: '请选择子场景分类' }]}>
-                  <Select 
-                    placeholder="请选择" 
-                    options={subSceneOptionsMap[currentSceneCat] || []} 
-                    onChange={handleSubSceneChange} 
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
+            <div style={{ marginTop: 18 }}>
+              <Text strong>任务说明</Text>
+              <TextArea value={description} onChange={event => setDescription(event.target.value)} autoSize={{ minRows: 2, maxRows: 3 }} style={{ marginTop: 8 }} />
+            </div>
           </Card>
 
-          {/* Card 2: 关联 Episode 数据量选择与明细筛选 */}
-          <Card 
-            title={
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <DatabaseOutlined style={{ color: '#1677ff' }} />
-                  关联 Episode 数据筛选与数量设定
-                </span>
-                <Text type="secondary" style={{ fontSize: 13 }}>
-                  源采集任务共有 <Text type="danger" strong>{selectedTask.totalDataCount}</Text> 条已采数据，已选定 <Text type="success" strong>{selectedRowKeys.length}</Text> 条 Episode 导入标注
-                </Text>
-              </div>
-            } 
-            variant="borderless" 
-            styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} 
-            style={{ marginBottom: 24, borderRadius: 8, border: '1px solid #f0f0f0' }}
-          >
-            <div style={{ background: '#f8fafc', padding: '16px 20px', borderRadius: 8, marginBottom: 20, border: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'nowrap' }}>
-                <Text strong style={{ fontSize: 14, color: '#334155', whiteSpace: 'nowrap' }}>选择关联导入的 Episode 数据数量:</Text>
-                <InputNumber 
-                  min={1} 
-                  max={selectedTask.totalDataCount} 
-                  value={selectedDataCount} 
-                  onChange={handleDataCountChange} 
-                  style={{ width: 140 }}
-                  size="middle"
-                />
-                <Text type="secondary" style={{ fontSize: 14, whiteSpace: 'nowrap', fontWeight: 600, color: '#475569' }}>
-                  / {selectedTask.totalDataCount} 条
-                </Text>
+          <Card style={{ borderRadius: 14, marginBottom: 16, border: '1px solid #e7ebf0', boxShadow: '0 4px 16px rgba(15,23,42,.035)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'flex-start' }}>
+              <SectionTitle step="02" title="从可标注数据池选择" description="采集完成数据、校验通过的资产数据和仿真数据统一汇入同一个数据池。" icon={<DatabaseOutlined style={{ color: '#2563eb' }} />} />
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: '#64748b', fontSize: 12 }}>已选择</div>
+                <div style={{ color: '#0f766e', fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{selectedRowKeys.length}<span style={{ fontSize: 12, fontWeight: 500, marginLeft: 4 }}>条</span></div>
               </div>
             </div>
 
-            <Table 
-              rowSelection={{
-                selectedRowKeys,
-                onChange: handleTableSelectionChange
-              }}
-              dataSource={episodesList} 
+            <div style={{
+              marginTop: 18,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 18,
+              padding: '15px 18px',
+              borderRadius: 12,
+              background: 'linear-gradient(100deg, #ecfeff 0%, #f8fafc 62%, #eff6ff 100%)',
+              border: '1px solid #bae6fd',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 11, display: 'grid', placeItems: 'center', background: '#0f766e', color: '#fff', fontSize: 19 }}>
+                  <CloudServerOutlined />
+                </div>
+                <div>
+                  <Text strong style={{ color: '#0f172a', fontSize: 15 }}>数据来源：可标注数据池</Text>
+                  <div style={{ color: '#64748b', fontSize: 12, marginTop: 3 }}>数据在进入本池前已经完成采集、导入解析或仿真生成，并通过可用性校验。</div>
+                </div>
+              </div>
+              <Space size={18} split={<span style={{ width: 1, height: 24, background: '#cbd5e1' }} />}>
+                <Text><b style={{ color: '#0f766e', fontSize: 18 }}>{poolSummary.total}</b> 条就绪</Text>
+                <Text type="secondary">采集产出 {poolSummary.collection}</Text>
+                <Text type="secondary">资产数据 {poolSummary.asset}</Text>
+                <Text type="secondary">仿真数据 {poolSummary.simulation}</Text>
+              </Space>
+            </div>
+
+            <Alert
+              type="info"
+              showIcon
+              style={{ marginTop: 12, marginBottom: 16, border: '1px solid #dbeafe', background: '#f8fbff' }}
+              message={<span><b>新建标注任务固定从可标注数据池取数。</b> 采集任务和资产包只作为原始来源保留，用于筛选和追溯。</span>}
+            />
+
+            <div style={{ background: '#f8fafc', border: '1px solid #e5eaf0', padding: 14, borderRadius: 12, marginBottom: 14 }}>
+              <Row gutter={12} align="middle">
+                <Col flex="150px">
+                  <Select allowClear value={scene} onChange={(value) => { setScene(value); setSubScene(undefined); }} placeholder="场景（选填）" style={{ width: '100%' }} options={sceneOptions} />
+                </Col>
+                <Col flex="150px">
+                  <Select allowClear value={subScene} onChange={setSubScene} placeholder="子场景（选填）" style={{ width: '100%' }} options={subSceneOptions} />
+                </Col>
+                <Col flex="240px">
+                  <Input allowClear value={keyword} onChange={event => setKeyword(event.target.value)} prefix={<SearchOutlined style={{ color: '#94a3b8' }} />} placeholder="搜索来源名称或 Episode ID" />
+                </Col>
+                <Col flex="70px">
+                  <Button type="link" onClick={resetFilters}>重置</Button>
+                </Col>
+              </Row>
+            </div>
+
+            <Table
+              size="middle"
               rowKey="key"
-              pagination={{ pageSize: 5 }} 
-              size="small"
-              bordered
-              columns={[
-                { title: 'Episode ID', dataIndex: 'id', key: 'id', width: 120 },
-                { title: 'Episode 名称', dataIndex: 'episodeName', key: 'episodeName' },
-                { title: '采集完成时间', dataIndex: 'collectTime', key: 'collectTime', width: 180 },
-                { title: '总帧数', dataIndex: 'totalFrames', key: 'totalFrames', width: 100 },
-                { title: '采集质检状态', dataIndex: 'collectStatus', key: 'collectStatus', width: 180, render: s => <Tag color="success">{s}</Tag> }
-              ]} 
+              columns={columns}
+              dataSource={filteredEpisodes}
+              pagination={{ pageSize: 5, showSizeChanger: false, showTotal: total => `共 ${total} 条可用数据` }}
+              rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys, preserveSelectedRowKeys: true }}
+              scroll={{ x: 1050 }}
             />
           </Card>
 
-          {/* Card 3: 预设SOP动作步骤序列 (高保真卡片卡槽样式) */}
-          <Card 
-            title={
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <UnorderedListOutlined style={{ color: '#1677ff' }} />
-                  预设SOP动作步骤序列
-                </span>
-                <Radio.Group 
-                  value={sopInputMode} 
-                  onChange={e => setSopInputMode(e.target.value)}
-                  buttonStyle="solid"
-                  size="small"
-                >
-                  <Radio.Button value="format">结构化步骤</Radio.Button>
-                  <Radio.Button value="natural">自然语言描述</Radio.Button>
-                </Radio.Group>
-              </div>
-            } 
-            variant="borderless" 
-            styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} 
-            style={{ marginBottom: 24, borderRadius: 8, border: '1px solid #f0f0f0' }}
-          >
-            {sopInputMode === 'format' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {sopSteps.map((step, idx) => {
-                  const startF = step.startFrame !== undefined ? step.startFrame : (idx === 0 ? 0 : idx * 300 + 1);
-                  const endF = step.endFrame !== undefined ? step.endFrame : (idx + 1) * 300;
+          <Card style={{ borderRadius: 14, marginBottom: 16, border: '1px solid #e7ebf0', boxShadow: '0 4px 16px rgba(15,23,42,.035)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <SectionTitle step="03" title="可选加速配置" description="不选模板也能发布任务；需要提效时再选择一种模板。" icon={<ThunderboltOutlined style={{ color: '#b45309' }} />} />
+              <Tag color="default" bordered={false} style={{ background: '#f1f5f9', color: '#475569', padding: '3px 10px' }}>选填</Tag>
+            </div>
 
+            <Radio.Group value={templateMode} onChange={event => setTemplateMode(event.target.value)} style={{ width: '100%', marginTop: 20 }}>
+              <Row gutter={14}>
+                {TEMPLATE_MODES.map(mode => {
+                  const selected = templateMode === mode.value;
                   return (
-                    <div 
-                      key={step.id} 
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 16, 
-                        background: '#fff', 
-                        border: '1px solid #e2e8f0', 
-                        borderRadius: 12, 
-                        padding: '16px 20px',
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
-                      }}
-                    >
-                      {/* Step Number Badge */}
-                      <div style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        background: '#1677ff',
-                        color: '#fff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 700,
-                        fontSize: 15,
-                        flexShrink: 0
-                      }}>
-                        {String(idx + 1).padStart(2, '0')}
-                      </div>
-
-                      {/* Input Controls Grid */}
-                      <Row gutter={12} style={{ flex: 1 }} align="middle">
-                        <Col span={5}>
-                          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>执行末端类型</div>
-                          <Select 
-                            value={step.effector} 
-                            onChange={v => updateSopStep(step.id, 'effector', v)} 
-                            style={{ width: '100%' }}
-                            options={[
-                              { value: '右手 (Right Arm)', label: '右手 (Right Arm)' },
-                              { value: '左手 (Left Arm)', label: '左手 (Left Arm)' },
-                              { value: '双手 (Dual Arms)', label: '双手 (Dual Arms)' },
-                              { value: '底盘 (Base)', label: '底盘 (Base)' }
-                            ]} 
-                          />
-                        </Col>
-
-                        <Col span={4}>
-                          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>原子技能</div>
-                          <Select 
-                            value={step.skill} 
-                            onChange={v => updateSopStep(step.id, 'skill', v)} 
-                            style={{ width: '100%' }}
-                            options={[
-                              { value: '识别', label: '识别' },
-                              { value: '靠近', label: '靠近' },
-                              { value: '避障靠近', label: '避障靠近' },
-                              { value: '抓取', label: '抓取' },
-                              { value: '放置', label: '放置' },
-                              { value: '定位', label: '定位' }
-                            ]} 
-                          />
-                        </Col>
-
-                        <Col span={5}>
-                          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>操作对象</div>
-                          <Select 
-                            value={step.object} 
-                            onChange={v => updateSopStep(step.id, 'object', v)} 
-                            style={{ width: '100%' }}
-                            options={[
-                              { value: '目标物品', label: '目标物品' },
-                              { value: '桌面杂物', label: '桌面杂物' },
-                              { value: '抽屉', label: '抽屉' },
-                              { value: '门把手', label: '门把手' }
-                            ]} 
-                          />
-                        </Col>
-
-                        <Col span={5}>
-                          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>操作目标</div>
-                          <Select 
-                            value={step.target} 
-                            onChange={v => updateSopStep(step.id, 'target', v)} 
-                            style={{ width: '100%' }}
-                            options={[
-                              { value: '确认位置', label: '确认位置' },
-                              { value: '避障靠近', label: '避障靠近' },
-                              { value: '牢固夹紧', label: '牢固夹紧' },
-                              { value: '目标点', label: '目标点' }
-                            ]} 
-                          />
-                        </Col>
-
-                        <Col span={5}>
-                          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>默认帧数区间</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <InputNumber 
-                              min={0} 
-                              value={startF} 
-                              onChange={v => updateSopStep(step.id, 'startFrame', v)} 
-                              style={{ width: '100%' }} 
-                            />
-                            <span style={{ color: '#94a3b8' }}>-</span>
-                            <InputNumber 
-                              min={0} 
-                              value={endF} 
-                              onChange={v => updateSopStep(step.id, 'endFrame', v)} 
-                              style={{ width: '100%' }} 
-                            />
+                    <Col span={8} key={mode.value}>
+                      <label style={{ display: 'block', cursor: 'pointer' }}>
+                        <div style={{
+                          minHeight: 116,
+                          padding: '17px 18px',
+                          borderRadius: 12,
+                          border: selected ? `2px solid ${mode.tone}` : '1px solid #dfe5ec',
+                          background: selected ? mode.background : '#fff',
+                          boxShadow: selected ? `0 7px 20px ${mode.tone}18` : 'none',
+                          transition: 'all .18s ease',
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Space size={10}>
+                              <span style={{ width: 32, height: 32, borderRadius: 9, display: 'grid', placeItems: 'center', background: selected ? mode.tone : '#eef2f6', color: selected ? '#fff' : '#64748b', fontSize: 16 }}>{mode.icon}</span>
+                              <Text strong style={{ color: selected ? mode.tone : '#0f172a' }}>{mode.title}</Text>
+                            </Space>
+                            <Radio value={mode.value} />
                           </div>
-                        </Col>
-                      </Row>
-
-                      {/* Red Minus Delete Button */}
-                      <Button 
-                        type="text" 
-                        icon={<MinusCircleOutlined style={{ fontSize: 20, color: '#ff4d4f' }} />} 
-                        onClick={() => removeSopStep(step.id)} 
-                        disabled={sopSteps.length <= 1}
-                      />
-                    </div>
+                          <div style={{ color: '#64748b', fontSize: 12, lineHeight: 1.6, marginTop: 12 }}>{mode.description}</div>
+                        </div>
+                      </label>
+                    </Col>
                   );
                 })}
+              </Row>
+            </Radio.Group>
 
-                {/* Full-width dashed Add button */}
-                <Button 
-                  type="dashed" 
-                  icon={<PlusOutlined />} 
-                  onClick={addSopStep} 
-                  block 
-                  size="large"
-                  style={{ 
-                    borderRadius: 8, 
-                    height: 48, 
-                    borderColor: '#1677ff', 
-                    color: '#1677ff', 
-                    background: '#f0f7ff',
-                    fontWeight: 600,
-                    fontSize: 15,
-                    marginTop: 8
-                  }}
-                >
-                  添加结构化步骤
-                </Button>
+            {templateMode === 'none' && (
+              <div style={{ marginTop: 16, borderRadius: 10, background: '#f0fdfa', color: '#115e59', padding: '11px 14px', fontSize: 13 }}>
+                <CheckCircleFilled style={{ marginRight: 8 }} />进入工作台后先人工标注首条数据，审核通过后可一键创建样例模板并批量应用。
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {sopSteps.map((step, idx) => (
-                  <div key={step.id} style={{ display: 'flex', gap: 16, background: '#ffffff', border: '1px dashed #cbd5e1', borderRadius: 12, padding: '16px 20px', alignItems: 'center' }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
-                      {idx + 1}
-                    </div>
-                    <Input 
-                      placeholder={`请输入第 ${idx + 1} 步动作步骤的自然语言描述（如：右手避障靠近目标物体）`}
-                      value={`${step.effector} ${step.skill} ${step.object} ${step.target}`}
-                      onChange={e => updateSopStep(step.id, 'target', e.target.value)}
-                      size="large"
-                      style={{ flex: 1, borderRadius: 8 }}
-                    />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: 180 }}>
-                      <InputNumber min={0} value={step.startFrame || (idx * 300 + (idx === 0 ? 0 : 1))} onChange={v => updateSopStep(step.id, 'startFrame', v)} style={{ width: '100%' }} />
-                      <span>-</span>
-                      <InputNumber min={0} value={step.endFrame || ((idx + 1) * 300)} onChange={v => updateSopStep(step.id, 'endFrame', v)} style={{ width: '100%' }} />
-                    </div>
-                    <Button 
-                      type="text" 
-                      danger 
-                      icon={<MinusCircleOutlined style={{ fontSize: 20 }} />} 
-                      onClick={() => removeSopStep(step.id)}
-                      disabled={sopSteps.length <= 1}
-                    />
-                  </div>
-                ))}
-
-                <Button 
-                  type="dashed" 
-                  icon={<PlusOutlined />} 
-                  onClick={addSopStep} 
-                  block 
-                  size="large"
-                  style={{ borderRadius: 8, height: 48, borderColor: '#10b981', color: '#059669', background: '#f0fdf4' }}
-                >
-                  添加自然语言步骤描述
-                </Button>
+            )}
+            {templateMode === 'action' && (
+              <div style={{ marginTop: 16 }}>
+                <Text strong>动作模板 / SOP</Text>
+                <Select
+                  allowClear
+                  value={actionTemplateId}
+                  onChange={setActionTemplateId}
+                  placeholder="请选择动作模板（选填）"
+                  style={{ width: '100%', marginTop: 8 }}
+                  options={[
+                    { value: 'sop-table-v2', label: '桌面整理动作步骤 SOP V2.1' },
+                    { value: 'sop-pick-v1', label: '抓取与放置通用动作模板 V1.4' },
+                    { value: 'sop-bimanual-v1', label: '双臂协同操作 SOP V1.0' },
+                  ]}
+                />
+              </div>
+            )}
+            {templateMode === 'sample' && (
+              <div style={{ marginTop: 16 }}>
+                <Text strong>已发布标注样例模板</Text>
+                <Select
+                  allowClear
+                  value={sampleTemplateId}
+                  onChange={setSampleTemplateId}
+                  placeholder="请选择审核通过的样例模板（选填）"
+                  style={{ width: '100%', marginTop: 8 }}
+                  options={[
+                    { value: 'sample-table-022', label: '桌面整理动作切分标准样例 #022 · 已审核' },
+                    { value: 'sample-bimanual-008', label: '双臂整理关键帧样例 #008 · 已审核' },
+                  ]}
+                />
               </div>
             )}
           </Card>
 
-          {/* Submit Action Bar */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 32, marginBottom: 40 }}>
-            <Button size="large" onClick={() => router.push('/collection/annotation-tasks')}>
-              取消
-            </Button>
-            <Button type="primary" size="large" icon={<CheckOutlined />} htmlType="submit" style={{ padding: '0 36px', borderRadius: 8, background: '#722ed1' }}>
-              发布标注任务 ({selectedRowKeys.length} 条数据)
-            </Button>
+          <div style={{
+            position: 'sticky',
+            bottom: 14,
+            zIndex: 5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: 'rgba(255,255,255,.94)',
+            backdropFilter: 'blur(14px)',
+            border: '1px solid #dfe5ec',
+            borderRadius: 14,
+            padding: '13px 16px 13px 20px',
+            boxShadow: '0 15px 38px rgba(15,23,42,.12)',
+          }}>
+            <div>
+              <Text strong style={{ color: '#0f172a' }}>任务已具备发布条件</Text>
+              <Text type="secondary" style={{ marginLeft: 10 }}>
+                来源：可标注数据池 · {selectedRowKeys.length} 条 Episode · {templateMode === 'none' ? '无模板开始' : templateMode === 'action' ? '动作模板模式' : '样例模板模式'}
+              </Text>
+            </div>
+            <Space>
+              <Button size="large" onClick={() => router.push('/collection/annotation-tasks')}>取消</Button>
+              <Button type="primary" size="large" icon={<CheckOutlined />} disabled={!publishable} onClick={handlePublish} style={{ minWidth: 170, background: publishable ? '#0f766e' : undefined }}>
+                发布标注任务
+              </Button>
+            </Space>
           </div>
-        </Form>
+        </div>
       </div>
     </MainLayout>
   );
@@ -696,7 +467,7 @@ function CreateAnnotationTaskContent() {
 
 export default function CreateAnnotationTaskPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div style={{ padding: 40 }}>Loading...</div>}>
       <CreateAnnotationTaskContent />
     </Suspense>
   );
