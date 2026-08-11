@@ -6,6 +6,7 @@ import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutli
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { AppModal, FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -169,7 +170,7 @@ export default function ObjectLibraryPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedObj, setSelectedObj] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
-  
+
   const [editingObj, setEditingObj] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
 
@@ -309,13 +310,13 @@ export default function ObjectLibraryPage() {
       width: 90,
       render: (img, record) => (img && !brokenImages[record.key])
         ? (
-          <div 
+          <div
             className="thumb-preview-container-table"
             onClick={() => setPreviewImage(img)}
           >
-            <img 
-              src={img} 
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            <img
+              src={img}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               onError={() => setBrokenImages(prev => ({ ...prev, [record.key]: true }))}
             />
             <div className="thumb-preview-mask-table">
@@ -353,10 +354,10 @@ export default function ObjectLibraryPage() {
       render: (_, record) => (
         <Space size={4}>
           <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: '0 4px' }} onClick={() => { setSelectedObj(record); setDetailOpen(true); }}>查看详情</Button>
-          <Button 
-            type="link" 
-            size="small" 
-            icon={<EditOutlined />} 
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
             style={{ padding: '0 4px' }}
             onClick={() => {
               setEditingObj(record);
@@ -373,22 +374,22 @@ export default function ObjectLibraryPage() {
           >
             编辑
           </Button>
-          <Button 
-            type="link" 
-            size="small" 
-            danger 
-            icon={<DeleteOutlined />} 
-            style={{ padding: '0 4px' }} 
-            onClick={() => Modal.confirm({ 
-              title: '确定删除？', 
-              content: '此操作不可恢复，是否继续？', 
-              okText: '确定', 
-              okType: 'danger', 
-              cancelText: '取消', 
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            style={{ padding: '0 4px' }}
+            onClick={() => Modal.confirm({
+              title: '确定删除？',
+              content: '此操作不可恢复，是否继续？',
+              okText: '确定',
+              okType: 'danger',
+              cancelText: '取消',
               onOk: () => {
                 setObjects(prev => prev.filter(o => o.key !== record.key));
                 message.success('已删除');
-              } 
+              }
             })}
           >
             删除
@@ -495,9 +496,14 @@ export default function ObjectLibraryPage() {
           opacity: 1;
         }
       ` }} />
-      <Breadcrumb items={[{ title: '首页' }, { title: '基础数据' }, { title: '物体库' }]} style={{ marginBottom: 16 }} />
+      <div className="ui-page">
+        <PageHeader
+          title="物体库"
+          description="维护物体分类、物理属性、图片资产及采集关联信息。"
+          breadcrumbs={[{ title: '首页' }, { title: '基础数据' }, { title: '物体库' }]}
+        />
 
-      <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 160px)' }}>
+        <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 210px)' }}>
 
         {/* Left Category Tree */}
         <div style={{
@@ -571,10 +577,7 @@ export default function ObjectLibraryPage() {
             remark="对接表格任务的‘查询筛选’节点，保证大吞吐量异构数据分类快速过滤。"
             style={{ width: '100%' }}
           >
-            <Card 
-              style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-              styles={{ body: { padding: '24px 24px 16px' } }}
-            >
+            <FilterPanel>
               <QueryFilter
                   submitter={{
                       submitButtonProps: { icon: <SearchOutlined /> },
@@ -608,18 +611,18 @@ export default function ObjectLibraryPage() {
                   <ProFormDateRangePicker name="date" label="录入时间" />
                   <ProFormText name="id" label="物体ID" placeholder="请输入ID" />
               </QueryFilter>
-            </Card>
+            </FilterPanel>
           </SpecMarker>
 
           {/* Toolbar & Table */}
-          <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff' }}>
-              <Space size={8}>
-                <div style={{ width: 4, height: 16, background: '#1890ff', borderRadius: 2 }} />
-                <Text strong style={{ fontSize: 15 }}>物体列表</Text>
-              </Space>
-              <Space size={12}>
+          <div className="ui-table-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <TableToolbar
+              title="物体列表"
+              count={filtered.length}
+              selectedCount={selectedRowKeys.length}
+              actions={[
                 <SpecMarker
+                  key="create"
                   id="objects-create"
                   number={3}
                   title="新增/编辑物体校验"
@@ -630,9 +633,9 @@ export default function ObjectLibraryPage() {
                   ]}
                   remark="保存后列表应无刷新局部更新数据，重新加载分类缓存。"
                 >
-                  <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />} 
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
                     onClick={() => {
                       setEditingObj(null);
                       setImageUrl(null);
@@ -642,9 +645,10 @@ export default function ObjectLibraryPage() {
                   >
                     新增物体
                   </Button>
-                </SpecMarker>
+                </SpecMarker>,
 
                 <SpecMarker
+                  key="delete"
                   id="objects-delete"
                   number={5}
                   title="批量删除与引用防错"
@@ -655,8 +659,8 @@ export default function ObjectLibraryPage() {
                   ]}
                   remark="删除操作需保留确认弹窗。拦截检测通常通过后端 API 切面完成。"
                 >
-                  <Button 
-                    danger 
+                  <Button
+                    danger
                     icon={<DeleteOutlined />}
                     disabled={selectedRowKeys.length === 0}
                     onClick={() => Modal.confirm({
@@ -674,12 +678,12 @@ export default function ObjectLibraryPage() {
                   >
                     批量删除
                   </Button>
-                </SpecMarker>
-                
-                <Button icon={<ReloadOutlined />} onClick={() => setObjects(mockObjects)}>重置列表数据</Button>
-              </Space>
-            </div>
-            
+                </SpecMarker>,
+
+                <Button key="reset" icon={<ReloadOutlined />} onClick={() => setObjects(mockObjects)}>重置列表数据</Button>,
+              ]}
+            />
+
             <div style={{ flex: 1, overflow: 'hidden' }}>
               {filtered.length === 0
                 ? <Empty description="该分类下暂无物体数据" style={{ paddingTop: 80 }} />
@@ -707,7 +711,7 @@ export default function ObjectLibraryPage() {
         </div>
       </div>
 
-      <Modal title="添加物体类型" open={typeModalVisible} onOk={handleAddType} onCancel={() => setTypeModalVisible(false)}>
+      <AppModal title="添加物体类型" open={typeModalVisible} onOk={handleAddType} onCancel={() => setTypeModalVisible(false)} widthSize="small">
         <Form form={typeForm} layout="vertical">
           <Form.Item label="名称" name="name" rules={[{ required: true, message: '请输入名称' }]}>
             <Input placeholder="请输入名称" maxLength={50} showCount />
@@ -716,14 +720,14 @@ export default function ObjectLibraryPage() {
             <Input placeholder="请输入英文名称" maxLength={50} showCount />
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
 
-      <Modal 
-        title={editingObj ? "编辑物体" : "添加物体"} 
-        open={objectModalVisible} 
-        onOk={handleSubmitObject} 
-        onCancel={handleCancelObject} 
-        width={560}
+      <AppModal
+        title={editingObj ? "编辑物体" : "添加物体"}
+        open={objectModalVisible}
+        onOk={handleSubmitObject}
+        onCancel={handleCancelObject}
+        widthSize="medium"
       >
         <Form form={objectForm} layout="vertical">
           <Row gutter={16}>
@@ -779,16 +783,16 @@ export default function ObjectLibraryPage() {
             </Col>
           </Row>
           <Form.Item label="物体图片" name="image">
-            <Upload 
-              listType="picture-card" 
-              maxCount={1} 
+            <Upload
+              listType="picture-card"
+              maxCount={1}
               showUploadList={false}
               beforeUpload={beforeUpload}
             >
               {imageUrl ? (
                 <div className="thumb-preview-container-upload">
                   <img src={imageUrl} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
-                  <div 
+                  <div
                     className="thumb-preview-mask-upload"
                     onClick={(e) => { e.stopPropagation(); setImageUrl(null); }}
                   >
@@ -807,9 +811,9 @@ export default function ObjectLibraryPage() {
             </div>
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
 
-      <Modal title="物体详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={640}>
+      <AppModal title="物体详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} widthSize="medium">
         {selectedObj && (
           <>
             <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
@@ -825,13 +829,13 @@ export default function ObjectLibraryPage() {
             <div style={{ marginTop: 16 }}>
               <Text strong style={{ display: 'block', marginBottom: 8 }}>物体图片</Text>
               {(selectedObj.img && !brokenImages[selectedObj.key]) ? (
-                <div 
+                <div
                   className="thumb-preview-container-detail"
                   onClick={() => setPreviewImage(selectedObj.img)}
                 >
-                  <img 
-                    src={selectedObj.img} 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  <img
+                    src={selectedObj.img}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     onError={() => setBrokenImages(prev => ({ ...prev, [selectedObj.key]: true }))}
                   />
                   <div className="thumb-preview-mask-detail">
@@ -859,23 +863,23 @@ export default function ObjectLibraryPage() {
             </div>
           </>
         )}
-      </Modal>
+      </AppModal>
 
       {/* 图片放大预览弹框 */}
-      <Modal
+      <AppModal
         open={!!previewImage}
         footer={null}
         onCancel={() => setPreviewImage(null)}
-        centered
         styles={{ body: { padding: 0 } }}
-        width={600}
-        destroyOnClose
+        widthSize="medium"
+        destroyOnHidden
       >
         <div style={{ position: 'relative', width: '100%', borderRadius: 8, overflow: 'hidden' }}>
           <img src={previewImage} alt="preview" style={{ width: '100%', height: 'auto', display: 'block' }} />
         </div>
-      </Modal>
+      </AppModal>
 
+      </div>
     </MainLayout>
   );
 }

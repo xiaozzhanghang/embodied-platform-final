@@ -29,6 +29,7 @@ import {
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { AppModal, FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Title, Text, Link } = Typography;
 const { Panel } = Collapse;
@@ -526,15 +527,14 @@ export default function DeviceTypesPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 20 }}>
-        <Breadcrumb
-          items={[{ title: '首页' }, { title: '设备管理' }, { title: '设备类型' }]}
-          style={{ marginBottom: 12 }}
+      <div className="ui-page">
+        <PageHeader
+          title="设备类型管理"
+          description="统一维护设备类型、部件类型、关联关系与数据规则。"
+          breadcrumbs={[{ title: '首页' }, { title: '设备管理' }, { title: '设备类型' }]}
         />
-        <Title level={4} style={{ margin: 0 }}>设备类型管理</Title>
-      </div>
 
-      <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: '0 24px 24px' }}>
+      <div className="ui-table-card">
         <SpecMarker
           id="devicetypes-tab"
           number={1}
@@ -569,10 +569,7 @@ export default function DeviceTypesPage() {
           remark="重置和提交操作建议增加 300ms 触发防抖限制，减缓大批量资产查询的后端并发压力。"
           style={{ width: '100%' }}
         >
-          <Card 
-            style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-            styles={{ body: { padding: '24px 24px 0' } }}
-          >
+          <FilterPanel>
             <Form layout="horizontal" labelCol={{ flex: '100px' }}>
               <Row gutter={24}>
                 <Col span={8}>
@@ -628,27 +625,15 @@ export default function DeviceTypesPage() {
                 </>
               )}
             </Form>
-          </Card>
+          </FilterPanel>
         </SpecMarker>
 
-        <div style={{ 
-          background: '#fff', 
-          borderRadius: '8px 8px 0 0', 
-          border: '1px solid #f0f0f0', 
-          padding: '12px 16px', 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          borderBottom: 'none'
-        }}>
-          <Space size={8}>
-            <div style={{ width: 4, height: 16, background: '#1890ff', borderRadius: 2 }} />
-            <Text strong style={{ fontSize: 15 }}>
-              {activeTab === 'robot' ? '设备类型列表' : activeTab === 'part' ? '部件类型列表' : '数据规则维护列表'}
-            </Text>
-          </Space>
-          <Space size={12}>
+        <TableToolbar
+          title={activeTab === 'robot' ? '设备类型列表' : activeTab === 'part' ? '部件类型列表' : '数据规则维护列表'}
+          count={(activeTab === 'robot' ? robotData : activeTab === 'part' ? partData : ruleData).length}
+          actions={[
             <SpecMarker
+              key="create"
               id="devicetypes-create"
               number={3}
               title="新建设备/部件类型"
@@ -666,13 +651,10 @@ export default function DeviceTypesPage() {
               >
                 {activeTab === 'robot' ? '新建设备' : activeTab === 'part' ? '新建部件' : '新建数据规则'}
               </Button>
-            </SpecMarker>
-            <Button danger icon={<DeleteOutlined />}>批量删除</Button>
-            <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-              共 {(activeTab === 'robot' ? robotData : activeTab === 'part' ? partData : ruleData).length} 条记录
-            </Text>
-          </Space>
-        </div>
+            </SpecMarker>,
+            <Button key="delete" danger icon={<DeleteOutlined />}>批量删除</Button>,
+          ]}
+        />
 
         {activeTab === 'rule' ? (
           <RuleTable 
@@ -711,12 +693,12 @@ export default function DeviceTypesPage() {
       </div>
 
       {/* --- Part Type Modal --- */}
-      <Modal
+      <AppModal
         title="添加采集部件"
         open={isPartModalOpen}
         onCancel={() => setIsPartModalOpen(false)}
         onOk={() => form.submit()}
-        width={900}
+        widthSize="large"
         okText="确定"
         cancelText="取消"
       >
@@ -881,15 +863,15 @@ export default function DeviceTypesPage() {
             </div>
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
 
       {/* --- Robot Type Modal --- */}
-      <Modal
+      <AppModal
         title="添加采集设备"
         open={isRobotModalOpen}
         onCancel={() => setIsRobotModalOpen(false)}
         onOk={() => form.submit()}
-        width={900}
+        widthSize="large"
         okText="确定"
         cancelText="取消"
       >
@@ -1024,15 +1006,15 @@ export default function DeviceTypesPage() {
             </div>
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
 
       {/* --- Data Rule Type Modal --- */}
-      <Modal
+      <AppModal
         title={editingItem ? "编辑数据规则" : "新建数据规则"}
         open={isRuleModalOpen}
         onCancel={() => setIsRuleModalOpen(false)}
         onOk={() => ruleForm.submit()}
-        width={720}
+        widthSize="medium"
         okText="确定"
         cancelText="取消"
       >
@@ -1114,21 +1096,21 @@ export default function DeviceTypesPage() {
             <Input.TextArea rows={3} placeholder="请输入规则描述或防丢帧参数备注" maxLength={500} showCount />
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
       {/* Video Preview Modal */}
-      <Modal
+      <AppModal
         title="封面视频预览"
         open={!!previewVideoUrl}
         onCancel={() => setPreviewVideoUrl(null)}
         footer={null}
-        width={640}
-        destroyOnClose
+        widthSize="medium"
+        destroyOnHidden
       >
         <div style={{ padding: '12px 0 0 0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <video src={previewVideoUrl} controls autoPlay style={{ width: '100%', maxHeight: 400, borderRadius: 8, background: '#000' }} />
         </div>
-      </Modal>
+      </AppModal>
+      </div>
     </MainLayout>
   );
 }
-

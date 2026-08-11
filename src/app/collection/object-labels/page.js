@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Typography, Breadcrumb, Button, Input, App, Tooltip, Modal, Form, Select, InputNumber, Radio, Row, Col, Space } from 'antd';
+import { Typography, Button, Input, App, Tooltip, Form, Select, InputNumber, Radio, Row, Col, Space } from 'antd';
 import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { AppModal, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Text, Title } = Typography;
 
@@ -175,9 +176,16 @@ export default function ObjectLabelsPage() {
 
   return (
     <MainLayout>
-      <Breadcrumb items={[{ title: '首页' }, { title: '基础数据' }, { title: '物体标签' }]} style={{ marginBottom: 16 }} />
+      <div className="ui-page">
+        <PageHeader
+          title="物体标签配置"
+          description="维护物体信息、视觉感知、几何与动态行为标签。"
+          breadcrumbs={[{ title: '首页' }, { title: '基础数据' }, { title: '物体标签' }]}
+        />
 
-      <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 160px)' }}>
+        <div className="ui-table-card">
+          <TableToolbar title="物体标签字典" count={total} />
+          <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 230px)', padding: 16 }}>
 
         {/* Left Category List */}
         <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: 16, overflowY: 'auto' }}>
@@ -325,18 +333,18 @@ export default function ObjectLabelsPage() {
             )}
           </div>
         </div>
-      </div>
+          </div>
+        </div>
 
       {/* Create Category Modal */}
-      <Modal
+      <AppModal
         title={editingCatKey ? "编辑分类" : "创建分类"}
         open={createCatOpen}
         onOk={handleCreateCategory}
         onCancel={() => { setCreateCatOpen(false); createCatForm.resetFields(); setEditingCatKey(null); }}
         okText="确定"
         cancelText="取消"
-        width={520}
-        centered
+        widthSize="small"
       >
         <Form
           form={createCatForm}
@@ -398,7 +406,8 @@ export default function ObjectLabelsPage() {
             <Input.TextArea placeholder="请输入描述" rows={3} />
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
+      </div>
     </MainLayout>
   );
 }

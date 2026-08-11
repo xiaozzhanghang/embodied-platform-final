@@ -1,18 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Typography, Breadcrumb, Form, Input, Select, Button, 
-  Card, Table, Space, Upload, App, Row, Col, Tooltip, Tag
+import {
+  Typography, Form, Input, Select, Button,
+  Table, Space, Upload, App, Row, Col, Tooltip, Tag
 } from 'antd';
-import { 
-  ArrowLeftOutlined, PlusOutlined, DeleteOutlined, 
-  InfoCircleOutlined, UploadOutlined 
+import {
+  PlusOutlined, DeleteOutlined,
+  InfoCircleOutlined, UploadOutlined
 } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/MainLayout';
+import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { TextArea } = Input;
 
 // ─── Mock Data for Components Pool (Available to be linked) ──────────────────
@@ -34,17 +35,17 @@ export default function AddRobotDevicePage() {
   const [components, setComponents] = useState([]);
 
   const componentColumns = [
-    { 
-      title: '对齐点', 
-      dataIndex: 'point', 
-      key: 'point', 
+    {
+      title: '对齐点',
+      dataIndex: 'point',
+      key: 'point',
       width: 120,
       render: (text) => <Tag color="blue" style={{ borderRadius: 2 }}>{text || '未指定'}</Tag>
     },
     { title: '部件名称', dataIndex: 'name', key: 'name' },
     { title: '部件类型', dataIndex: 'type', key: 'type' },
-    { 
-      title: '数据规则', 
+    {
+      title: '数据规则',
       key: 'rule',
       render: (_, r) => (
         <Space size={4} wrap>
@@ -53,16 +54,16 @@ export default function AddRobotDevicePage() {
         </Space>
       )
     },
-    { 
+    {
       title: '操作', fixed: 'right',
-      key: 'action', 
-      width: 80, 
+      key: 'action',
+      width: 80,
       align: 'center',
       render: (_, record) => (
-        <Button 
-          type="text" 
-          danger 
-          icon={<DeleteOutlined />} 
+        <Button
+          type="text"
+          danger
+          icon={<DeleteOutlined />}
           onClick={() => setComponents(prev => prev.filter(c => c.id !== record.id))}
         />
       )
@@ -88,50 +89,34 @@ export default function AddRobotDevicePage() {
 
   return (
     <MainLayout>
-      {/* Header & Breadcrumb */}
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb 
-          items={[
-            { title: '首页', href: '/' },
-            { title: '设备类型管理', href: '/collection/device-types' },
-            { title: '添加机器人设备' }
-          ]} 
-          style={{ marginBottom: 16 }}
+      <div className="ui-page">
+        <PageHeader
+          title="添加机器人设备"
+          description={<> 填写新的机器人设备类型，带 <Text type="danger">*</Text> 的为必填项。</>}
+          breadcrumbs={[{ title: '首页', href: '/' }, { title: '设备类型管理', href: '/collection/device-types' }, { title: '添加机器人设备' }]}
+          back={() => router.back()}
         />
-        <Space direction="vertical" size={0}>
-          <Space align="center">
-            <Button 
-              type="text" 
-              icon={<ArrowLeftOutlined />} 
-              onClick={() => router.back()} 
-              style={{ fontSize: 16, marginRight: 8 }}
-            />
-            <Title level={3} style={{ margin: 0 }}>添加机器人设备</Title>
-          </Space>
-          <Text type="secondary">填写以下信息创建新的机器人设备类型，带 <Text type="danger">*</Text> 的为必填项。</Text>
-        </Space>
-      </div>
 
-      <Form
+        <Form
         form={form}
         layout="vertical"
         onFinish={onFinish}
         initialValues={{ status: 'enabled' }}
       >
         {/* Section 1: Basic Info */}
-        <Card title="基本信息" bordered={false} style={{ marginBottom: 24, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+        <FormSection title="基本信息" description="定义设备类型的唯一身份、版本与启用状态。">
           <Row gutter={24}>
             <Col span={8}>
-              <Form.Item 
-                label="机器人名称" 
-                name="name" 
+              <Form.Item
+                label="机器人名称"
+                name="name"
                 rules={[{ required: true, message: '请输入机器人名称' }]}
               >
                 <Input placeholder="请输入机器人名称" maxLength={50} showCount />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item 
+              <Form.Item
                 label={
                   <Space>
                     英文名称
@@ -146,9 +131,9 @@ export default function AddRobotDevicePage() {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item 
-                label="机器人版本" 
-                name="version" 
+              <Form.Item
+                label="机器人版本"
+                name="version"
                 rules={[{ required: true, message: '请输入机器人版本' }]}
               >
                 <Input placeholder="请输入机器人版本" maxLength={50} showCount />
@@ -169,28 +154,25 @@ export default function AddRobotDevicePage() {
             </Col>
           </Row>
 
-          <Form.Item 
-            label="传感器描述" 
-            name="sensorDesc" 
+          <Form.Item
+            label="传感器描述"
+            name="sensorDesc"
             rules={[{ required: true, message: '请输入传感器描述' }]}
           >
-            <TextArea 
-              placeholder="请输入传感器描述" 
-              rows={4} 
-              maxLength={500} 
-              showCount 
+            <TextArea
+              placeholder="请输入传感器描述"
+              rows={4}
+              maxLength={500}
+              showCount
             />
           </Form.Item>
-        </Card>
+        </FormSection>
 
         {/* Section 2: Component Configuration */}
-        <Card 
-          title="部件配置" 
-          bordered={false} 
-          style={{ marginBottom: 24, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
-          extra={
-            <Select 
-              placeholder="选择并添加部件" 
+        <FormSection title="部件配置" description="从部件池中建立设备类型的组成关系与数据规则。">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+            <Select
+              placeholder="选择并添加部件"
               style={{ width: 240 }}
               suffixIcon={<PlusOutlined />}
               onSelect={handleAddComponent}
@@ -200,20 +182,19 @@ export default function AddRobotDevicePage() {
                 value: c.id
               }))}
             />
-          }
-        >
-          <Table 
-            columns={componentColumns} 
-            dataSource={components} 
+          </div>
+          <Table
+            columns={componentColumns}
+            dataSource={components}
             pagination={false}
             size="middle"
             bordered
             locale={{ emptyText: '暂无数据' }}
           />
-        </Card>
+        </FormSection>
 
         {/* Section 3: Files & Images */}
-        <Card title="文件与图片" bordered={false} style={{ marginBottom: 32, borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+        <FormSection title="文件与图片" description="上传 URDF 模型文件与设备外观图片。">
           <Row gutter={48}>
             <Col span={12}>
               <Form.Item label="URDF 文件" name="urdfFile">
@@ -243,19 +224,15 @@ export default function AddRobotDevicePage() {
               </Form.Item>
             </Col>
           </Row>
-        </Card>
+        </FormSection>
 
         {/* Footer actions */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'flex-end', 
-          gap: 12, 
-          paddingBottom: 40 
-        }}>
+        <ActionFooter>
           <Button onClick={() => router.back()}>取消</Button>
           <Button type="primary" htmlType="submit">确认添加</Button>
-        </div>
-      </Form>
+        </ActionFooter>
+        </Form>
+      </div>
     </MainLayout>
   );
 }

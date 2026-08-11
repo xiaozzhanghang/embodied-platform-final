@@ -2,21 +2,22 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Table, Button, Tag, Space, Input, Card, Typography, 
-  Form, Popconfirm, Tooltip, Breadcrumb, Badge, Select, 
+import {
+  Table, Button, Tag, Space, Input, Typography,
+  Form, Popconfirm, Tooltip, Select,
   Modal, Collapse, Row, Col, Divider, App, Radio, Upload, Descriptions,
   Alert, Steps
 } from 'antd';
-import { 
-  PlusOutlined, SearchOutlined, ReloadOutlined, 
-  ColumnHeightOutlined, SettingOutlined, EyeOutlined, 
-  EditOutlined, StopOutlined, DownOutlined, UpOutlined, RobotOutlined, 
-  ApiOutlined, InfoCircleOutlined, DeleteOutlined, InboxOutlined 
+import {
+  PlusOutlined, SearchOutlined, ReloadOutlined,
+  ColumnHeightOutlined, SettingOutlined, EyeOutlined,
+  EditOutlined, StopOutlined, DownOutlined, UpOutlined, RobotOutlined,
+  ApiOutlined, InfoCircleOutlined, DeleteOutlined, InboxOutlined
 } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -93,7 +94,7 @@ export default function DeviceListPage() {
 
   const deviceColumns = [
     { title: '设备名称', dataIndex: 'name', key: 'name', width: 200, ellipsis: true },
-    { 
+    {
       title: (
         <SpecMarker
           id="devices-status"
@@ -109,23 +110,15 @@ export default function DeviceListPage() {
           运行状态
         </SpecMarker>
       ),
-      dataIndex: 'status', 
-      key: 'status', 
+      dataIndex: 'status',
+      key: 'status',
       width: 110,
-      render: (s) => {
-        const map = {
-          '在线': { status: 'success', color: '#52c41a' },
-          '离线': { status: 'error', color: '#ff4d4f' },
-          '维护中': { status: 'warning', color: '#faad14' },
-        };
-        const cfg = map[s] || map['离线'];
-        return <Badge status={cfg.status} text={<span style={{ color: cfg.color, fontWeight: 500 }}>{s}</span>} />;
-      },
+      render: (s) => <StatusTag status={s} />,
     },
-    { 
-        title: '设备类型', 
-        dataIndex: 'deviceType', 
-        width: 150, 
+    {
+        title: '设备类型',
+        dataIndex: 'deviceType',
+        width: 150,
         render: (t) => {
             const type = deviceTypes.find(dt => dt.value === t);
             return <Tag color="blue" icon={<RobotOutlined />}>{type?.label || t}</Tag>
@@ -203,14 +196,12 @@ export default function DeviceListPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[
-          { title: '首页' },
-          { title: '设备管理' },
-          { title: '设备列表' },
-        ]} style={{ marginBottom: 16 }} />
-        <Title level={3} style={{ margin: 0 }}>设备实例管理</Title>
-      </div>
+      <div className="ui-page">
+        <PageHeader
+          title="设备实例管理"
+          description="查看采集设备运行状态，维护设备类型、编号与物理网络信息。"
+          breadcrumbs={[{ title: '首页' }, { title: '设备管理' }, { title: '设备列表' }]}
+        />
 
       <SpecMarker
         id="devices-query"
@@ -224,10 +215,7 @@ export default function DeviceListPage() {
         remark="重置操作需把查询参数重新初始化为默认空对象并刷新表格。"
         style={{ width: '100%' }}
       >
-        <Card 
-          style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-          styles={{ body: { padding: '24px 24px 16px' } }}
-        >
+        <FilterPanel>
           <QueryFilter
               submitter={{
                   submitButtonProps: { icon: <SearchOutlined /> },
@@ -240,17 +228,16 @@ export default function DeviceListPage() {
               <ProFormText name="sn" label="SN序列号" placeholder="请输入SN" />
               <ProFormText name="area" label="区域位置" placeholder="请输入区域" />
           </QueryFilter>
-        </Card>
+        </FilterPanel>
       </SpecMarker>
 
-      <Card styles={{ body: { padding: '24px' } }} style={{ borderRadius: 8 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Space size={8}>
-            <div style={{ width: 4, height: 16, background: '#1890ff', borderRadius: 2 }} />
-            <Text strong style={{ fontSize: 16 }}>设备实例列表</Text>
-          </Space>
-          <Space size={12}>
+        <div className="ui-table-card">
+          <TableToolbar
+            title="设备实例列表"
+            count={deviceData.length}
+            actions={[
             <SpecMarker
+              key="create"
               id="devices-create"
               number={3}
               title="新建设备接入校验"
@@ -262,31 +249,30 @@ export default function DeviceListPage() {
               remark="URDF 物理拓扑骨骼描述文件是平台实现 3D 关节姿态复现及动力学反解的前置条件。"
             >
               <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setIsModalOpen(true); }}>新建设备</Button>
-            </SpecMarker>
-            <Button danger icon={<DeleteOutlined />}>批量删除</Button>
-            <Tooltip title="刷新"><Button type="text" icon={<ReloadOutlined />} /></Tooltip>
-          </Space>
+            </SpecMarker>,
+            <Button key="delete" danger icon={<DeleteOutlined />}>批量删除</Button>,
+            <Tooltip key="refresh" title="刷新"><Button type="text" icon={<ReloadOutlined />} /></Tooltip>,
+            ]}
+          />
+
+          <Table
+          rowSelection={{ type: 'checkbox' }}
+          columns={deviceColumns}
+          dataSource={deviceData}
+          scroll={{ x: 1000 }}
+          pagination={{ pageSize: 10 }}
+          />
         </div>
 
-        <Table 
-          rowSelection={{ type: 'checkbox' }} 
-          columns={deviceColumns} 
-          dataSource={deviceData} 
-          scroll={{ x: 1000 }}
-          pagination={{ pageSize: 10 }} 
-        />
-      </Card>
-
       {/* --- New Device Modal (As per Image) --- */}
-      <Modal
+      <AppModal
         title="添加采集设备"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
-        width={720}
+        widthSize="medium"
         okText="确定"
         cancelText="取消"
-        centered
       >
         <Form form={form} layout="vertical" onFinish={handleCreate} style={{ marginTop: 24 }}>
           <Row gutter={24}>
@@ -310,9 +296,9 @@ export default function DeviceListPage() {
             </Col>
             <Col span={12}>
               <Form.Item name="deviceType" label="设备类型" rules={[{ required: true, message: '请选择设备类型' }]}>
-                <Select 
-                  placeholder="请选择设备类型" 
-                  options={deviceTypes} 
+                <Select
+                  placeholder="请选择设备类型"
+                  options={deviceTypes}
                   onChange={(val) => setSelectedDeviceType(val)}
                 />
               </Form.Item>
@@ -375,7 +361,8 @@ export default function DeviceListPage() {
             </Col>
           </Row>
         </Form>
-      </Modal>
+      </AppModal>
+      </div>
     </MainLayout>
   );
 }

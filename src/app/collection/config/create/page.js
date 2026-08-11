@@ -2,11 +2,10 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Card, Typography, Space, Input, Form, Select, Row, Col, App } from 'antd';
-import { ArrowLeftOutlined, CheckSquareOutlined, TagOutlined } from '@ant-design/icons';
+import { Button, Input, Form, Select, Row, Col, App } from 'antd';
+import { CheckSquareOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-
-const { Title } = Typography;
+import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 
 export default function CreateLabelPage() {
   const router = useRouter();
@@ -20,19 +19,16 @@ export default function CreateLabelPage() {
 
   return (
     <MainLayout>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-            <Title level={4} style={{ margin: 0 }}><TagOutlined style={{ marginRight: 8, color: '#1677ff' }}/>新增业务标签</Title>
-        </div>
-        <Space>
-            <Button onClick={() => router.back()}>取消</Button>
-            <Button type="primary" icon={<CheckSquareOutlined />} onClick={handleSave}>保存标签</Button>
-        </Space>
-      </div>
+      <div className="ui-page">
+        <PageHeader
+          title="新增业务标签"
+          description="将新标签归入现有业务分类，用于采集任务与数据检索。"
+          breadcrumbs={[{ title: '首页' }, { title: '基础数据' }, { title: '任务标签' }, { title: '新增' }]}
+          back={() => router.back()}
+        />
 
-      <Form form={form} layout="vertical">
-          <Card bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
+        <Form form={form} layout="vertical">
+          <FormSection title="标签信息" description="配置所属分类、唯一编码与业务说明。">
               <Row gutter={16}>
                   <Col span={12}>
                       <Form.Item label="所属分类" required name="category">
@@ -56,8 +52,14 @@ export default function CreateLabelPage() {
               <Form.Item label="标签描述" name="desc">
                   <Input.TextArea rows={4} placeholder="描述该标签的具体用途..." />
               </Form.Item>
-          </Card>
-      </Form>
+          </FormSection>
+        </Form>
+
+        <ActionFooter>
+          <Button onClick={() => router.back()}>取消</Button>
+          <Button type="primary" icon={<CheckSquareOutlined />} onClick={handleSave}>保存标签</Button>
+        </ActionFooter>
+      </div>
     </MainLayout>
   );
 }

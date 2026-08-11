@@ -14,6 +14,7 @@ import {
   CodeOutlined, SlidersOutlined, DeploymentUnitOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { PageHeader, StatusTag } from '@/components/ui';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -190,39 +191,19 @@ export default function DeviceTypeDetailPage() {
 
   return (
     <MainLayout>
-      {/* Premium Header Breadcrumbs & Status Bar */}
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[
-          { title: '首页' },
-          { title: '设备管理' },
-          { title: '设备类型', href: '/collection/device-types' },
-          { title: isEditing ? '编辑设备类型' : '查看设备详情' }
-        ]} style={{ marginBottom: 16 }} />
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Space size={16}>
-            <Button type="default" shape="circle" icon={<ArrowLeftOutlined />} onClick={() => router.back()} />
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <Title level={3} style={{ margin: 0 }}>{initialData.name}</Title>
-                <Tag color="blue" bordered={false} style={{ fontSize: 12, padding: '2px 8px', fontWeight: 'bold' }}>{initialData.version}</Tag>
-                <Badge status="processing" text={<span style={{ color: '#52c41a', fontWeight: 'bold' }}>已发布</span>} />
-              </div>
-            </div>
-          </Space>
-          
-          <Space>
-            {isEditing && (
-              <>
-                <Button onClick={() => setIsEditing(false)}>取消</Button>
-                <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>提交更新</Button>
-              </>
-            )}
-          </Space>
-        </div>
-      </div>
+      <div className="ui-page ui-detail-page">
+        <PageHeader
+          title={<Space size={12}>{initialData.name}<Tag color="blue">{initialData.version}</Tag><StatusTag status="已发布" /></Space>}
+          description="查看设备类型的基础参数、硬件关联、URDF 资源与对齐基准。"
+          breadcrumbs={[{ title: '首页' }, { title: '设备管理' }, { title: '设备类型', href: '/collection/device-types' }, { title: isEditing ? '编辑设备类型' : '查看设备详情' }]}
+          back={() => router.back()}
+          extra={isEditing ? [
+            <Button key="cancel" onClick={() => setIsEditing(false)}>取消</Button>,
+            <Button key="save" type="primary" icon={<SaveOutlined />} onClick={handleSave}>提交更新</Button>,
+          ] : null}
+        />
 
-      <Row gutter={24}>
+      <Row className="ui-detail-grid" gutter={24}>
         {/* Left Column: Visual Schematic & Core Details */}
         <Col span={8}>
           <Space direction="vertical" size={24} style={{ width: '100%' }}>
@@ -455,6 +436,7 @@ export default function DeviceTypeDetailPage() {
           </Card>
         </Col>
       </Row>
+      </div>
     </MainLayout>
   );
 }

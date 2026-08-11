@@ -17,6 +17,7 @@ import {
   StopOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { PageHeader, StatusTag } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -301,37 +302,22 @@ export default function DeviceInstanceDetailPage() {
       title: '状态', 
       dataIndex: 'status',
       render: () => (
-        <Badge status="success" text={<span style={{ color: '#52c41a', fontWeight: 500 }}>正常</span>} />
+        <StatusTag status="正常" />
       )
     },
   ];
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[
-          { title: '首页' },
-          { title: '设备管理' },
-          { title: '设备列表', href: '/collection/devices' },
-          { title: '实例详情' }
-        ]} style={{ marginBottom: 16 }} />
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Space size={16}>
-            <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} />
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <Title level={3} style={{ margin: 0 }}>{device.name}</Title>
-                <Tag color={deviceStatus === '在线' ? 'green' : deviceStatus === '维护中' ? 'gold' : 'red'}>{deviceStatus}</Tag>
-                <Text type="secondary">ID: {device.id}</Text>
-              </div>
-            </div>
-          </Space>
+      <div className="ui-page ui-detail-page">
+        <PageHeader
+          title={<Space size={12}>{device.name}<StatusTag status={deviceStatus} /></Space>}
+          description={`ID: ${device.id} · 管理设备部件、运行状态、部署流程与采集记录。`}
+          breadcrumbs={[{ title: '首页' }, { title: '设备管理' }, { title: '设备列表', href: '/collection/devices' }, { title: '实例详情' }]}
+          back={() => router.back()}
+        />
 
-        </div>
-      </div>
-
-      <Row gutter={24}>
+      <Row className="ui-detail-grid" gutter={24}>
         <Col span={18}>
           <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
             <Col span={6}>
@@ -339,7 +325,7 @@ export default function DeviceInstanceDetailPage() {
                 <Text type="secondary" style={{ fontSize: 12 }}>XCU 物理网络连通</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                   <Title level={4} style={{ margin: 0, fontSize: 16 }}>192.168.1.66</Title>
-                  <Tag color="green">已连接</Tag>
+                  <StatusTag status="已连接" />
                 </div>
               </Card>
             </Col>
@@ -348,7 +334,7 @@ export default function DeviceInstanceDetailPage() {
                 <Text type="secondary" style={{ fontSize: 12 }}>HPU 物理网络连通</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                   <Title level={4} style={{ margin: 0, fontSize: 16 }}>192.168.1.88</Title>
-                  <Tag color="green">已连接</Tag>
+                  <StatusTag status="已连接" />
                 </div>
               </Card>
             </Col>
@@ -357,7 +343,7 @@ export default function DeviceInstanceDetailPage() {
                 <Text type="secondary" style={{ fontSize: 12 }}>数采网桥服务</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                   <Title level={4} style={{ margin: 0, fontSize: 16 }}>galbot_upper</Title>
-                  <Tag color="green">运行中</Tag>
+                  <StatusTag status="运行中" />
                 </div>
               </Card>
             </Col>
@@ -366,7 +352,7 @@ export default function DeviceInstanceDetailPage() {
                 <Text type="secondary" style={{ fontSize: 12 }}>系统 SN 安全认证</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                   <Title level={4} style={{ margin: 0, fontSize: 16 }}>sys_tool</Title>
-                  <Tag color="blue">已认证</Tag>
+                  <StatusTag status="已认证" />
                 </div>
               </Card>
             </Col>
@@ -405,7 +391,7 @@ export default function DeviceInstanceDetailPage() {
                           { title: '任务ID', dataIndex: 'id' },
                           { title: '任务名称', dataIndex: 'name' },
                           { title: '执行时间', dataIndex: 'time' },
-                          { title: '结果', dataIndex: 'status', render: s => <Tag color={s === 'Success' ? 'green' : 'red'}>{s}</Tag> }
+                          { title: '结果', dataIndex: 'status', render: s => <StatusTag status={s === 'Success' ? '已完成' : '失败'}>{s}</StatusTag> }
                         ]}
                       />
                     </div>
@@ -455,7 +441,7 @@ export default function DeviceInstanceDetailPage() {
                               <Descriptions.Item label="登录凭证">root / 12345678</Descriptions.Item>
                               <Descriptions.Item label="固件版本">Galbot-OS v1.16.0.2 (已部署)</Descriptions.Item>
                               <Descriptions.Item label="底层守护服务">
-                                <Badge status="success" text="remote_ctrl_record.target (Active)" />
+                                <StatusTag status="运行中">remote_ctrl_record.target (Active)</StatusTag>
                               </Descriptions.Item>
                               <Descriptions.Item label="主要文件路径">
                                 <div style={{ fontSize: 11, fontFamily: 'monospace' }}>
@@ -473,10 +459,10 @@ export default function DeviceInstanceDetailPage() {
                               <Descriptions.Item label="登录凭证">galbot / gb@2023</Descriptions.Item>
                               <Descriptions.Item label="VLA 镜像">release-VLA-CAPSULE-GBS_1.16.0.2 (3.7GB)</Descriptions.Item>
                               <Descriptions.Item label="进程守护">
-                                <Badge status="success" text="Supervisor Daemon (Active)" />
+                                <StatusTag status="运行中">Supervisor Daemon (Active)</StatusTag>
                               </Descriptions.Item>
                               <Descriptions.Item label="网桥服务">
-                                <Badge status="success" text="galbot_upper_bridge (Active)" />
+                                <StatusTag status="运行中">galbot_upper_bridge (Active)</StatusTag>
                               </Descriptions.Item>
                             </Descriptions>
                           </Card>
@@ -652,6 +638,7 @@ export default function DeviceInstanceDetailPage() {
           </Card>
         </Col>
       </Row>
+      </div>
     </MainLayout>
   );
 }

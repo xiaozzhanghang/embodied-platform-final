@@ -30,6 +30,14 @@ for (const [status, semantic] of [
   ['暂停', 'default'],
   ['待分配', 'warning'],
   ['已领满', 'default'],
+  ['正常运行', 'success'],
+  ['在线', 'success'],
+  ['离线', 'error'],
+  ['维护中', 'warning'],
+  ['正常', 'success'],
+  ['已连接', 'success'],
+  ['运行中', 'processing'],
+  ['已认证', 'success'],
 ]) {
   assert.match(
     statusSource,

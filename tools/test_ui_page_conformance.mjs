@@ -206,5 +206,52 @@ for (const pagePath of [
   assert.match(source, /<AppModal(?:\s|\/|>)/, `${pagePath} 配置弹窗未使用 AppModal`);
 }
 
+const collectionConfigurationPages = [
+  { path: 'src/app/collection/components/page.js', type: 'list' },
+  { path: 'src/app/collection/components/create/page.js', type: 'form' },
+  { path: 'src/app/collection/config/page.js', type: 'list' },
+  { path: 'src/app/collection/config/create/page.js', type: 'form' },
+  { path: 'src/app/collection/config/detail/[id]/page.js', type: 'detail' },
+  { path: 'src/app/collection/device-types/page.js', type: 'list' },
+  { path: 'src/app/collection/device-types/add/page.js', type: 'form' },
+  { path: 'src/app/collection/device-types/detail/[id]/page.js', type: 'detail' },
+  { path: 'src/app/collection/device-types/part-detail/[id]/page.js', type: 'detail' },
+  { path: 'src/app/collection/devices/page.js', type: 'list' },
+  { path: 'src/app/collection/devices/detail/[id]/page.js', type: 'detail' },
+  { path: 'src/app/collection/object-labels/page.js', type: 'list' },
+  { path: 'src/app/collection/objects/page.js', type: 'list' },
+  { path: 'src/app/collection/objects/create/page.js', type: 'form' },
+];
+
+for (const page of collectionConfigurationPages) {
+  const source = await readFile(page.path, 'utf8');
+
+  if (page.type === 'form') {
+    for (const component of ['PageHeader', 'FormSection', 'ActionFooter']) {
+      assert.match(
+        source,
+        new RegExp(`<${component}(?:\\s|\\/|>)`),
+        `${page.path} 页面式表单未使用 ${component}`,
+      );
+    }
+    continue;
+  }
+
+  assert.match(source, /<PageHeader(?:\s|\/|>)/, `${page.path} 未使用统一页头`);
+
+  if (page.type === 'list') {
+    assert.ok(
+      /<(?:FilterPanel|TableToolbar)(?:\s|\/|>)/.test(source),
+      `${page.path} 列表页未使用 FilterPanel 或 TableToolbar`,
+    );
+  } else {
+    assert.match(
+      source,
+      /className=["'][^"']*\bui-detail-grid\b[^"']*["']/,
+      `${page.path} 详情页缺少 ui-detail-grid`,
+    );
+  }
+}
+
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Typography, Breadcrumb, Button, Input, App, Modal, Tag, Space, Tooltip, Form, Select, InputNumber, Radio, Row, Col } from 'antd';
+import { Typography, Button, Input, App, Tag, Space, Tooltip, Form, Select, InputNumber, Radio, Row, Col } from 'antd';
 import { PlusOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { AppModal, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Text } = Typography;
 
@@ -212,9 +213,16 @@ export default function TaskLabelsPage() {
 
   return (
     <MainLayout>
-      <Breadcrumb items={[{ title: '首页' }, { title: '基础数据' }, { title: '任务标签' }]} style={{ marginBottom: 16 }} />
+      <div className="ui-page">
+        <PageHeader
+          title="任务标签配置"
+          description="维护采集场景、硬件配置与数据标注标签层级。"
+          breadcrumbs={[{ title: '首页' }, { title: '基础数据' }, { title: '任务标签' }]}
+        />
 
-      <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 160px)' }}>
+        <div className="ui-table-card">
+          <TableToolbar title="标签分类与标签项" count={total} />
+          <div style={{ display: 'flex', gap: 16, height: 'calc(100vh - 230px)', padding: 16 }}>
 
         {/* Left Category List */}
         <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0', padding: 16, overflowY: 'auto' }}>
@@ -404,16 +412,16 @@ export default function TaskLabelsPage() {
             )}
           </div>
         </div>
-      </div>
+          </div>
+        </div>
 
       {/* Secondary Label Management Modal */}
-      <Modal
+      <AppModal
         title="二级标签管理"
         open={subModal.open}
         onCancel={() => setSubModal({ open: false, parentTag: null })}
         footer={null}
-        width={600}
-        centered
+        widthSize="medium"
         styles={{ body: { padding: '24px 32px' } }}
       >
         {subModal.parentTag && (
@@ -491,17 +499,16 @@ export default function TaskLabelsPage() {
             </div>
           </div>
         )}
-      </Modal>
+      </AppModal>
       {/* Create Category Modal */}
-      <Modal
+      <AppModal
         title="创建分类"
         open={createCatOpen}
         onOk={handleCreateCategory}
         onCancel={() => { setCreateCatOpen(false); createCatForm.resetFields(); }}
         okText="确定"
         cancelText="取消"
-        width={520}
-        centered
+        widthSize="small"
       >
         <Form
           form={createCatForm}
@@ -562,7 +569,8 @@ export default function TaskLabelsPage() {
             <Input.TextArea placeholder="请输入描述" rows={3} />
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
+      </div>
     </MainLayout>
   );
 }

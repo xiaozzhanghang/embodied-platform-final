@@ -13,6 +13,7 @@ import {
   ApiOutlined, RobotOutlined, InboxOutlined, DeleteOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { PageHeader } from '@/components/ui';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -62,32 +63,19 @@ export default function PartDetailPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[
-          { title: '首页' },
-          { title: '设备管理' },
-          { title: '设备类型', href: '/collection/device-types' },
-          { title: isEditing ? '编辑部件类型' : '查看部件详情' }
-        ]} style={{ marginBottom: 16 }} />
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Space size={16}>
-            <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} />
-            <Title level={3} style={{ margin: 0 }}>{initialData.name}</Title>
-          </Space>
-          
-          <Space>
-            {isEditing && (
-              <>
-                <Button onClick={() => setIsEditing(false)}>取消</Button>
-                <Button type="primary" icon={<SaveOutlined />} onClick={handleSave}>提交更新</Button>
-              </>
-            )}
-          </Space>
-        </div>
-      </div>
+      <div className="ui-page ui-detail-page">
+        <PageHeader
+          title={initialData.name}
+          description="查看或维护部件类型的基础参数、Topic 节点与 URDF 资源。"
+          breadcrumbs={[{ title: '首页' }, { title: '设备管理' }, { title: '设备类型', href: '/collection/device-types' }, { title: isEditing ? '编辑部件类型' : '查看部件详情' }]}
+          back={() => router.back()}
+          extra={isEditing ? [
+            <Button key="cancel" onClick={() => setIsEditing(false)}>取消</Button>,
+            <Button key="save" type="primary" icon={<SaveOutlined />} onClick={handleSave}>提交更新</Button>,
+          ] : null}
+        />
 
-      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+      <div className="ui-detail-grid" style={{ maxWidth: 1000, margin: '0 auto' }}>
         <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
           <Form 
             form={form} 
@@ -210,6 +198,7 @@ export default function PartDetailPage() {
             </div>
           </Form>
         </Card>
+      </div>
       </div>
     </MainLayout>
   );

@@ -2,11 +2,10 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Card, Typography, Space, Descriptions, Divider, Table, App } from 'antd';
-import { ArrowLeftOutlined, PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { Button, Card, Space, Descriptions, Table, App } from 'antd';
+import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-
-const { Title } = Typography;
+import { PageHeader } from '@/components/ui';
 
 export default function LabelDetailPage({ params }) {
   const router = useRouter();
@@ -28,28 +27,32 @@ export default function LabelDetailPage({ params }) {
 
   return (
     <MainLayout>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-            <Title level={4} style={{ margin: 0 }}>二级标签管理</Title>
-        </div>
-        <Space>
-            <Button onClick={() => router.back()}>返回</Button>
-            <Button type="primary" onClick={() => { message.success('保存成功'); router.back(); }}>保存修改</Button>
-        </Space>
-      </div>
+      <div className="ui-page ui-detail-page">
+        <PageHeader
+          title="二级标签管理"
+          description="维护当前父标签下的二级分类与唯一编码。"
+          breadcrumbs={[{ title: '首页' }, { title: '基础数据' }, { title: '任务标签' }, { title: '二级标签' }]}
+          back={() => router.back()}
+          extra={[
+            <Button key="back" onClick={() => router.back()}>返回</Button>,
+            <Button key="save" type="primary" onClick={() => { message.success('保存成功'); router.back(); }}>保存修改</Button>,
+          ]}
+        />
 
-      <Card bordered={false} style={{ marginBottom: 24 }}>
+      <div className="ui-detail-grid" style={{ display: 'grid', gap: 16 }}>
+        <Card>
           <Descriptions title="父级信息" bordered column={2} size="small">
               <Descriptions.Item label="标签ID">{activeTag.id}</Descriptions.Item>
               <Descriptions.Item label="标签名称">{activeTag.name}</Descriptions.Item>
               <Descriptions.Item label="当前使用量" span={2}>{activeTag.usage} 个任务关联</Descriptions.Item>
           </Descriptions>
-      </Card>
+        </Card>
 
-      <Card title="二级子标签列表" bordered={false} extra={<Button type="primary" icon={<PlusOutlined />}>新增二级子项</Button>}>
+        <Card title="二级子标签列表" extra={<Button type="primary" icon={<PlusOutlined />}>新增二级子项</Button>}>
           <Table size="small" pagination={false} dataSource={dataSource} columns={columns} />
-      </Card>
+        </Card>
+      </div>
+      </div>
     </MainLayout>
   );
 }

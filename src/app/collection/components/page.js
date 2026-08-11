@@ -2,11 +2,10 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, Badge, App } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, SettingOutlined, ToolOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Input, Badge, App } from 'antd';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-
-const { Title, Text } = Typography;
+import { FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 export default function ComponentManagementPage() {
   const router = useRouter();
@@ -17,7 +16,7 @@ export default function ComponentManagementPage() {
     { title: '组件类型', dataIndex: 'type', key: 'type', width: 150, render: (t) => <Tag color="blue">{t}</Tag> },
     { title: '所属设备', dataIndex: 'device', key: 'device', width: 200 },
     { title: '包含Topic数', dataIndex: 'topicCount', key: 'topicCount', width: 120, render: (c) => <Badge count={c} style={{ backgroundColor: '#52c41a' }} /> },
-    { title: '状态', render: () => <Badge status="success" text="正常运行" />, width: 120 },
+    { title: '状态', render: () => <StatusTag status="正常运行" />, width: 120 },
     { title: '更新时间', dataIndex: 'time', key: 'time', width: 180 },
     {
       title: '操作', key: 'action', width: 150, fixed: 'right', render: () => (
@@ -38,29 +37,35 @@ export default function ComponentManagementPage() {
 
   return (
     <MainLayout>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-            <ToolOutlined style={{ fontSize: 24, marginRight: 12, color: '#1677ff' }} />
-            <Title level={4} style={{ margin: 0 }}>机器人部件管理</Title>
-        </div>
-      </div>
-      
-      <Card styles={{ body: { padding: '24px' } }}>
-        <div className="table-toolbar" style={{ marginBottom: 16 }}>
+      <div className="ui-page">
+        <PageHeader
+          title="机器人部件管理"
+          description="管理采集设备部件及 ROS Topic 数据通道。"
+          breadcrumbs={[{ title: '首页' }, { title: '设备管理' }, { title: '部件管理' }]}
+        />
+
+        <FilterPanel>
           <Space>
             <Input placeholder="输入组件名称" prefix={<SearchOutlined />} style={{ width: 250 }} />
             <Button type="primary">查询</Button>
             <Button icon={<ReloadOutlined />} />
           </Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/components/create')}>接入新部件 (配置 Topic)</Button>
-        </div>
-        <Table 
-            columns={componentColumns} 
-            dataSource={mockData} 
+        </FilterPanel>
+
+        <div className="ui-table-card">
+          <TableToolbar
+            title="部件列表"
+            count={mockData.length}
+            actions={<Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/components/create')}>接入新部件 (配置 Topic)</Button>}
+          />
+          <Table
+            columns={componentColumns}
+            dataSource={mockData}
             scroll={{ x: 1000 }}
             pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条组件` }}
-        />
-      </Card>
+          />
+        </div>
+      </div>
     </MainLayout>
   );
 }

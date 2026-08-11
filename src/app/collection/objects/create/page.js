@@ -2,11 +2,10 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Card, Typography, Space, Input, Form, Select, Upload, App, Row, Col, Modal } from 'antd';
-import { ArrowLeftOutlined, CheckSquareOutlined, InboxOutlined, BlockOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Input, Form, Select, Upload, App, Row, Col } from 'antd';
+import { CheckSquareOutlined, InboxOutlined, PlusOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-
-const { Title } = Typography;
+import { ActionFooter, AppModal, FormSection, PageHeader } from '@/components/ui';
 
 export default function CreateObjectPage() {
   const router = useRouter();
@@ -22,19 +21,16 @@ export default function CreateObjectPage() {
 
   return (
     <MainLayout>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-            <Title level={4} style={{ margin: 0 }}><BlockOutlined style={{ marginRight: 8, color: '#1677ff' }}/>添加新物体</Title>
-        </div>
-        <Space>
-            <Button onClick={() => router.back()}>取消</Button>
-            <Button type="primary" icon={<CheckSquareOutlined />} onClick={handleSave}>入库并保存</Button>
-        </Space>
-      </div>
+      <div className="ui-page">
+        <PageHeader
+          title="添加新物体"
+          description="录入物体分类、物理材质与视觉图片，用于采集任务关联。"
+          breadcrumbs={[{ title: '首页' }, { title: '基础数据' }, { title: '物体库' }, { title: '添加新物体' }]}
+          back={() => router.back()}
+        />
 
-      <Form form={form} layout="vertical">
-          <Card bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
+        <Form form={form} layout="vertical">
+          <FormSection title="物体基础信息" description="配置物体身份、分类关系、材质标签与实物图片。">
               <Row gutter={16}>
                   <Col span={12}>
                       <Form.Item label="中文名称" required name="nameCn">
@@ -54,14 +50,14 @@ export default function CreateObjectPage() {
                       </Form.Item>
                   </Col>
                   <Col span={12}>
-                      <Form.Item 
+                      <Form.Item
                           label={
                               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
                                   <span>材质类型 (影响抓取力控逻辑)</span>
                                   <Button type="link" size="small" icon={<PlusOutlined />} onClick={() => setIsTagModalOpen(true)}>快捷新建标签</Button>
                               </div>
                           }
-                          required 
+                          required
                           name="material"
                           tooltip="不同材质对应的刚度系数不同，后台将根据此项调整机器人末端的力闭环参数。"
                       >
@@ -81,12 +77,17 @@ export default function CreateObjectPage() {
                       <p className="ant-upload-text">点击或拖拽图片进行上传</p>
                   </Upload.Dragger>
               </Form.Item>
-          </Card>
-      </Form>
+          </FormSection>
+        </Form>
 
-      <Modal 
-        title="快捷新建标签字典" 
-        open={isTagModalOpen} 
+        <ActionFooter>
+          <Button onClick={() => router.back()}>取消</Button>
+          <Button type="primary" icon={<CheckSquareOutlined />} onClick={handleSave}>入库并保存</Button>
+        </ActionFooter>
+
+        <AppModal
+        title="快捷新建标签字典"
+        open={isTagModalOpen}
         onOk={() => {
             message.success(`已将“${newTagName}”加入标签字典并自动选中！`);
             form.setFieldsValue({ material: newTagName });
@@ -103,7 +104,8 @@ export default function CreateObjectPage() {
                 <Input placeholder="例如：光滑 (Smooth)" value={newTagName} onChange={e => setNewTagName(e.target.value)} />
             </Form.Item>
         </Form>
-      </Modal>
+        </AppModal>
+      </div>
     </MainLayout>
   );
 }
