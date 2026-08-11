@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select } from 'antd';
+import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select, Alert } from 'antd';
 import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
-import { assignQaer, loadQaPackages } from '@/lib/annotationQaFlow.mjs';
+import { assignQaer, readQaPackages } from '@/lib/annotationQaFlow.mjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -79,16 +79,22 @@ export default function QaPage() {
   const [reassignForm] = Form.useForm();
 
   const [tableData, setTableData] = useState(instanceMockData);
+  const [storageError, setStorageError] = useState(null);
 
-  useEffect(() => {
-    const generatedPackages = loadQaPackages(window.localStorage);
+  const refreshQaPackages = React.useCallback(() => {
+    const { packages: generatedPackages, error } = readQaPackages(window.localStorage);
     setTableData([
       ...generatedPackages,
       ...instanceMockData.filter(mock => (
         !generatedPackages.some(item => String(item.instanceId) === String(mock.instanceId))
       )),
     ]);
+    setStorageError(error ? '质检包数据读取失败，当前仍展示演示数据。' : null);
   }, []);
+
+  useEffect(() => {
+    refreshQaPackages();
+  }, [refreshQaPackages]);
 
   const handleReassign = (record) => {
     setReassignRecord(record);
@@ -100,7 +106,13 @@ export default function QaPage() {
 
   const handleReassignSubmit = () => {
     reassignForm.validateFields().then(values => {
-      assignQaer(window.localStorage, reassignRecord.qaPackageId, values.qaer);
+      if (reassignRecord.qaPackageId) {
+        const assignResult = assignQaer(window.localStorage, reassignRecord.qaPackageId, values.qaer);
+        if (!assignResult.persisted) {
+          message.error('质检员分配保存失败，请检查本地存储后重试。');
+          return;
+        }
+      }
       setTableData(prev => prev.map(item => {
         if (item.key === reassignRecord.key) {
           return { ...item, qaer: values.qaer };
@@ -243,6 +255,15 @@ export default function QaPage() {
           <ProFormSelect name="qaer" label="质检员" placeholder="请选择" options={people.map(p => ({ label: p, value: p }))} />
         </QueryFilter>
       </FilterPanel>
+
+      {storageError && (
+        <Alert
+          type="error"
+          showIcon
+          message={storageError}
+          action={<Button size="small" onClick={refreshQaPackages}>重试</Button>}
+        />
+      )}
 
       {/* Table Section */}
       <Card 

@@ -52,7 +52,7 @@ export default function StatusTag({ status, children, className, rootClassName, 
       className={mergeClassNames('ui-status-tag', className)}
       rootClassName={mergeClassNames('ui-status-tag', rootClassName)}
     >
-      {children || status}
+      {children ?? status}
     </Tag>
   );
 }

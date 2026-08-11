@@ -53,6 +53,8 @@ for (const status of ['运行中', '已认证']) {
 }
 assert.match(statusSource, /className=\{mergeClassNames\('ui-status-tag', className\)\}/);
 assert.match(statusSource, /rootClassName=\{mergeClassNames\('ui-status-tag', rootClassName\)\}/);
+assert.match(statusSource, /\{children \?\? status\}/, 'children={0} 必须保留 0，而不是回退到 status');
+assert.doesNotMatch(statusSource, /\{children \|\| status\}/, '状态标签不得把 0 或空字符串误判为空值');
 
 const modalSource = await readFile('src/components/ui/AppModal.js', 'utf8');
 assert.ok(modalSource.includes('520'));
@@ -70,4 +72,8 @@ assert.match(filterSource, /\{isExpanded \? children : null\}/);
 const stateSource = await readFile('src/components/ui/StateView.js', 'utf8');
 assert.match(stateSource, /title \|\| defaults\.title/);
 assert.match(stateSource, /description \|\| defaults\.description/);
+
+const designSource = await readFile('docs/superpowers/specs/2026-08-10-ui-system-unification-design.md', 'utf8');
+assert.ok(designSource.endsWith('\n'), '设计说明文件必须以换行结尾');
+assert.ok(!designSource.endsWith('\n\n'), '设计说明文件 EOF 不得保留多余空行');
 console.log('UI_COMPONENTS_OK');

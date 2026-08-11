@@ -1,16 +1,21 @@
 export const QA_PACKAGES_STORAGE_KEY = 'embodied_qa_packages';
 
-function safeParse(value, fallback) {
-  if (!value) return fallback;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return fallback;
-  }
-}
+const padDatePart = value => String(value).padStart(2, '0');
 
-function nowText() {
-  return new Date().toISOString().replace('T', ' ').slice(0, 19);
+export function formatLocalDateTime(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new TypeError('Invalid date supplied to formatLocalDateTime');
+  }
+  return [
+    date.getFullYear(),
+    padDatePart(date.getMonth() + 1),
+    padDatePart(date.getDate()),
+  ].join('-') + ' ' + [
+    padDatePart(date.getHours()),
+    padDatePart(date.getMinutes()),
+    padDatePart(date.getSeconds()),
+  ].join(':');
 }
 
 function positiveNumber(value, fallback = 0) {
@@ -23,15 +28,113 @@ function sourceTaskId(sourceTask) {
   return match?.[0] || String(sourceTask || '-');
 }
 
+function textValue(value, fallback = '-') {
+  if (typeof value === 'string') return value || fallback;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
+    return String(value);
+  }
+  return fallback;
+}
+
+function normalizeQaPackage(item, index) {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+  const qaPackageId = textValue(
+    item.qaPackageId,
+    textValue(item.instanceId, `QA-RECOVERED-${index + 1}`),
+  );
+  const dataCount = positiveNumber(item.dataCount);
+  const rounds = Array.isArray(item.rounds)
+    ? item.rounds
+      .filter(round => round && typeof round === 'object' && !Array.isArray(round))
+      .map((round, roundIndex) => ({
+        ...round,
+        round: Math.max(1, positiveNumber(round.round, roundIndex + 1)),
+        annotationVersion: Math.max(1, positiveNumber(round.annotationVersion, 1)),
+        status: textValue(round.status, '待质检'),
+        submittedAt: textValue(round.submittedAt, '-'),
+      }))
+    : [];
+
+  return {
+    ...item,
+    key: textValue(item.key, qaPackageId),
+    qaPackageId,
+    instanceId: textValue(item.instanceId, qaPackageId),
+    annotationTaskId: textValue(item.annotationTaskId),
+    annotationVersion: Math.max(1, positiveNumber(item.annotationVersion, 1)),
+    currentRound: Math.max(1, positiveNumber(item.currentRound, rounds.length || 1)),
+    rounds,
+    generatedBy: textValue(item.generatedBy),
+    project: textValue(item.project),
+    secondLevel: textValue(item.secondLevel),
+    taskbook: textValue(item.taskbook),
+    annoId: textValue(item.annoId),
+    taskId: textValue(item.taskId),
+    taskName: textValue(item.taskName),
+    taskNameEn: textValue(item.taskNameEn, ''),
+    annoTaskName: textValue(item.annoTaskName),
+    dataCount,
+    dataMinutes: textValue(item.dataMinutes, '0.0'),
+    qcStatus: textValue(item.qcStatus, '待质检'),
+    isShelfTask: textValue(item.isShelfTask, '否'),
+    rowCol: textValue(item.rowCol),
+    deviceSN: textValue(item.deviceSN),
+    deviceType: textValue(item.deviceType),
+    qaer: textValue(item.qaer, '待分配'),
+    annotator: textValue(item.annotator),
+    auditor: textValue(item.auditor),
+    collector: textValue(item.collector),
+    qcPassCount: positiveNumber(item.qcPassCount),
+    qcFailCount: positiveNumber(item.qcFailCount),
+    qcTotal: positiveNumber(item.qcTotal, dataCount),
+    qcProgress: Math.min(100, positiveNumber(item.qcProgress)),
+    annoType: textValue(item.annoType, '范围标注'),
+    taskDesc: textValue(item.taskDesc),
+    creator: textValue(item.creator),
+    createTime: textValue(item.createTime),
+    submittedAt: textValue(item.submittedAt),
+  };
+}
+
+export function readQaPackages(storage) {
+  if (!storage || typeof storage.getItem !== 'function') {
+    return { packages: [], error: null };
+  }
+  try {
+    const rawValue = storage.getItem(QA_PACKAGES_STORAGE_KEY);
+    if (!rawValue) return { packages: [], error: null };
+    let parsed;
+    try {
+      parsed = JSON.parse(rawValue);
+    } catch (error) {
+      return { packages: [], error };
+    }
+    if (!Array.isArray(parsed)) {
+      return { packages: [], error: new TypeError('Stored QA packages must be an array') };
+    }
+    return {
+      packages: parsed.map(normalizeQaPackage).filter(Boolean),
+      error: null,
+    };
+  } catch (error) {
+    return { packages: [], error };
+  }
+}
+
 export function loadQaPackages(storage) {
-  if (!storage || typeof storage.getItem !== 'function') return [];
-  const value = safeParse(storage.getItem(QA_PACKAGES_STORAGE_KEY), []);
-  return Array.isArray(value) ? value : [];
+  return readQaPackages(storage).packages;
 }
 
 function saveQaPackages(storage, packages) {
-  if (!storage || typeof storage.setItem !== 'function') return;
-  storage.setItem(QA_PACKAGES_STORAGE_KEY, JSON.stringify(packages));
+  if (!storage || typeof storage.setItem !== 'function') {
+    return { ok: false, error: new TypeError('QA package storage is unavailable') };
+  }
+  try {
+    storage.setItem(QA_PACKAGES_STORAGE_KEY, JSON.stringify(packages));
+    return { ok: true, error: null };
+  } catch (error) {
+    return { ok: false, error };
+  }
 }
 
 export function isCompletedAnnotationTask(task) {
@@ -142,8 +245,19 @@ function refreshQaPackage(existing, task, submittedAt) {
 }
 
 export function syncCompletedAnnotationTasks(storage, tasks, options = {}) {
-  const submittedAt = options.submittedAt || nowText();
-  let packages = loadQaPackages(storage);
+  const submittedAt = options.submittedAt || formatLocalDateTime(options.now || new Date());
+  const readResult = readQaPackages(storage);
+  if (readResult.error) {
+    return {
+      packages: readResult.packages,
+      createdPackageIds: [],
+      updatedPackageIds: [],
+      persisted: false,
+      error: readResult.error,
+    };
+  }
+  const storedPackages = readResult.packages;
+  let packages = storedPackages;
   const createdPackageIds = [];
   const updatedPackageIds = [];
   let metadataChanged = false;
@@ -169,21 +283,55 @@ export function syncCompletedAnnotationTasks(storage, tasks, options = {}) {
     }
   }
 
+  let persistence = { ok: true, error: null };
   if (createdPackageIds.length > 0 || updatedPackageIds.length > 0 || metadataChanged) {
-    saveQaPackages(storage, packages);
+    persistence = saveQaPackages(storage, packages);
   }
 
-  return { packages, createdPackageIds, updatedPackageIds };
+  if (!persistence.ok) {
+    return {
+      packages: storedPackages,
+      createdPackageIds: [],
+      updatedPackageIds: [],
+      persisted: false,
+      error: persistence.error,
+    };
+  }
+
+  return {
+    packages,
+    createdPackageIds,
+    updatedPackageIds,
+    persisted: persistence.ok,
+    error: persistence.error,
+  };
 }
 
 export function assignQaer(storage, qaPackageId, qaer) {
-  const packages = loadQaPackages(storage);
+  const readResult = readQaPackages(storage);
+  if (readResult.error) {
+    return {
+      assigned: null,
+      packages: readResult.packages,
+      persisted: false,
+      error: readResult.error,
+    };
+  }
+  const packages = readResult.packages;
   let assigned = null;
   const updated = packages.map(item => {
     if (item.qaPackageId !== qaPackageId) return item;
     assigned = { ...item, qaer };
     return assigned;
   });
-  if (assigned) saveQaPackages(storage, updated);
-  return assigned;
+  if (!assigned) {
+    return { assigned: null, packages, persisted: false, error: null };
+  }
+  const persistence = saveQaPackages(storage, updated);
+  return {
+    assigned,
+    packages: persistence.ok ? updated : packages,
+    persisted: persistence.ok,
+    error: persistence.error,
+  };
 }
