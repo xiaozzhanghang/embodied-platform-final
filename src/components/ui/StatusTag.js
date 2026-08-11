@@ -10,6 +10,7 @@ const STATUS_COLORS = {
   '质检中': 'processing',
   '可领取': 'processing',
   '已完成': 'success',
+  '已标注': 'success',
   '通过': 'success',
   '已通过': 'success',
   '已结算': 'success',
