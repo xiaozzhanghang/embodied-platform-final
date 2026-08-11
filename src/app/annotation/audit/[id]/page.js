@@ -6,6 +6,7 @@ import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select,
 import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { PageHeader, StatusTag } from '@/components/ui';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -471,10 +472,9 @@ export default function AnnotationAuditEpisodeListPage() {
       width: 150, 
       align: 'center',
       render: (s, r) => {
-        const config = annoStatusConfig[s] || { color: 'default' };
         return (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Badge status={config.color} text={s} />
+            <StatusTag status={s} />
             {s === '已标注' && r.segments && (
               <span style={{ fontSize: 10, color: '#8c8c8c', marginTop: 2 }}>
                 ({r.segments.length}段时序标注)
@@ -489,10 +489,7 @@ export default function AnnotationAuditEpisodeListPage() {
       dataIndex: 'auditStatus', 
       width: 100, 
       align: 'center',
-      render: (s) => {
-        const config = auditStatusConfig[s] || { color: 'default' };
-        return <Badge status={config.color} text={s} />;
-      }
+      render: (s) => <StatusTag status={s === '不通过' ? '未通过' : s}>{s}</StatusTag>
     },
     {
       title: '操作', key: 'action', width: 220, fixed: 'right',
@@ -561,30 +558,33 @@ export default function AnnotationAuditEpisodeListPage() {
 
   return (
     <MainLayout>
-      <div style={{ backgroundColor: '#fff', minHeight: '100vh' }}>
-        {/* Header Bar */}
-        <div style={{ padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
-           <Space size={12}>
-             <Button type="text" icon={<LeftOutlined />} onClick={() => router.push('/annotation/audit')} style={{ fontWeight: 500 }}>返回列表</Button>
-             <Divider orientation="vertical" />
-             <Text strong style={{ fontSize: '14px' }}>标注工作台 — 实例 #{instanceId}</Text>
-           </Space>
-           <Space>
-             <Button 
-               type="primary" 
-               icon={<UploadOutlined />} 
-               onClick={() => { uploadForm.resetFields(); setUploadFileList([]); setIsUploadModalOpen(true); }}
-               style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
-             >
-               上传数据
-             </Button>
-             <Button type="primary" size="small" icon={<AuditOutlined />} onClick={() => message.success('审核全部数据')}>审核全部数据</Button>
-             <Button type="text" icon={<CloseOutlined />} onClick={() => router.push('/annotation/audit')} />
-           </Space>
-        </div>
+      <div className="ui-page ui-detail-page">
+        <PageHeader
+          title={`标注工作台 — 实例 #${instanceId}`}
+          description="统一查看、标注与审核当前实例的 Episode 数据"
+          breadcrumbs={[
+            { title: '数据标注' },
+            { title: '标注工作台', href: '/annotation/audit' },
+            { title: '实例详情' },
+          ]}
+          back={<Button type="text" icon={<LeftOutlined />} onClick={() => router.push('/annotation/audit')} style={{ fontWeight: 500 }}>返回列表</Button>}
+          extra={[
+            <Button
+              key="upload"
+              type="primary"
+              icon={<UploadOutlined />}
+              onClick={() => { uploadForm.resetFields(); setUploadFileList([]); setIsUploadModalOpen(true); }}
+              style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
+            >
+              上传数据
+            </Button>,
+            <Button key="audit-all" type="primary" size="small" icon={<AuditOutlined />} onClick={() => message.success('审核全部数据')}>审核全部数据</Button>,
+            <Button key="close" type="text" aria-label="关闭" icon={<CloseOutlined />} onClick={() => router.push('/annotation/audit')} />,
+          ]}
+        />
 
         {/* Stats Row */}
-        <div style={{ padding: '16px 24px', display: 'flex', gap: 24, borderBottom: '1px solid #f5f5f5' }}>
+        <div className="ui-form-section" style={{ display: 'flex', gap: 24 }}>
           <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#f6ffed', border: '1px solid #b7eb8f' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
             <div style={{ width: 40, height: 40, borderRadius: 8, background: '#52c41a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <CheckCircleOutlined style={{ color: '#fff', fontSize: 20 }} />
@@ -624,7 +624,7 @@ export default function AnnotationAuditEpisodeListPage() {
         </div>
 
         {/* Filters */}
-        <div style={{ marginBottom: 16 }}>
+        <div className="ui-form-section">
           <Form layout="inline">
             <Row gutter={[12, 12]} style={{ width: '100%' }}>
               <Col><Input placeholder="ID" style={{ width: 140 }} value={filterId} onChange={e => setFilterId(e.target.value)} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear /></Col>
@@ -650,7 +650,7 @@ export default function AnnotationAuditEpisodeListPage() {
 
         {/* Interactive Floating Selection alert bar */}
         {selectedRowKeys.length > 0 && (
-          <div style={{
+          <div className="ui-toolbar" style={{
             background: '#e6f4ff',
             border: '1px solid #91caff',
             padding: '12px 18px',
@@ -719,6 +719,7 @@ export default function AnnotationAuditEpisodeListPage() {
 
         {/* Table Section */}
         <Card
+          className="ui-table-card"
           title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>数据列表</span>}
           tabList={[
             { key: 'unannotated', tab: `未标注 (${episodes.filter(e => e.annoStatus === '未标注').length})` },

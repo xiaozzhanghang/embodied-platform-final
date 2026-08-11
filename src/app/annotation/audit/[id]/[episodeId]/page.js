@@ -20,6 +20,7 @@ import {
   SaveOutlined, BulbOutlined, GlobalOutlined, TagOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { StatusTag } from '@/components/ui';
 
 const { Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -2230,15 +2231,16 @@ useEffect(() => {
   // RENDER METHOD 2: 经典视频标注工作台 (White Theme - Standard Modes)
   // ----------------------------------------------------
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f4f5f7', overflow: 'hidden', fontFamily: 'Inter, sans-serif' }}>
+    <div className="ui-workspace" style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f4f5f7', overflow: 'hidden', fontFamily: 'Inter, sans-serif' }}>
       
       {/* Header Area */}
-      <div style={{ 
+      <div className="ui-toolbar" style={{
         background: '#fff', 
         borderBottom: '1px solid #e2e8f0', 
         padding: '10px 20px',
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'stretch',
         gap: 6,
         boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
         zIndex: 10
@@ -2253,10 +2255,10 @@ useEffect(() => {
             {/* Status Badges */}
             <Space size={8}>
               <span style={{ fontSize: 11, color: '#64748b' }}>解析状态</span>
-              <Tag color="success" style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', fontSize: 11, margin: 0, padding: '0 8px', borderRadius: 4, fontWeight: 500 }}>解析完成</Tag>
+              <StatusTag status="已完成">解析完成</StatusTag>
               
               <span style={{ fontSize: 11, color: '#64748b', marginLeft: 8 }}>质检状态</span>
-              <span style={{ border: '1px solid #16a34a', color: '#16a34a', background: '#f0fdf4', fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>优秀</span>
+              <StatusTag status="已通过">优秀</StatusTag>
             </Space>
           </Space>
 
@@ -2589,7 +2591,7 @@ useEffect(() => {
         <div style={{ flex: 1, background: '#fff', borderRadius: 6, border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           
           {/* Header tabs */}
-          <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', padding: '0 8px' }}>
+          <div className="ui-toolbar" style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-start', minHeight: 0, padding: '0 8px' }}>
             {['动作步骤', '区域段管理', 'VLA', '错误帧管理'].map((tab, idx) => (
               <div 
                 key={tab}
@@ -2836,7 +2838,7 @@ useEffect(() => {
       </div>
 
       {/* Playback Controls & Video Playback Axis */}
-      <div style={{ background: '#fff', borderTop: '1px solid #e2e8f0', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="ui-action-footer" style={{ background: '#fff', borderTop: '1px solid #e2e8f0', padding: '14px 20px', display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
         
         {/* Dedicated Video Playback Slider Axis (视频播放轴) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 4px' }}>

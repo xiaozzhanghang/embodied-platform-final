@@ -15,6 +15,7 @@ import {
   Badge
 } from 'antd';
 import SpecMarker from '@/components/SpecMarker';
+import { StatusTag } from '@/components/ui';
 import { 
   ArrowLeftOutlined,
   CloseOutlined,
@@ -132,8 +133,8 @@ export default function QaReviewPage({ params }) {
   };
 
   const renderVideoViewport = (id, imgUrl, hasBottomBar = true) => (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, border: '1px solid #e8e8e8', backgroundColor: '#fff', boxSizing: 'border-box' }}>
-      <div style={{ 
+    <div className="ui-table-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, border: '1px solid #e8e8e8', backgroundColor: '#fff', boxSizing: 'border-box' }}>
+      <div className="ui-toolbar" style={{
         padding: '4px 8px', 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -185,14 +186,14 @@ export default function QaReviewPage({ params }) {
   );
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fff', overflow: 'hidden' }}>
+    <div className="ui-workspace" style={{ height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#fff', overflow: 'hidden' }}>
       
       {/* Top Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 16px', borderBottom: '1px solid #f0f0f0', fontSize: 12 }}>
+      <div className="ui-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 16px', borderBottom: '1px solid #f0f0f0', fontSize: 12 }}>
         <Space size="middle" style={{ color: '#595959' }}>
           <Text style={{ color: '#8c8c8c' }}>餐具摆放 <span style={{ color: '#ff4d4f' }}>[共 8 步]</span></Text>
-          <Text>解析状态: <span style={{ color: '#52c41a' }}>[解析完成]</span></Text>
-          <Text>覆检状态: <Text type="secondary">[未质检]</Text></Text>
+          <Text>解析状态: <StatusTag status="已完成">[解析完成]</StatusTag></Text>
+          <Text>覆检状态: <StatusTag status={conclusion === '不合格' ? '未通过' : conclusion ? '已通过' : '待质检'}>[{conclusion || '未质检'}]</StatusTag></Text>
           <Text>任务ID: 10383</Text>
           <Text>实例ID: 12745</Text>
           <Text type="secondary" style={{ maxWidth: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block', verticalAlign: 'bottom' }}>
@@ -235,7 +236,7 @@ export default function QaReviewPage({ params }) {
         </div>
 
         {/* Right: SOP Steps Panel */}
-        <div style={{ width: 280, borderLeft: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', backgroundColor: '#fff', overflowY: 'auto' }}>
+        <div className="ui-table-card" style={{ width: 280, borderLeft: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', backgroundColor: '#fff', overflowY: 'auto' }}>
           <SpecMarker
             id="qa-auto-rules"
             number={1}
@@ -343,7 +344,7 @@ export default function QaReviewPage({ params }) {
         remark="避免由于机器人开机自检标定、以及机械臂回零动作引发的非实质性质检报错，提升真实有效动作的质检通过率。"
         style={{ width: '100%' }}
       >
-        <div style={{ height: 80, borderTop: '1px solid #d9d9d9', display: 'flex', flexDirection: 'column', backgroundColor: '#f5f5f5' }}>
+        <div className="ui-action-footer" style={{ height: 80, borderTop: '1px solid #d9d9d9', display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'initial', padding: 0, backgroundColor: '#f5f5f5' }}>
           
           {/* Timeline Bar Area */}
           <div style={{ position: 'relative', height: 24, paddingTop: 4 }}>

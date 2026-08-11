@@ -5,6 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal } from 'antd';
 import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, AuditOutlined, CloseCircleOutlined, DeleteOutlined, FileSearchOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { PageHeader, StatusTag } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -186,20 +187,14 @@ export default function QaDetailPage() {
       dataIndex: 'annoStatus', 
       width: 120, 
       align: 'center',
-      render: (s) => {
-        const config = annoStatusConfig[s] || { color: 'default' };
-        return <Badge status={config.color} text={s} />;
-      }
+      render: (s) => <StatusTag status={s} />
     },
     { 
       title: '质检状态', 
       dataIndex: 'qcStatus', 
       width: 120, 
       align: 'center',
-      render: (s) => {
-        const config = qcStatusConfig[s] || { color: 'default', text: s };
-        return <Badge status={config.color} text={config.text} />;
-      }
+      render: (s) => <StatusTag status={s} />
     },
     {
       title: '操作', key: 'action', width: 140, fixed: 'right',
@@ -246,22 +241,24 @@ export default function QaDetailPage() {
 
   return (
     <MainLayout>
-      <div style={{ backgroundColor: '#fff', minHeight: '100vh' }}>
-        {/* Header Bar */}
-        <div style={{ padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
-           <Space size={12}>
-             <Button type="text" icon={<LeftOutlined />} onClick={() => router.push('/collection/qa')} style={{ fontWeight: 500 }}>返回列表</Button>
-             <Divider orientation="vertical" />
-             <Text strong style={{ fontSize: '14px' }}>数据质检 — 实例 #{instanceId}</Text>
-           </Space>
-           <Space>
-             <Button type="primary" size="small" icon={<CheckCircleOutlined />} style={{ background: '#52c41a', borderColor: '#52c41a' }} onClick={handleBatchPass}>一键全部通过</Button>
-             <Button type="text" icon={<CloseOutlined />} onClick={() => router.push('/collection/qa')} />
-           </Space>
-        </div>
+      <div className="ui-page ui-detail-page">
+        <PageHeader
+          title={`数据质检 — 实例 #${instanceId}`}
+          description="查看当前质检包的 Episode 数据并执行批量质检"
+          breadcrumbs={[
+            { title: '任务管理' },
+            { title: '数据质检', href: '/collection/qa' },
+            { title: '质检包详情' },
+          ]}
+          back={<Button type="text" icon={<LeftOutlined />} onClick={() => router.push('/collection/qa')} style={{ fontWeight: 500 }}>返回列表</Button>}
+          extra={[
+            <Button key="pass-all" type="primary" size="small" icon={<CheckCircleOutlined />} style={{ background: '#52c41a', borderColor: '#52c41a' }} onClick={handleBatchPass}>一键全部通过</Button>,
+            <Button key="close" type="text" aria-label="关闭" icon={<CloseOutlined />} onClick={() => router.push('/collection/qa')} />,
+          ]}
+        />
 
         {/* Stats Row */}
-        <div style={{ padding: '16px 24px', display: 'flex', gap: 16, borderBottom: '1px solid #f5f5f5' }}>
+        <div className="ui-form-section" style={{ display: 'flex', gap: 16 }}>
           <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fafafa', border: '1px solid #d9d9d9' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
             <div style={{ width: 40, height: 40, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <CheckCircleOutlined style={{ color: '#fff', fontSize: 20 }} />
@@ -310,7 +307,7 @@ export default function QaDetailPage() {
         </div>
 
         {/* Filters */}
-        <div style={{ padding: '16px 24px 0 24px', marginBottom: 16 }}>
+        <div className="ui-form-section">
           <Form layout="inline">
             <Row gutter={[12, 12]} style={{ width: '100%' }}>
               <Col><Input placeholder="ID" style={{ width: 140 }} value={filterId} onChange={e => setFilterId(e.target.value)} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear /></Col>
@@ -331,8 +328,8 @@ export default function QaDetailPage() {
 
         {/* Floating Selection Alert */}
         {selectedRowKeys.length > 0 && (
-          <div style={{
-            margin: '0 24px 16px 24px',
+          <div className="ui-toolbar" style={{
+            marginBottom: 16,
             background: '#e6f4ff',
             border: '1px solid #91caff',
             padding: '12px 18px',
@@ -379,8 +376,9 @@ export default function QaDetailPage() {
         )}
 
         {/* Table Section */}
-        <div style={{ padding: '0 24px 24px 24px' }}>
+        <div>
           <Card
+            className="ui-table-card"
             title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>数据列表</span>}
             tabList={[
               { key: 'pending', tab: `待质检 (${pendingCount})` },

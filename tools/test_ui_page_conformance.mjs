@@ -151,6 +151,53 @@ assert.match(annotationEditor, /className=["']ui-workspace["']/, '标注编辑�
 assert.match(annotationEditor, /<StatusTag(?:\s|\/|>)/, '标注编辑器未使用统一状态标签');
 
 for (const pagePath of [
+  'src/app/annotation/audit/[id]/page.js',
+  'src/app/collection/qa/[instanceId]/page.js',
+]) {
+  const source = await readFile(pagePath, 'utf8');
+  for (const component of ['PageHeader', 'StatusTag']) {
+    assert.match(
+      source,
+      new RegExp(`<${component}(?:\\s|\\/|>)`),
+      `${pagePath} 详情外壳未使用 ${component}`,
+    );
+  }
+  assert.match(
+    source,
+    /className=["'][^"']*\bui-detail-page\b[^"']*["']/,
+    `${pagePath} 缺少标准详情页语义类`,
+  );
+  assert.match(
+    source,
+    /className=["'][^"']*\bui-table-card\b[^"']*["']/,
+    `${pagePath} 数据列表未使用统一内容卡片`,
+  );
+}
+
+for (const pagePath of [
+  'src/app/annotation/audit/[id]/[episodeId]/page.js',
+  'src/app/collection/qa/[instanceId]/[seqId]/page.js',
+]) {
+  const source = await readFile(pagePath, 'utf8');
+  assert.match(
+    source,
+    /className=["'][^"']*\bui-workspace\b[^"']*["']/,
+    `${pagePath} 多面板工作台缺少 ui-workspace`,
+  );
+  assert.match(source, /<StatusTag(?:\s|\/|>)/, `${pagePath} 顶部任务状态未使用 StatusTag`);
+  assert.match(
+    source,
+    /className=["'][^"']*\bui-toolbar\b[^"']*["']/,
+    `${pagePath} 工具栏未使用统一语义类`,
+  );
+  assert.match(
+    source,
+    /className=["'][^"']*\bui-action-footer\b[^"']*["']/,
+    `${pagePath} 底部操作区未使用统一语义类`,
+  );
+}
+
+for (const pagePath of [
   'src/app/annotation/audit/page.js',
   'src/app/annotation/projects/page.js',
   'src/app/collection/qa/page.js',
