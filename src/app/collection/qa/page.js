@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select, Alert } from 'antd';
+import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select } from 'antd';
 import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
-import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
+import { AppModal, FilterPanel, PageHeader, StateView, StatusTag, TableToolbar } from '@/components/ui';
 import { assignQaerResult, readQaPackages } from '@/lib/annotationQaFlow.mjs';
 
 const { Title, Text } = Typography;
@@ -81,7 +81,7 @@ export default function QaPage() {
   const [tableData, setTableData] = useState(instanceMockData);
   const [storageError, setStorageError] = useState(null);
 
-  const refreshQaPackages = React.useCallback(() => {
+  const loadGeneratedPackages = React.useCallback(() => {
     const { packages: generatedPackages, error } = readQaPackages(window.localStorage);
     setTableData([
       ...generatedPackages,
@@ -93,8 +93,8 @@ export default function QaPage() {
   }, []);
 
   useEffect(() => {
-    refreshQaPackages();
-  }, [refreshQaPackages]);
+    loadGeneratedPackages();
+  }, [loadGeneratedPackages]);
 
   const handleReassign = (record) => {
     setReassignRecord(record);
@@ -257,11 +257,11 @@ export default function QaPage() {
       </FilterPanel>
 
       {storageError && (
-        <Alert
+        <StateView
           type="error"
-          showIcon
-          message={storageError}
-          action={<Button size="small" onClick={refreshQaPackages}>重试</Button>}
+          title="质检包数据读取失败"
+          description={storageError}
+          onRetry={loadGeneratedPackages}
         />
       )}
 
@@ -294,6 +294,9 @@ export default function QaPage() {
           rowSelection={rowSelection}
           columns={columns}
           dataSource={filteredData}
+          locale={{
+            emptyText: <StateView type="no-result" title="暂无符合条件的质检包" />
+          }}
           scroll={{ x: 3200 }}
           size="small"
           pagination={{

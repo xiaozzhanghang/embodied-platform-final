@@ -129,6 +129,44 @@ for (const page of annotationQaListPages) {
   }
 }
 
+const collectionQaListSource = await readFile('src/app/collection/qa/page.js', 'utf8');
+assert.match(
+  collectionQaListSource,
+  /import\s*{[^}]*\bStateView\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
+  '数据质检列表未导入 StateView',
+);
+assert.doesNotMatch(collectionQaListSource, /import\s*{[^}]*\bAlert\b[^}]*}\s*from\s*['"]antd['"]/s, '数据质检列表不应继续导入 Alert');
+
+const qaPackageLoaderSource = collectionQaListSource.match(
+  /const loadGeneratedPackages = React\.useCallback\(\(\) => \{[\s\S]*?\n  \}, \[\]\);/,
+)?.[0] || '';
+assert.ok(qaPackageLoaderSource, '未找到可重试的质检包加载函数');
+assert.match(qaPackageLoaderSource, /readQaPackages\(window\.localStorage\)/, '质检包加载函数未执行存储读取');
+assert.match(
+  qaPackageLoaderSource,
+  /setTableData\(\[\s*\.\.\.generatedPackages,\s*\.\.\.instanceMockData\.filter/,
+  '存储读取失败时必须保留 instanceMockData 表格回退',
+);
+
+const qaStorageErrorBranch = collectionQaListSource.match(
+  /\{storageError && \(\s*<StateView[\s\S]*?\s*\/\>\s*\)\}/,
+)?.[0] || '';
+assert.ok(qaStorageErrorBranch, '存储读取错误分支未使用独立状态视图');
+assert.match(qaStorageErrorBranch, /type="error"/, '存储读取错误分支必须使用 error StateView');
+assert.match(qaStorageErrorBranch, /description=\{storageError\}/, '存储读取错误分支未显示实际错误文案');
+assert.match(qaStorageErrorBranch, /onRetry=\{loadGeneratedPackages\}/, '存储读取错误分支的重试未连接可执行加载函数');
+
+const qaTableSource = collectionQaListSource.match(
+  /<Table\s+rowSelection=\{rowSelection\}[\s\S]*?\n        \/>/,
+)?.[0] || '';
+assert.ok(qaTableSource, '未找到数据质检主表格');
+assert.match(qaTableSource, /dataSource=\{filteredData\}/, '数据质检主表格未使用筛选结果');
+assert.match(
+  qaTableSource,
+  /locale=\{\{\s*emptyText:\s*<StateView\s+type="no-result"[\s\S]*?\/>\s*\}\}/,
+  '数据质检筛选无结果时必须在表格 emptyText 中展示 no-result StateView',
+);
+
 for (const pagePath of [
   'src/app/annotation/audit/create/page.js',
   'src/app/annotation/projects/create/page.js',
