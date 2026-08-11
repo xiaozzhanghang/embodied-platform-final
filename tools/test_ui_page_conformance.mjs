@@ -695,5 +695,15 @@ for (const label of ['修改密码', '编辑', '删除']) {
   );
 }
 
+for (const loginPage of [
+  'src/app/login/page.js',
+  'src/app/qa-login/page.js',
+  'src/app/collector-login/page.js',
+]) {
+  const source = await readFile(loginPage, 'utf8');
+  assert.equal(source.includes('<ConfigProvider'), false, `${loginPage} 不得创建私有主题`);
+  assert.ok(source.includes('ui-login'), `${loginPage} 必须使用统一登录外壳`);
+}
+
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');
