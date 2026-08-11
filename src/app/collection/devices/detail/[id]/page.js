@@ -343,7 +343,7 @@ export default function DeviceInstanceDetailPage() {
                 <Text type="secondary" style={{ fontSize: 12 }}>数采网桥服务</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                   <Title level={4} style={{ margin: 0, fontSize: 16 }}>galbot_upper</Title>
-                  <StatusTag status="已完成">运行中</StatusTag>
+                  <StatusTag status="正常运行" />
                 </div>
               </Card>
             </Col>
@@ -352,7 +352,7 @@ export default function DeviceInstanceDetailPage() {
                 <Text type="secondary" style={{ fontSize: 12 }}>系统 SN 安全认证</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                   <Title level={4} style={{ margin: 0, fontSize: 16 }}>sys_tool</Title>
-                  <StatusTag status="进行中">已认证</StatusTag>
+                  <StatusTag status="已认证" />
                 </div>
               </Card>
             </Col>

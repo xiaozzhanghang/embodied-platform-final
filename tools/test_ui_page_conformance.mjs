@@ -311,7 +311,6 @@ for (const pagePath of [
 
 const deviceDetailSource = await readFile('src/app/collection/devices/detail/[id]/page.js', 'utf8');
 for (const label of [
-  '运行中',
   'remote_ctrl_record.target (Active)',
   'Supervisor Daemon (Active)',
   'galbot_upper_bridge (Active)',
@@ -322,9 +321,15 @@ for (const label of [
   );
 }
 assert.ok(
-  deviceDetailSource.includes('<StatusTag status="进行中">已认证</StatusTag>'),
-  '设备详情中已认证应保留 processing 色义',
+  deviceDetailSource.includes('<StatusTag status="正常运行" />'),
+  '设备详情中服务健康状态应统一为中央已定义的“正常运行”',
 );
+assert.doesNotMatch(deviceDetailSource, /<StatusTag status="[^"]+">运行中<\/StatusTag>/, '不得保留 status/text 不一致的“运行中”');
+assert.ok(
+  deviceDetailSource.includes('<StatusTag status="已认证" />'),
+  '设备详情中“已认证”必须直接交给中央语义层',
+);
+assert.doesNotMatch(deviceDetailSource, /<StatusTag status="[^"]+">已认证<\/StatusTag>/, '已认证不得 status/text 不一致');
 
 for (const pagePath of [
   'src/app/collection/config/page.js',
@@ -401,6 +406,19 @@ assert.ok(
   collectionTasksRedirect.includes("router.replace('/collection/collection-tasks')"),
   '采集任务兼容入口必须保持重定向到 /collection/collection-tasks',
 );
+
+const collectionExecutionListSource = await readFile('src/app/collection/collect/page.js', 'utf8');
+const collectionExecutionStatusColumn = collectionExecutionListSource.match(
+  /title:\s*'采集状态'[\s\S]*?\n\s*},/,
+)?.[0] || '';
+assert.ok(collectionExecutionStatusColumn, '未找到采集执行列表的采集状态列');
+assert.match(
+  collectionExecutionStatusColumn,
+  /render:\s*\(status\) => <StatusTag status=\{status\}>\{status\}<\/StatusTag>/,
+  '采集状态必须保留原文并直接交给中央语义层',
+);
+assert.doesNotMatch(collectionExecutionStatusColumn, /statusKey/, '采集状态列不得在页面重新映射中央状态');
+assert.doesNotMatch(collectionExecutionListSource, /const collectStatusMap\s*=/, '采集列表不得保留页面级采集状态映射');
 
 const collectionTaskDetailSource = await readFile('src/app/collection/tasks/[id]/page.js', 'utf8');
 const collectColumnsSource = collectionTaskDetailSource.match(/const columnsCollect = \[[\s\S]*?const columnsAsset = \[/)?.[0] || '';

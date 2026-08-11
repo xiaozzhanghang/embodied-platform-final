@@ -182,7 +182,6 @@ const mockData = [
     }
 ];
 
-const collectStatusMap = { '采集中': 'processing', '采集完成': 'success', '待采集': 'default' };
 const dataStatusMap = { '上传中': 'processing', '处理完成': 'success', '未上传': 'default', '处理中': 'warning', '-': 'default' };
 
 export default function CollectTaskPage() {
@@ -642,10 +641,7 @@ export default function CollectTaskPage() {
             dataIndex: 'status',
             key: 'status',
             width: 120,
-            render: (status) => {
-                const statusKey = status === '采集完成' ? '已完成' : status === '采集中' ? '进行中' : '未开始';
-                return <StatusTag status={statusKey}>{status}</StatusTag>;
-            }
+            render: (status) => <StatusTag status={status}>{status}</StatusTag>
         },
         {
             title: '数据状态',

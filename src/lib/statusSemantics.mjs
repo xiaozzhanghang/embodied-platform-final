@@ -32,6 +32,8 @@ const STATUS_SEMANTICS = Object.freeze({
   '在线': 'success',
   '正常': 'success',
   '已连接': 'success',
+  '采集完成': 'success',
+  '已认证': 'success',
 
   '失败': 'error',
   '驳回': 'error',
