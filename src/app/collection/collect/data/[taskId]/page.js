@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, Table, Tag, Space, Row, Col, Descriptions, Steps, Button, Typography, Breadcrumb, Collapse } from 'antd';
+import { Card, Table, Space, Row, Col, Descriptions, Steps, Button, Typography, Breadcrumb, Collapse } from 'antd';
 import { 
   ArrowLeftOutlined, HddOutlined, PlayCircleOutlined, ApiOutlined,
   CheckCircleOutlined, ExclamationCircleOutlined, InfoCircleOutlined,
@@ -26,6 +26,18 @@ const lumosEpisodes = [
   { key: '2', episodeId: 'EP-20260414-002', time: '2026-04-14 14:22:15', duration: '00:00:15', steps: 4, status: '已入库质检池', qaBatch: 'BATCH-202604-A' },
   { key: '3', episodeId: 'EP-20260414-003', time: '2026-04-14 14:25:30', duration: '00:00:15', steps: 4, status: '废弃', qaBatch: '-' },
 ];
+
+const EPISODE_TOOLBAR_STATUS = {
+  '已入库质检池': { status: '已完成', text: '数据已就绪' },
+  '等待解析': { status: '待处理', text: '等待解析' },
+  '废弃': { status: '失败', text: '序列已废弃' },
+};
+
+const resolveEpisodeToolbarStatus = (episode, isLoading) => {
+  if (isLoading) return { status: '处理中', text: '数据解析中' };
+  if (!episode) return { status: '待处理', text: '待选择序列' };
+  return EPISODE_TOOLBAR_STATUS[episode.status] || { status: '未开始', text: '状态待确认' };
+};
 
 export default function CollectTaskDataPage() {
   const router = useRouter();
@@ -305,6 +317,7 @@ export default function CollectTaskDataPage() {
 
   // Task metadata
   const taskName = isLumos ? 'Lumos-双手筷子与勺子整理-001' : (taskId === 'CT-20250301002' ? 'FRANKA-FR3-放置蓝色圆柱-002' : 'FRANKA-FR3-抓取红色方块-001');
+  const toolbarStatus = resolveEpisodeToolbarStatus(selectedEpisode, loadingRealData);
 
 
   return (
@@ -329,7 +342,7 @@ export default function CollectTaskDataPage() {
           </div>
         </Space>
         <Space>
-          <StatusTag status={selectedEpisode ? '已完成' : '待处理'}>{selectedEpisode ? '数据已就绪' : '待选择序列'}</StatusTag>
+          <StatusTag status={toolbarStatus.status}>{toolbarStatus.text}</StatusTag>
           <Button onClick={() => window.close()}>关闭页面</Button>
         </Space>
       </div>
@@ -631,7 +644,7 @@ export default function CollectTaskDataPage() {
                     <Space>
                       <SafetyCertificateOutlined style={{ color: '#52c41a' }} />
                       <span style={{ fontWeight: 600 }}>自动质检诊断分析报告 (Auto QA & Diagnostic Report)</span>
-                      <Tag color="success" style={{ marginLeft: 8 }}>所有检查通过 (PASS)</Tag>
+                      <StatusTag status="已通过" style={{ marginLeft: 8 }}>所有检查通过 (PASS)</StatusTag>
                     </Space>
                   } 
                   variant="borderless"
@@ -647,16 +660,16 @@ export default function CollectTaskDataPage() {
                     </Descriptions.Item>
                     <Descriptions.Item label="诊断分析时间">2026-05-20 10:13:21</Descriptions.Item>
                     <Descriptions.Item label="左臂状态 (left_hand)">
-                      <Tag color="success">通过 (PASS)</Tag>
+                      <StatusTag status="已通过">通过 (PASS)</StatusTag>
                     </Descriptions.Item>
                     <Descriptions.Item label="右臂状态 (right_hand)">
-                      <Tag color="success">通过 (PASS)</Tag>
+                      <StatusTag status="已通过">通过 (PASS)</StatusTag>
                       <span style={{ color: '#8c8c8c', fontSize: 12 }}>（处于静止状态，静止率 100.0% 豁免）</span>
                     </Descriptions.Item>
                     <Descriptions.Item label="数据判定基准">
                       <Space>
                         <span>帧间位移 MERGE:</span>
-                        <Tag color="success">通过</Tag>
+                        <StatusTag status="已通过">通过</StatusTag>
                       </Space>
                     </Descriptions.Item>
                   </Descriptions>
@@ -681,7 +694,7 @@ export default function CollectTaskDataPage() {
                                 render: (val, record) => (
                                   <Space>
                                     <span style={{ fontFamily: 'monospace' }}>{val}</span>
-                                    {record.leftStatus === 'pass' ? <Tag color="success" size="small">通过</Tag> : <Tag color="error" size="small">超标</Tag>}
+                                    {record.leftStatus === 'pass' ? <StatusTag status="已通过" size="small">通过</StatusTag> : <StatusTag status="未通过" size="small">超标</StatusTag>}
                                   </Space>
                                 )
                               },
@@ -691,7 +704,7 @@ export default function CollectTaskDataPage() {
                                 render: (val, record) => (
                                   <Space>
                                     <span style={{ fontFamily: 'monospace' }}>{val}</span>
-                                    {record.rightStatus === 'pass' ? <Tag color="success" size="small">通过</Tag> : <Tag color="warning" size="small">警告</Tag>}
+                                    {record.rightStatus === 'pass' ? <StatusTag status="已通过" size="small">通过</StatusTag> : <StatusTag status="待处理" size="small">警告</StatusTag>}
                                   </Space>
                                 )
                               },
@@ -708,17 +721,17 @@ export default function CollectTaskDataPage() {
                             <Row gutter={16}>
                               <Col span={12}>
                                 <Card type="inner" title="左臂位移检测 (left_hand_250801DR48FP26003296)" size="small">
-                                  <p style={{ margin: '4px 0' }}>判定基准: <b>MERGE</b> (结果: <Tag color="success">通过</Tag>)</p>
+                                  <p style={{ margin: '4px 0' }}>判定基准: <b>MERGE</b> (结果: <StatusTag status="已通过">通过</StatusTag>)</p>
                                   <ul style={{ paddingLeft: 16, margin: 0, fontSize: 12, lineHeight: 1.8 }}>
                                     <li><b>MERGE:</b> 阈值 = 7.00mm | 超标数 = 0/15221 (0.00%) | 最大位移 = 6.13mm | 平均位移 = 0.13mm</li>
-                                    <li><b>SLAM:</b> 阈值 = 4.00mm | 超标数 = 3/15221 (0.02%) | 最大位移 = 6.17mm | 平均位移 = 0.13mm <Tag color="warning" style={{ transform: 'scale(0.85)', margin: 0 }}>超标</Tag></li>
+                                    <li><b>SLAM:</b> 阈值 = 4.00mm | 超标数 = 3/15221 (0.02%) | 最大位移 = 6.17mm | 平均位移 = 0.13mm <StatusTag status="待处理" style={{ transform: 'scale(0.85)', margin: 0 }}>超标</StatusTag></li>
                                     <li><b>VIVE:</b> <span style={{ color: '#8c8c8c' }}>数据不足或缺失（未启用）</span></li>
                                   </ul>
                                 </Card>
                               </Col>
                               <Col span={12}>
                                 <Card type="inner" title="右臂位移检测 (right_hand_250801DR48FP26003349)" size="small">
-                                  <p style={{ margin: '4px 0' }}>判定基准: <b>MERGE</b> (结果: <Tag color="success">通过</Tag>)</p>
+                                  <p style={{ margin: '4px 0' }}>判定基准: <b>MERGE</b> (结果: <StatusTag status="已通过">通过</StatusTag>)</p>
                                   <ul style={{ paddingLeft: 16, margin: 0, fontSize: 12, lineHeight: 1.8 }}>
                                     <li><b>MERGE:</b> 阈值 = 7.00mm | 超标数 = 0/15234 (0.00%) | 最大位移 = 0.10mm | 平均位移 = 0.00mm</li>
                                     <li><b>SLAM:</b> 阈值 = 4.00mm | 超标数 = 0/15234 (0.00%) | 最大位移 = 0.03mm | 平均位移 = 0.00mm</li>

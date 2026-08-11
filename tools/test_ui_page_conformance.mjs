@@ -416,6 +416,81 @@ assert.match(
   '采集录制工作台底部控制条缺少 ui-action-footer',
 );
 
+const collectionDataWorkspace = await readFile('src/app/collection/collect/data/[taskId]/page.js', 'utf8');
+for (const [sourceStatus, canonicalStatus, text] of [
+  ['已入库质检池', '已完成', '数据已就绪'],
+  ['等待解析', '待处理', '等待解析'],
+  ['废弃', '失败', '序列已废弃'],
+]) {
+  assert.match(
+    collectionDataWorkspace,
+    new RegExp(`'${sourceStatus}':\\s*\\{\\s*status:\\s*'${canonicalStatus}',\\s*text:\\s*'${text}'\\s*\\}`),
+    `数据工作台未正确归一 ${sourceStatus} 状态`,
+  );
+}
+assert.match(
+  collectionDataWorkspace,
+  /if \(isLoading\) return \{ status: '处理中', text: '数据解析中' \};/,
+  '数据工作台加载态应使用 processing 色义',
+);
+assert.match(
+  collectionDataWorkspace,
+  /if \(!episode\) return \{ status: '待处理', text: '待选择序列' \};/,
+  '数据工作台未选择序列时应保持 warning 色义',
+);
+assert.match(
+  collectionDataWorkspace,
+  /\|\| \{ status: '未开始', text: '状态待确认' \}/,
+  '数据工作台未知状态不应被误报为已就绪',
+);
+assert.match(
+  collectionDataWorkspace,
+  /<StatusTag status=\{toolbarStatus\.status\}>\{toolbarStatus\.text\}<\/StatusTag>/,
+  '数据工作台顶部状态未使用解析后的状态与文案',
+);
+
+const collectionQaReportSource = collectionDataWorkspace.match(/自动质检诊断分析报告[\s\S]*?\{\/\* Action Timeline \*\//)?.[0] || '';
+assert.ok(collectionQaReportSource, '未找到数据工作台自动质检报告片段');
+assert.doesNotMatch(collectionQaReportSource, /<Tag(?:\s|\/|>)/, '自动质检报告中的结果状态应统一使用 StatusTag');
+assert.match(
+  collectionQaReportSource,
+  /<StatusTag status="已通过"[^>]*>所有检查通过 \(PASS\)<\/StatusTag>/,
+  '质检报告总结论应保留 success 色义',
+);
+assert.match(
+  collectionQaReportSource,
+  /record\.leftStatus === 'pass' \? <StatusTag status="已通过" size="small">通过<\/StatusTag> : <StatusTag status="未通过" size="small">超标<\/StatusTag>/,
+  '左臂质检结果未保留 success/error 色义',
+);
+assert.match(
+  collectionQaReportSource,
+  /record\.rightStatus === 'pass' \? <StatusTag status="已通过" size="small">通过<\/StatusTag> : <StatusTag status="待处理" size="small">警告<\/StatusTag>/,
+  '右臂质检警告未保留 warning 色义',
+);
+
+const humanoidRecordStatusSource = collectionRecordingWorkspace.match(/已采记录 \(\$\{completedEpisodes\.length\}\/50\)[\s\S]*?\]\}/)?.[0] || '';
+assert.match(
+  humanoidRecordStatusSource,
+  /<StatusTag status="已完成">\{ep\.status\}<\/StatusTag>/,
+  '通用采集器的已上传记录应使用 success 状态芯片',
+);
+
+const lumosDeviceCardSource = collectionRecordingWorkspace.match(/离线物理终端设备模拟[\s\S]*?<\/Card>/)?.[0] || '';
+assert.match(
+  lumosDeviceCardSource,
+  /<StatusTag status=\{lumosState === 'SERVICE_STOPPED' \? '未开始' : '已完成'\}>\{lumosState === 'SERVICE_STOPPED' \? '未启动' : '已就绪'\}<\/StatusTag>/,
+  'Lumos 物理终端状态未保留 default/success 色义',
+);
+
+const galbotDaemonSource = collectionRecordingWorkspace.match(/双端系统服务管理器[\s\S]*?\{\/\* 3D Kinematic Twin SVG \*\//)?.[0] || '';
+assert.ok(galbotDaemonSource, '未找到 Galbot 双端系统服务管理器片段');
+assert.doesNotMatch(galbotDaemonSource, /<Badge\s+status=/, 'Galbot 守护进程文本状态应统一使用 StatusTag');
+assert.match(
+  galbotDaemonSource,
+  /<StatusTag status=\{galbotState === 'SERVICE_STOPPED' \? '未开始' : galbotState === 'BOOTING' \? '进行中' : '已完成'\}>\{galbotState === 'SERVICE_STOPPED' \? '已停止' : '已就绪'\}<\/StatusTag>/,
+  'Galbot 守护进程状态未保留 default/processing/success 色义',
+);
+
 const collectionDeviceStatusWorkspace = await readFile('src/app/collection/collect/status/[taskId]/page.js', 'utf8');
 assert.doesNotMatch(
   collectionDeviceStatusWorkspace,

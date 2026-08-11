@@ -6,7 +6,6 @@ import {
   Button, 
   Typography, 
   Space, 
-  Badge, 
   Switch, 
   Upload, 
   Progress, 
@@ -786,7 +785,7 @@ function HumanoidWorkspace({ taskId, router, params }) {
                                <div key={i} style={{ border: '1px solid #e8e8e8', background: '#fff', padding: 12, borderRadius: 4, marginBottom: 8 }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                                      <span style={{ fontWeight: 'bold', color: '#1677ff' }}>{ep.id}</span>
-                                     <span style={{ fontSize: 12, color: '#52c41a' }}><Badge status="success" /> {ep.status}</span>
+                                     <StatusTag status="已完成">{ep.status}</StatusTag>
                                   </div>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#595959' }}>
                                      <span>时长: {ep.time}s</span>
@@ -1307,7 +1306,7 @@ function LumosWorkspace({ taskId, router, params }) {
             size="small"
             style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}
             styles={{ body: { padding: 16 } }}
-            extra={<Badge status={lumosState === 'SERVICE_STOPPED' ? 'default' : 'success'} text={<span style={{ color: '#0f172a', fontSize: 11 }}>{lumosState === 'SERVICE_STOPPED' ? '未启动' : '已就绪'}</span>} />}
+            extra={<StatusTag status={lumosState === 'SERVICE_STOPPED' ? '未开始' : '已完成'}>{lumosState === 'SERVICE_STOPPED' ? '未启动' : '已就绪'}</StatusTag>}
           >
             <div style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, padding: 12, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -1870,7 +1869,7 @@ function Galbot116Workspace({ taskId, router, params }) {
                   <div style={{ fontSize: 11, fontWeight: 'bold' }}>XCU 控制箱底座守护:</div>
                   <div style={{ fontSize: 9, color: 'rgba(15, 23, 42, 0.45)' }}>`remote_ctrl_record.target`</div>
                 </div>
-                <Badge status={galbotState === 'SERVICE_STOPPED' ? 'default' : galbotState === 'BOOTING' ? 'processing' : 'success'} text={<span style={{ color: '#0f172a', fontSize: 10 }}>{galbotState === 'SERVICE_STOPPED' ? '已停止' : '已就绪'}</span>} />
+                <StatusTag status={galbotState === 'SERVICE_STOPPED' ? '未开始' : galbotState === 'BOOTING' ? '进行中' : '已完成'}>{galbotState === 'SERVICE_STOPPED' ? '已停止' : '已就绪'}</StatusTag>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f1f5f9', padding: '8px 12px', borderRadius: 6 }}>
@@ -1878,7 +1877,7 @@ function Galbot116Workspace({ taskId, router, params }) {
                   <div style={{ fontSize: 11, fontWeight: 'bold' }}>HPU 上位机守护:</div>
                   <div style={{ fontSize: 9, color: 'rgba(15, 23, 42, 0.45)' }}>`supervisor` -&gt; `galbot_upper_bridge`</div>
                 </div>
-                <Badge status={galbotState === 'SERVICE_STOPPED' ? 'default' : galbotState === 'BOOTING' ? 'processing' : 'success'} text={<span style={{ color: '#0f172a', fontSize: 10 }}>{galbotState === 'SERVICE_STOPPED' ? '已停止' : '已就绪'}</span>} />
+                <StatusTag status={galbotState === 'SERVICE_STOPPED' ? '未开始' : galbotState === 'BOOTING' ? '进行中' : '已完成'}>{galbotState === 'SERVICE_STOPPED' ? '已停止' : '已就绪'}</StatusTag>
               </div>
 
               {galbotState === 'SERVICE_STOPPED' ? (
