@@ -18,7 +18,7 @@ import {
   UnorderedListOutlined, InfoCircleFilled, EditOutlined, MinusCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { ActionFooter, AppModal, FormSection, PageHeader } from '@/components/ui';
+import { ActionFooter, AppModal, FormSection, PageHeader, StateView } from '@/components/ui';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -1407,7 +1407,7 @@ function CreateTaskContent() {
 
 export default function CreateTaskPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<StateView type="loading" />}>
       <CreateTaskContent />
     </Suspense>
   );

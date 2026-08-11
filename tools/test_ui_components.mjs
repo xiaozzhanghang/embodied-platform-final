@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { resolveStatusSemantic } from '../src/lib/statusSemantics.mjs';
 
 const exportsSource = await readFile('src/components/ui/index.js', 'utf8');
 for (const name of [
@@ -8,18 +9,19 @@ for (const name of [
 ]) assert.match(exportsSource, new RegExp(`export \\{ default as ${name} \\}`));
 
 const statusSource = await readFile('src/components/ui/StatusTag.js', 'utf8');
-for (const status of ['进行中', '已完成', '待审核', '失败', '已取消']) {
-  assert.ok(statusSource.includes(status), `缺少状态映射: ${status}`);
-}
-assert.match(statusSource, /'已发布':\s*'success'/, '已发布应使用 success 状态色');
-assert.match(statusSource, /'审核中':\s*'processing'/, '审核中应使用 processing 状态色');
-assert.match(statusSource, /'机检通过':\s*'success'/, '机检通过迁移到 StatusTag 后应保留 success 状态色');
-assert.match(statusSource, /'已标注':\s*'success'/, '已标注应使用 success 状态色');
-assert.match(statusSource, /'标注审核中':\s*'purple'/, '标注审核中应保留 purple 业务色');
 for (const [status, semantic] of [
+  ['采集中', 'processing'],
+  ['处理中', 'processing'],
+  ['标注审核中', 'processing'],
   ['质检中', 'processing'],
+  ['审核中', 'processing'],
+  ['待采集', 'warning'],
   ['已通过', 'success'],
+  ['完成', 'success'],
+  ['通过', 'success'],
   ['未通过', 'error'],
+  ['失败', 'error'],
+  ['驳回', 'error'],
   ['标注中', 'processing'],
   ['待校验', 'warning'],
   ['校验中', 'processing'],
@@ -37,20 +39,16 @@ for (const [status, semantic] of [
   ['维护中', 'warning'],
   ['正常', 'success'],
   ['已连接', 'success'],
+  ['取消', 'default'],
+  ['已取消', 'default'],
 ]) {
-  assert.match(
-    statusSource,
-    new RegExp(`'${status}':\\s*'${semantic}'`),
-    `${status} 应使用 ${semantic} 状态色`,
-  );
+  assert.equal(resolveStatusSemantic(status), semantic, `${status} 应使用 ${semantic} 状态色`);
 }
 for (const status of ['运行中', '已认证']) {
-  assert.doesNotMatch(
-    statusSource,
-    new RegExp(`'${status}':\\s*'`),
-    `${status} 的颜色语义依赖业务上下文，不应写入全局状态映射`,
-  );
+  assert.equal(resolveStatusSemantic(status), 'default', `${status} 的未知全局语义应回退为 default`);
 }
+assert.match(statusSource, /import \{ resolveStatusSemantic \} from ['"]@\/lib\/statusSemantics\.mjs['"]/);
+assert.match(statusSource, /color=\{resolveStatusSemantic\(status\)\}/, 'StatusTag 必须通过单一语义适配层解析颜色');
 assert.match(statusSource, /className=\{mergeClassNames\('ui-status-tag', className\)\}/);
 assert.match(statusSource, /rootClassName=\{mergeClassNames\('ui-status-tag', rootClassName\)\}/);
 assert.match(statusSource, /\{children \?\? status\}/, 'children={0} 必须保留 0，而不是回退到 status');

@@ -34,7 +34,7 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { ActionFooter, FilterPanel, FormSection, PageHeader, StatusTag } from '@/components/ui';
+import { ActionFooter, FilterPanel, FormSection, PageHeader, StateView, StatusTag } from '@/components/ui';
 import {
   canPublishTask,
   filterEpisodes,
@@ -383,7 +383,7 @@ function CreateAnnotationTaskContent() {
 
 export default function CreateAnnotationTaskPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 40 }}>Loading...</div>}>
+    <Suspense fallback={<StateView type="loading" />}>
       <CreateAnnotationTaskContent />
     </Suspense>
   );

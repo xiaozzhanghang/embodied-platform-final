@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, Input, Button, Tree, Form, Select, Row, Col, Space, Tag, Typography, Breadcrumb, Tooltip, Empty, Divider, Tabs, Table, Pagination } from 'antd';
+import { Card, Input, Button, Tree, Form, Select, Row, Col, Space, Tag, Typography, Breadcrumb, Tooltip, Divider, Tabs, Table, Pagination } from 'antd';
 import { 
   SearchOutlined, 
   EyeOutlined, 
@@ -24,7 +24,7 @@ import {
   InfoCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
+import { FilterPanel, PageHeader, StateView, TableToolbar } from '@/components/ui';
 
 const { Text, Title } = Typography;
 
@@ -623,7 +623,7 @@ export default function DataCatalogPage() {
                   )}
                   </>
                 ) : (
-                  <Empty description="暂无符合条件的数据资产" />
+                  <StateView type="no-result" title="暂无符合条件的数据资产" />
                 )}
               </Card>
             </Col>

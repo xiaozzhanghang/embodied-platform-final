@@ -30,6 +30,13 @@ assert.match(
   '首页未从公共 UI 入口导入 PageHeader',
 );
 assert.match(dashboard, /<PageHeader(?:\s|\/|>)/, '首页未使用 PageHeader');
+assert.match(
+  dashboard,
+  /import\s*{[^}]*\bStatusTag\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
+  '首页未导入统一状态标签',
+);
+assert.match(dashboard, /render:\s*\(s\) => <StatusTag status=\{s\}>\{s\}<\/StatusTag>/, '首页任务状态必须保留原文案并走单一适配层');
+assert.doesNotMatch(dashboard, /const statusMap\s*=/, '首页不应保留局部状态颜色映射');
 
 const coreTaskPages = [
   { path: 'src/app/collection/annotation-tasks/page.js', type: 'list' },
@@ -362,9 +369,10 @@ const collectColumnsSource = collectionTaskDetailSource.match(/const columnsColl
 const assetColumnsSource = collectionTaskDetailSource.match(/const columnsAsset = \[[\s\S]*?const mockInstancesNoCollect = \[/)?.[0] || '';
 assert.match(
   collectColumnsSource,
-  /<StatusTag status=\{s === '采集中' \? '进行中' : s === '待分配' \? '未开始' : s\}>\{s\}<\/StatusTag>/,
-  '采集分包的待分配必须在调用处归一为默认灰色，并保留显示文案',
+  /<StatusTag status=\{s\}>\{s\}<\/StatusTag>/,
+  '采集分包必须保留原状态文案并直接走单一语义适配层',
 );
+assert.doesNotMatch(collectColumnsSource, /s === '待分配' \? '未开始'/, '待分配不得被强制改写为未开始');
 assert.match(
   assetColumnsSource,
   /<StatusTag status=\{s\}>\{s\}<\/StatusTag>/,
@@ -433,13 +441,15 @@ assert.match(
   /const \[loadingEpisodeId, setLoadingEpisodeId\] = useState\(null\);/,
   '真实数据加载态必须记录正在加载的序列身份',
 );
+assert.match(collectionDataWorkspace, /const \[realDataError, setRealDataError\] = useState\(null\);/, '真实数据请求必须有可视错误态');
+assert.match(collectionDataWorkspace, /const \[loadAttempt, setLoadAttempt\] = useState\(0\);/, '真实数据请求必须有可触发重试的 token');
 assert.doesNotMatch(
   collectionDataWorkspace,
   /loadingRealData|setLoadingRealData/,
   '真实数据加载态不应继续使用全局布尔值',
 );
 const realDataLoadingEffect = collectionDataWorkspace.match(
-  /useEffect\(\(\) => \{[\s\S]*?fetch\('\/api\/luming\?type=report'\)[\s\S]*?\n  \}, \[selectedEpisode\]\);/,
+  /useEffect\(\(\) => \{[\s\S]*?fetch\('\/api\/luming\?type=report'\)[\s\S]*?\n  \}, \[selectedEpisode, loadAttempt\]\);/,
 )?.[0] || '';
 assert.ok(realDataLoadingEffect, '未找到 session_028 真实数据加载 effect');
 assert.match(
@@ -459,6 +469,11 @@ assert.match(
 );
 assert.match(
   realDataLoadingEffect,
+  /\.catch\(err => \{\s*if \(cancelled\) return;\s*setRealDataError\(\{\s*episodeId,\s*message:/,
+  '已取消的 session_028 请求不应写回错误，错误必须绑定序列身份',
+);
+assert.match(
+  realDataLoadingEffect,
   /\.finally\(\(\) => \{\s*if \(!cancelled\) \{\s*setLoadingEpisodeId\(current => current === episodeId \? null : current\);\s*\}\s*\}\);/,
   'session_028 请求结束时必须仅清理自身加载身份',
 );
@@ -471,6 +486,16 @@ assert.match(
   collectionDataWorkspace,
   /const isSelectedEpisodeLoading = loadingEpisodeId === selectedEpisode\?\.episodeId;\s*const toolbarStatus = resolveEpisodeToolbarStatus\(selectedEpisode, isSelectedEpisodeLoading\);/,
   '数据工作台加载提示必须与当前选中序列身份相关联',
+);
+assert.match(
+  collectionDataWorkspace,
+  /const selectedEpisodeError = realDataError\?\.episodeId === selectedEpisode\?\.episodeId \? realDataError : null;/,
+  '数据工作台错误提示必须与当前选中序列身份相关联',
+);
+assert.match(
+  collectionDataWorkspace,
+  /const retryRealData = \(\) => \{\s*if \(selectedEpisode\?\.episodeId === 'session_028'\) \{\s*setLoadAttempt\(current => current \+ 1\);\s*\}\s*\};/,
+  '重试动作必须更新 effect 依赖的 token，且只重试当前 session_028',
 );
 assert.match(
   collectionDataWorkspace,
@@ -491,6 +516,11 @@ assert.match(
   collectionDataWorkspace,
   /<StatusTag status=\{toolbarStatus\.status\}>\{toolbarStatus\.text\}<\/StatusTag>/,
   '数据工作台顶部状态未使用解析后的状态与文案',
+);
+assert.match(
+  collectionDataWorkspace,
+  /\{isSelectedEpisodeLoading \? \(\s*<StateView\s+type="loading"[\s\S]*?\) : selectedEpisodeError \? \(\s*<StateView\s+type="error"[\s\S]*?description=\{selectedEpisodeError\.message\}[\s\S]*?onRetry=\{retryRealData\}[\s\S]*?\) : selectedEpisode \? \(/,
+  '数据工作台必须以互斥条件分支展示 loading/error/成功内容，并连接可执行重试',
 );
 
 const collectionQaReportSource = collectionDataWorkspace.match(/自动质检诊断分析报告[\s\S]*?\{\/\* Action Timeline \*\//)?.[0] || '';
@@ -607,6 +637,34 @@ for (const pagePath of dataAdministrationListPages) {
     /className=["'][^"']*\bui-table-card\b[^"']*["']/,
     `${pagePath} 列表内容缺少 ui-table-card 语义类`,
   );
+}
+
+const dataCatalogSource = await readFile('src/app/data/catalog/page.js', 'utf8');
+assert.match(
+  dataCatalogSource,
+  /import\s*{[^}]*\bStateView\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
+  '数据资产目录未导入 StateView',
+);
+assert.match(
+  dataCatalogSource,
+  /\{filteredCards\.length > 0 \? \([\s\S]*?\) : \(\s*<StateView type="no-result" title="暂无符合条件的数据资产" \/>\s*\)\}/,
+  '数据资产目录的筛选无结果分支必须使用 no-result StateView',
+);
+
+for (const pagePath of [
+  'src/app/collection/annotation-tasks/create/page.js',
+  'src/app/collection/tasks/create/page.js',
+  'src/app/collection/templates/create/page.js',
+  'src/app/collection/collection-tasks/create/page.js',
+]) {
+  const source = await readFile(pagePath, 'utf8');
+  assert.match(
+    source,
+    /import\s*{[^}]*\bStateView\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
+    `${pagePath} 未导入 StateView`,
+  );
+  assert.match(source, /<Suspense fallback=\{<StateView type="loading" \/>\}>/, `${pagePath} 的 Suspense fallback 必须使用 loading StateView`);
+  assert.doesNotMatch(source, /<Suspense fallback=\{<div[^>]*>Loading\.\.\.<\/div>\}>/, `${pagePath} 不应保留裸 Loading 文字`);
 }
 
 const appModalTitleContracts = {

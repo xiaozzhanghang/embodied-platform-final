@@ -12,7 +12,7 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
-import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
+import { ActionFooter, FormSection, PageHeader, StateView } from '@/components/ui';
 
 import { Suspense } from 'react';
 
@@ -324,7 +324,7 @@ function TemplateForm() {
 
 export default function CreateTemplatePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<StateView type="loading" />}>
       <TemplateForm />
     </Suspense>
   );

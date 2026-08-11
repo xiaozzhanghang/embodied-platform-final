@@ -9,7 +9,7 @@ import {
   FileTextOutlined, SafetyCertificateOutlined, WarningOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { StatusTag } from '@/components/ui';
+import { StateView, StatusTag } from '@/components/ui';
 
 const { Title } = Typography;
 
@@ -39,6 +39,17 @@ const resolveEpisodeToolbarStatus = (episode, isLoading) => {
   return EPISODE_TOOLBAR_STATUS[episode.status] || { status: '未开始', text: '状态待确认' };
 };
 
+const readJsonResponse = async (response) => {
+  if (!response.ok) {
+    throw new Error(`请求失败（${response.status}）`);
+  }
+  const payload = await response.json();
+  if (payload?.error) {
+    throw new Error(payload.error);
+  }
+  return payload;
+};
+
 export default function CollectTaskDataPage() {
   const router = useRouter();
   const params = useParams();
@@ -53,6 +64,8 @@ export default function CollectTaskDataPage() {
   const [leftTrajectory, setLeftTrajectory] = useState([]);
   const [rightTrajectory, setRightTrajectory] = useState([]);
   const [loadingEpisodeId, setLoadingEpisodeId] = useState(null);
+  const [realDataError, setRealDataError] = useState(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [activeVideoHand, setActiveVideoHand] = useState('left');
 
   useEffect(() => {
@@ -60,24 +73,31 @@ export default function CollectTaskDataPage() {
       setRealReport(null);
       setLeftTrajectory([]);
       setRightTrajectory([]);
+      setRealDataError(null);
+      setLoadingEpisodeId(current => current === 'session_028' ? null : current);
       return undefined;
     }
 
     const episodeId = selectedEpisode.episodeId;
     let cancelled = false;
     setLoadingEpisodeId(episodeId);
+    setRealDataError(null);
 
     Promise.all([
-      fetch('/api/luming?type=report').then(res => res.json()),
-      fetch('/api/luming?type=trajectory&hand=left').then(res => res.json()),
-      fetch('/api/luming?type=trajectory&hand=right').then(res => res.json())
+      fetch('/api/luming?type=report').then(readJsonResponse),
+      fetch('/api/luming?type=trajectory&hand=left').then(readJsonResponse),
+      fetch('/api/luming?type=trajectory&hand=right').then(readJsonResponse)
     ]).then(([report, leftTraj, rightTraj]) => {
       if (cancelled) return;
       if (report && !report.error) setRealReport(report);
       if (Array.isArray(leftTraj)) setLeftTrajectory(leftTraj);
       if (Array.isArray(rightTraj)) setRightTrajectory(rightTraj);
     }).catch(err => {
-      if (!cancelled) console.error('Error fetching real luming data:', err);
+      if (cancelled) return;
+      setRealDataError({
+        episodeId,
+        message: err instanceof Error ? err.message : '真实数据加载失败，请稍后重试。',
+      });
     }).finally(() => {
       if (!cancelled) {
         setLoadingEpisodeId(current => current === episodeId ? null : current);
@@ -88,7 +108,7 @@ export default function CollectTaskDataPage() {
       cancelled = true;
       setLoadingEpisodeId(current => current === episodeId ? null : current);
     };
-  }, [selectedEpisode]);
+  }, [selectedEpisode, loadAttempt]);
 
 
   useEffect(() => {
@@ -331,6 +351,12 @@ export default function CollectTaskDataPage() {
   const taskName = isLumos ? 'Lumos-双手筷子与勺子整理-001' : (taskId === 'CT-20250301002' ? 'FRANKA-FR3-放置蓝色圆柱-002' : 'FRANKA-FR3-抓取红色方块-001');
   const isSelectedEpisodeLoading = loadingEpisodeId === selectedEpisode?.episodeId;
   const toolbarStatus = resolveEpisodeToolbarStatus(selectedEpisode, isSelectedEpisodeLoading);
+  const selectedEpisodeError = realDataError?.episodeId === selectedEpisode?.episodeId ? realDataError : null;
+  const retryRealData = () => {
+    if (selectedEpisode?.episodeId === 'session_028') {
+      setLoadAttempt(current => current + 1);
+    }
+  };
 
 
   return (
@@ -404,7 +430,20 @@ export default function CollectTaskDataPage() {
 
         {/* Right Column - Multi-modal Data View */}
         <Col span={17}>
-          {selectedEpisode ? (
+          {isSelectedEpisodeLoading ? (
+            <StateView
+              type="loading"
+              title="数据解析中"
+              description="正在加载 session_028 质检报告与轨迹数据。"
+            />
+          ) : selectedEpisodeError ? (
+            <StateView
+              type="error"
+              title="真实数据加载失败"
+              description={selectedEpisodeError.message}
+              onRetry={retryRealData}
+            />
+          ) : selectedEpisode ? (
             <Space direction="vertical" size={16} style={{ width: '100%' }}>
               {/* Episode Metadata Details */}
               <Card className="ui-table-card" variant="borderless" styles={{ body: { padding: 16 } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)', borderRadius: 8 }}>
@@ -861,9 +900,11 @@ Time: 2026-05-20T10:13:21.314410
               </Card>
             </Space>
           ) : (
-            <Card className="ui-table-card" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ textAlign: 'center', color: '#aaa' }}>请选择左侧的一个序列包来查看多模态传感器和相机数据</div>
-            </Card>
+            <StateView
+              type="empty"
+              title="请选择序列包"
+              description="选择左侧序列包后可查看多模态传感器和相机数据。"
+            />
           )}
         </Col>
       </Row>

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Row, Col, Card, Statistic, Table, Tag, Progress, Typography, Space, Timeline, Button } from 'antd';
+import { Row, Col, Card, Statistic, Table, Progress, Typography, Space, Timeline, Button } from 'antd';
 import {
     CloudUploadOutlined,
     DatabaseOutlined,
@@ -15,7 +15,7 @@ import {
     EyeOutlined,
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, StatusTag } from '@/components/ui';
 
 const { Text } = Typography;
 
@@ -26,18 +26,11 @@ const recentTasks = [
     { key: '4', name: 'FRANKA-FR3-搬运任务-004', status: '处理中', robot: 'FRANKA-FR3-3号', progress: 45, time: '2025-03-05 16:45:00' },
 ];
 
-const statusMap = {
-    '采集中': 'processing',
-    '已完成': 'success',
-    '待采集': 'default',
-    '处理中': 'warning',
-};
-
 const columns = [
     { title: '任务名称', dataIndex: 'name', key: 'name', width: 280 },
     {
         title: '状态', dataIndex: 'status', key: 'status', width: 100,
-        render: (s) => <Tag color={statusMap[s]}>{s}</Tag>,
+        render: (s) => <StatusTag status={s}>{s}</StatusTag>,
     },
     { title: '采集机器人', dataIndex: 'robot', key: 'robot', width: 160 },
     {
