@@ -17,6 +17,7 @@ import {
   ArrowDownOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -125,9 +126,14 @@ function HorizontalDistribution({ data }) {
 export default function DataReportsPage() {
   return (
     <MainLayout>
-      <div className="page-header" style={{ marginBottom: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Title level={4} style={{ margin: 0 }}>数据资产报表</Title>
+      <div className="ui-page">
+      <PageHeader
+        title="数据资产报表"
+        description="汇总数据规模、来源分布与质检趋势。"
+        breadcrumbs={[{ title: '数据资产' }, { title: '数据资产报表' }]}
+        extra={<Button icon={<CloudDownloadOutlined />}>导出报表</Button>}
+      />
+      <FilterPanel>
           <Space>
             <Select defaultValue="month" style={{ width: 120 }}>
               <Select.Option value="week">本周</Select.Option>
@@ -135,10 +141,8 @@ export default function DataReportsPage() {
               <Select.Option value="quarter">本季度</Select.Option>
               <Select.Option value="year">本年</Select.Option>
             </Select>
-            <Button icon={<CloudDownloadOutlined />}>导出报表</Button>
           </Space>
-        </div>
-      </div>
+      </FilterPanel>
 
       <div className="fade-in-up">
         {/* Summary Stats */}
@@ -200,11 +204,12 @@ export default function DataReportsPage() {
 
         {/* Quality Table */}
         <Card
-          title={<Space><FileSearchOutlined style={{ color: '#fa8c16' }} /><span>数据质检概览</span></Space>}
+          className="ui-table-card"
           variant="borderless"
           style={{ borderRadius: 8 }}
           styles={{ body: { padding: '16px 24px' } }}
         >
+          <TableToolbar title="数据质检概览" count={qualityData.length} />
           <Table
             columns={qualityColumns}
             dataSource={qualityData}
@@ -213,6 +218,7 @@ export default function DataReportsPage() {
             style={{ marginTop: 8 }}
           />
         </Card>
+      </div>
       </div>
     </MainLayout>
   );

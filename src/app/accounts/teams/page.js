@@ -5,6 +5,7 @@ import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Transf
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, TeamOutlined, DeleteOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title } = Typography;
 
@@ -43,7 +44,7 @@ export default function TeamManagementPage() {
         { title: '团队管理员', dataIndex: 'admin', width: 120 },
         { title: '团队人数', dataIndex: 'count', width: 100 },
         { title: '创建时间', dataIndex: 'createTime', width: 170 },
-        { title: '状态', dataIndex: 'status', width: 80, render: (s) => <Tag color={s === '启用' ? 'success' : 'default'}>{s}</Tag> },
+        { title: '状态', dataIndex: 'status', width: 80, render: (s) => <StatusTag status={s === '启用' ? '已完成' : '停用'}>{s}</StatusTag> },
         {
             title: '操作', key: 'action', width: 300, fixed: 'right',
             render: (_, record) => (
@@ -76,8 +77,9 @@ export default function TeamManagementPage() {
 
     return (
             <MainLayout>
-                <div className="page-header"><h3 className="page-header-title">团队管理</h3></div>
-                <Card className="search-form" style={{ marginBottom: 16 }}>
+                <div className="ui-page">
+                <PageHeader title="团队管理" description="管理团队及成员归属关系。" breadcrumbs={[{ title: '系统管理' }, { title: '团队管理' }]} />
+                <FilterPanel>
                     <QueryFilter
                         submitter={{
                             submitButtonProps: { icon: <SearchOutlined /> },
@@ -86,36 +88,33 @@ export default function TeamManagementPage() {
                     >
                         <ProFormText name="teamName" label="团队名称" placeholder="请输入团队名称" />
                     </QueryFilter>
-                </Card>
+                </FilterPanel>
 
-                <Card>
-                    <div className="table-toolbar">
-                        <span className="table-toolbar-title">团队列表</span>
-                        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建团队</Button>
-                    </div>
+                <Card className="ui-table-card">
+                    <TableToolbar title="团队列表" count={mockData.length} actions={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建团队</Button>} />
                     <Table columns={columns} dataSource={mockData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>
 
-                <Modal title="新建团队" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => { setCreateOpen(false); message.success('创建成功'); }} okText="确定" cancelText="取消">
+                <AppModal title="新建团队" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => { setCreateOpen(false); message.success('创建成功'); }} okText="确定" cancelText="取消">
                     <Form layout="vertical" style={{ marginTop: 16 }}>
                         <Form.Item label="团队名称" required><Input placeholder="请输入团队名称" /></Form.Item>
                     </Form>
-                </Modal>
+                </AppModal>
 
-                <Modal title="编辑团队" open={editOpen} onCancel={() => setEditOpen(false)} onOk={() => { setEditOpen(false); message.success('保存成功'); }} okText="确定" cancelText="取消">
+                <AppModal title="编辑团队" open={editOpen} onCancel={() => setEditOpen(false)} onOk={() => { setEditOpen(false); message.success('保存成功'); }} okText="确定" cancelText="取消">
                     <Form layout="vertical" style={{ marginTop: 16 }}>
                         <Form.Item label="团队名称" required><Input defaultValue="标注团队A" /></Form.Item>
                     </Form>
-                </Modal>
+                </AppModal>
 
-                <Modal title="成员列表" open={memberOpen} onCancel={() => setMemberOpen(false)} footer={null} width={700}>
+                <AppModal title="成员列表" open={memberOpen} onCancel={() => setMemberOpen(false)} footer={null}>
                     <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
                         <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddMemberOpen(true)}>添加成员</Button>
                     </div>
                     <Table columns={memberColumns} dataSource={memberData} size="small" pagination={false} />
-                </Modal>
+                </AppModal>
 
-                <Modal title="添加成员" open={addMemberOpen} onCancel={() => setAddMemberOpen(false)} onOk={() => { setAddMemberOpen(false); message.success('添加成功'); }} okText="确定" cancelText="取消" width={600}>
+                <AppModal title="添加成员" open={addMemberOpen} onCancel={() => setAddMemberOpen(false)} onOk={() => { setAddMemberOpen(false); message.success('添加成功'); }} okText="确定" cancelText="取消">
                     <Transfer
                         dataSource={transferData}
                         targetKeys={targetKeys}
@@ -124,7 +123,8 @@ export default function TeamManagementPage() {
                         titles={['可选成员', '已选成员']}
                         listStyle={{ width: 240, height: 300 }}
                     />
-                </Modal>
+                </AppModal>
+                </div>
             </MainLayout>
     );
 }

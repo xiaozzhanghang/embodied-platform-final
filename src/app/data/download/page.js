@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Progress, Tabs, Tooltip, App, Popconfirm, Row, Col } from 'antd';
 import { DownloadOutlined, SearchOutlined, ReloadOutlined, DeleteOutlined, FileZipOutlined, CopyOutlined, CloudDownloadOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -62,12 +63,14 @@ export default function DownloadCenterPage() {
 
   return (
     <MainLayout>
-      <div className="page-header" style={{ marginBottom: 24 }}>
-        <Title level={3} style={{ margin: 0 }}>下载中心</Title>
-        <Text type="secondary">管理已发布的训练集、原始数据导出记录及其下载状态。</Text>
-      </div>
+      <div className="ui-page">
+      <PageHeader
+        title="下载中心"
+        description="管理已发布的训练集、原始数据导出记录及其下载状态。"
+        breadcrumbs={[{ title: '数据资产' }, { title: '下载中心' }]}
+      />
 
-      <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
+      <FilterPanel>
         <Row gutter={16}>
           <Col span={12}>
             <Space style={{ width: '100%' }}>
@@ -84,9 +87,10 @@ export default function DownloadCenterPage() {
             </Space>
           </Col>
         </Row>
-      </Card>
+      </FilterPanel>
 
-      <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
+      <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
+        <TableToolbar title="下载记录" count={mockData.length} />
         <Tabs 
           activeKey={activeTab} 
           onChange={setActiveTab} 
@@ -117,6 +121,7 @@ export default function DownloadCenterPage() {
             </Text>
           </div>
         </Space>
+      </div>
       </div>
     </MainLayout>
   );

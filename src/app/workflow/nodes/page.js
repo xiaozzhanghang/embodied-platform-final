@@ -5,6 +5,7 @@ import { Table, Button, Tag, Space, Input, Form, Card, Typography, Tabs, Modal, 
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, DeleteOutlined, SettingOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -50,7 +51,7 @@ function NodeTable({ data, isCustom }) {
         { title: '节点名称', dataIndex: 'name', key: 'name', width: 180 },
         { title: '节点ID', dataIndex: 'nodeId', key: 'nodeId', width: 100 },
         { title: '节点描述', dataIndex: 'desc', key: 'desc' },
-        { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: (s) => <Tag color={s ? 'success' : 'default'}>{s ? '启用' : '停用'}</Tag> },
+        { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: (s) => <StatusTag status={s ? '已完成' : '停用'}>{s ? '启用' : '停用'}</StatusTag> },
         { title: '创建人', dataIndex: 'creator', key: 'creator', width: 80 },
         { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 120 },
         {
@@ -73,7 +74,7 @@ function NodeTable({ data, isCustom }) {
 
     return (
         <>
-            <div style={{ padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <FilterPanel>
                 <QueryFilter
                     submitter={{
                         submitButtonProps: { icon: <SearchOutlined /> },
@@ -84,11 +85,11 @@ function NodeTable({ data, isCustom }) {
                     <ProFormText name="name" label="节点名称" placeholder="请输入节点名称" />
                     <ProFormText name="creator" label="创建人" placeholder="请输入创建人" />
                 </QueryFilter>
-                {isCustom && <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增工具</Button>}
-            </div>
+            </FilterPanel>
+            <TableToolbar title="节点列表" count={data.length} actions={isCustom ? <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增工具</Button> : null} />
             <Table columns={columns} dataSource={data} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
 
-            <Modal title="新增工具节点" open={addOpen} onCancel={() => setAddOpen(false)} onOk={() => { setAddOpen(false); message.success('新增成功'); }} width={680} okText="保存" cancelText="取消">
+            <AppModal title="新增工具节点" open={addOpen} onCancel={() => setAddOpen(false)} onOk={() => { setAddOpen(false); message.success('新增成功'); }} okText="保存" cancelText="取消">
                 <Form layout="vertical" style={{ marginTop: 16 }}>
                     <Card size="small" title="基础参数配置" style={{ marginBottom: 16 }}>
                         <Row gutter={16}>
@@ -112,9 +113,9 @@ function NodeTable({ data, isCustom }) {
                         <Button type="dashed" block icon={<PlusOutlined />}>添加动态参数</Button>
                     </Card>
                 </Form>
-            </Modal>
+            </AppModal>
 
-            <Modal title="节点详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={640}>
+            <AppModal title="节点详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} widthSize="small">
                 {selectedNode && (
                     <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
                         <Descriptions.Item label="节点名称">{selectedNode.name}</Descriptions.Item>
@@ -128,7 +129,7 @@ function NodeTable({ data, isCustom }) {
                         <Descriptions.Item label="创建时间" span={2}>{selectedNode.createTime}</Descriptions.Item>
                     </Descriptions>
                 )}
-            </Modal>
+            </AppModal>
         </>
     );
 }
@@ -137,8 +138,9 @@ export default function NodeManagementPage() {
   const { message } = App.useApp();
     return (
             <MainLayout>
-                <div className="page-header"><h3 className="page-header-title">节点管理</h3></div>
-                <Card>
+                <div className="ui-page">
+                <PageHeader title="节点管理" description="管理工作流输入、输出及工具节点。" breadcrumbs={[{ title: '工作流' }, { title: '节点管理' }]} />
+                <Card className="ui-table-card">
                     <Tabs
                         defaultActiveKey="io"
                         items={[
@@ -167,6 +169,7 @@ export default function NodeManagementPage() {
                         ]}
                     />
                 </Card>
+                </div>
             </MainLayout>
     );
 }

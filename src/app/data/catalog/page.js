@@ -24,6 +24,7 @@ import {
   InfoCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Text, Title } = Typography;
 
@@ -471,25 +472,13 @@ export default function DataCatalogPage() {
 
   return (
     <MainLayout>
-      <div className="page-header" style={{ marginBottom: '16px' }}>
-        <Breadcrumb
-          items={[
-            { title: '首页' },
-            { title: '数据资产' },
-            { title: viewMode === 'list' ? '数据资产目录' : '数据详情' }
-          ]}
-        />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px' }}>
-          <Title level={4} style={{ margin: 0 }}>
-            {viewMode === 'list' ? '数据资产目录' : (
-              <span>
-                <Button type="text" icon={<ArrowLeftOutlined />} onClick={handleBack} style={{ marginRight: '8px' }} />
-                数据详情
-              </span>
-            )}
-          </Title>
-        </div>
-      </div>
+      <div className="ui-page">
+      <PageHeader
+        title={viewMode === 'list' ? '数据资产目录' : '数据详情'}
+        description={viewMode === 'list' ? '按场景、来源与任务查找已完成的数据资产。' : '查看数据概况、文件清单与同步视频。'}
+        breadcrumbs={[{ title: '数据资产' }, { title: viewMode === 'list' ? '数据资产目录' : '数据详情' }]}
+        back={viewMode === 'detail' ? handleBack : undefined}
+      />
 
       {viewMode === 'list' ? (
         <div className="fade-in-up">
@@ -523,11 +512,7 @@ export default function DataCatalogPage() {
             {/* Right Cards List */}
             <Col span={18} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* Filters */}
-              <Card
-                variant="borderless"
-                style={{ borderRadius: 8 }}
-                styles={{ body: { padding: '16px 24px' } }}
-              >
+              <FilterPanel>
                 <Form layout="vertical" style={{ display: 'flex', gap: '16px', alignItems: 'flex-end' }}>
                   <Form.Item label="任务名称ID" style={{ margin: 0, flex: 1 }}>
                     <Input 
@@ -545,20 +530,21 @@ export default function DataCatalogPage() {
                   </Form.Item>
                   <Form.Item style={{ margin: 0 }}>
                     <Space>
-                      <Button type="primary" style={{ borderRadius: '6px', background: '#1890ff' }}>筛选</Button>
-                      <Button onClick={() => { setSearchText(''); setSelectedTreeKey('luming-data'); }} style={{ borderRadius: '6px' }}>重置</Button>
+                      <Button type="primary">筛选</Button>
+                      <Button onClick={() => { setSearchText(''); setSelectedTreeKey('luming-data'); }}>重置</Button>
                     </Space>
                   </Form.Item>
                 </Form>
-              </Card>
+              </FilterPanel>
 
               {/* Cards Grid */}
               <Card
+                className="ui-table-card"
                 variant="borderless"
-                title="数据资产列表"
                 style={{ borderRadius: 8, minHeight: 'calc(100vh - 300px)' }}
                 styles={{ body: { padding: '20px' } }}
               >
+                <TableToolbar title="数据资产列表" count={filteredCards.length} />
                 {filteredCards.length > 0 ? (
                   <>
                   <Row gutter={[16, 20]}>
@@ -607,13 +593,13 @@ export default function DataCatalogPage() {
                               type="primary" 
                               icon={<EyeOutlined />} 
                               onClick={() => handleCardClick(card)}
-                              style={{ flex: 1, borderRadius: '4px', background: '#1890ff' }}
+                              style={{ flex: 1 }}
                             >
                               查看详情
                             </Button>
                             <Button 
                               icon={<DownloadOutlined />} 
-                              style={{ flex: 1, borderRadius: '4px' }}
+                              style={{ flex: 1 }}
                               onClick={() => window.open(card.isLuming ? '/videos/session_028_left.mp4' : '#')}
                             >
                               下载
@@ -736,7 +722,6 @@ export default function DataCatalogPage() {
                       type="primary" 
                       icon={<PlayCircleOutlined />} 
                       onClick={playAll}
-                      style={{ background: '#52c41a', borderColor: '#52c41a', borderRadius: '4px' }}
                     >
                       播放全部
                     </Button>
@@ -745,14 +730,12 @@ export default function DataCatalogPage() {
                       danger 
                       icon={<PauseCircleOutlined />} 
                       onClick={pauseAll}
-                      style={{ background: '#fa8c16', borderColor: '#fa8c16', borderRadius: '4px' }}
                     >
                       暂停全部
                     </Button>
                     <Button 
                       icon={<RedoOutlined />} 
                       onClick={resetAll}
-                      style={{ color: '#722ed1', borderColor: '#722ed1', borderRadius: '4px' }}
                     >
                       重置全部
                     </Button>
@@ -817,6 +800,7 @@ export default function DataCatalogPage() {
           </Row>
         </div>
       )}
+      </div>
     </MainLayout>
   );
 }

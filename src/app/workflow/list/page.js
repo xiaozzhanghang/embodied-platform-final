@@ -5,6 +5,7 @@ import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Modal
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, EyeOutlined, DeleteOutlined, PlayCircleOutlined, SaveOutlined, BranchesOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -44,8 +45,9 @@ export default function WorkflowListPage() {
 
     return (
             <MainLayout>
-                <div className="page-header"><h3 className="page-header-title">工作流列表</h3></div>
-                <Card className="search-form" style={{ marginBottom: 16 }}>
+                <div className="ui-page">
+                <PageHeader title="工作流列表" description="配置和运行数据处理工作流。" breadcrumbs={[{ title: '工作流' }, { title: '工作流列表' }]} />
+                <FilterPanel>
                     <QueryFilter
                         submitter={{
                             submitButtonProps: { icon: <SearchOutlined /> },
@@ -57,28 +59,27 @@ export default function WorkflowListPage() {
                         <ProFormText name="id" label="工作流ID" placeholder="请输入ID" />
                         <ProFormText name="creator" label="创建人" placeholder="请输入创建人" />
                     </QueryFilter>
-                </Card>
+                </FilterPanel>
 
-                <Card>
-                    <div className="table-toolbar">
-                        <span className="table-toolbar-title">工作流列表</span>
+                <Card className="ui-table-card">
+                    <TableToolbar title="工作流列表" count={mockData.length} actions={
                         <Space>
                             <Button icon={<BranchesOutlined />} onClick={() => message.info('工作流模板')}>工作流模板</Button>
                             <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建工作流</Button>
                         </Space>
-                    </div>
+                    } />
                     <Table columns={columns} dataSource={mockData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>
 
-                <Modal title="新建工作流" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => { setCreateOpen(false); setEditorOpen(true); message.success('工作流已创建'); }} okText="确认" cancelText="取消">
+                <AppModal title="新建工作流" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => { setCreateOpen(false); setEditorOpen(true); message.success('工作流已创建'); }} okText="确认" cancelText="取消">
                     <Form layout="vertical" style={{ marginTop: 16 }}>
                         <Form.Item label="工作流名称" required><Input placeholder="请输入工作流名称" /></Form.Item>
                         <Form.Item label="应用场景" required><Select placeholder="请选择应用场景" options={[{ value: 'rosbag解析' }, { value: 'HDF5转换' }, { value: '视频处理' }, { value: '点云处理' }, { value: '图像处理' }]} /></Form.Item>
                         <Form.Item label="描述"><Input.TextArea rows={3} placeholder="请输入描述" /></Form.Item>
                     </Form>
-                </Modal>
+                </AppModal>
 
-                <Modal title="工作流编辑器" open={editorOpen} onCancel={() => setEditorOpen(false)} width={900} footer={
+                <AppModal title="工作流编辑器" open={editorOpen} onCancel={() => setEditorOpen(false)} widthSize="large" footer={
                     <Space>
                         <Button onClick={() => setEditorOpen(false)}>取消</Button>
                         <Button onClick={() => message.success('已保存为模板')}>另存为模板</Button>
@@ -116,9 +117,9 @@ export default function WorkflowListPage() {
                             </Card>
                         </Col>
                     </Row>
-                </Modal>
+                </AppModal>
 
-                <Modal title="运行工作流" open={runOpen} onCancel={() => setRunOpen(false)} onOk={() => { setRunOpen(false); message.success('工作流已开始运行'); }} okText="运行" cancelText="取消">
+                <AppModal title="运行工作流" open={runOpen} onCancel={() => setRunOpen(false)} onOk={() => { setRunOpen(false); message.success('工作流已开始运行'); }} okText="运行" cancelText="取消">
                     <Form layout="vertical" style={{ marginTop: 16 }}>
                         <Form.Item label="任务名称" required><Input placeholder="请输入任务名称" /></Form.Item>
                         <Form.Item label="描述"><Input.TextArea rows={2} placeholder="请输入描述" /></Form.Item>
@@ -130,7 +131,8 @@ export default function WorkflowListPage() {
                             ]} />
                         </Form.Item>
                     </Form>
-                </Modal>
+                </AppModal>
+                </div>
             </MainLayout>
     );
 }

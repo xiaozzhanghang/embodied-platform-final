@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Modal, Tree, Row, Col, Descriptions, Divider, Popconfirm, App, Statistic, Progress, Drawer, Badge, Steps, Checkbox, Tooltip } from 'antd';
 import { PlusOutlined, SearchOutlined, FolderOutlined, FolderOpenOutlined, FileOutlined, SettingOutlined, DeleteOutlined, EyeOutlined, PlayCircleOutlined, RocketOutlined, HistoryOutlined, DownloadOutlined, CloudUploadOutlined, CheckCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -62,8 +63,8 @@ export default function DatasetPage() {
         { title: '序号', dataIndex: 'id', key: 'id', width: 60 },
         { title: '子集名称', dataIndex: 'name', key: 'name', width: 140 },
         { title: '子集ID', dataIndex: 'subsetId', key: 'subsetId', width: 100 },
-        { title: '送标状态', dataIndex: 'sendStatus', key: 'sendStatus', width: 100, render: (s) => <Tag color={s === '已送标' ? 'blue' : 'default'}>{s}</Tag> },
-        { title: '标注状态', dataIndex: 'annotationStatus', key: 'annotationStatus', width: 100, render: (s) => <Tag color={s === '已完成' ? 'success' : s === '标注中' ? 'processing' : 'default'}>{s}</Tag> },
+        { title: '送标状态', dataIndex: 'sendStatus', key: 'sendStatus', width: 100, render: (s) => <StatusTag status={s === '已送标' ? '进行中' : '未开始'}>{s}</StatusTag> },
+        { title: '标注状态', dataIndex: 'annotationStatus', key: 'annotationStatus', width: 100, render: (s) => <StatusTag status={s === '已完成' ? '已完成' : s === '标注中' ? '标注中' : '未开始'}>{s}</StatusTag> },
         { title: 'Episode数', dataIndex: 'episodes', width: 100 },
         { title: '数据大小', dataIndex: 'size', width: 100 },
         { title: '更新时间', dataIndex: 'updateTime', key: 'updateTime', width: 160 },
@@ -86,7 +87,14 @@ export default function DatasetPage() {
 
     return (
         <MainLayout>
-            <div className="page-header"><h3 className="page-header-title">数据集管理</h3></div>
+            <div className="ui-page">
+            <PageHeader title="数据集管理" description="组织数据子集、版本与发布记录。" breadcrumbs={[{ title: '数据资产' }, { title: '数据集管理' }]} />
+            <FilterPanel>
+                <Space>
+                    <Text type="secondary">所属项目</Text>
+                    <Select placeholder="筛选项目" allowClear style={{ width: 280 }} defaultValue="ds-001" options={[{ value: 'ds-001', label: '具身抓取项目' }]} />
+                </Space>
+            </FilterPanel>
             <Row gutter={16}>
                 <Col span={6}>
                     <Card
@@ -95,9 +103,6 @@ export default function DatasetPage() {
                         extra={<Button type="text" size="small" icon={<PlusOutlined />} onClick={() => setCreateDatasetOpen(true)} />}
                         style={{ height: 'calc(100vh - 128px)', overflowY: 'auto' }}
                     >
-                        <div style={{ marginBottom: 12 }}>
-                            <Select placeholder="筛选项目" allowClear style={{ width: '100%' }} defaultValue="ds-001" options={[{ value: 'ds-001', label: '具身抓取项目' }]} size="small" />
-                        </div>
                         <Tree
                             showIcon
                             defaultExpandAll
@@ -130,11 +135,12 @@ export default function DatasetPage() {
                     </Card>
 
                     <Card
+                        className="ui-table-card"
                         title={
                             <Space>
                                 <FolderOpenOutlined style={{ color: '#1677ff' }} />
                                 <span>具身抓取数据集</span>
-                                <Badge status="success" text="已发布 v1.2.0" />
+                                <StatusTag status="已发布">已发布 v1.2.0</StatusTag>
                             </Space>
                         }
                         extra={
@@ -145,21 +151,17 @@ export default function DatasetPage() {
                             </Space>
                         }
                     >
-                        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Text type="secondary">包含子集列表 ({subsetData.length})</Text>
-                            <Button size="small" icon={<PlusOutlined />} onClick={() => setCreateSubsetOpen(true)}>添加子集</Button>
-                        </div>
+                        <TableToolbar title="包含子集列表" count={subsetData.length} actions={<Button icon={<PlusOutlined />} onClick={() => setCreateSubsetOpen(true)}>添加子集</Button>} />
                         <Table columns={subsetColumns} dataSource={subsetData} pagination={{ pageSize: 5 }} scroll={{ x: 1000 }} />
                     </Card>
                 </Col>
             </Row>
 
             {/* Release Dataset Wizard */}
-            <Modal
+            <AppModal
                 title="发布数据集新版本"
                 open={releaseOpen}
                 onCancel={() => { setReleaseOpen(false); setReleaseStep(0); }}
-                width={700}
                 footer={
                     <Space>
                         <Button onClick={() => setReleaseOpen(false)}>取消</Button>
@@ -232,7 +234,7 @@ export default function DatasetPage() {
                         </div>
                     </div>
                 )}
-            </Modal>
+            </AppModal>
 
             {/* Version History Drawer */}
             <Drawer
@@ -246,7 +248,7 @@ export default function DatasetPage() {
                     dataSource={historyData}
                     columns={[
                         { title: '版本', dataIndex: 'version', width: 80, render: (v) => <Text strong>{v}</Text> },
-                        { title: '状态', dataIndex: 'status', width: 80, render: (s) => <Tag color={s === '已发布' ? 'success' : 'default'}>{s}</Tag> },
+                        { title: '状态', dataIndex: 'status', width: 80, render: (s) => <StatusTag status={s === '已发布' ? '已发布' : '未开始'}>{s}</StatusTag> },
                         { title: '格式', dataIndex: 'format', width: 120 },
                         { title: '发布时间', dataIndex: 'time', width: 160 },
                         {
@@ -262,24 +264,24 @@ export default function DatasetPage() {
                 />
             </Drawer>
 
-            <Modal title="新建数据集" open={createDatasetOpen} onCancel={() => setCreateDatasetOpen(false)} onOk={() => { setCreateDatasetOpen(false); message.success('创建成功'); }} okText="确定" cancelText="取消">
+            <AppModal title="新建数据集" open={createDatasetOpen} onCancel={() => setCreateDatasetOpen(false)} onOk={() => { setCreateDatasetOpen(false); message.success('创建成功'); }} okText="确定" cancelText="取消">
                 <Form layout="vertical" style={{ marginTop: 16 }}>
                     <Form.Item label="数据集名称" required><Input placeholder="请输入数据集名称" /></Form.Item>
                     <Form.Item label="英文名称" required><Input placeholder="请输入英文名称" /></Form.Item>
                     <Form.Item label="简介"><Input.TextArea rows={3} placeholder="请输入简介" /></Form.Item>
                 </Form>
-            </Modal>
+            </AppModal>
 
-            <Modal title="新建子集" open={createSubsetOpen} onCancel={() => setCreateSubsetOpen(false)} onOk={() => { setCreateSubsetOpen(false); message.success('创建成功'); }} okText="确定" cancelText="取消">
+            <AppModal title="新建子集" open={createSubsetOpen} onCancel={() => setCreateSubsetOpen(false)} onOk={() => { setCreateSubsetOpen(false); message.success('创建成功'); }} okText="确定" cancelText="取消">
                 <Form layout="vertical" style={{ marginTop: 16 }}>
                     <Form.Item label="子集中文名称" required><Input placeholder="请输入中文名称" /></Form.Item>
                     <Form.Item label="子集英文名称" required><Input placeholder="请输入英文名称" /></Form.Item>
                     <Form.Item label="描述"><Input.TextArea rows={3} placeholder="请输入描述" /></Form.Item>
                 </Form>
-            </Modal>
+            </AppModal>
 
             {/* Reuse detailed modal */}
-            <Modal title="数据子集详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={800}>
+            <AppModal title="数据子集详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null}>
                 <Descriptions bordered size="small" column={3} style={{ marginBottom: 16 }}>
                     <Descriptions.Item label="子集ID">SS-001</Descriptions.Item>
                     <Descriptions.Item label="子集名称">抓取子集-01</Descriptions.Item>
@@ -303,7 +305,8 @@ export default function DatasetPage() {
                     { title: '操作', key: 'op', fixed: 'right', render: (_, record) => <Button type="link" size="small" onClick={() => message.info(`数据文件: ${record.name}, ID: ${record.dataId}, 大小: ${record.size}`)}>查看详情</Button> }
                   ]}
                 />
-            </Modal>
+            </AppModal>
+            </div>
         </MainLayout>
     );
 }

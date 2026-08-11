@@ -547,5 +547,94 @@ assert.doesNotMatch(
   '设备状态工作台不应使用 Badge 承载文本状态',
 );
 
+const dataAdministrationPages = [
+  'src/app/data/catalog/page.js',
+  'src/app/data/datasets/page.js',
+  'src/app/data/download/page.js',
+  'src/app/data/raw/page.js',
+  'src/app/data/reports/page.js',
+  'src/app/accounts/list/page.js',
+  'src/app/accounts/teams/page.js',
+  'src/app/accounts/vendors/page.js',
+  'src/app/projects/page.js',
+  'src/app/workflow/list/page.js',
+  'src/app/workflow/nodes/page.js',
+  'src/app/workflow/tasks/page.js',
+];
+
+for (const pagePath of dataAdministrationPages) {
+  const source = await readFile(pagePath, 'utf8');
+  assert.match(
+    source,
+    /import\s*{[^}]*\bPageHeader\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
+    `${pagePath} 未从公共 UI 入口导入 PageHeader`,
+  );
+  assert.match(source, /<PageHeader(?:\s|\/|>)/, `${pagePath} 未使用统一页头`);
+  assert.match(
+    source,
+    /className=["'][^"']*\bui-page\b[^"']*["']/,
+    `${pagePath} 缺少 ui-page 语义类`,
+  );
+  assert.equal(source.includes('destroyOnClose'), false, `${pagePath} 不应继续使用 Ant Design 6 已弃用的 destroyOnClose`);
+}
+
+const dataAdministrationListPages = [
+  'src/app/data/catalog/page.js',
+  'src/app/data/datasets/page.js',
+  'src/app/data/download/page.js',
+  'src/app/data/raw/page.js',
+  'src/app/data/reports/page.js',
+  'src/app/accounts/list/page.js',
+  'src/app/accounts/teams/page.js',
+  'src/app/accounts/vendors/page.js',
+  'src/app/projects/page.js',
+  'src/app/workflow/list/page.js',
+  'src/app/workflow/nodes/page.js',
+  'src/app/workflow/tasks/page.js',
+];
+
+for (const pagePath of dataAdministrationListPages) {
+  const source = await readFile(pagePath, 'utf8');
+  for (const component of ['FilterPanel', 'TableToolbar']) {
+    assert.match(
+      source,
+      new RegExp(`<${component}(?:\\s|\\/|>)`),
+      `${pagePath} 列表结构未使用 ${component}`,
+    );
+  }
+  assert.match(
+    source,
+    /className=["'][^"']*\bui-table-card\b[^"']*["']/,
+    `${pagePath} 列表内容缺少 ui-table-card 语义类`,
+  );
+}
+
+for (const pagePath of [
+  'src/app/data/datasets/page.js',
+  'src/app/data/raw/page.js',
+  'src/app/accounts/list/page.js',
+  'src/app/accounts/teams/page.js',
+  'src/app/accounts/vendors/page.js',
+  'src/app/projects/page.js',
+  'src/app/workflow/list/page.js',
+  'src/app/workflow/nodes/page.js',
+]) {
+  const source = await readFile(pagePath, 'utf8');
+  assert.match(
+    source,
+    /import\s*{[^}]*\bAppModal\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
+    `${pagePath} 未从公共 UI 入口导入 AppModal`,
+  );
+  assert.match(source, /<AppModal(?:\s|\/|>)/, `${pagePath} 新建或编辑弹窗未使用 AppModal`);
+}
+
+const accountListSource = await readFile('src/app/accounts/list/page.js', 'utf8');
+assert.match(
+  accountListSource,
+  /<Popconfirm[\s\S]*?title="确认重置密码？"[\s\S]*?onConfirm=/,
+  '重置密码等确认类交互应保留轻量二次确认',
+);
+assert.doesNotMatch(accountListSource, /resetOpen|setResetOpen/, '重置密码不应继续占用通用表单弹窗状态');
+
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');

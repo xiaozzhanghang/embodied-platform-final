@@ -5,6 +5,7 @@ import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Popcon
 import { PlusOutlined, SearchOutlined, ReloadOutlined, SettingOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Title } = Typography;
 
@@ -46,8 +47,9 @@ export default function ProjectManagementPage() {
 
     return (
             <MainLayout>
-                <div className="page-header"><h3 className="page-header-title">项目管理</h3></div>
-                <Card className="search-form" style={{ marginBottom: 16 }}>
+                <div className="ui-page">
+                <PageHeader title="项目管理" description="管理数据采集与标注的项目空间。" breadcrumbs={[{ title: '系统管理' }, { title: '项目管理' }]} />
+                <FilterPanel>
                     <QueryFilter
                         submitter={{
                             submitButtonProps: { icon: <SearchOutlined /> },
@@ -56,32 +58,29 @@ export default function ProjectManagementPage() {
                     >
                         <ProFormText name="projectName" label="项目名称" placeholder="请输入项目名称" />
                     </QueryFilter>
-                </Card>
+                </FilterPanel>
 
-                <Card>
-                    <div className="table-toolbar">
-                        <span className="table-toolbar-title">项目列表</span>
-                        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建项目</Button>
-                    </div>
+                <Card className="ui-table-card">
+                    <TableToolbar title="项目列表" count={mockData.length} actions={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>新建项目</Button>} />
                     <Table columns={columns} dataSource={mockData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>
 
-                <Modal title="新建项目" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => { setCreateOpen(false); message.success('创建成功'); }} okText="确定" cancelText="取消">
+                <AppModal title="新建项目" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => { setCreateOpen(false); message.success('创建成功'); }} okText="确定" cancelText="取消">
                     <Form layout="vertical" style={{ marginTop: 16 }}>
                         <Form.Item label="项目中文名称" required><Input placeholder="请输入项目中文名称" /></Form.Item>
                         <Form.Item label="英文名称" required><Input placeholder="请输入英文名称" /></Form.Item>
                         <Form.Item label="备注"><Input.TextArea rows={3} placeholder="请输入备注" /></Form.Item>
                     </Form>
-                </Modal>
+                </AppModal>
 
-                <Modal title="项目配置" open={editOpen} onCancel={() => setEditOpen(false)} onOk={() => { setEditOpen(false); message.success('配置已保存'); }} okText="确定" cancelText="取消">
+                <AppModal title="项目配置" open={editOpen} onCancel={() => setEditOpen(false)} onOk={() => { setEditOpen(false); message.success('配置已保存'); }} okText="确定" cancelText="取消">
                     <Form layout="vertical" style={{ marginTop: 16 }}>
                         <Form.Item label="项目中文名称" required><Input defaultValue="具身抓取项目A" /></Form.Item>
                         <Form.Item label="描述"><Input.TextArea rows={3} defaultValue="桌面场景抓取数据采集项目" /></Form.Item>
                     </Form>
-                </Modal>
+                </AppModal>
 
-                <Modal title="项目详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={640}>
+                <AppModal title="项目详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} widthSize="small">
                     {selectedProject && (
                         <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
                             <Descriptions.Item label="项目ID">{selectedProject.projectId}</Descriptions.Item>
@@ -92,7 +91,8 @@ export default function ProjectManagementPage() {
                             <Descriptions.Item label="创建时间" span={2}>{selectedProject.createTime}</Descriptions.Item>
                         </Descriptions>
                     )}
-                </Modal>
+                </AppModal>
+                </div>
             </MainLayout>
     );
 }

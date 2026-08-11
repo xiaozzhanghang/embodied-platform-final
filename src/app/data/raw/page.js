@@ -6,6 +6,7 @@ import { PlusOutlined, SearchOutlined, ReloadOutlined, UploadOutlined, Thunderbo
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { AppModal, FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 
 const { Title } = Typography;
 
@@ -57,11 +58,9 @@ export default function RawDataPage() {
 
     return (
             <MainLayout>
-                <div className="page-header"><h3 className="page-header-title">原始数据</h3></div>
-                <Card 
-                    style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-                    styles={{ body: { padding: '24px 24px 16px' } }}
-                >
+                <div className="ui-page">
+                <PageHeader title="原始数据" description="管理待解析的原始数据包及其归属信息。" breadcrumbs={[{ title: '数据资产' }, { title: '原始数据' }]} />
+                <FilterPanel>
                     <QueryFilter
                         submitter={{
                             submitButtonProps: { icon: <SearchOutlined /> },
@@ -72,17 +71,14 @@ export default function RawDataPage() {
                         <ProFormText name="name" label="数据名称" placeholder="请输入" />
                         <ProFormDateRangePicker name="dateRange" label="创建时间" />
                     </QueryFilter>
-                </Card>
+                </FilterPanel>
 
-                <Card>
-                    <div className="table-toolbar">
-                        <span className="table-toolbar-title">原始数据列表</span>
-                        <Button type="primary" icon={<UploadOutlined />} onClick={() => setUploadOpen(true)}>上传数据</Button>
-                    </div>
+                <Card className="ui-table-card">
+                    <TableToolbar title="原始数据列表" count={mockData.length} actions={<Button type="primary" icon={<UploadOutlined />} onClick={() => setUploadOpen(true)}>上传数据</Button>} />
                     <Table columns={columns} dataSource={mockData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>
 
-                <Modal title="上传数据" open={uploadOpen} onCancel={() => setUploadOpen(false)} onOk={() => { setUploadOpen(false); message.success('上传成功'); }} okText="确定" cancelText="取消" width={560}>
+                <AppModal title="上传数据" open={uploadOpen} onCancel={() => setUploadOpen(false)} onOk={() => { setUploadOpen(false); message.success('上传成功'); }} okText="确定" cancelText="取消" widthSize="small">
                     <Form layout="vertical" style={{ marginTop: 16 }}>
                         <Form.Item label="所属项目" required><Select placeholder="请选择项目" options={[{ value: '具身抓取项目A' }, { value: '具身搬运项目B' }]} /></Form.Item>
                         <Form.Item label="数据名称" required><Input placeholder="请输入数据名称" /></Form.Item>
@@ -94,9 +90,9 @@ export default function RawDataPage() {
                             </div>
                         </Form.Item>
                     </Form>
-                </Modal>
+                </AppModal>
 
-                <Modal title="数据解析" open={parseOpen} onCancel={() => setParseOpen(false)} onOk={() => { setParseOpen(false); message.success('解析任务已创建'); }} okText="开始解析" cancelText="取消" width={600}>
+                <AppModal title="数据解析" open={parseOpen} onCancel={() => setParseOpen(false)} onOk={() => { setParseOpen(false); message.success('解析任务已创建'); }} okText="开始解析" cancelText="取消" widthSize="small">
                     {selectedData && (
                         <Form layout="vertical" style={{ marginTop: 16 }}>
                             <Descriptions bordered size="small" column={2} style={{ marginBottom: 16 }}>
@@ -113,9 +109,9 @@ export default function RawDataPage() {
                             </Form.Item>
                         </Form>
                     )}
-                </Modal>
+                </AppModal>
 
-                <Modal title="原始数据详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} width={600}>
+                <AppModal title="原始数据详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={null} widthSize="small">
                     {selectedRaw && (
                         <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
                             <Descriptions.Item label="数据名称">{selectedRaw.name}</Descriptions.Item>
@@ -128,7 +124,8 @@ export default function RawDataPage() {
                             <Descriptions.Item label="创建时间">{selectedRaw.createTime}</Descriptions.Item>
                         </Descriptions>
                     )}
-                </Modal>
+                </AppModal>
+                </div>
             </MainLayout>
     );
 }

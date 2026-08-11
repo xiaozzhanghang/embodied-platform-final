@@ -5,6 +5,7 @@ import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Popcon
 import { PlusOutlined, SearchOutlined, ReloadOutlined, KeyOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title } = Typography;
 
@@ -24,7 +25,7 @@ export default function VendorPage() {
         { title: '服务商人数', dataIndex: 'count', width: 100 },
         { title: '服务商管理员', dataIndex: 'admin', width: 160 },
         { title: '创建时间', dataIndex: 'createTime', width: 170 },
-        { title: '服务商状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '启用' ? 'success' : 'default'}>{s}</Tag> },
+        { title: '服务商状态', dataIndex: 'status', width: 100, render: (s) => <StatusTag status={s === '启用' ? '已完成' : '停用'}>{s}</StatusTag> },
         {
             title: '操作', key: 'action', width: 250, fixed: 'right',
             render: (_, record) => (
@@ -39,8 +40,9 @@ export default function VendorPage() {
 
     return (
             <MainLayout>
-                <div className="page-header"><h3 className="page-header-title">服务商</h3></div>
-                <Card className="search-form" style={{ marginBottom: 16 }}>
+                <div className="ui-page">
+                <PageHeader title="服务商" description="管理外部服务商账号与访问状态。" breadcrumbs={[{ title: '系统管理' }, { title: '服务商' }]} />
+                <FilterPanel>
                     <QueryFilter
                         submitter={{
                             submitButtonProps: { icon: <SearchOutlined /> },
@@ -49,23 +51,21 @@ export default function VendorPage() {
                     >
                         <ProFormText name="vendorName" label="服务商名称" placeholder="请输入服务商名称" />
                     </QueryFilter>
-                </Card>
+                </FilterPanel>
 
-                <Card>
-                    <div className="table-toolbar">
-                        <span className="table-toolbar-title">服务商列表</span>
-                        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>添加服务商</Button>
-                    </div>
+                <Card className="ui-table-card">
+                    <TableToolbar title="服务商列表" count={mockData.length} actions={<Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>添加服务商</Button>} />
                     <Table columns={columns} dataSource={mockData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>
 
-                <Modal title="添加服务商" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => { setCreateOpen(false); message.success('添加成功'); }} okText="确定" cancelText="取消">
+                <AppModal title="添加服务商" open={createOpen} onCancel={() => setCreateOpen(false)} onOk={() => { setCreateOpen(false); message.success('添加成功'); }} okText="确定" cancelText="取消">
                     <Form layout="vertical" style={{ marginTop: 16 }}>
                         <Form.Item label="服务商名称" required><Input placeholder="请输入服务商名称" /></Form.Item>
                         <Form.Item label="账号名称" required><Input placeholder="请输入管理员账号" /></Form.Item>
                         <Form.Item label="账号密码" required><Input.Password placeholder="请输入密码" /></Form.Item>
                     </Form>
-                </Modal>
+                </AppModal>
+                </div>
             </MainLayout>
     );
 }

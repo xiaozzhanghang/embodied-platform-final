@@ -5,6 +5,7 @@ import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Descri
 import { SearchOutlined, ReloadOutlined, EyeOutlined, DeleteOutlined, StopOutlined, RedoOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -33,7 +34,7 @@ export default function WorkflowTaskPage() {
     const columns = [
         { title: '序号', dataIndex: 'id', key: 'id', width: 60 },
         { title: '任务名称', dataIndex: 'name', key: 'name', width: 200 },
-        { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (s) => <Tag color={statusMap[s]?.tagColor}>{s}</Tag> },
+        { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (s) => <StatusTag status={s === '运行成功' ? '已完成' : s === '运行中' ? '进行中' : s === '运行失败' ? '失败' : '待处理'}>{s}</StatusTag> },
         { title: '任务ID', dataIndex: 'taskId', key: 'taskId', width: 100 },
         { title: '优先级', dataIndex: 'priority', key: 'priority', width: 80, render: (p) => <Tag color={priorityMap[p]}>{p}</Tag> },
         { title: '工作流ID', dataIndex: 'workflowId', key: 'workflowId', width: 100 },
@@ -57,8 +58,9 @@ export default function WorkflowTaskPage() {
 
     return (
         <MainLayout>
-            <div className="page-header"><h3 className="page-header-title">预设工具</h3></div>
-            <Card className="search-form" style={{ marginBottom: 16 }}>
+            <div className="ui-page">
+            <PageHeader title="工作流任务" description="查看工作流运行记录与执行状态。" breadcrumbs={[{ title: '工作流' }, { title: '工作流任务' }]} />
+            <FilterPanel>
                 <QueryFilter
                     submitter={{
                         submitButtonProps: { icon: <SearchOutlined /> },
@@ -70,10 +72,10 @@ export default function WorkflowTaskPage() {
                     <ProFormText name="taskId" label="任务ID" placeholder="请输入" />
                     <ProFormText name="creator" label="创建人" placeholder="请输入" />
                 </QueryFilter>
-            </Card>
+            </FilterPanel>
 
-            <Card>
-                <div className="table-toolbar"><span className="table-toolbar-title">任务列表</span></div>
+            <Card className="ui-table-card">
+                <TableToolbar title="任务列表" count={mockData.length} />
                 <Table columns={columns} dataSource={mockData} scroll={{ x: 1600 }} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
             </Card>
 
@@ -85,7 +87,7 @@ export default function WorkflowTaskPage() {
                             <Descriptions.Item label="任务ID">{selectedTask.taskId}</Descriptions.Item>
                             <Descriptions.Item label="工作流ID">{selectedTask.workflowId}</Descriptions.Item>
                             <Descriptions.Item label="优先级"><Tag color={priorityMap[selectedTask.priority]}>{selectedTask.priority}</Tag></Descriptions.Item>
-                            <Descriptions.Item label="状态"><Tag color={statusMap[selectedTask.status]?.tagColor}>{selectedTask.status}</Tag></Descriptions.Item>
+                            <Descriptions.Item label="状态"><StatusTag status={selectedTask.status === '运行成功' ? '已完成' : selectedTask.status === '运行中' ? '进行中' : selectedTask.status === '运行失败' ? '失败' : '待处理'}>{selectedTask.status}</StatusTag></Descriptions.Item>
                             <Descriptions.Item label="运行时间">{selectedTask.runTime}</Descriptions.Item>
                             <Descriptions.Item label="开始时间">{selectedTask.startTime}</Descriptions.Item>
                             <Descriptions.Item label="结束时间">{selectedTask.endTime}</Descriptions.Item>
@@ -107,6 +109,7 @@ export default function WorkflowTaskPage() {
                     </>
                 )}
             </Modal>
+            </div>
         </MainLayout>
     );
 }
