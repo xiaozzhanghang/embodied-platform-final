@@ -29,7 +29,7 @@ const lumosEpisodes = [
 
 const EPISODE_TOOLBAR_STATUS = {
   '已入库质检池': { status: '已完成', text: '数据已就绪' },
-  '等待解析': { status: '待处理', text: '等待解析' },
+  '等待解析': { status: '进行中', text: '等待解析' },
   '废弃': { status: '失败', text: '序列已废弃' },
 };
 
@@ -52,30 +52,42 @@ export default function CollectTaskDataPage() {
   const [realReport, setRealReport] = useState(null);
   const [leftTrajectory, setLeftTrajectory] = useState([]);
   const [rightTrajectory, setRightTrajectory] = useState([]);
-  const [loadingRealData, setLoadingRealData] = useState(false);
+  const [loadingEpisodeId, setLoadingEpisodeId] = useState(null);
   const [activeVideoHand, setActiveVideoHand] = useState('left');
 
   useEffect(() => {
-    if (selectedEpisode?.episodeId === 'session_028') {
-      setLoadingRealData(true);
-      Promise.all([
-        fetch('/api/luming?type=report').then(res => res.json()),
-        fetch('/api/luming?type=trajectory&hand=left').then(res => res.json()),
-        fetch('/api/luming?type=trajectory&hand=right').then(res => res.json())
-      ]).then(([report, leftTraj, rightTraj]) => {
-        if (report && !report.error) setRealReport(report);
-        if (Array.isArray(leftTraj)) setLeftTrajectory(leftTraj);
-        if (Array.isArray(rightTraj)) setRightTrajectory(rightTraj);
-      }).catch(err => {
-        console.error('Error fetching real luming data:', err);
-      }).finally(() => {
-        setLoadingRealData(false);
-      });
-    } else {
+    if (selectedEpisode?.episodeId !== 'session_028') {
       setRealReport(null);
       setLeftTrajectory([]);
       setRightTrajectory([]);
+      return undefined;
     }
+
+    const episodeId = selectedEpisode.episodeId;
+    let cancelled = false;
+    setLoadingEpisodeId(episodeId);
+
+    Promise.all([
+      fetch('/api/luming?type=report').then(res => res.json()),
+      fetch('/api/luming?type=trajectory&hand=left').then(res => res.json()),
+      fetch('/api/luming?type=trajectory&hand=right').then(res => res.json())
+    ]).then(([report, leftTraj, rightTraj]) => {
+      if (cancelled) return;
+      if (report && !report.error) setRealReport(report);
+      if (Array.isArray(leftTraj)) setLeftTrajectory(leftTraj);
+      if (Array.isArray(rightTraj)) setRightTrajectory(rightTraj);
+    }).catch(err => {
+      if (!cancelled) console.error('Error fetching real luming data:', err);
+    }).finally(() => {
+      if (!cancelled) {
+        setLoadingEpisodeId(current => current === episodeId ? null : current);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      setLoadingEpisodeId(current => current === episodeId ? null : current);
+    };
   }, [selectedEpisode]);
 
 
@@ -317,7 +329,8 @@ export default function CollectTaskDataPage() {
 
   // Task metadata
   const taskName = isLumos ? 'Lumos-双手筷子与勺子整理-001' : (taskId === 'CT-20250301002' ? 'FRANKA-FR3-放置蓝色圆柱-002' : 'FRANKA-FR3-抓取红色方块-001');
-  const toolbarStatus = resolveEpisodeToolbarStatus(selectedEpisode, loadingRealData);
+  const isSelectedEpisodeLoading = loadingEpisodeId === selectedEpisode?.episodeId;
+  const toolbarStatus = resolveEpisodeToolbarStatus(selectedEpisode, isSelectedEpisodeLoading);
 
 
   return (

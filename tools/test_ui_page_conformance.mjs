@@ -419,7 +419,7 @@ assert.match(
 const collectionDataWorkspace = await readFile('src/app/collection/collect/data/[taskId]/page.js', 'utf8');
 for (const [sourceStatus, canonicalStatus, text] of [
   ['已入库质检池', '已完成', '数据已就绪'],
-  ['等待解析', '待处理', '等待解析'],
+  ['等待解析', '进行中', '等待解析'],
   ['废弃', '失败', '序列已废弃'],
 ]) {
   assert.match(
@@ -428,6 +428,50 @@ for (const [sourceStatus, canonicalStatus, text] of [
     `数据工作台未正确归一 ${sourceStatus} 状态`,
   );
 }
+assert.match(
+  collectionDataWorkspace,
+  /const \[loadingEpisodeId, setLoadingEpisodeId\] = useState\(null\);/,
+  '真实数据加载态必须记录正在加载的序列身份',
+);
+assert.doesNotMatch(
+  collectionDataWorkspace,
+  /loadingRealData|setLoadingRealData/,
+  '真实数据加载态不应继续使用全局布尔值',
+);
+const realDataLoadingEffect = collectionDataWorkspace.match(
+  /useEffect\(\(\) => \{[\s\S]*?fetch\('\/api\/luming\?type=report'\)[\s\S]*?\n  \}, \[selectedEpisode\]\);/,
+)?.[0] || '';
+assert.ok(realDataLoadingEffect, '未找到 session_028 真实数据加载 effect');
+assert.match(
+  realDataLoadingEffect,
+  /if \(selectedEpisode\?\.episodeId !== 'session_028'\) \{[\s\S]*?return undefined;\s*\}\s*const episodeId = selectedEpisode\.episodeId;/,
+  '加载身份只能在 session_028 请求分支中设置',
+);
+assert.match(
+  realDataLoadingEffect,
+  /const episodeId = selectedEpisode\.episodeId;\s*let cancelled = false;\s*setLoadingEpisodeId\(episodeId\);/,
+  'session_028 请求启动时必须绑定当前序列身份',
+);
+assert.match(
+  realDataLoadingEffect,
+  /\.then\(\(\[report, leftTraj, rightTraj\]\) => \{\s*if \(cancelled\) return;/,
+  '已取消的 session_028 请求不应写回报告或轨迹',
+);
+assert.match(
+  realDataLoadingEffect,
+  /\.finally\(\(\) => \{\s*if \(!cancelled\) \{\s*setLoadingEpisodeId\(current => current === episodeId \? null : current\);\s*\}\s*\}\);/,
+  'session_028 请求结束时必须仅清理自身加载身份',
+);
+assert.match(
+  realDataLoadingEffect,
+  /return \(\) => \{\s*cancelled = true;\s*setLoadingEpisodeId\(current => current === episodeId \? null : current\);\s*\};/,
+  '切换序列时必须取消写回并清理对应加载身份',
+);
+assert.match(
+  collectionDataWorkspace,
+  /const isSelectedEpisodeLoading = loadingEpisodeId === selectedEpisode\?\.episodeId;\s*const toolbarStatus = resolveEpisodeToolbarStatus\(selectedEpisode, isSelectedEpisodeLoading\);/,
+  '数据工作台加载提示必须与当前选中序列身份相关联',
+);
 assert.match(
   collectionDataWorkspace,
   /if \(isLoading\) return \{ status: '处理中', text: '数据解析中' \};/,
