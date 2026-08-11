@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import {
   QA_PACKAGES_STORAGE_KEY,
   assignQaer,
+  assignQaerResult,
   formatLocalDateTime,
   loadQaPackages,
   readQaPackages,
@@ -119,9 +120,21 @@ assert.equal(reworkSync.packages[0].rounds.length, 2);
 assert.equal(reworkSync.packages[0].qcStatus, '待质检');
 
 const assigned = assignQaer(storage, 'QA-ANNO-20260415-002', '质检员00810');
-assert.equal(assigned.assigned.qaer, '质检员00810');
-assert.equal(assigned.persisted, true);
+assert.equal(assigned.qaer, '质检员00810', '旧 API 成功时必须直接返回已分配对象');
 assert.equal(loadQaPackages(storage)[0].qaer, '质检员00810', '质检员分配必须持久化');
+assert.equal(assignQaer(storage, 'QA-NOT-FOUND', '质检员00000'), null, '旧 API 未找到质检包时必须返回 null');
+
+const resultAssignment = assignQaerResult(storage, 'QA-ANNO-20260415-002', '质检员00811');
+assert.equal(resultAssignment.persisted, true);
+assert.equal(resultAssignment.error, null);
+assert.equal(resultAssignment.package.qaer, '质检员00811');
+assert.equal(loadQaPackages(storage)[0].qaer, '质检员00811', '结果型 API 成功时也必须持久化');
+const missingResultAssignment = assignQaerResult(storage, 'QA-NOT-FOUND', '质检员00000');
+assert.deepEqual(
+  missingResultAssignment,
+  { package: null, persisted: false, error: null },
+  '结果型 API 未找到时必须保持明确的 null 语义',
+);
 
 storage.setItem(QA_PACKAGES_STORAGE_KEY, '{broken json');
 assert.deepEqual(loadQaPackages(storage), [], '损坏的本地数据不得导致页面崩溃');
@@ -177,14 +190,26 @@ assert.deepEqual(failedWriteSync.createdPackageIds, [], '写失败不得触发�
 assert.deepEqual(failedWriteSync.packages, [], '写失败不得把尚未持久化的质检包作为当前数据返回');
 
 const assignSourcePackage = firstSync.packages[0];
-const failedAssignment = assignQaer(
-  new ThrowingSetStorage(JSON.stringify([assignSourcePackage])),
+const failedAssignmentStorage = new ThrowingSetStorage(JSON.stringify([assignSourcePackage]));
+const failedAssignmentStoredValue = failedAssignmentStorage.getItem(QA_PACKAGES_STORAGE_KEY);
+const failedAssignment = assignQaerResult(
+  failedAssignmentStorage,
   assignSourcePackage.qaPackageId,
   '不会落库的质检员',
 );
 assert.equal(failedAssignment.persisted, false, '分配写失败必须可由调用者判断');
 assert.match(failedAssignment.error?.message || '', /storage quota exceeded/);
-assert.equal(failedAssignment.packages[0].qaer, assignSourcePackage.qaer, '写失败不得把未持久化数据作为当前表格数据返回');
+assert.equal(failedAssignment.package, null, '写失败不得把未持久化对象作为成功结果返回');
+assert.equal(
+  failedAssignmentStorage.getItem(QA_PACKAGES_STORAGE_KEY),
+  failedAssignmentStoredValue,
+  '写失败不得改变原存储内容',
+);
+assert.equal(
+  assignQaer(failedAssignmentStorage, assignSourcePackage.qaPackageId, '仍不会落库'),
+  null,
+  '旧 API 写失败时不得返回看似成功的对象',
+);
 
 const annotationPageSource = fs.readFileSync('src/app/collection/annotation-tasks/page.js', 'utf8');
 assert.match(annotationPageSource, /syncCompletedAnnotationTasks/);
@@ -192,12 +217,12 @@ assert.match(annotationPageSource, /查看质检/);
 
 const qaPageSource = fs.readFileSync('src/app/collection/qa/page.js', 'utf8');
 assert.match(qaPageSource, /readQaPackages/);
-assert.match(qaPageSource, /assignQaer/);
+assert.match(qaPageSource, /assignQaerResult/);
 assert.match(qaPageSource, /storageError/);
 assert.match(qaPageSource, /重试/);
 assert.match(qaPageSource, /message\.error/);
 assert.match(qaPageSource, /if \(!assignResult\.persisted\)/, '写失败时必须在表格更新前退出');
-assert.match(qaPageSource, /const assignResult = assignQaer[\s\S]*?if \(!assignResult\.persisted\)[\s\S]*?return;[\s\S]*?setTableData/);
+assert.match(qaPageSource, /const assignResult = assignQaerResult[\s\S]*?if \(!assignResult\.persisted\)[\s\S]*?return;[\s\S]*?setTableData/);
 assert.doesNotMatch(qaPageSource, /Math\.random\(\)/, '质检页服务端与客户端必须生成相同的演示进度');
 
 console.log('ANNOTATION_QA_FLOW_OK');

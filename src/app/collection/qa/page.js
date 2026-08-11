@@ -7,7 +7,7 @@ import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutline
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
-import { assignQaer, readQaPackages } from '@/lib/annotationQaFlow.mjs';
+import { assignQaerResult, readQaPackages } from '@/lib/annotationQaFlow.mjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -107,7 +107,7 @@ export default function QaPage() {
   const handleReassignSubmit = () => {
     reassignForm.validateFields().then(values => {
       if (reassignRecord.qaPackageId) {
-        const assignResult = assignQaer(window.localStorage, reassignRecord.qaPackageId, values.qaer);
+        const assignResult = assignQaerResult(window.localStorage, reassignRecord.qaPackageId, values.qaer);
         if (!assignResult.persisted) {
           message.error('质检员分配保存失败，请检查本地存储后重试。');
           return;

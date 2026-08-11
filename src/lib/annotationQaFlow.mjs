@@ -307,12 +307,11 @@ export function syncCompletedAnnotationTasks(storage, tasks, options = {}) {
   };
 }
 
-export function assignQaer(storage, qaPackageId, qaer) {
+export function assignQaerResult(storage, qaPackageId, qaer) {
   const readResult = readQaPackages(storage);
   if (readResult.error) {
     return {
-      assigned: null,
-      packages: readResult.packages,
+      package: null,
       persisted: false,
       error: readResult.error,
     };
@@ -325,13 +324,17 @@ export function assignQaer(storage, qaPackageId, qaer) {
     return assigned;
   });
   if (!assigned) {
-    return { assigned: null, packages, persisted: false, error: null };
+    return { package: null, persisted: false, error: null };
   }
   const persistence = saveQaPackages(storage, updated);
   return {
-    assigned,
-    packages: persistence.ok ? updated : packages,
+    package: persistence.ok ? assigned : null,
     persisted: persistence.ok,
     error: persistence.error,
   };
+}
+
+export function assignQaer(storage, qaPackageId, qaer) {
+  const result = assignQaerResult(storage, qaPackageId, qaer);
+  return result.persisted ? result.package : null;
 }
