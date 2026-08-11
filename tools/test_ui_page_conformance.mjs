@@ -929,5 +929,17 @@ for (const loginPage of [
   assert.ok(source.includes('ui-login'), `${loginPage} 必须使用统一登录外壳`);
 }
 
+const annotationAuditDetailSource = await readFile('src/app/annotation/audit/[id]/page.js', 'utf8');
+assert.doesNotMatch(
+  annotationAuditDetailSource,
+  /\bmaskClosable=/,
+  'Ant Design 6 Modal 应使用 mask.closable，不能继续传入已弃用的 maskClosable',
+);
+assert.doesNotMatch(
+  annotationAuditDetailSource,
+  /\bdestroyOnClose\b/,
+  'Ant Design 6 Modal 应使用 destroyOnHidden，不能继续传入已弃用的 destroyOnClose',
+);
+
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');

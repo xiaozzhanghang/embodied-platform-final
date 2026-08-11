@@ -769,7 +769,7 @@ export default function AnnotationAuditEpisodeListPage() {
         onCancel={() => !isCopying && setIsBatchModalOpen(false)}
         footer={null}
         width={750}
-        maskClosable={!isCopying}
+        mask={{ closable: !isCopying }}
         styles={{ body: { padding: '12px 16px' } }}
       >
         {isCopying ? (
@@ -922,8 +922,8 @@ export default function AnnotationAuditEpisodeListPage() {
         cancelText="取消"
         okButtonProps={{ style: { background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }, disabled: uploadFileList.length === 0 || isUploading }}
         width={640}
-        destroyOnClose
-        maskClosable={!isUploading}
+        destroyOnHidden
+        mask={{ closable: !isUploading }}
       >
         {isUploading ? (
           <div style={{ padding: '30px 10px', textAlign: 'center' }}>
