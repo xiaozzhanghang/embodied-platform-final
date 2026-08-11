@@ -207,7 +207,6 @@ export default function AnnotationTasksPage() {
           title="标注任务"
           description="统一管理标注进度、人员分派与质检交付。"
           breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '任务中心' }, { title: '标注任务' }]}
-          extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/annotation-tasks/create')}>新建任务</Button>}
         />
 
         <SpecMarker
@@ -252,6 +251,14 @@ export default function AnnotationTasksPage() {
             count={filteredData.length}
             selectedCount={selectedRowKeys.length}
             actions={[
+              <Button
+                key="create"
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => router.push('/collection/annotation-tasks/create')}
+              >
+                新建任务
+              </Button>,
               <Button
                 key="assign"
                 icon={<NodeIndexOutlined />}

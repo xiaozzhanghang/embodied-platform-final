@@ -86,6 +86,22 @@ for (const pagePath of [
   assert.match(source, /<StatusTag(?:\s|\/|>)/, `${pagePath} 未使用统一状态标签`);
 }
 
+const annotationTaskList = await readFile('src/app/collection/annotation-tasks/page.js', 'utf8');
+const annotationTaskHeader = annotationTaskList.slice(
+  annotationTaskList.indexOf('<PageHeader'),
+  annotationTaskList.indexOf('<SpecMarker'),
+);
+const annotationTaskToolbar = annotationTaskList.slice(
+  annotationTaskList.indexOf('<TableToolbar'),
+  annotationTaskList.indexOf('<Table\n'),
+);
+assert.doesNotMatch(annotationTaskHeader, /新建任务/, '标注任务新建入口不应继续占用页头操作区');
+assert.match(
+  annotationTaskToolbar,
+  /key="create"[\s\S]*?新建任务[\s\S]*?key="assign"[\s\S]*?批量分派标注员/,
+  '标注任务新建入口应位于批量分派标注员之前',
+);
+
 for (const pagePath of [
   'src/app/collection/annotation-tasks/page.js',
   'src/app/collection/projects/page.js',
