@@ -311,7 +311,7 @@ export default function DeviceInstanceDetailPage() {
     <MainLayout>
       <div className="ui-page ui-detail-page">
         <PageHeader
-          title={<Space size={12}>{device.name}<StatusTag status={deviceStatus} /></Space>}
+          title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>{device.name}<StatusTag status={deviceStatus} /></span>}
           description={`ID: ${device.id} · 管理设备部件、运行状态、部署流程与采集记录。`}
           breadcrumbs={[{ title: '首页' }, { title: '设备管理' }, { title: '设备列表', href: '/collection/devices' }, { title: '实例详情' }]}
           back={() => router.back()}
@@ -343,7 +343,7 @@ export default function DeviceInstanceDetailPage() {
                 <Text type="secondary" style={{ fontSize: 12 }}>数采网桥服务</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                   <Title level={4} style={{ margin: 0, fontSize: 16 }}>galbot_upper</Title>
-                  <StatusTag status="运行中" />
+                  <StatusTag status="已完成">运行中</StatusTag>
                 </div>
               </Card>
             </Col>
@@ -352,7 +352,7 @@ export default function DeviceInstanceDetailPage() {
                 <Text type="secondary" style={{ fontSize: 12 }}>系统 SN 安全认证</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                   <Title level={4} style={{ margin: 0, fontSize: 16 }}>sys_tool</Title>
-                  <StatusTag status="已认证" />
+                  <StatusTag status="进行中">已认证</StatusTag>
                 </div>
               </Card>
             </Col>
@@ -441,7 +441,7 @@ export default function DeviceInstanceDetailPage() {
                               <Descriptions.Item label="登录凭证">root / 12345678</Descriptions.Item>
                               <Descriptions.Item label="固件版本">Galbot-OS v1.16.0.2 (已部署)</Descriptions.Item>
                               <Descriptions.Item label="底层守护服务">
-                                <StatusTag status="运行中">remote_ctrl_record.target (Active)</StatusTag>
+                                <StatusTag status="已完成">remote_ctrl_record.target (Active)</StatusTag>
                               </Descriptions.Item>
                               <Descriptions.Item label="主要文件路径">
                                 <div style={{ fontSize: 11, fontFamily: 'monospace' }}>
@@ -459,10 +459,10 @@ export default function DeviceInstanceDetailPage() {
                               <Descriptions.Item label="登录凭证">galbot / gb@2023</Descriptions.Item>
                               <Descriptions.Item label="VLA 镜像">release-VLA-CAPSULE-GBS_1.16.0.2 (3.7GB)</Descriptions.Item>
                               <Descriptions.Item label="进程守护">
-                                <StatusTag status="运行中">Supervisor Daemon (Active)</StatusTag>
+                                <StatusTag status="已完成">Supervisor Daemon (Active)</StatusTag>
                               </Descriptions.Item>
                               <Descriptions.Item label="网桥服务">
-                                <StatusTag status="运行中">galbot_upper_bridge (Active)</StatusTag>
+                                <StatusTag status="已完成">galbot_upper_bridge (Active)</StatusTag>
                               </Descriptions.Item>
                             </Descriptions>
                           </Card>

@@ -39,8 +39,6 @@ const STATUS_COLORS = {
   '维护中': 'warning',
   '正常': 'success',
   '已连接': 'success',
-  '运行中': 'processing',
-  '已认证': 'success',
 };
 
 const mergeClassNames = (...classNames) => classNames.filter(Boolean).join(' ');

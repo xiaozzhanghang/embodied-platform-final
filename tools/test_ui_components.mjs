@@ -36,13 +36,18 @@ for (const [status, semantic] of [
   ['维护中', 'warning'],
   ['正常', 'success'],
   ['已连接', 'success'],
-  ['运行中', 'processing'],
-  ['已认证', 'success'],
 ]) {
   assert.match(
     statusSource,
     new RegExp(`'${status}':\\s*'${semantic}'`),
     `${status} 应使用 ${semantic} 状态色`,
+  );
+}
+for (const status of ['运行中', '已认证']) {
+  assert.doesNotMatch(
+    statusSource,
+    new RegExp(`'${status}':\\s*'`),
+    `${status} 的颜色语义依赖业务上下文，不应写入全局状态映射`,
   );
 }
 assert.match(statusSource, /className=\{mergeClassNames\('ui-status-tag', className\)\}/);

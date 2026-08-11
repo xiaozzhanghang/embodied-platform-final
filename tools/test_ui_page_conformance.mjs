@@ -253,5 +253,50 @@ for (const page of collectionConfigurationPages) {
   }
 }
 
+for (const pagePath of [
+  'src/app/collection/device-types/detail/[id]/page.js',
+  'src/app/collection/devices/detail/[id]/page.js',
+]) {
+  const source = await readFile(pagePath, 'utf8');
+  const pageHeaderSource = source.match(/<PageHeader[\s\S]*?\/>/)?.[0] || '';
+  assert.ok(pageHeaderSource, `${pagePath} 缺少 PageHeader`);
+  assert.equal(pageHeaderSource.includes('title={<Space'), false, `${pagePath} 页头标题不应将块级 Space 放入标题元素`);
+  assert.match(pageHeaderSource, /title=\{<span(?:\s|>)/, `${pagePath} 页头复合标题应使用内联 span 容器`);
+}
+
+const deviceDetailSource = await readFile('src/app/collection/devices/detail/[id]/page.js', 'utf8');
+for (const label of [
+  '运行中',
+  'remote_ctrl_record.target (Active)',
+  'Supervisor Daemon (Active)',
+  'galbot_upper_bridge (Active)',
+]) {
+  assert.ok(
+    deviceDetailSource.includes(`<StatusTag status="已完成">${label}</StatusTag>`),
+    `设备详情中 ${label} 应保留 success 色义`,
+  );
+}
+assert.ok(
+  deviceDetailSource.includes('<StatusTag status="进行中">已认证</StatusTag>'),
+  '设备详情中已认证应保留 processing 色义',
+);
+
+for (const pagePath of [
+  'src/app/collection/config/page.js',
+  'src/app/collection/device-types/page.js',
+  'src/app/collection/devices/page.js',
+  'src/app/collection/object-labels/page.js',
+  'src/app/collection/objects/page.js',
+  'src/app/collection/objects/create/page.js',
+]) {
+  const source = await readFile(pagePath, 'utf8');
+  assert.match(
+    source,
+    /import\s*{[^}]*\bAppModal\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
+    `${pagePath} 未从公共 UI 入口导入 AppModal`,
+  );
+  assert.match(source, /<AppModal(?:\s|\/|>)/, `${pagePath} 覆盖式新增/编辑弹窗未使用 AppModal`);
+}
+
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');

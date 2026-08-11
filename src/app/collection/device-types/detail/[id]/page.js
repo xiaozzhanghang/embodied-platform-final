@@ -193,7 +193,7 @@ export default function DeviceTypeDetailPage() {
     <MainLayout>
       <div className="ui-page ui-detail-page">
         <PageHeader
-          title={<Space size={12}>{initialData.name}<Tag color="blue">{initialData.version}</Tag><StatusTag status="已发布" /></Space>}
+          title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>{initialData.name}<Tag color="blue">{initialData.version}</Tag><StatusTag status="已发布" /></span>}
           description="查看设备类型的基础参数、硬件关联、URDF 资源与对齐基准。"
           breadcrumbs={[{ title: '首页' }, { title: '设备管理' }, { title: '设备类型', href: '/collection/device-types' }, { title: isEditing ? '编辑设备类型' : '查看设备详情' }]}
           back={() => router.back()}
