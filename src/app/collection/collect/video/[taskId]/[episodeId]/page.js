@@ -13,6 +13,7 @@ import {
   VideoCameraOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { StatusTag } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -328,8 +329,9 @@ export default function EpisodeVideoPage() {
 
   return (
     <MainLayout>
+      <div className="ui-workspace">
       {/* Breadcrumb Header */}
-      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="ui-toolbar" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Space size="middle">
           <Button icon={<ArrowLeftOutlined />} onClick={() => window.close()} />
           <div>
@@ -347,19 +349,20 @@ export default function EpisodeVideoPage() {
             </Title>
           </div>
         </Space>
+        <StatusTag status="已完成">数据包已加载</StatusTag>
       </div>
 
       <Row gutter={20} style={{ minHeight: 'calc(100vh - 200px)' }}>
         {/* Left Column: Directory structure */}
         <Col span={8}>
-          <Card 
+          <Card className="ui-table-card"
             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#1677ff' }}>
                 <FolderOpenOutlined style={{ fontSize: 16 }} />
                 <span>原始数据目录树 ({episodeId})</span>
               </div>
             }
-            bordered
+            variant="outlined"
             style={{ borderRadius: 8, height: 600, overflowY: 'auto' }}
           >
             <Tree
@@ -434,7 +437,7 @@ export default function EpisodeVideoPage() {
 
         {/* Right Column: File Content / Video simulation preview */}
         <Col span={16}>
-          <Card 
+          <Card className="ui-table-card"
             title={
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                 <Space>
@@ -450,7 +453,7 @@ export default function EpisodeVideoPage() {
                 )}
               </div>
             }
-            bordered
+            variant="outlined"
             style={{ borderRadius: 8, height: 600, display: 'flex', flexDirection: 'column' }}
             styles={{ body: { flex: 1, padding: 20, display: 'flex', flexDirection: 'column', height: 'calc(100% - 50px)' } }}
           >
@@ -527,6 +530,7 @@ export default function EpisodeVideoPage() {
           </Card>
         </Col>
       </Row>
+      </div>
     </MainLayout>
   );
 }

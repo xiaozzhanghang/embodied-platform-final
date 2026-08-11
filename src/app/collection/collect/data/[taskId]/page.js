@@ -9,6 +9,7 @@ import {
   FileTextOutlined, SafetyCertificateOutlined, WarningOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { StatusTag } from '@/components/ui';
 
 const { Title } = Typography;
 
@@ -308,8 +309,9 @@ export default function CollectTaskDataPage() {
 
   return (
     <MainLayout>
+      <div className="ui-workspace">
       {/* Page Header */}
-      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="ui-toolbar" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Space size="middle">
           <Button icon={<ArrowLeftOutlined />} onClick={() => window.close()} />
           <div>
@@ -326,13 +328,16 @@ export default function CollectTaskDataPage() {
             </Title>
           </div>
         </Space>
-        <Button onClick={() => window.close()}>关闭页面</Button>
+        <Space>
+          <StatusTag status={selectedEpisode ? '已完成' : '待处理'}>{selectedEpisode ? '数据已就绪' : '待选择序列'}</StatusTag>
+          <Button onClick={() => window.close()}>关闭页面</Button>
+        </Space>
       </div>
 
       <Row gutter={24} style={{ minHeight: 'calc(100vh - 180px)' }}>
         {/* Left Column - Episode List */}
         <Col span={7}>
-          <Card title="已采集序列包 (Episodes)" bordered={false} styles={{ body: { padding: 0 } }} style={{ height: '100%', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', borderRadius: 8 }}>
+          <Card className="ui-table-card" title="已采集序列包 (Episodes)" variant="borderless" styles={{ body: { padding: 0 } }} style={{ height: '100%', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', borderRadius: 8 }}>
             <Table
               dataSource={episodes}
               columns={[
@@ -353,11 +358,8 @@ export default function CollectTaskDataPage() {
                   dataIndex: 'status',
                   key: 'status',
                   render: (st) => {
-                    let color = 'default';
-                    if (st === '已入库质检池') color = 'success';
-                    if (st === '等待解析') color = 'processing';
-                    if (st === '废弃') color = 'error';
-                    return <Tag color={color}>{st}</Tag>;
+                    const status = st === '已入库质检池' ? '已完成' : st === '等待解析' ? '进行中' : st === '废弃' ? '失败' : st;
+                    return <StatusTag status={status}>{st}</StatusTag>;
                   }
                 }
               ]}
@@ -379,16 +381,16 @@ export default function CollectTaskDataPage() {
           {selectedEpisode ? (
             <Space direction="vertical" size={16} style={{ width: '100%' }}>
               {/* Episode Metadata Details */}
-              <Card bordered={false} styles={{ body: { padding: 16 } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)', borderRadius: 8 }}>
+              <Card className="ui-table-card" variant="borderless" styles={{ body: { padding: 16 } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)', borderRadius: 8 }}>
                 <Descriptions title={`序列详情: ${selectedEpisode.episodeId}`} size="small" column={3}>
                   <Descriptions.Item label="所属批次">{selectedEpisode.qaBatch}</Descriptions.Item>
                   <Descriptions.Item label="采集时间">{selectedEpisode.time}</Descriptions.Item>
                   <Descriptions.Item label="视频时长">{selectedEpisode.duration}</Descriptions.Item>
                   <Descriptions.Item label="动作帧数">{selectedEpisode.episodeId === 'session_028' ? '1800' : (selectedEpisode.steps * 30 || 450)} 帧</Descriptions.Item>
                   <Descriptions.Item label="系统状态">
-                    <Tag color={selectedEpisode.status === '已入库质检池' ? 'success' : selectedEpisode.status === '废弃' ? 'error' : 'processing'}>
+                    <StatusTag status={selectedEpisode.status === '已入库质检池' ? '已完成' : selectedEpisode.status === '废弃' ? '失败' : '进行中'}>
                       {selectedEpisode.status}
-                    </Tag>
+                    </StatusTag>
                   </Descriptions.Item>
                 </Descriptions>
 
@@ -416,9 +418,9 @@ export default function CollectTaskDataPage() {
               <Row gutter={16}>
                 {/* 4-Camera Video Grid Simulator */}
                 <Col span={14}>
-                  <Card 
+                  <Card className="ui-table-card"
                     title={selectedEpisode.episodeId === 'session_028' ? "实际数据监控 - 双手臂相机画面" : (isLumos ? "多视角相机流监视 (Lumos Multi-Cam)" : "多视角相机监视 (Camera CCTV)")} 
-                    bordered={false} 
+                    variant="borderless"
                     styles={{ body: { padding: 8 } }} 
                     style={{ background: '#141414', color: '#fff', borderRadius: 8, overflow: 'hidden' }}
                   >
@@ -536,7 +538,7 @@ export default function CollectTaskDataPage() {
  
                 {/* Trajectory plot and joint sensor charts */}
                 <Col span={10}>
-                  <Card title="运动轨迹与力矩监视 (Telemetry)" bordered={false} styles={{ body: { padding: 12 } }} style={{ height: '100%', borderRadius: 8 }}>
+                  <Card className="ui-table-card" title="运动轨迹与力矩监视 (Telemetry)" variant="borderless" styles={{ body: { padding: 12 } }} style={{ height: '100%', borderRadius: 8 }}>
                     <div style={{ background: '#f5f5f5', borderRadius: 4, height: 110, padding: 8, marginBottom: 12, position: 'relative' }}>
                       <span style={{ fontSize: 11, fontWeight: 'bold', color: '#888', display: 'block' }}>3D Trajectory Path Visualizer</span>
                       {selectedEpisode.episodeId === 'session_028' ? (
@@ -624,7 +626,7 @@ export default function CollectTaskDataPage() {
 
               {/* 自动质检诊断分析报告 (Auto QA & Diagnostic Report) */}
               {selectedEpisode.episodeId === 'session_028' && (
-                <Card 
+                <Card className="ui-table-card"
                   title={
                     <Space>
                       <SafetyCertificateOutlined style={{ color: '#52c41a' }} />
@@ -632,7 +634,7 @@ export default function CollectTaskDataPage() {
                       <Tag color="success" style={{ marginLeft: 8 }}>所有检查通过 (PASS)</Tag>
                     </Space>
                   } 
-                  bordered={false} 
+                  variant="borderless"
                   style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
                 >
                   <Descriptions size="small" column={3} bordered style={{ marginBottom: 16 }}>
@@ -806,7 +808,7 @@ Time: 2026-05-20T10:13:21.314410
               )}
 
               {/* Action Timeline */}
-              <Card title="动作原语解析序列 (Action Timeline)" bordered={false} style={{ borderRadius: 8 }}>
+              <Card className="ui-table-card" title="动作原语解析序列 (Action Timeline)" variant="borderless" style={{ borderRadius: 8 }}>
                 <Steps
                   direction="horizontal"
                   current={2}
@@ -833,12 +835,13 @@ Time: 2026-05-20T10:13:21.314410
               </Card>
             </Space>
           ) : (
-            <Card style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Card className="ui-table-card" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ textAlign: 'center', color: '#aaa' }}>请选择左侧的一个序列包来查看多模态传感器和相机数据</div>
             </Card>
           )}
         </Col>
       </Row>
+      </div>
     </MainLayout>
   );
 }

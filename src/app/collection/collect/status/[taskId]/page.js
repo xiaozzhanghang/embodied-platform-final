@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Button, Tabs, Card, Tag, Typography, Space, Row, Col, Divider, List, Badge, Alert } from 'antd';
+import { Button, Tabs, Card, Typography, Space, Row, Col, Divider, List, Badge, Alert } from 'antd';
 import { 
   ArrowLeftOutlined, 
   CheckCircleFilled, 
@@ -20,6 +20,7 @@ import {
   VideoCameraOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { StatusTag } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -139,7 +140,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">移动电源电量</Text>
-                <Tag color="success">92% (输入功率 22.5W)</Tag>
+                <StatusTag status="已完成">92% (输入功率 22.5W)</StatusTag>
               </div>
             </div>
           </div>
@@ -160,10 +161,10 @@ export default function DeviceStatusPage() {
                 </div>
               </Col>
               <Col span={12}>
-                <Badge status="success" text="HDMI 诱骗器信号连接正常" />
+                <StatusTag status="正常">HDMI 诱骗器信号连接正常</StatusTag>
               </Col>
               <Col span={12}>
-                <Badge status="success" text="耳机音频插口就绪 (Stereo)" />
+                <StatusTag status="正常">耳机音频插口就绪 (Stereo)</StatusTag>
               </Col>
             </Row>
           </div>
@@ -234,11 +235,11 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">左夹爪状态</Text>
-                <Tag color="success">正常通信</Tag>
+                <StatusTag status="正常">正常通信</StatusTag>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">右夹爪状态</Text>
-                <Tag color={isErrorMode ? 'error' : 'success'}>{isErrorMode ? '未响应 (设备丢失)' : '正常通信'}</Tag>
+                <StatusTag status={isErrorMode ? '失败' : '正常'}>{isErrorMode ? '未响应 (设备丢失)' : '正常通信'}</StatusTag>
               </div>
             </div>
           </div>
@@ -248,7 +249,7 @@ export default function DeviceStatusPage() {
             {isErrorMode ? (
               <div style={{ padding: '0 12px' }}>
                 <Alert
-                  message="检测到 1 个设备通信异常"
+                  title="检测到 1 个设备通信异常"
                   description="可能是右侧夹爪的 USB 信号接头未锁紧，或供电不足。请重新插拔夹爪 USB 连接线，并点击重连设备。"
                   type="error"
                   showIcon
@@ -310,7 +311,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">时钟对齐同步度</Text>
-                <Tag color="success">时滞差异 &lt; 2ms</Tag>
+                <StatusTag status="正常">时滞差异 &lt; 2ms</StatusTag>
               </div>
             </div>
           </div>
@@ -392,7 +393,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">SSH 状态</Text>
-                <Tag color={isErrorMode ? 'error' : 'success'}>{isErrorMode ? '连接失败' : '成功连通'}</Tag>
+                <StatusTag status={isErrorMode ? '失败' : '正常'}>{isErrorMode ? '连接失败' : '成功连通'}</StatusTag>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">系统服务</Text>
@@ -406,7 +407,7 @@ export default function DeviceStatusPage() {
             {isErrorMode ? (
               <div style={{ padding: '0 12px' }}>
                 <Alert
-                  message="XCU 控制器未响应"
+                  title="XCU 控制器未响应"
                   description="请确认 XCU 底座是否已加电开机。检查笔记本与控制箱的物理网口连接，或者检查网段是否配置为 192.168.1.x。"
                   type="error"
                   showIcon
@@ -479,7 +480,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">WiFi 网络</Text>
-                <Tag color="success">miracle-office-5g (已连接)</Tag>
+                <StatusTag status="已连接">miracle-office-5g (已连接)</StatusTag>
               </div>
             </div>
           </div>
@@ -500,10 +501,10 @@ export default function DeviceStatusPage() {
                 </div>
               </Col>
               <Col span={12}>
-                <Badge status="success" text="Supervisor 进程守护在线" />
+                <StatusTag status="在线">Supervisor 进程守护在线</StatusTag>
               </Col>
               <Col span={12}>
-                <Badge status="success" text="galbot_upper_bridge 正常" />
+                <StatusTag status="正常">galbot_upper_bridge 正常</StatusTag>
               </Col>
             </Row>
           </div>
@@ -560,7 +561,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">IEEE 1588 时钟偏差</Text>
-                <Tag color="success">时钟时滞差 &lt; 0.2ms</Tag>
+                <StatusTag status="正常">时钟时滞差 &lt; 0.2ms</StatusTag>
               </div>
             </div>
           </div>
@@ -638,7 +639,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">连接状态</Text>
-                <Tag color="success">已连接</Tag>
+                <StatusTag status="已连接" />
               </div>
             </div>
           </div>
@@ -659,10 +660,10 @@ export default function DeviceStatusPage() {
                 </div>
               </Col>
               <Col span={12}>
-                <Badge status="success" text="电机初始化完成" />
+                <StatusTag status="已完成">电机初始化完成</StatusTag>
               </Col>
               <Col span={12}>
-                <Badge status="success" text="力反馈通道正常" />
+                <StatusTag status="正常">力反馈通道正常</StatusTag>
               </Col>
             </Row>
           </div>
@@ -720,7 +721,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">电池状态</Text>
-                <Tag color="success">98% (充电中)</Tag>
+                <StatusTag status="已完成">98% (充电中)</StatusTag>
               </div>
             </div>
           </div>
@@ -795,7 +796,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">连接状态</Text>
-                <Tag color={isErrorMode ? 'error' : 'success'}>{isErrorMode ? '信号丢失' : '已连接'}</Tag>
+                <StatusTag status={isErrorMode ? '失败' : '已连接'}>{isErrorMode ? '信号丢失' : '已连接'}</StatusTag>
               </div>
             </div>
           </div>
@@ -805,7 +806,7 @@ export default function DeviceStatusPage() {
             {isErrorMode ? (
               <div style={{ padding: '0 12px' }}>
                 <Alert
-                  message="检测到硬件连接异常"
+                  title="检测到硬件连接异常"
                   description="VR 投屏总线带宽不足。请尝试拔掉 Link 接口，并点击“模拟恢复正常”重试。"
                   type="error"
                   showIcon
@@ -825,8 +826,8 @@ export default function DeviceStatusPage() {
 
   return (
     <MainLayout>
-      <div style={{ padding: '0 12px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div className="ui-workspace" style={{ padding: '0 12px' }}>
+        <div className="ui-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <Space size="middle">
             <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} />
             <div>
@@ -835,6 +836,7 @@ export default function DeviceStatusPage() {
             </div>
           </Space>
           <Space>
+            <StatusTag status={isErrorMode ? '失败' : '正常'}>{isErrorMode ? '存在硬件异常' : '设备就绪'}</StatusTag>
             <Button size="small" onClick={() => setIsErrorMode(!isErrorMode)} style={{ fontSize: 11 }}>
               {isErrorMode ? '模拟恢复正常' : '模拟硬件故障'}
             </Button>
@@ -851,7 +853,7 @@ export default function DeviceStatusPage() {
           </Space>
         </div>
 
-        <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8, overflow: 'hidden' }}>
+        <Card className="ui-table-card" styles={{ body: { padding: 0 } }} style={{ borderRadius: 8, overflow: 'hidden' }}>
           {isGalbot116 ? (
             <Tabs
               activeKey={activeKey}
@@ -951,7 +953,7 @@ export default function DeviceStatusPage() {
           zIndex: 1000,
           boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
         }}>
-          <Card 
+          <Card className="ui-table-card"
             title={<div style={{ fontSize: 13 }}><MessageOutlined /> 运行信息</div>}
             size="small"
             style={{ borderRadius: 8, borderColor: isErrorMode ? '#ffa39e' : '#d9d9d9', transition: 'all 0.3s' }}

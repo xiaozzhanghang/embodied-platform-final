@@ -51,6 +51,7 @@ import {
   DeploymentUnitOutlined,
   HistoryOutlined
 } from '@ant-design/icons';
+import { StatusTag } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -200,27 +201,27 @@ function HumanoidWorkspace({ taskId, router, params }) {
   );
 
   return (
-    <div style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
+    <div className="ui-workspace" style={{ height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
       
       {/* Top Header */}
-      <div style={{ height: 36, borderBottom: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 12, color: '#595959', background: '#fafafa' }}>
+      <div className="ui-toolbar" style={{ height: 36, borderBottom: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', fontSize: 12, color: '#595959', background: '#fafafa' }}>
         <Space size="large" separator={<span style={{ color: '#d9d9d9' }}>|</span>}>
           <Space size="small">
             <ApiOutlined style={{ color: '#1677ff' }} />
             <span style={{ fontWeight: 500 }}>主从臂设备:</span>
-            <Badge status="success" text="已连接" />
+            <StatusTag status="已连接" />
           </Space>
           
           <Space size="small">
             <MonitorOutlined style={{ color: '#722ed1' }} />
             <span style={{ fontWeight: 500 }}>VR设备:</span>
-            <Badge status="success" text="在线" />
+            <StatusTag status="在线" />
           </Space>
 
           <Space size="small">
             <RobotOutlined style={{ color: '#eb2f96' }} />
             <span style={{ fontWeight: 500 }}>机器人本体:</span>
-            <Badge status="success" text="通信正常" />
+            <StatusTag status="正常">通信正常</StatusTag>
           </Space>
 
           <Space size="small">
@@ -740,7 +741,7 @@ function HumanoidWorkspace({ taskId, router, params }) {
                    children: (
                       <div style={{ overflowY: 'auto', padding: '0 16px 16px 16px', height: '100%' }}>
                          {/* Current Job Section */}
-                         <div style={{ border: '1px solid #e8e8e8', borderRadius: 16, padding: 20, background: '#fff' }}>
+                         <div className="ui-table-card" style={{ border: '1px solid #e8e8e8', borderRadius: 16, padding: 20, background: '#fff' }}>
                             <div style={{ fontSize: 10, color: '#8c8c8c', fontWeight: 'bold', marginBottom: 4 }}>CURRENT JOB</div>
                             <div style={{ fontSize: 20, fontWeight: 'bold', color: '#141414', marginBottom: 24 }}>餐具整理_job</div>
                             
@@ -1097,7 +1098,7 @@ function LumosWorkspace({ taskId, router, params }) {
   };
 
   return (
-    <div style={{ 
+    <div className="ui-workspace" style={{
       height: '100vh', 
       background: '#f8fafc', 
       color: '#0f172a',
@@ -1108,7 +1109,7 @@ function LumosWorkspace({ taskId, router, params }) {
     }}>
       
       {/* 1. TOP HEADER - DIAGNOSTICS */}
-      <div style={{ 
+      <div className="ui-toolbar" style={{
         height: 48, 
         borderBottom: '1px solid #e2e8f0', 
         background: '#ffffff',
@@ -1122,7 +1123,7 @@ function LumosWorkspace({ taskId, router, params }) {
           <Space size="small">
             <ThunderboltOutlined style={{ color: '#faad14' }} />
             <span style={{ color: '#0f172a', fontWeight: 600 }}>Lumos FastUMI Go</span>
-            <Tag color="warning" style={{ fontSize: 10, margin: 0 }}>OFFLINE CLIENT</Tag>
+            <StatusTag status="待处理" style={{ fontSize: 10, margin: 0 }}>OFFLINE CLIENT</StatusTag>
           </Space>
 
           <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
@@ -1259,7 +1260,7 @@ function LumosWorkspace({ taskId, router, params }) {
         <div style={{ width: 440, borderLeft: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', flexDirection: 'column', padding: 20, gap: 20 }}>
           
           {/* Audio Synthesizer sound waves logs */}
-          <Card 
+          <Card className="ui-table-card"
             title={
               <div style={{ fontSize: 13, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }}></span>
@@ -1301,7 +1302,7 @@ function LumosWorkspace({ taskId, router, params }) {
           </Card>
 
           {/* Physical Device Controller Simulator */}
-          <Card
+          <Card className="ui-table-card"
             title={<span style={{ fontSize: 13, color: '#0f172a' }}>离线物理终端设备模拟</span>}
             size="small"
             style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}
@@ -1430,7 +1431,7 @@ function LumosWorkspace({ taskId, router, params }) {
                   <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 'bold', color: '#3b82f6' }}>{ep.id}</span>
-                      <Tag color={ep.status === '已保存' ? 'success' : 'error'} style={{ fontSize: 9, margin: 0 }}>{ep.status}</Tag>
+                      <StatusTag status={ep.status === '已保存' ? '已完成' : '失败'} style={{ fontSize: 9, margin: 0 }}>{ep.status}</StatusTag>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(15, 23, 42, 0.45)' }}>
                       <span>时长: {ep.time}s</span>
@@ -1448,7 +1449,7 @@ function LumosWorkspace({ taskId, router, params }) {
       </div>
 
       {/* 3. FOOTER TIMELINE & REALTIME STATE */}
-      <div style={{ height: 60, borderTop: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
+      <div className="ui-action-footer" style={{ height: 60, borderTop: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 11, color: 'rgba(15, 23, 42, 0.45)' }}>
           单段采集耗时: <span style={{ color: '#0f172a', fontWeight: 'bold', fontSize: 13 }}>{collectionTime}s</span> / 15.0s &nbsp;|&nbsp;
           采集数据帧率: <span style={{ color: '#0f172a', fontWeight: 'bold' }}>30 FPS</span> &nbsp;|&nbsp;
@@ -1712,7 +1713,7 @@ function Galbot116Workspace({ taskId, router, params }) {
   };
 
   return (
-    <div style={{ 
+    <div className="ui-workspace" style={{
       height: '100vh', 
       background: '#f8fafc', 
       color: '#0f172a',
@@ -1723,7 +1724,7 @@ function Galbot116Workspace({ taskId, router, params }) {
     }}>
       
       {/* 1. TOP DIAGNOSTICS BAR */}
-      <div style={{ 
+      <div className="ui-toolbar" style={{
         height: 48, 
         borderBottom: '1px solid #e2e8f0', 
         background: '#ffffff',
@@ -1737,7 +1738,7 @@ function Galbot116Workspace({ taskId, router, params }) {
           <Space size="small">
             <ThunderboltOutlined style={{ color: '#faad14' }} />
             <span style={{ color: '#0f172a', fontWeight: 600 }}>Galbot 1.16 Workspace</span>
-            <Tag color="processing" style={{ fontSize: 10, margin: 0 }}>XCU/HPU DUAL-CORE</Tag>
+            <StatusTag status="进行中" style={{ fontSize: 10, margin: 0 }}>XCU/HPU DUAL-CORE</StatusTag>
           </Space>
 
           <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
@@ -1853,7 +1854,7 @@ function Galbot116Workspace({ taskId, router, params }) {
         <div style={{ width: 420, borderLeft: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', flexDirection: 'column', padding: 16, gap: 16, overflowY: 'auto' }}>
           
           {/* Boot Control & Daemons Panel */}
-          <Card 
+          <Card className="ui-table-card"
             title={
               <div style={{ fontSize: 12, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <DeploymentUnitOutlined style={{ color: '#3b82f6' }} />
@@ -1897,7 +1898,7 @@ function Galbot116Workspace({ taskId, router, params }) {
           </Card>
 
           {/* 3D Kinematic Twin SVG */}
-          <Card 
+          <Card className="ui-table-card"
             title={
               <div style={{ fontSize: 12, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <RobotOutlined style={{ color: '#10b981' }} />
@@ -1952,7 +1953,7 @@ function Galbot116Workspace({ taskId, router, params }) {
           </Card>
 
           {/* Voice logs */}
-          <Card 
+          <Card className="ui-table-card"
             title={
               <div style={{ fontSize: 11, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
@@ -2025,7 +2026,7 @@ function Galbot116Workspace({ taskId, router, params }) {
                   <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 'bold', color: '#3b82f6' }}>{ep.id}</span>
-                      <Tag color="success" style={{ fontSize: 9, margin: 0 }}>{ep.status}</Tag>
+                      <StatusTag status="已完成" style={{ fontSize: 9, margin: 0 }}>{ep.status}</StatusTag>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(15, 23, 42, 0.45)' }}>
                       <span>时长: {ep.time}s</span>
@@ -2042,7 +2043,7 @@ function Galbot116Workspace({ taskId, router, params }) {
       </div>
 
       {/* 3. FOOTER CONTROL BAR */}
-      <div style={{ height: 64, borderTop: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
+      <div className="ui-action-footer" style={{ height: 64, borderTop: '1px solid #e2e8f0', background: '#ffffff', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 11, color: 'rgba(15, 23, 42, 0.45)' }}>
           作业时间: <span style={{ color: '#0f172a', fontWeight: 'bold', fontSize: 13 }}>{collectionTime.toFixed(1)}s</span> / 15.0s &nbsp;|&nbsp;
           时序帧率: <span style={{ color: '#0f172a', fontWeight: 'bold' }}>30 FPS</span> &nbsp;|&nbsp;

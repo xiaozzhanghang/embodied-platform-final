@@ -3,18 +3,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { 
-  Button, Card, Typography, Space, Descriptions, Badge, 
-  Progress, Table, Tag, Steps, App, Modal, Tree, Row, Col 
+  Button, Card, Space, Descriptions,
+  Progress, Table, Steps, App, Modal, Tree, Row, Col
 } from 'antd';
 import { 
-  ArrowLeftOutlined, VideoCameraOutlined, ApiOutlined, DesktopOutlined, 
+  VideoCameraOutlined, ApiOutlined, DesktopOutlined,
   EyeOutlined, SolutionOutlined, FileSearchOutlined, FolderOutlined, 
   FolderOpenOutlined, FileTextOutlined, PlayCircleOutlined, FileOutlined,
   CaretRightOutlined, PauseOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-
-const { Title, Text } = Typography;
+import { PageHeader, StatusTag } from '@/components/ui';
 
 export default function CollectTaskDetailPage() {
   const router = useRouter();
@@ -106,13 +105,11 @@ export default function CollectTaskDetailPage() {
       title: '当前状态', 
       dataIndex: 'status', 
       key: 'status',
-      render: status => {
-        let color = 'default';
-        if (status === '已入库质检池') color = 'success';
-        if (status === '等待解析') color = 'processing';
-        if (status === '废弃') color = 'error';
-        return <Tag color={color}>{status}</Tag>;
-      }
+      render: status => (
+        <StatusTag status={status === '已入库质检池' ? '已完成' : status === '等待解析' ? '进行中' : status === '废弃' ? '失败' : status}>
+          {status}
+        </StatusTag>
+      )
     },
     { 
       title: '操作', fixed: 'right',
@@ -151,19 +148,15 @@ export default function CollectTaskDetailPage() {
 
   return (
     <MainLayout>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-            <Title level={4} style={{ margin: 0 }}>工作台采集任务详情</Title>
-        </div>
-        <Space>
-            <Button type="primary" size="large" onClick={() => window.open(`/collection/collect/connection/${taskId}`, '_blank')}>进入数采自检与工作台</Button>
-        </Space>
-      </div>
+      <div className="ui-page ui-detail-page">
+      <PageHeader
+        title="工作台采集任务详情"
+        description={`${selectedTask.name} · ${taskId}`}
+        back={() => router.back()}
+        extra={<Button type="primary" size="large" onClick={() => window.open(`/collection/collect/connection/${taskId}`, '_blank')}>进入数采自检与工作台</Button>}
+      />
 
-
-
-      <Card title="任务信息" bordered={false} style={{ marginBottom: 24, borderRadius: 8 }}>
+      <Card className="ui-table-card" title="任务信息" variant="borderless" style={{ marginBottom: 24, borderRadius: 8 }}>
           <Descriptions bordered column={2}>
               <Descriptions.Item label="任务ID">{selectedTask.taskId}</Descriptions.Item>
               <Descriptions.Item label="任务名称">{selectedTask.name}</Descriptions.Item>
@@ -173,16 +166,16 @@ export default function CollectTaskDetailPage() {
           </Descriptions>
       </Card>
       
-      <Card title="采集情况" bordered={false} style={{ borderRadius: 8, marginBottom: 24 }}>
+      <Card className="ui-table-card" title="采集情况" variant="borderless" style={{ borderRadius: 8, marginBottom: 24 }}>
           <Descriptions bordered column={2}>
               <Descriptions.Item label="采集机器人">{selectedTask.robot}</Descriptions.Item>
               <Descriptions.Item label="采集场景">{selectedTask.scene}</Descriptions.Item>
-              <Descriptions.Item label="设备状态"><Badge status={selectedTask.deviceStatus === '正常' ? 'success' : 'error'} text={selectedTask.deviceStatus} /></Descriptions.Item>
+              <Descriptions.Item label="设备状态"><StatusTag status={selectedTask.deviceStatus === '正常' ? '正常' : '失败'}>{selectedTask.deviceStatus}</StatusTag></Descriptions.Item>
               <Descriptions.Item label="采集进度"><Progress percent={parseFloat(selectedTask.progress.split('/')[0]) / parseFloat(selectedTask.progress.split('/')[1]) * 100} size="small" /></Descriptions.Item>
           </Descriptions>
       </Card>
  
-      <Card title="已采集序列包记录 (Historical Episodes)" bordered={false} style={{ borderRadius: 8 }}>
+      <Card className="ui-table-card" title="已采集序列包记录 (Historical Episodes)" variant="borderless" style={{ borderRadius: 8 }}>
           <Table 
             dataSource={episodes} 
             columns={columns} 
@@ -192,7 +185,7 @@ export default function CollectTaskDetailPage() {
       </Card>
 
       {/* Dynamic video viewer is now opened in a new tab */}
+      </div>
     </MainLayout>
   );
 }
-

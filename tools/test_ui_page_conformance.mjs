@@ -376,5 +376,57 @@ assert.doesNotMatch(
   '标注审核中不应在调用处被改写为审核中',
 );
 
+const collectionExecutionDetail = await readFile('src/app/collection/collect/detail/[taskId]/page.js', 'utf8');
+for (const component of ['PageHeader', 'StatusTag']) {
+  assert.match(
+    collectionExecutionDetail,
+    new RegExp(`<${component}(?:\\s|\\/|>)`),
+    `src/app/collection/collect/detail/[taskId]/page.js 未使用 ${component}`,
+  );
+}
+for (const className of ['ui-page', 'ui-detail-page', 'ui-table-card']) {
+  assert.match(
+    collectionExecutionDetail,
+    new RegExp(`className=["'][^"']*\\b${className}\\b[^"']*["']`),
+    `src/app/collection/collect/detail/[taskId]/page.js 缺少 ${className} 语义类`,
+  );
+}
+
+const collectionExecutionWorkspaces = [
+  'src/app/collection/collect/connection/[taskId]/page.js',
+  'src/app/collection/collect/data/[taskId]/page.js',
+  'src/app/collection/collect/status/[taskId]/page.js',
+  'src/app/collection/collect/video/[taskId]/[episodeId]/page.js',
+  'src/app/collection/collect/workspace/[taskId]/page.js',
+];
+
+for (const pagePath of collectionExecutionWorkspaces) {
+  const source = await readFile(pagePath, 'utf8');
+  assert.equal(source.includes('message='), false, `${pagePath} 不应继续使用 Ant Design 6 已弃用的 Alert message`);
+  assert.match(source, /className=["'][^"']*\bui-workspace\b[^"']*["']/, `${pagePath} 多面板工作台缺少 ui-workspace`);
+  assert.match(source, /className=["'][^"']*\bui-toolbar\b[^"']*["']/, `${pagePath} 顶部工具条缺少 ui-toolbar`);
+  assert.match(source, /className=["'][^"']*\bui-table-card\b[^"']*["']/, `${pagePath} 内容面板缺少 ui-table-card`);
+  assert.match(source, /<StatusTag(?:\s|\/|>)/, `${pagePath} 未使用统一状态标签`);
+}
+
+const collectionRecordingWorkspace = await readFile('src/app/collection/collect/workspace/[taskId]/page.js', 'utf8');
+assert.match(
+  collectionRecordingWorkspace,
+  /className=["'][^"']*\bui-action-footer\b[^"']*["']/,
+  '采集录制工作台底部控制条缺少 ui-action-footer',
+);
+
+const collectionDeviceStatusWorkspace = await readFile('src/app/collection/collect/status/[taskId]/page.js', 'utf8');
+assert.doesNotMatch(
+  collectionDeviceStatusWorkspace,
+  /<Tag(?:\s|\/|>)/,
+  '设备状态工作台的状态芯片应统一使用 StatusTag',
+);
+assert.doesNotMatch(
+  collectionDeviceStatusWorkspace,
+  /<Badge\s+status=/,
+  '设备状态工作台不应使用 Badge 承载文本状态',
+);
+
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');

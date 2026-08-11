@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Button, Card, Badge, Space, Typography, Tag, Progress, App } from 'antd';
+import { Button, Card, Badge, Space, Typography, Progress, App } from 'antd';
 import { 
   ApiOutlined, 
   CheckCircleFilled, 
@@ -14,6 +14,7 @@ import {
   MonitorOutlined,
   GlobalOutlined
 } from '@ant-design/icons';
+import { StatusTag } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -137,7 +138,7 @@ export default function DeviceConnectionPage() {
   }, [logs]);
 
   return (
-    <div style={{ 
+    <div className="ui-workspace" style={{
       minHeight: '100vh', 
       background: '#020817', 
       padding: '40px',
@@ -173,7 +174,7 @@ export default function DeviceConnectionPage() {
       `}</style>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
+      <div className="ui-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
         <Space size="large">
           <Button 
             type="text" 
@@ -185,7 +186,7 @@ export default function DeviceConnectionPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <MonitorOutlined style={{ color: '#1677ff', fontSize: 20 }} />
               <Title level={4} style={{ color: '#fff', margin: 0 }}>设备自检与握手中心</Title>
-              <Tag color="processing" style={{ marginLeft: 8 }}>Task ID: {taskId}</Tag>
+              <StatusTag status="进行中" style={{ marginLeft: 8 }}>Task ID: {taskId}</StatusTag>
             </div>
             <Text style={{ color: 'rgba(255,255,255,0.45)' }}>正在检测边缘端硬件环境的稳定性 ({isGalbot116 ? 'Galbot 1.16 双端部署模式' : isLumos ? 'Lumos FastUMI Go 模式' : '通用人形机器人模式'})...</Text>
           </div>
@@ -196,7 +197,7 @@ export default function DeviceConnectionPage() {
         {/* Left: Visualization */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Main Scanner Card */}
-          <Card styles={{ body: { padding: 0 } }} style={{ 
+          <Card className="ui-table-card" styles={{ body: { padding: 0 } }} style={{
             background: 'rgba(255,255,255,0.02)', 
             border: '1px solid rgba(255,255,255,0.1)', 
             borderRadius: 20,
@@ -296,7 +297,7 @@ export default function DeviceConnectionPage() {
         {/* Right: Console Logs */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {/* Quick Metrics */}
-          <Card style={{ background: '#111c30', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16 }}>
+          <Card className="ui-table-card" style={{ background: '#111c30', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16 }}>
             <Title level={5} style={{ color: '#fff', marginBottom: 20 }}>实时连接指标</Title>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
@@ -317,7 +318,7 @@ export default function DeviceConnectionPage() {
           </Card>
 
           {/* Terminal Console */}
-          <div style={{ 
+          <div className="ui-table-card" style={{
             flex: 1, 
             background: '#000', 
             borderRadius: 16, 
