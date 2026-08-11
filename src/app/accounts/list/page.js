@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Select, Popconfirm, App } from 'antd';
-import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, LockOutlined, KeyOutlined, MinusCircleFilled, PlusCircleFilled } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Select, Popconfirm, App, Dropdown } from 'antd';
+import { PlusOutlined, SearchOutlined, ReloadOutlined, EditOutlined, DeleteOutlined, LockOutlined, KeyOutlined, MinusCircleFilled, PlusCircleFilled, MoreOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
@@ -26,6 +26,33 @@ export default function AccountListPage() {
     const [editOpen, setEditOpen] = useState(false);
     const [changeOpen, setChangeOpen] = useState(false);
 
+    const accountMoreMenuItems = [
+        { key: 'change-password', label: '修改密码', icon: <LockOutlined /> },
+        { key: 'edit-account', label: '编辑', icon: <EditOutlined /> },
+        { type: 'divider' },
+        { key: 'delete-account', label: '删除', icon: <DeleteOutlined />, danger: true },
+    ];
+
+    const handleAccountMoreAction = ({ key, domEvent }) => {
+        domEvent?.stopPropagation();
+        if (key === 'change-password') {
+            setChangeOpen(true);
+        }
+        if (key === 'edit-account') {
+            setEditOpen(true);
+        }
+        if (key === 'delete-account') {
+            Modal.confirm({
+                title: '确定删除此账号？',
+                content: '删除后该账号将无法继续访问平台。',
+                okText: '删除',
+                okButtonProps: { danger: true },
+                cancelText: '取消',
+                onOk: () => message.success('已删除'),
+            });
+        }
+    };
+
     const columns = [
         { title: '账号ID', dataIndex: 'accountId', width: 80 },
         { title: '账号名', dataIndex: 'name', width: 160 },
@@ -38,9 +65,9 @@ export default function AccountListPage() {
         { title: '创建时间', dataIndex: 'createTime', width: 170 },
         { title: '账号状态', dataIndex: 'status', width: 100, render: (s) => <StatusTag status={s === '启用' ? '已完成' : '停用'}>{s}</StatusTag> },
         {
-            title: '操作', key: 'action', width: 360, fixed: 'right',
+            title: '操作', key: 'action', width: 220, fixed: 'right',
             render: (_, record) => (
-                <Space size="small" wrap>
+                <Space size="small" wrap={false} style={{ whiteSpace: 'nowrap' }}>
                     <Button type="link" size="small" onClick={() => message.success(record.status === '启用' ? '已停用' : '已启用')}>{record.status === '启用' ? '停用' : '启用'}</Button>
                     <Popconfirm
                         title="确认重置密码？"
@@ -49,9 +76,9 @@ export default function AccountListPage() {
                     >
                         <Button type="link" size="small" icon={<KeyOutlined />}>重置密码</Button>
                     </Popconfirm>
-                    <Button type="link" size="small" icon={<LockOutlined />} onClick={() => setChangeOpen(true)}>修改密码</Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => setEditOpen(true)}>编辑</Button>
-                    <Popconfirm title="确定删除此账号？" onConfirm={() => message.success('已删除')}><Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>
+                    <Dropdown trigger={['click']} menu={{ items: accountMoreMenuItems, onClick: handleAccountMoreAction }}>
+                        <Button type="link" size="small" icon={<MoreOutlined />}>更多</Button>
+                    </Dropdown>
                 </Space>
             ),
         },

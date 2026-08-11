@@ -609,24 +609,44 @@ for (const pagePath of dataAdministrationListPages) {
   );
 }
 
-for (const pagePath of [
-  'src/app/data/datasets/page.js',
-  'src/app/data/raw/page.js',
-  'src/app/accounts/list/page.js',
-  'src/app/accounts/teams/page.js',
-  'src/app/accounts/vendors/page.js',
-  'src/app/projects/page.js',
-  'src/app/workflow/list/page.js',
-  'src/app/workflow/nodes/page.js',
-]) {
+const appModalTitleContracts = {
+  'src/app/data/datasets/page.js': ['发布数据集新版本', '新建数据集', '新建子集'],
+  'src/app/data/raw/page.js': ['上传数据', '数据解析'],
+  'src/app/accounts/list/page.js': ['添加成员', '编辑账号', '修改密码'],
+  'src/app/accounts/teams/page.js': ['新建团队', '编辑团队', '添加成员'],
+  'src/app/accounts/vendors/page.js': ['添加服务商'],
+  'src/app/projects/page.js': ['新建项目', '项目配置'],
+  'src/app/workflow/list/page.js': ['新建工作流', '工作流编辑器', '运行工作流'],
+  'src/app/workflow/nodes/page.js': ['新增工具节点'],
+};
+
+for (const [pagePath, modalTitles] of Object.entries(appModalTitleContracts)) {
   const source = await readFile(pagePath, 'utf8');
   assert.match(
     source,
     /import\s*{[^}]*\bAppModal\b[^}]*}\s*from\s*['"]@\/components\/ui['"]/s,
     `${pagePath} 未从公共 UI 入口导入 AppModal`,
   );
-  assert.match(source, /<AppModal(?:\s|\/|>)/, `${pagePath} 新建或编辑弹窗未使用 AppModal`);
+  for (const title of modalTitles) {
+    assert.match(
+      source,
+      new RegExp(`<AppModal\\s+title=["']${title}["']`),
+      `${pagePath} 的“${title}”弹窗未由 AppModal 承载`,
+    );
+    assert.doesNotMatch(
+      source,
+      new RegExp(`<Modal\\s+title=["']${title}["']`),
+      `${pagePath} 的“${title}”弹窗不应回退为原生 Modal`,
+    );
+  }
 }
+
+const workflowTaskSource = await readFile('src/app/workflow/tasks/page.js', 'utf8');
+assert.match(workflowTaskSource, /<Modal\s+title="任务运行详情"/, '只读任务运行详情应保留原生 Modal');
+assert.doesNotMatch(workflowTaskSource, /<AppModal\s+title="任务运行详情"/, '只读任务运行详情不应被创建类弹窗契约误收');
+
+const datasetPageSource = await readFile('src/app/data/datasets/page.js', 'utf8');
+assert.match(datasetPageSource, /<Drawer[\s\S]*?title="数据集版本历史"/, '只读数据集版本历史应保留 Drawer');
 
 const accountListSource = await readFile('src/app/accounts/list/page.js', 'utf8');
 assert.match(
@@ -635,6 +655,45 @@ assert.match(
   '重置密码等确认类交互应保留轻量二次确认',
 );
 assert.doesNotMatch(accountListSource, /resetOpen|setResetOpen/, '重置密码不应继续占用通用表单弹窗状态');
+for (const [key, label] of [
+  ['change-password', '修改密码'],
+  ['edit-account', '编辑'],
+  ['delete-account', '删除'],
+]) {
+  assert.match(
+    accountListSource,
+    new RegExp(`key:\\s*'${key}'[\\s\\S]*?label:\\s*'${label}'`),
+    `用户更多菜单缺少“${label}”动作`,
+  );
+}
+assert.match(
+  accountListSource,
+  /<Dropdown[\s\S]*?menu=\{\{\s*items:\s*accountMoreMenuItems,\s*onClick:\s*handleAccountMoreAction\s*\}\}[\s\S]*?>/,
+  '用户操作列未使用受控 Dropdown 更多菜单',
+);
+assert.match(
+  accountListSource,
+  /const handleAccountMoreAction = \(\{ key, domEvent \}\) => \{\s*domEvent\?\.stopPropagation\(\);/,
+  '更多菜单动作应阻止事件继续传播，避免触发行级交互',
+);
+assert.match(accountListSource, /if \(key === 'change-password'\) \{\s*setChangeOpen\(true\);\s*\}/, '修改密码菜单动作未路由到原 handler');
+assert.match(accountListSource, /if \(key === 'edit-account'\) \{\s*setEditOpen\(true\);\s*\}/, '编辑菜单动作未路由到原 handler');
+assert.match(
+  accountListSource,
+  /if \(key === 'delete-account'\) \{[\s\S]*?Modal\.confirm\(\{[\s\S]*?title:\s*'确定删除此账号？'[\s\S]*?onOk:\s*\(\) => message\.success\('已删除'\)[\s\S]*?\}\);[\s\S]*?\}/,
+  '删除菜单动作必须单独路由到 Modal.confirm 二次确认',
+);
+const accountActionColumnSource = accountListSource.match(/title:\s*'操作'[\s\S]*?\n\s*},\n\s*];/)?.[0] || '';
+assert.ok(accountActionColumnSource, '未找到用户操作列');
+assert.match(accountActionColumnSource, /width:\s*220/, '用户操作列应显著收窄');
+assert.match(accountActionColumnSource, /whiteSpace:\s*'nowrap'/, '用户操作列应保持单行');
+for (const label of ['修改密码', '编辑', '删除']) {
+  assert.doesNotMatch(
+    accountActionColumnSource,
+    new RegExp(`<Button[^>]*>${label}<\\/Button>`),
+    `用户操作列不应直显低频动作“${label}”`,
+  );
+}
 
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');
