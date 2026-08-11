@@ -298,5 +298,64 @@ for (const pagePath of [
   assert.match(source, /<AppModal(?:\s|\/|>)/, `${pagePath} 覆盖式新增/编辑弹窗未使用 AppModal`);
 }
 
+const collectionExecutionPages = [
+  {
+    path: 'src/app/collection/collect-home/page.js',
+    components: ['PageHeader', 'StatusTag'],
+    classNames: ['ui-page'],
+  },
+  {
+    path: 'src/app/collection/collect/page.js',
+    components: ['PageHeader', 'FilterPanel', 'TableToolbar', 'StatusTag'],
+    classNames: ['ui-page', 'ui-table-card'],
+  },
+  {
+    path: 'src/app/collection/tasks/page.js',
+    components: ['PageHeader'],
+    classNames: ['ui-page'],
+  },
+  {
+    path: 'src/app/collection/tasks/[id]/page.js',
+    components: ['PageHeader', 'FilterPanel', 'TableToolbar', 'StatusTag'],
+    classNames: ['ui-page', 'ui-detail-page', 'ui-table-card'],
+  },
+  {
+    path: 'src/app/collection/tasks/create/page.js',
+    components: ['PageHeader', 'FormSection', 'ActionFooter'],
+    classNames: ['ui-page'],
+  },
+  {
+    path: 'src/app/collection/tasks/detail/[taskId]/page.js',
+    components: ['PageHeader', 'FormSection', 'StatusTag'],
+    classNames: ['ui-page', 'ui-detail-page'],
+  },
+];
+
+for (const page of collectionExecutionPages) {
+  const source = await readFile(page.path, 'utf8');
+  assert.equal(source.includes('bordered={false}'), false, `${page.path} 不应继续使用 Ant Design 6 已弃用的 bordered={false}`);
+  assert.equal(source.includes('message='), false, `${page.path} 不应继续使用 Ant Design 6 已弃用的 Alert message`);
+  for (const component of page.components) {
+    assert.match(
+      source,
+      new RegExp(`<${component}(?:\\s|\\/|>)`),
+      `${page.path} 未使用 ${component}`,
+    );
+  }
+  for (const className of page.classNames) {
+    assert.match(
+      source,
+      new RegExp(`className=["'][^"']*\\b${className}\\b[^"']*["']`),
+      `${page.path} 缺少 ${className} 语义类`,
+    );
+  }
+}
+
+const collectionTasksRedirect = await readFile('src/app/collection/tasks/page.js', 'utf8');
+assert.ok(
+  collectionTasksRedirect.includes("router.replace('/collection/collection-tasks')"),
+  '采集任务兼容入口必须保持重定向到 /collection/collection-tasks',
+);
+
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');

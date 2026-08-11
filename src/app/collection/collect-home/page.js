@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Row, Col, Card, Statistic, Button, Space, Typography, Badge, Progress, Timeline } from 'antd';
+import { Row, Col, Card, Statistic, Button, Space, Typography, Progress, Timeline } from 'antd';
 import {
   PlayCircleOutlined,
   CheckCircleOutlined,
@@ -15,8 +15,9 @@ import {
   SyncOutlined,
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { PageHeader, StatusTag } from '@/components/ui';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 export default function CollectorHomePage() {
   const router = useRouter();
@@ -36,7 +37,13 @@ export default function CollectorHomePage() {
 
   return (
     <MainLayout>
-      <div style={{ padding: '4px 0 24px' }}>
+      <div className="ui-page">
+        <PageHeader
+          title="采集工作台"
+          description="查看设备状态、待办任务与最新采集动态。"
+          breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '采集工作台' }]}
+        />
+
         {/* Welcome Banner */}
         <div style={{
           background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
@@ -80,7 +87,7 @@ export default function CollectorHomePage() {
         <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
           {quickStats.map((item, idx) => (
             <Col xs={24} sm={8} key={idx}>
-              <Card bordered={false} style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+              <Card variant="borderless" style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <Text type="secondary" style={{ fontSize: '14px' }}>{item.title}</Text>
@@ -110,7 +117,7 @@ export default function CollectorHomePage() {
         {/* Detailed Grid: Device Status & Activity */}
         <Row gutter={[16, 16]}>
           <Col xs={24} md={16}>
-            <Card title={<strong>设备在线状态</strong>} bordered={false} style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', height: '100%' }}>
+            <Card title={<strong>设备在线状态</strong>} variant="borderless" style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', height: '100%' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: '#fafafa', borderRadius: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -120,7 +127,7 @@ export default function CollectorHomePage() {
                       <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '2px' }}>IP: 192.168.10.105 | PTP 时钟已同步</div>
                     </div>
                   </div>
-                  <Badge status="success" text={<span style={{ color: '#52c41a', fontWeight: 600 }}>在线</span>} />
+                  <StatusTag status="在线" />
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: '#fafafa', borderRadius: '8px' }}>
@@ -131,7 +138,7 @@ export default function CollectorHomePage() {
                       <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '2px' }}>IP: 192.168.10.110 | 控制器连接正常</div>
                     </div>
                   </div>
-                  <Badge status="success" text={<span style={{ color: '#52c41a', fontWeight: 600 }}>在线</span>} />
+                  <StatusTag status="在线" />
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: '#fafafa', borderRadius: '8px' }}>
@@ -142,13 +149,13 @@ export default function CollectorHomePage() {
                       <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '2px' }}>3路视频流已就绪 | 帧率: 30FPS</div>
                     </div>
                   </div>
-                  <Badge status="success" text={<span style={{ color: '#52c41a', fontWeight: 600 }}>在线</span>} />
+                  <StatusTag status="在线" />
                 </div>
               </div>
             </Card>
           </Col>
           <Col xs={24} md={8}>
-            <Card title={<strong>数采动态日志</strong>} bordered={false} style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', height: '100%' }}>
+            <Card title={<strong>数采动态日志</strong>} variant="borderless" style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', height: '100%' }}>
               <Timeline style={{ marginTop: '8px' }}
                 items={[
                   { color: 'green', content: '14:02:15 Lumos 设备完成 IEEE 1588 时钟校准' },

@@ -3,20 +3,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { 
-  Table, Button, Tag, Space, Card, Typography, Breadcrumb, 
+  Table, Button, Tag, Space, Card, Typography,
   Badge, App, Modal, Form, Select, Input, Switch, Tabs, 
   Progress, Tooltip, Descriptions, Divider, Row, Col, InputNumber, Upload, Radio, Checkbox, Alert
 } from 'antd';
 import { 
-  ArrowLeftOutlined, PlusOutlined, SearchOutlined, SyncOutlined, 
+  PlusOutlined, SearchOutlined, SyncOutlined,
   ThunderboltOutlined, PauseCircleOutlined, TagsOutlined, InfoCircleOutlined,
   DownloadOutlined, FileSearchOutlined, CloudUploadOutlined, EditOutlined, 
   DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PauseOutlined,
   ExclamationCircleOutlined, UserOutlined, ClockCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const mockInstancesCollect = [
@@ -149,7 +150,7 @@ export default function TaskInstancePage() {
         </div>
       )
     },
-    { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (s) => <Tag color={s === '已完成' ? 'success' : s === '待分配' ? 'default' : 'processing'}>{s}</Tag> },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (s) => <StatusTag status={s === '采集中' ? '进行中' : s}>{s}</StatusTag> },
     { title: '操作', key: 'action', width: 180, fixed: 'right', render: (_, record) => getStatusActions(record) },
   ];
 
@@ -170,7 +171,7 @@ export default function TaskInstancePage() {
         </div>
       )
     },
-    { title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (s) => <Tag color={s === '已完成' ? 'success' : s === '待分配' ? 'default' : 'purple'}>{s}</Tag> },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (s) => <StatusTag status={s === '标注审核中' ? '审核中' : s}>{s}</StatusTag> },
     { title: '操作', key: 'action', width: 180, fixed: 'right', render: (_, record) => getStatusActions(record) },
   ];
 
@@ -192,25 +193,21 @@ export default function TaskInstancePage() {
 
   return (
     <MainLayout>
-      <Breadcrumb items={[{ title: '首页' }, { title: '数据采集' }, { title: '任务详情' }]} style={{ marginBottom: 16 }} />
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <Button type="link" icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ padding: 0 }}>
-          返回任务列表
-        </Button>
-      </div>
+      <div className="ui-page ui-detail-page">
+        <PageHeader
+          title={`${taskMode === 'collect' ? '任务详情：餐具摆放数采任务' : '任务详情：工业纸箱打包封装关联标注任务'} (${id})`}
+          description={taskMode === 'collect' ? '查看采集分包、执行进度与人员分配。' : '查看关联资产分包、标注审核进度与人员分配。'}
+          breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '任务详情' }]}
+          back={() => router.back()}
+          extra={(
+            <Tag color={taskMode === 'collect' ? (isNoCollectTask ? 'cyan' : 'blue') : 'purple'} variant="borderless">
+              {taskMode === 'collect' ? (isNoCollectTask ? '采集模式：不需要采集 (外部导入/关联资产)' : '采集模式：需要采集数据') : '标注任务模式'}
+            </Tag>
+          )}
+        />
 
       {/* High-Fidelity Header Card */}
       <Card style={{ marginBottom: 24, borderRadius: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.05)', background: '#f8f9fc' }} styles={{ body: { padding: '24px 28px' } }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <Title level={4} style={{ margin: 0 }}>
-            {taskMode === 'collect' ? '任务详情：餐具摆放数采任务' : '任务详情：工业纸箱打包封装关联标注任务'} ({id})
-          </Title>
-          <Tag color={taskMode === 'collect' ? (isNoCollectTask ? 'cyan' : 'blue') : 'purple'} variant="borderless" style={{ borderRadius: 10, padding: '2px 12px' }}>
-            {taskMode === 'collect' ? (isNoCollectTask ? '采集模式：不需要采集 (外部导入/关联资产)' : '采集模式：需要采集数据') : '标注任务模式'}
-          </Tag>
-        </div>
-
         {/* Basic Info Bar - Collapsible */}
         <div style={{ 
           background: '#fff', border: '1px solid #f0f0f0', borderRadius: 12, 
@@ -276,20 +273,21 @@ export default function TaskInstancePage() {
         </div>
       </Card>
 
-      <Card style={{ borderRadius: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Title level={5} style={{ margin: 0 }}>分包明细列表</Title>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              {taskMode === 'collect' 
-                ? '每个分包包含具体的采集员、标注员、审核员及计划采集数量' 
-                : '每个关联分包指定具体的标注员、审核员及分包关联数据数量'}
-            </Text>
-          </div>
-          <Button type="text" icon={<ReloadOutlined />} style={{ color: '#8c8c8c' }} />
-        </div>
+      <Card className="ui-table-card" style={{ borderRadius: 12 }}>
+        <TableToolbar
+          title="分包明细列表"
+          count={currentMockData.length}
+          selectedCount={selectedRowKeys.length}
+          actions={<Button type="text" icon={<ReloadOutlined />} aria-label="刷新分包列表" />}
+        />
+        <Text type="secondary" style={{ display: 'block', marginBottom: 16, fontSize: 13 }}>
+          {taskMode === 'collect'
+            ? '每个分包包含具体的采集员、标注员、审核员及计划采集数量'
+            : '每个关联分包指定具体的标注员、审核员及分包关联数据数量'}
+        </Text>
 
-        <div style={{ background: '#fff', borderRadius: 8, padding: '16px 20px', border: '1px solid #f0f0f0', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <FilterPanel>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space size={16} align="bottom">
             <Form.Item label="分包ID" style={{ marginBottom: 0 }}><Input placeholder="分包ID" style={{ width: 140 }} /></Form.Item>
             {taskMode !== 'collect' && (
@@ -321,6 +319,7 @@ export default function TaskInstancePage() {
               </Button>
             </Space>
           </div>
+        </FilterPanel>
 
         <Tabs
           activeKey={activeTab}
@@ -460,8 +459,8 @@ export default function TaskInstancePage() {
           }}>确定</Button>
         ]}
       >
-        <Alert 
-          message={`当前已选中 ${selectedRowKeys.length} 个包实例，将统一配置标注流程。`} 
+        <Alert
+          title={`当前已选中 ${selectedRowKeys.length} 个包实例，将统一配置标注流程。`}
           type="info" showIcon style={{ marginBottom: 24 }} 
         />
         <Form form={annoForm} layout="vertical">
@@ -562,6 +561,7 @@ export default function TaskInstancePage() {
           )}
         </Form>
       </Modal>
+      </div>
     </MainLayout>
   );
 }

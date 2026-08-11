@@ -7,6 +7,7 @@ import { SearchOutlined, ReloadOutlined, EyeOutlined, PlayCircleOutlined, PauseC
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import { FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -642,10 +643,8 @@ export default function CollectTaskPage() {
             key: 'status',
             width: 120,
             render: (status) => {
-                let color = 'default';
-                if (status === '采集完成') color = 'success';
-                if (status === '采集中') color = 'processing';
-                return <Tag color={color} style={{ margin: 0 }}>{status}</Tag>;
+                const statusKey = status === '采集完成' ? '已完成' : status === '采集中' ? '进行中' : '未开始';
+                return <StatusTag status={statusKey}>{status}</StatusTag>;
             }
         },
         {
@@ -654,9 +653,7 @@ export default function CollectTaskPage() {
             key: 'dataStatus',
             width: 100,
             render: (status) => {
-                let color = 'default';
-                if (status === '待质检') color = 'warning';
-                return <Tag color={color} style={{ margin: 0 }}>{status}</Tag>;
+                return <StatusTag status={status}>{status}</StatusTag>;
             }
         },
         {
@@ -741,13 +738,14 @@ export default function CollectTaskPage() {
 
     return (
             <MainLayout>
-                <div style={{ width: '100%' }}>
+                <div className="ui-page">
+                <PageHeader
+                    title="采集任务中心"
+                    description="按采集员视角查看待采集、采集中与已完成任务。"
+                    breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '采集任务中心' }]}
+                />
 
-
-                <Card 
-                    style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-                    styles={{ body: { padding: '24px 24px 16px' } }}
-                >
+                <FilterPanel>
                     <Form
                         form={form}
                         layout="horizontal"
@@ -798,7 +796,7 @@ export default function CollectTaskPage() {
                             </Col>
                         </Row>
                     </Form>
-                </Card>
+                </FilterPanel>
 
                 <SpecMarker
                   id="collect-precheck"
@@ -812,20 +810,17 @@ export default function CollectTaskPage() {
                   remark="数据采集前置物理校验，防止因传感器损坏、线缆松动或时钟失准导致采集到不可用的废包。"
                   style={{ width: '100%' }}
                 >
-                    <Card styles={{ body: { padding: '24px' } }} style={{ borderRadius: 8 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                            <div style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f' }}>
-                                采集任务
-                            </div>
-                            <Space size="middle" style={{ fontSize: 16, color: '#595959' }}>
-                                <ReloadOutlined style={{ cursor: 'pointer' }} onClick={() => message.success('数据已刷新')} />
-                                <span style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}>
-                                    <svg viewBox="64 64 896 896" focusable="false" data-icon="column-height" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M840 836H184c-4.4 0-8 3.6-8 8v32c0 4.4 3.6 8 8 8h656c4.4 0 8-3.6 8-8v-32c0-4.4-3.6-8-8-8zm0-704H184c-4.4 0-8 3.6-8 8v32c0 4.4 3.6 8 8 8h656c4.4 0 8-3.6 8-8v-32c0-4.4-3.6-8-8-8zM544 260h-64c-4.4 0-8 3.6-8 8v348c0 4.4 3.6 8 8 8h64c4.4 0 8-3.6 8-8V268c0-4.4-3.6-8-8-8z"></path></svg>
-                                </span>
-                                <SettingOutlined style={{ cursor: 'pointer' }} onClick={() => message.info('列设置暂不可用')} />
-                                <svg viewBox="64 64 896 896" focusable="false" data-icon="fullscreen" width="1em" height="1em" fill="currentColor" aria-hidden="true" style={{ cursor: 'pointer' }} onClick={() => message.info('全屏模式暂不可用')}><path d="M290 398a8 8 0 008-8V222h168c4.4 0 8-3.6 8-8v-48c0-4.4-3.6-8-8-8H222v238c0 4.4 3.6 8 8 8h60zm444-168v168a8 8 0 008 8h60c4.4 0 8-3.6 8-8V158H642c-4.4 0-8 3.6-8 8v48c0 4.4 3.6 8 8 8h168zM222 866h238c4.4 0 8-3.6 8-8v-48c0-4.4-3.6-8-8-8H290v-168a8 8 0 00-8-8h-60c-4.4 0-8 3.6-8 8v238zm588-238a8 8 0 00-8 8v168H642c-4.4 0-8 3.6-8 8v48c0 4.4 3.6 8 8 8h238V628c0-4.4-3.6-8-8-8h-60z"></path></svg>
-                            </Space>
-                        </div>
+                    <Card className="ui-table-card" styles={{ body: { padding: '24px' } }} style={{ borderRadius: 8 }}>
+                        <TableToolbar
+                            title="采集任务"
+                            count={filteredData.length}
+                            actions={[
+                                <Button key="refresh" type="text" icon={<ReloadOutlined />} aria-label="刷新数据" onClick={() => message.success('数据已刷新')} />,
+                                <Button key="density" type="text" aria-label="表格密度"><span aria-hidden="true">↕</span></Button>,
+                                <Button key="settings" type="text" icon={<SettingOutlined />} aria-label="列设置" onClick={() => message.info('列设置暂不可用')} />,
+                                <Button key="fullscreen" type="text" aria-label="全屏模式" onClick={() => message.info('全屏模式暂不可用')}><span aria-hidden="true">⛶</span></Button>,
+                            ]}
+                        />
                         <Table 
                             columns={columns} 
                             dataSource={filteredData} 

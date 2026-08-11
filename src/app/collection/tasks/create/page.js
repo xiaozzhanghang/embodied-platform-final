@@ -4,11 +4,11 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Typography, Space, Input, Select, Form, Row, Col, 
-  Card, Table, Radio, Switch, App, Breadcrumb, Steps, 
+  Card, Table, Radio, Switch, App, Steps,
   InputNumber, Upload, Checkbox, Avatar, Tag, Divider, Alert, Modal
 } from 'antd';
 import { 
-  ArrowLeftOutlined, SaveOutlined, PlusOutlined, 
+  SaveOutlined, PlusOutlined,
   DeleteOutlined, UploadOutlined, DragOutlined,
   QuestionCircleOutlined, LayoutOutlined, FileTextOutlined,
   CheckOutlined, RightOutlined, InfoCircleOutlined, EyeOutlined,
@@ -18,8 +18,9 @@ import {
   UnorderedListOutlined, InfoCircleFilled, EditOutlined, MinusCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 // Collectors / Annotators / Auditors lists
@@ -550,11 +551,6 @@ function CreateTaskContent() {
 
   const renderSelection = () => (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 32 }}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-        <Title level={4} style={{ margin: 0 }}>选择创建方式</Title>
-      </div>
-
       <div style={{ marginBottom: 40 }}>
         <Title level={5} style={{ marginBottom: 20 }}>常用任务模版</Title>
         <Row gutter={[24, 24]}>
@@ -571,7 +567,7 @@ function CreateTaskContent() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <Text strong style={{ fontSize: 15 }}>{tpl.name}</Text>
-                      <Tag color="blue" bordered={false} style={{ fontSize: 10 }}>{tpl.type}</Tag>
+                      <Tag color="blue" variant="borderless" style={{ fontSize: 10 }}>{tpl.type}</Tag>
                     </div>
                     <Text type="secondary" style={{ fontSize: 12, display: 'block', minHeight: 32 }}>{tpl.desc}</Text>
                   </div>
@@ -615,18 +611,6 @@ function CreateTaskContent() {
 
   const renderConfigFlow = () => (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, background: '#fff', padding: '16px 24px', borderRadius: 8, border: '1px solid #f0f0f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => setCreationStage('selection')} style={{ marginRight: 16 }} />
-          <div>
-            <Title level={4} style={{ margin: 0 }}>
-              {mode === 'edit' ? '编辑任务：' : mode === 'copy' ? '复制任务：' : '基于模版创建：'}
-              {selectedTemplate?.name}
-            </Title>
-          </div>
-        </div>
-      </div>
-
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32, padding: '0 100px' }}>
         <Steps current={currentStep} titlePlacement="horizontal" style={{ width: '100%', maxWidth: 800 }}
           items={[
@@ -645,8 +629,8 @@ function CreateTaskContent() {
       }}>
         {currentStep === 0 ? (
           <>
-            <Alert 
-              message={
+            <Alert
+              title={
                 taskFormType === 'collect' 
                   ? '【数据数采模式】当前形式将生成针对具体物理设备/仿真场景的采集指令，派发给采集员执行。'
                   : '【资产关联模式】直接在系统已有的数据资产包（如已录制视频、已上传轨迹）中选择数据，建立标注审核待办。'
@@ -657,7 +641,7 @@ function CreateTaskContent() {
               style={{ marginBottom: 24, borderRadius: 8 }}
             />
 
-            <Card title="基础信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+            <Card title="基础信息" variant="borderless" styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
               <div style={{ marginBottom: 24, padding: '16px', background: '#f8f9fc', borderRadius: 8, border: '1px solid #e8e8e8' }}>
                 <Form.Item label={<Text strong style={{ fontSize: 14, color: '#1f1f1f' }}>请选择任务类型模式</Text>} style={{ marginBottom: 0 }}>
                   <Radio.Group 
@@ -722,7 +706,7 @@ function CreateTaskContent() {
             </Card>
 
             {/* Merged Card: 设备与采集配置 */}
-            <Card title="设备与采集配置" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+            <Card title="设备与采集配置" variant="borderless" styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
               {/* Top Row: 任务模式类型 Radio 单选组 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 16, borderBottom: '1px dashed #e8e8e8' }}>
                 <span style={{ fontWeight: 600, color: '#262626', width: 110, flexShrink: 0 }}>
@@ -1041,8 +1025,10 @@ function CreateTaskContent() {
             )}
             </Card>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
-              <Button type="primary" size="large" style={{ width: 160 }} onClick={() => setCurrentStep(1)}>下一步</Button>
+            <div style={{ marginTop: 32 }}>
+              <ActionFooter>
+                <Button type="primary" size="large" style={{ width: 160 }} onClick={() => setCurrentStep(1)}>下一步</Button>
+              </ActionFooter>
             </div>
           </>
         ) : (
@@ -1070,7 +1056,7 @@ function CreateTaskContent() {
                   </Radio.Group>
                 </div>
               }
-              bordered={false} 
+              variant="borderless"
               style={{ marginBottom: 24, borderRadius: 12, border: '1px solid #e2e8f0' }}
             >
               {/* 预设动作步骤模版一键填充工具条 */}
@@ -1291,11 +1277,13 @@ function CreateTaskContent() {
                  </div>
                )}
             </Card>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 32 }}>
-              <Button size="large" style={{ width: 120 }} onClick={() => setCurrentStep(0)}>上一步</Button>
-              <Button type="primary" size="large" style={{ width: 160 }} htmlType="submit">
-                发布任务
-              </Button>
+            <div style={{ marginTop: 32 }}>
+              <ActionFooter>
+                <Button size="large" style={{ width: 120 }} onClick={() => setCurrentStep(0)}>上一步</Button>
+                <Button type="primary" size="large" style={{ width: 160 }} htmlType="submit">
+                  发布任务
+                </Button>
+              </ActionFooter>
             </div>
           </>
         )}
@@ -1305,10 +1293,22 @@ function CreateTaskContent() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[{ title: '数据采集' }, { title: '任务中心', href: '/collection/tasks' }, { title: '编辑/复制任务' }]} style={{ marginBottom: 16 }} />
-      </div>
-      {creationStage === 'selection' ? renderSelection() : renderConfigFlow()}
+      <div className="ui-page">
+        <PageHeader
+          title={creationStage === 'selection'
+            ? '选择采集任务创建方式'
+            : `${mode === 'edit' ? '编辑任务：' : mode === 'copy' ? '复制任务：' : '基于模版创建：'}${selectedTemplate?.name || ''}`}
+          description={creationStage === 'selection' ? '选择常用任务模版，或从空白配置开始。' : '按步完成基础参数、设备与动作流程配置。'}
+          breadcrumbs={[{ title: '数据采集' }, { title: '任务中心', href: '/collection/tasks' }, { title: mode === 'edit' ? '编辑任务' : mode === 'copy' ? '复制任务' : '新建任务' }]}
+          back={() => creationStage === 'selection' ? router.back() : setCreationStage('selection')}
+        />
+
+        <FormSection
+          title={creationStage === 'selection' ? '创建方式' : '任务配置'}
+          description={creationStage === 'selection' ? '模版会预置设备、遥操与采集模式。' : '已选参数、查询参数与分配逻辑保持不变。'}
+        >
+          {creationStage === 'selection' ? renderSelection() : renderConfigFlow()}
+        </FormSection>
       
       <Modal
           title={`新建${currentField ? fieldLabels[currentField] : ''}`}
@@ -1399,7 +1399,8 @@ function CreateTaskContent() {
                   </Form.Item>
               )}
           </Form>
-      </Modal>
+        </Modal>
+      </div>
     </MainLayout>
   );
 }
