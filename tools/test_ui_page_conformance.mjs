@@ -98,5 +98,66 @@ assert.equal(annotationCreate.includes('<Segmented'), false, '标注任务创建
 assert.equal(annotationCreate.includes('message='), false, '标注任务创建页不应使用 Ant Design 6 已弃用的 Alert message');
 assert.equal(annotationCreate.includes('bordered={false}'), false, '标注任务创建页不应使用 Ant Design 6 已弃用的 Tag bordered');
 
+const annotationQaListPages = [
+  { path: 'src/app/annotation/acceptance/page.js', filters: true },
+  { path: 'src/app/annotation/audit/page.js', filters: true },
+  { path: 'src/app/annotation/marketplace/page.js', filters: true },
+  { path: 'src/app/annotation/projects/page.js', filters: true },
+  { path: 'src/app/annotation/review-list/page.js', filters: true },
+  { path: 'src/app/annotation/stats/page.js', filters: false },
+  { path: 'src/app/collection/qa/page.js', filters: true },
+];
+
+for (const page of annotationQaListPages) {
+  const source = await readFile(page.path, 'utf8');
+  for (const component of ['PageHeader', 'TableToolbar', 'StatusTag']) {
+    assert.match(
+      source,
+      new RegExp(`<${component}(?:\\s|\\/|>)`),
+      `${page.path} 未使用 ${component}`,
+    );
+  }
+  if (page.filters) {
+    assert.match(source, /<FilterPanel(?:\s|\/|>)/, `${page.path} 筛选区未使用 FilterPanel`);
+  }
+}
+
+for (const pagePath of [
+  'src/app/annotation/audit/create/page.js',
+  'src/app/annotation/projects/create/page.js',
+]) {
+  const source = await readFile(pagePath, 'utf8');
+  for (const component of ['PageHeader', 'FormSection', 'ActionFooter']) {
+    assert.match(
+      source,
+      new RegExp(`<${component}(?:\\s|\\/|>)`),
+      `${pagePath} 页面式表单未使用 ${component}`,
+    );
+  }
+}
+
+const answerWorkspace = await readFile('src/app/annotation/answer/page.js', 'utf8');
+for (const component of ['PageHeader', 'FilterPanel', 'TableToolbar', 'StatusTag']) {
+  assert.match(
+    answerWorkspace,
+    new RegExp(`<${component}(?:\\s|\\/|>)`),
+    `src/app/annotation/answer/page.js 外层任务列表未使用 ${component}`,
+  );
+}
+assert.match(answerWorkspace, /className=["']ui-workspace["']/, '标注作业工作台缺少 ui-workspace');
+
+const annotationEditor = await readFile('src/app/annotation/editor/[type]/page.js', 'utf8');
+assert.match(annotationEditor, /className=["']ui-workspace["']/, '标注编辑器缺少 ui-workspace');
+assert.match(annotationEditor, /<StatusTag(?:\s|\/|>)/, '标注编辑器未使用统一状态标签');
+
+for (const pagePath of [
+  'src/app/annotation/audit/page.js',
+  'src/app/annotation/projects/page.js',
+  'src/app/collection/qa/page.js',
+]) {
+  const source = await readFile(pagePath, 'utf8');
+  assert.match(source, /<AppModal(?:\s|\/|>)/, `${pagePath} 配置弹窗未使用 AppModal`);
+}
+
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');

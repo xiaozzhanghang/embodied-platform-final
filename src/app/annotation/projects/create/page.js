@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button, Card, Typography, Space, Input, Select, Form, Row, Col, Steps, Table, App, Radio, Tag, Divider, Avatar, Breadcrumb, Alert } from 'antd';
 import { ArrowLeftOutlined, PlusOutlined, ProjectOutlined, UserOutlined, CheckCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -55,16 +56,15 @@ export default function CreateProjectPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 24 }}>
-        <Breadcrumb items={[{ title: '数据标注' }, { title: '标注项目', href: '/annotation/projects' }, { title: '新建标注项目' }]} style={{ marginBottom: 16 }} />
-      </div>
+      <div className="ui-page">
+      <PageHeader
+        title="新建标注项目"
+        description="配置项目基本信息、标注类型与作业人员，确认后发布任务。"
+        breadcrumbs={[{ title: '首页' }, { title: '数据标注' }, { title: '标注项目', href: '/annotation/projects' }, { title: '新建标注项目' }]}
+        back={() => router.back()}
+      />
 
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }} />
-          <Title level={4} style={{ margin: 0 }}>新建标注项目</Title>
-        </div>
-
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 48, padding: '0 100px' }}>
           <Steps current={step} labelPlacement="horizontal" style={{ width: '100%', maxWidth: 800 }}
             items={[
@@ -79,12 +79,12 @@ export default function CreateProjectPage() {
         {step === 0 && (
           <>
             <Alert
-              message="请填写标注项目基本信息，选择标注类型并关联对应的采集任务"
+              title="请填写标注项目基本信息，选择标注类型并关联对应的采集任务"
               type="info" showIcon icon={<InfoCircleOutlined />}
               style={{ marginBottom: 24, borderRadius: 8 }}
             />
 
-            <Card title="基本信息" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+            <FormSection title="基本信息" description="填写项目名称并关联对应的采集任务。">
               <Row gutter={24}>
                 <Col span={8}>
                   <Form.Item label="项目名称" required>
@@ -115,9 +115,9 @@ export default function CreateProjectPage() {
                   </Form.Item>
                 </Col>
               </Row>
-            </Card>
+            </FormSection>
 
-            <Card title="标注类型" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+            <FormSection title="标注类型" description="选择本项目采用的标注方式。">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                 {ANNOTATION_TYPES.map(type => (
                   <div
@@ -140,11 +140,11 @@ export default function CreateProjectPage() {
                   </div>
                 ))}
               </div>
-            </Card>
+            </FormSection>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
+            <ActionFooter>
               <Button type="primary" size="large" style={{ width: 160 }} onClick={() => setStep(1)} disabled={!canNext()}>下一步</Button>
-            </div>
+            </ActionFooter>
           </>
         )}
 
@@ -152,12 +152,12 @@ export default function CreateProjectPage() {
         {step === 1 && (
           <>
             <Alert
-              message="请分配标注员与审核员，系统将自动均分数据任务给标注员"
+              title="请分配标注员与审核员，系统将自动均分数据任务给标注员"
               type="info" showIcon icon={<InfoCircleOutlined />}
               style={{ marginBottom: 24, borderRadius: 8 }}
             />
 
-            <Card title="标注员分配" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+            <FormSection title="标注员分配" description="可分配多名标注员，任务将按人员均分。">
               <Row gutter={24}>
                 <Col span={24}>
                   <Form.Item label="分配标注员" required extra="可分配多名标注员，任务将均分给每位标注员">
@@ -186,9 +186,9 @@ export default function CreateProjectPage() {
                   </Form.Item>
                 </Col>
               </Row>
-            </Card>
+            </FormSection>
 
-            <Card title="审核人员（QA）" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+            <FormSection title="审核人员（QA）" description="审核员负责对标注结果进行抽检与审核。">
               <Row gutter={24}>
                 <Col span={24}>
                   <Form.Item label="分配审核员" extra="审核员负责对标注结果进行抽检与审核">
@@ -212,12 +212,12 @@ export default function CreateProjectPage() {
                   </Text>
                 </Card>
               )}
-            </Card>
+            </FormSection>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 32 }}>
+            <ActionFooter>
               <Button size="large" style={{ width: 120 }} onClick={() => setStep(0)}>上一步</Button>
               <Button type="primary" size="large" style={{ width: 160 }} onClick={() => setStep(2)} disabled={!canNext()}>下一步</Button>
-            </div>
+            </ActionFooter>
           </>
         )}
 
@@ -225,12 +225,12 @@ export default function CreateProjectPage() {
         {step === 2 && (
           <>
             <Alert
-              message="请确认以下信息无误后提交创建"
+              title="请确认以下信息无误后提交创建"
               type="info" showIcon icon={<InfoCircleOutlined />}
               style={{ marginBottom: 24, borderRadius: 8 }}
             />
 
-            <Card title="项目信息预览" bordered={false} styles={{ header: { background: '#fafafa', borderRadius: '8px 8px 0 0' } }} style={{ marginBottom: 24, borderRadius: 8 }}>
+            <FormSection title="项目信息预览" description="确认项目、标注类型和人员分配信息。">
               <Row gutter={24}>
                 <Col span={8}>
                   <div style={{ marginBottom: 16 }}>
@@ -270,7 +270,7 @@ export default function CreateProjectPage() {
                   </div>
                 </Col>
               </Row>
-            </Card>
+            </FormSection>
 
             <Card style={{ background: '#e6f4ff', borderColor: '#91caff', borderRadius: 8 }}>
               <Text>
@@ -279,12 +279,13 @@ export default function CreateProjectPage() {
               </Text>
             </Card>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 32 }}>
+            <ActionFooter>
               <Button size="large" style={{ width: 120 }} onClick={() => setStep(1)}>上一步</Button>
               <Button type="primary" size="large" style={{ width: 160 }} onClick={handleSave} icon={<CheckCircleOutlined />}>保存并创建</Button>
-            </div>
+            </ActionFooter>
           </>
         )}
+      </div>
       </div>
     </MainLayout>
   );

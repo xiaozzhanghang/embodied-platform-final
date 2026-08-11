@@ -42,6 +42,7 @@ import {
   EditOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -402,23 +403,17 @@ export default function CreateAnnotationTaskPage() {
 
   return (
     <MainLayout>
-      <div style={{ padding: '24px 32px', background: '#f8fafc', minHeight: '100vh' }}>
-
-        {/* Breadcrumb Navigation */}
-        <div style={{ marginBottom: 16 }}>
-          <Breadcrumb items={[
-            { title: <a onClick={() => router.push('/annotation/audit')}>标注工作台</a> },
-            { title: '新建标注任务' }
-          ]} />
-        </div>
-
-        {/* Page Title & Back */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => router.push('/annotation/audit')}>
-            返回列表
-          </Button>
-          <Title level={4} style={{ margin: 0 }}>新建标注任务</Title>
-        </div>
+      <div className="ui-page">
+        <PageHeader
+          title="新建标注任务"
+          description="关联已采集的数据资产，配置标注要求并分配作业人员。"
+          breadcrumbs={[
+            { title: '首页' },
+            { title: '标注工作台', href: '/annotation/audit' },
+            { title: '新建标注任务' },
+          ]}
+          back={() => router.push('/annotation/audit')}
+        />
 
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <Form
@@ -435,17 +430,9 @@ export default function CreateAnnotationTaskPage() {
           >
 
             {/* ==================== 区块一：关联数据源 ==================== */}
-            <Card
-              title={
-                <SectionHeader
-                  number="1"
-                  icon={<LinkOutlined style={{ color: '#1677ff' }} />}
-                  title="关联数据资产目录"
-                  subtitle="从数据资产目录中选择已导入或已采集的动作序列数据包"
-                />
-              }
-              variant="borderless"
-              style={cardStyle}
+            <FormSection
+              title="01 · 关联数据资产目录"
+              description="从数据资产目录中选择已导入或已采集的动作序列数据包。"
             >
               <Row gutter={16}>
                 <Col span={16}>
@@ -543,20 +530,12 @@ export default function CreateAnnotationTaskPage() {
                   />
                 </div>
               )}
-            </Card>
+            </FormSection>
 
             {/* ==================== 区块二：基本配置 ==================== */}
-            <Card
-              title={
-                <SectionHeader
-                  number="2"
-                  icon={<SettingOutlined style={{ color: '#1677ff' }} />}
-                  title="标注任务基本配置"
-                  subtitle="设置任务名称、标注类型、所属项目等基础信息"
-                />
-              }
-              variant="borderless"
-              style={cardStyle}
+            <FormSection
+              title="02 · 标注任务基本配置"
+              description="设置任务名称、标注类型、所属项目等基础信息。"
             >
               <Row gutter={16}>
                 <Col span={16}>
@@ -596,20 +575,12 @@ export default function CreateAnnotationTaskPage() {
                   </Form.Item>
                 </Col>
               </Row>
-            </Card>
+            </FormSection>
 
             {/* ==================== 区块三：人员分配 ==================== */}
-            <Card
-              title={
-                <SectionHeader
-                  number="3"
-                  icon={<TeamOutlined style={{ color: '#1677ff' }} />}
-                  title="人员分配"
-                  subtitle="分配本任务的标注员与审核员"
-                />
-              }
-              variant="borderless"
-              style={cardStyle}
+            <FormSection
+              title="03 · 人员分配"
+              description="分配本任务的标注员与审核员。"
             >
               <Row gutter={16}>
                 <Col span={12}>
@@ -623,74 +594,68 @@ export default function CreateAnnotationTaskPage() {
                   </Form.Item>
                 </Col>
               </Row>
-            </Card>
+            </FormSection>
 
             {/* ==================== 区块四：动作步骤编排 ==================== */}
-            <Card
-              title={
-                <SectionHeader
-                  icon={<OrderedListOutlined style={{ color: '#1677ff' }} />}
-                  title="动作步骤编排"
-                />
-              }
-              extra={
-                <div style={{ 
-                  display: 'flex', 
-                  background: '#f1f5f9', 
-                  padding: '2px', 
-                  borderRadius: '8px', 
-                  border: '1px solid #e2e8f0',
-                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)'
-                }}>
-                  <button
-                    type="button"
-                    onClick={() => setSopMode('structured')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '5px 16px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      fontSize: '12px',
-                      fontWeight: sopMode === 'structured' ? 600 : 500,
-                      color: sopMode === 'structured' ? '#2563eb' : '#64748b',
-                      background: sopMode === 'structured' ? '#ffffff' : 'transparent',
-                      boxShadow: sopMode === 'structured' ? '0 2px 8px rgba(37, 99, 235, 0.08)' : 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-                    }}
-                  >
-                    <OrderedListOutlined style={{ fontSize: 13 }} />
-                    结构化步骤
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSopMode('natural')}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '5px 16px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      fontSize: '12px',
-                      fontWeight: sopMode === 'natural' ? 600 : 500,
-                      color: sopMode === 'natural' ? '#10b981' : '#64748b',
-                      background: sopMode === 'natural' ? '#ffffff' : 'transparent',
-                      boxShadow: sopMode === 'natural' ? '0 2px 8px rgba(16, 185, 129, 0.08)' : 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-                    }}
-                  >
-                    <EditOutlined style={{ fontSize: 13 }} />
-                    自然语言描述
-                  </button>
-                </div>
-              }
-              variant="borderless"
-              style={cardStyle}
+            <FormSection
+              title="04 · 动作步骤编排"
+              description="选择结构化步骤或自然语言描述方式，编排任务的动作流程。"
             >
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                <div style={{
+                    display: 'flex',
+                    background: '#f1f5f9',
+                    padding: '2px',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)'
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => setSopMode('structured')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '5px 16px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontSize: '12px',
+                        fontWeight: sopMode === 'structured' ? 600 : 500,
+                        color: sopMode === 'structured' ? '#2563eb' : '#64748b',
+                        background: sopMode === 'structured' ? '#ffffff' : 'transparent',
+                        boxShadow: sopMode === 'structured' ? '0 2px 8px rgba(37, 99, 235, 0.08)' : 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }}
+                    >
+                      <OrderedListOutlined style={{ fontSize: 13 }} />
+                      结构化步骤
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSopMode('natural')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '5px 16px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontSize: '12px',
+                        fontWeight: sopMode === 'natural' ? 600 : 500,
+                        color: sopMode === 'natural' ? '#10b981' : '#64748b',
+                        background: sopMode === 'natural' ? '#ffffff' : 'transparent',
+                        boxShadow: sopMode === 'natural' ? '0 2px 8px rgba(16, 185, 129, 0.08)' : 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }}
+                    >
+                      <EditOutlined style={{ fontSize: 13 }} />
+                      自然语言描述
+                    </button>
+                  </div>
+              </div>
 
               {/* 模版选择与填充 */}
               <div style={{
@@ -1070,24 +1035,12 @@ export default function CreateAnnotationTaskPage() {
                   )}
                 </Form.List>
               )}
-            </Card>
+            </FormSection>
 
 
 
             {/* ==================== 底部操作栏 ==================== */}
-            <div style={{
-              padding: '16px 24px',
-              background: '#fff',
-              border: '1px solid #f0f0f0',
-              borderRadius: 10,
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: 16,
-              position: 'sticky',
-              bottom: 0,
-              zIndex: 10,
-              boxShadow: '0 -2px 8px rgba(0,0,0,0.06)'
-            }}>
+            <ActionFooter>
               <Button size="large" onClick={() => router.push('/annotation/audit')}>
                 取消
               </Button>
@@ -1100,7 +1053,7 @@ export default function CreateAnnotationTaskPage() {
               >
                 确认并分发标注任务
               </Button>
-            </div>
+            </ActionFooter>
 
           </Form>
         </div>

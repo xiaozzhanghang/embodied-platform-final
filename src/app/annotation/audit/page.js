@@ -6,6 +6,7 @@ import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progres
 import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, PlusOutlined, FileAddOutlined, MinusCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -313,7 +314,7 @@ export default function AnnotationAuditPage() {
     { title: '数据量(分钟)', dataIndex: 'dataMinutes', width: 100, align: 'right', render: (v) => `${v} min` },
     {
       title: '任务状态', dataIndex: 'taskStatus', width: 90, align: 'center',
-      render: (s) => <Badge status={statusColors[s]} text={s} />
+      render: (s) => <StatusTag status={s} />
     },
     { title: '货架任务', dataIndex: 'isShelfTask', width: 80, align: 'center', render: (v) => v === '是' ? <Tag color="orange">是</Tag> : <Text type="secondary">否</Text> },
     { title: '行列号', dataIndex: 'rowCol', width: 80, align: 'center' },
@@ -372,14 +373,19 @@ export default function AnnotationAuditPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 16 }}>
-        <Breadcrumb items={[{ title: '数据采集' }, { title: '标注工作台' }]} style={{ marginBottom: 16 }} />
-      </div>
+      <div className="ui-page">
+      <PageHeader
+        title="标注工作台"
+        description="统一查看标注任务状态、作业进度与人员分配。"
+        breadcrumbs={[{ title: '首页' }, { title: '数据标注' }, { title: '标注工作台' }]}
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/annotation/audit/create')}>
+            新建标注任务
+          </Button>
+        }
+      />
 
-      <Card 
-        style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-        styles={{ body: { padding: '24px 24px 16px' } }}
-      >
+      <FilterPanel>
         <QueryFilter
           submitter={{
             submitButtonProps: { icon: <SearchOutlined /> },
@@ -401,11 +407,11 @@ export default function AnnotationAuditPage() {
           <ProFormSelect name="annotator" label="标注员" placeholder="请选择" options={people.map(p => ({ label: p, value: p }))} />
           <ProFormSelect name="auditor" label="审核员" placeholder="请选择" options={people.map(p => ({ label: p, value: p }))} />
         </QueryFilter>
-      </Card>
+      </FilterPanel>
 
       {/* Table Section */}
       <Card 
-        title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>标注列表</span>}
+        className="ui-table-card"
         tabList={[
           { key: 'all', tab: `全部 (${tableData.length})` },
           { key: 'running', tab: `进行中 (${tableData.filter(t => t.taskStatus === '进行中').length})` },
@@ -414,25 +420,21 @@ export default function AnnotationAuditPage() {
         ]}
         activeTabKey={activeStatusTab}
         onTabChange={(key) => setActiveStatusTab(key)}
-        extra={
-          <Space style={{ padding: '6px 0' }}>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={() => router.push('/annotation/audit/create')}
-              style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
-            >
-              新建标注任务
-            </Button>
-            <Button icon={<UserOutlined />} disabled={selectedRowKeys.length === 0} onClick={() => message.info(`已选 ${selectedRowKeys.length} 条，批量分配`)}>
-              批量分配 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
-            </Button>
-            <Button icon={<DownloadOutlined />} onClick={() => message.success('正在导出...')}>导出</Button>
-          </Space>
-        }
         styles={{ body: { padding: 0 } }} 
-        style={{ borderRadius: 8 }}
       >
+        <TableToolbar
+          title="标注列表"
+          count={filteredData.length}
+          selectedCount={selectedRowKeys.length}
+          actions={
+            <>
+              <Button icon={<UserOutlined />} disabled={selectedRowKeys.length === 0} onClick={() => message.info(`已选 ${selectedRowKeys.length} 条，批量分配`)}>
+                批量分配 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+              </Button>
+              <Button icon={<DownloadOutlined />} onClick={() => message.success('正在导出...')}>导出</Button>
+            </>
+          }
+        />
         <Table
           rowSelection={rowSelection}
           columns={columns}
@@ -449,7 +451,7 @@ export default function AnnotationAuditPage() {
       </Card>
 
       {/* 重新分配弹窗 */}
-      <Modal
+      <AppModal
         title="重新分配"
         open={reassignModalOpen}
         onCancel={() => setReassignModalOpen(false)}
@@ -481,8 +483,9 @@ export default function AnnotationAuditPage() {
             </Select>
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
 
+      </div>
     </MainLayout>
   );
 }

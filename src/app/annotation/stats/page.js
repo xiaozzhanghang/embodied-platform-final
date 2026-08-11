@@ -4,6 +4,7 @@ import React from 'react';
 import { Card, Typography, Row, Col, Statistic, Table, Tag, Tabs, Progress } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined, CheckCircleOutlined, ClockCircleOutlined, TeamOutlined, FileTextOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import { PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -35,7 +36,12 @@ const capacityData = [
 export default function StatsPage() {
     return (
         <MainLayout>
-            <div className="page-header"><h3 className="page-header-title">项目统计</h3></div>
+            <div className="ui-page">
+            <PageHeader
+                title="项目统计"
+                description="汇总标注项目进度、团队产能与结算状态。"
+                breadcrumbs={[{ title: '首页' }, { title: '数据标注' }, { title: '项目统计' }]}
+            />
             <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
                 <Col span={6}><Card hoverable><Statistic title="总项目数" value={12} prefix={<FileTextOutlined style={{ color: '#1677ff' }} />} /></Card></Col>
                 <Col span={6}><Card hoverable><Statistic title="待标注数据" value={1580} prefix={<ClockCircleOutlined style={{ color: '#faad14' }} />} suffix="条" /></Card></Col>
@@ -43,9 +49,11 @@ export default function StatsPage() {
                 <Col span={6}><Card hoverable><Statistic title="标注团队人数" value={16} prefix={<TeamOutlined style={{ color: '#722ed1' }} />} suffix="人" /></Card></Col>
             </Row>
 
-            <Card>
+            <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
+                <TableToolbar title="统计明细" />
                 <Tabs
                     defaultActiveKey="projectStats"
+                    style={{ padding: '0 16px 16px' }}
                     items={[
                         {
                             key: 'projectStats', label: '项目统计',
@@ -74,7 +82,7 @@ export default function StatsPage() {
                                         { title: '项目ID', dataIndex: 'projectId', width: 100 },
                                         { title: '项目名称', dataIndex: 'name', width: 200 },
                                         { title: '进度', dataIndex: 'progress', width: 200, render: (p) => <Progress percent={p} size="small" status={p >= 90 ? 'success' : 'active'} /> },
-                                        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '即将完成' ? 'green' : 'blue'}>{s}</Tag> },
+                                        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <StatusTag status={s} /> },
                                         { title: '开始时间', dataIndex: 'startTime', width: 120 },
                                         { title: '结束时间', dataIndex: 'endTime', width: 120 },
                                     ]}
@@ -92,7 +100,7 @@ export default function StatsPage() {
                                         { title: '任务名称', dataIndex: 'name', width: 200 },
                                         { title: '标注员', dataIndex: 'annotator', width: 120 },
                                         { title: '进度', dataIndex: 'progress', width: 200, render: (p) => <Progress percent={p} size="small" status={p === 100 ? 'success' : 'active'} /> },
-                                        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '已完成' ? 'success' : 'processing'}>{s}</Tag> },
+                                        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <StatusTag status={s} /> },
                                         { title: '开始时间', dataIndex: 'startTime', width: 120 },
                                     ]}
                                     pagination={false}
@@ -129,7 +137,7 @@ export default function StatsPage() {
                                         { title: '标注总量', dataIndex: 'total', width: 100 },
                                         { title: '单价(元)', dataIndex: 'unitPrice', width: 100 },
                                         { title: '金额(元)', dataIndex: 'amount', width: 120, render: (v) => <Text strong style={{ color: '#f5222d' }}>¥{v}</Text> },
-                                        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '已结算' ? 'success' : 'warning'}>{s}</Tag> },
+                                        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <StatusTag status={s} /> },
                                     ]}
                                     pagination={false}
                                 />
@@ -138,6 +146,7 @@ export default function StatsPage() {
                     ]}
                 />
             </Card>
+            </div>
         </MainLayout>
     );
 }

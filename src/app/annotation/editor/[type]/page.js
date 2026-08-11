@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button, Tag, Space, Card, Typography, Row, Col, List, Badge, Input, Table, Divider, App, Tooltip, Radio } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined, PlayCircleOutlined, PauseCircleOutlined, 
          BorderOutlined, AimOutlined, HistoryOutlined, SettingOutlined, SwapOutlined } from '@ant-design/icons';
+import { StatusTag } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -27,13 +28,13 @@ export default function AnnotationEditorPage() {
   const isRangeType = params.type === 'range' || params.type === 'range-box';
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#000' }}>
+    <div className="ui-workspace" style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#000' }}>
       {/* Header */}
       <div style={{ height: 50, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#141414', borderBottom: '1px solid #333' }}>
         <Space>
           <Button type="text" icon={<ArrowLeftOutlined style={{color: '#fff'}} />} onClick={() => router.back()} />
           <Text style={{ color: '#fff', fontSize: 16, fontWeight: 600 }}>标注编辑器 - {params.type?.toUpperCase()}</Text>
-          <Tag color="blue">标注中</Tag>
+          <StatusTag status="进行中">标注中</StatusTag>
         </Space>
         <Space>
           {isRangeType && (

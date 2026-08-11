@@ -6,6 +6,7 @@ import { Table, Button, Tag, Space, Input, Form, Card, Typography, Modal, Progre
 import { SearchOutlined, ReloadOutlined, PlayCircleOutlined, EyeOutlined, CheckCircleOutlined, LeftOutlined, RightOutlined, SaveOutlined, SendOutlined, ToolOutlined, ScissorOutlined, BorderOutlined, AimOutlined, HistoryOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -52,7 +53,7 @@ export default function AnswerPage() {
             title: '状态',
             dataIndex: 'status',
             width: 100,
-            render: (s) => <Badge status={ANNO_STATUS_COLORS[s] || 'default'} text={s} />,
+            render: (s) => <StatusTag status={s} />,
         },
         { title: '总题目数', dataIndex: 'total', width: 100 },
         { title: '完成进度', key: 'progress', width: 200, render: (_, r) => (
@@ -78,12 +79,14 @@ export default function AnswerPage() {
 
     return (
         <MainLayout>
-            <div className="page-header" style={{ marginBottom: 24 }}>
-                <Title level={3} style={{ margin: 0 }}>标注作业中心</Title>
-                <Text type="secondary">欢迎回来！您当前有 {mockProjects.length} 个待处理的标注项目。</Text>
-            </div>
+            <div className="ui-page">
+            <PageHeader
+                title="标注作业中心"
+                description={`欢迎回来！您当前有 ${mockProjects.length} 个待处理的标注项目。`}
+                breadcrumbs={[{ title: '首页' }, { title: '数据标注' }, { title: '标注作业' }]}
+            />
 
-            <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
+            <FilterPanel>
                 <QueryFilter
                     submitter={{
                         submitButtonProps: { icon: <SearchOutlined /> },
@@ -99,10 +102,11 @@ export default function AnswerPage() {
                     <ProFormText name="projectName" label="项目名称" placeholder="搜索项目" />
                     <ProFormSelect name="type" label="任务类型" placeholder="全部" options={[{ value: '点标注', label: '点标注' }, { value: '框标注', label: '框标注' }, { value: '范围标注', label: '范围标注' }, { value: '范围&框标注', label: '范围&框标注' }]} />
                 </QueryFilter>
-            </Card>
+            </FilterPanel>
 
-            <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
-                <Table columns={columns} dataSource={filteredData} style={{ padding: '0 24px 24px' }} pagination={{ pageSize: 10 }} scroll={{ x: 1200 }} />
+            <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
+                <TableToolbar title="待处理项目" count={filteredData.length} />
+                <Table columns={columns} dataSource={filteredData} pagination={{ pageSize: 10 }} scroll={{ x: 1200 }} />
             </Card>
 
             {/* Immersive Annotation Workspace */}
@@ -118,6 +122,7 @@ export default function AnswerPage() {
             >
                 {selectedProject && <AnnotationWorkspace project={selectedProject} onClose={() => setWorkspaceVisible(false)} />}
             </Modal>
+            </div>
         </MainLayout>
     );
 }
@@ -137,7 +142,7 @@ function AnnotationWorkspace({ project, onClose }) {
     };
 
     return (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', color: '#fff' }}>
+        <div className="ui-workspace" style={{ height: '100vh', display: 'flex', flexDirection: 'column', color: '#fff' }}>
             {/* Toolbar Header */}
             <div style={{ height: 50, borderBottom: '1px solid #303030', display: 'flex', alignItems: 'center', padding: '0 20px', justifyContent: 'space-between' }}>
                 <Space size={20}>

@@ -6,6 +6,7 @@ import { Table, Button, Tag, Space, Input, Select, Form, Card, Modal, Tabs, Stat
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, TeamOutlined, EditOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, UserOutlined, DownOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -259,8 +260,7 @@ export default function AnnotationProjectsPage() {
       key: 'status',
       width: 90,
       render: (s) => {
-        const cfg = statusConfig[s] || {};
-        return <Badge status={cfg.color || 'default'} text={s} />;
+        return <StatusTag status={s} />;
       },
     },
     {
@@ -326,9 +326,13 @@ export default function AnnotationProjectsPage() {
 
   return (
     <MainLayout>
-      <div className="page-header">
-        <h3 className="page-header-title">标注管理</h3>
-      </div>
+      <div className="ui-page">
+      <PageHeader
+        title="标注管理"
+        description="统一管理标注项目、人员分配与任务执行进度。"
+        breadcrumbs={[{ title: '首页' }, { title: '数据标注' }, { title: '标注管理' }]}
+        extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/annotation/projects/create')}>新建标注项目</Button>}
+      />
 
       {/* Stats Banner */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
@@ -347,10 +351,7 @@ export default function AnnotationProjectsPage() {
       </Row>
 
       {/* Search Bar */}
-      <Card 
-        style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-        styles={{ body: { padding: '24px 24px 16px' } }}
-      >
+      <FilterPanel>
         <QueryFilter
           submitter={{
             submitButtonProps: { icon: <SearchOutlined /> },
@@ -369,13 +370,10 @@ export default function AnnotationProjectsPage() {
           <ProFormSelect name="annoType" label="标注类型" placeholder="全部" options={Object.keys(ANNO_TYPE_COLORS).map(v => ({ value: v, label: v }))} />
           <ProFormSelect name="status" label="标注状态" placeholder="全部" options={Object.keys(statusConfig).map(v => ({ value: v, label: v }))} />
         </QueryFilter>
-      </Card>
+      </FilterPanel>
 
-      <Card>
-        <div className="table-toolbar">
-          <span className="table-toolbar-title">标注任务列表</span>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/annotation/projects/create')}>新建标注项目</Button>
-        </div>
+      <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
+        <TableToolbar title="标注任务列表" count={filteredData.length} />
         <Table
           columns={columns}
           dataSource={filteredData}
@@ -386,14 +384,14 @@ export default function AnnotationProjectsPage() {
       </Card>
 
       {/* Assign Modal */}
-      <Modal
+      <AppModal
         title={`分配人员 — ${selectedRecord?.taskName || ''}`}
         open={assignOpen}
         onCancel={() => setAssignOpen(false)}
         onOk={handleAssign}
         okText="确认分配"
         cancelText="取消"
-        width={500}
+        widthSize="small"
       >
         <Form layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item label="标注员" required>
@@ -418,7 +416,7 @@ export default function AnnotationProjectsPage() {
             />
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
 
       {/* Detail Drawer */}
       <Drawer
@@ -437,7 +435,7 @@ export default function AnnotationProjectsPage() {
               <Tag color={ANNO_TYPE_COLORS[selectedRecord.annoType]}>{selectedRecord.annoType}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="状态">
-              <Badge status={statusConfig[selectedRecord.status]?.color} text={selectedRecord.status} />
+              <StatusTag status={selectedRecord.status} />
             </Descriptions.Item>
             <Descriptions.Item label="标注员">{selectedRecord.annoer || '未分配'}</Descriptions.Item>
             <Descriptions.Item label="审核员">{selectedRecord.reviewer || '未分配'}</Descriptions.Item>
@@ -458,6 +456,7 @@ export default function AnnotationProjectsPage() {
           </Space>
         </div>
       </Drawer>
+      </div>
     </MainLayout>
   );
 }

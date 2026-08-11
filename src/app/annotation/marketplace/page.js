@@ -5,6 +5,7 @@ import { Table, Button, Tag, Space, Input, Form, Card, Typography, Tabs, Modal, 
 import { SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title } = Typography;
 
@@ -41,7 +42,7 @@ export default function MarketplacePage() {
         { title: '数量', dataIndex: 'count', width: 80 },
         { title: '截止日期', dataIndex: 'deadline', width: 120 },
         { title: '报酬', dataIndex: 'reward', width: 100 },
-        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '可领取' ? 'success' : 'default'}>{s}</Tag> },
+        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <StatusTag status={s} /> },
         {
             title: '操作', key: 'action', width: 180, fixed: 'right',
             render: (_, record) => (
@@ -60,7 +61,7 @@ export default function MarketplacePage() {
         { title: '总量', dataIndex: 'total', width: 80 },
         { title: '已完成', dataIndex: 'completed', width: 80 },
         { title: '进度', dataIndex: 'progress', width: 100, render: (p) => <Tag color={p === 100 ? 'success' : 'processing'}>{p}%</Tag> },
-        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '已完成' ? 'success' : 'processing'}>{s}</Tag> },
+        { title: '状态', dataIndex: 'status', width: 100, render: (s) => <StatusTag status={s} /> },
         { title: '截止日期', dataIndex: 'deadline', width: 120 },
         {
             title: '操作', key: 'action', width: 150, fixed: 'right',
@@ -75,15 +76,22 @@ export default function MarketplacePage() {
 
     return (
         <MainLayout>
-            <div className="page-header"><h3 className="page-header-title">题包列表</h3></div>
-            <Card>
+            <div className="ui-page">
+            <PageHeader
+                title="题包列表"
+                description="浏览可领取标注任务并跟踪已领取任务的完成进度。"
+                breadcrumbs={[{ title: '首页' }, { title: '数据标注' }, { title: '题包列表' }]}
+            />
+            <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
                 <Tabs
                     defaultActiveKey="list"
+                    style={{ padding: '0 16px' }}
                     items={[
                         {
                             key: 'list', label: '任务列表',
                              children: (
                                 <>
+                                    <FilterPanel>
                                     <QueryFilter
                                         submitter={{
                                             submitButtonProps: { icon: <SearchOutlined /> },
@@ -95,24 +103,30 @@ export default function MarketplacePage() {
                                         onReset={() => {
                                             setFilters({});
                                         }}
-                                        style={{ marginBottom: 16 }}
                                     >
                                         <ProFormText name="name" label="任务名称" placeholder="请输入" />
                                         <ProFormText name="scene" label="标注场景" placeholder="请输入" />
                                     </QueryFilter>
+                                    </FilterPanel>
+                                    <TableToolbar title="可领取任务" count={filteredTasks.length} />
                                     <Table columns={taskColumns} dataSource={filteredTasks} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                                 </>
                             ),
                         },
                         {
                             key: 'claimed', label: '已领任务',
-                            children: <Table columns={claimedColumns} dataSource={claimedTaskData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />,
+                            children: (
+                                <>
+                                    <TableToolbar title="已领任务" count={claimedTaskData.length} />
+                                    <Table columns={claimedColumns} dataSource={claimedTaskData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
+                                </>
+                            ),
                         },
                     ]}
                 />
             </Card>
 
-            <Modal title="任务详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={<Button type="primary" onClick={() => { setDetailOpen(false); message.success('领取成功'); }}>领取任务</Button>} width={600}>
+            <AppModal title="任务详情" open={detailOpen} onCancel={() => setDetailOpen(false)} footer={<Button type="primary" onClick={() => { setDetailOpen(false); message.success('领取成功'); }}>领取任务</Button>} widthSize="medium">
                 <Card size="small" style={{ marginBottom: 16 }}>
                     <p><strong>任务名称：</strong>具身抓取标注任务</p>
                     <p><strong>标注场景：</strong>二维框选标注</p>
@@ -122,7 +136,8 @@ export default function MarketplacePage() {
                     <p><strong>截止日期：</strong>2025-04-01</p>
                     <p><strong>报酬：</strong>¥2.5/条</p>
                 </Card>
-            </Modal>
+            </AppModal>
+            </div>
         </MainLayout>
     );
 }

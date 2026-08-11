@@ -5,6 +5,7 @@ import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Modal
 import { SearchOutlined, ReloadOutlined, PlayCircleOutlined, CheckOutlined, CloseOutlined, EyeOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title } = Typography;
 
@@ -49,8 +50,13 @@ export default function ReviewPage() {
 
     return (
             <MainLayout>
-                <div className="page-header"><h3 className="page-header-title">审核管理</h3></div>
-                <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
+                <div className="ui-page">
+                <PageHeader
+                    title="审核管理"
+                    description="查看待审核项目，进入题包完成审核与结果确认。"
+                    breadcrumbs={[{ title: '首页' }, { title: '数据标注' }, { title: '审核管理' }]}
+                />
+                <FilterPanel>
                     <QueryFilter
                         submitter={{
                             submitButtonProps: { icon: <SearchOutlined /> },
@@ -67,10 +73,10 @@ export default function ReviewPage() {
                         <ProFormText name="name" label="项目名称" placeholder="请输入" />
                         <ProFormSelect name="scene" label="标注场景" placeholder="全部" options={[{ value: '二维框选标注', label: '二维框选标注' }, { value: 'VLA标注', label: 'VLA标注' }, { value: '视频质检', label: '视频质检' }]} />
                     </QueryFilter>
-                </Card>
+                </FilterPanel>
  
-                <Card>
-                    <div className="table-toolbar"><span className="table-toolbar-title">审核管理列表</span></div>
+                <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
+                    <TableToolbar title="审核管理列表" count={filteredData.length} />
                     <Table columns={columns} dataSource={filteredData} pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }} />
                 </Card>
 
@@ -84,7 +90,7 @@ export default function ReviewPage() {
                             { title: '标注员', dataIndex: 'annotator', width: 100 },
                             { title: '题目数', dataIndex: 'total', width: 80 },
                             { title: '已审核', dataIndex: 'reviewed', width: 80 },
-                            { title: '状态', dataIndex: 'status', width: 100, render: (s) => <Tag color={s === '已通过' ? 'success' : s === '审核中' ? 'processing' : 'default'}>{s}</Tag> },
+                            { title: '状态', dataIndex: 'status', width: 100, render: (s) => <StatusTag status={s} /> },
                             {
                                 title: '操作', key: 'action', width: 200, fixed: 'right',
                                 render: (_, record) => (
@@ -135,6 +141,7 @@ export default function ReviewPage() {
                         </div>
                     </div>
                 </Modal>
+                </div>
             </MainLayout>
     );
 }

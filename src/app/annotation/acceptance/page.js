@@ -5,6 +5,7 @@ import { Table, Button, Tag, Space, Input, Select, Form, Card, Typography, Modal
 import { SearchOutlined, ReloadOutlined, CheckOutlined, CloseOutlined, EyeOutlined, DownloadOutlined, ExportOutlined, CheckCircleOutlined, InfoCircleOutlined, AuditOutlined, CloudUploadOutlined, TeamOutlined, HistoryOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -72,9 +73,9 @@ export default function AcceptancePage() {
         )},
         { title: '题包概览', key: 'packs', width: 200, render: (_, r) => (
             <Space size={4}>
-                <Tooltip title="通过"><Tag color="success">{r.passed}</Tag></Tooltip>
-                <Tooltip title="打回"><Tag color="error">{r.rejected}</Tag></Tooltip>
-                <Tooltip title="待验收"><Tag color="warning">{r.pendingAcceptance}</Tag></Tooltip>
+                <Tooltip title="通过"><StatusTag status="通过">{r.passed}</StatusTag></Tooltip>
+                <Tooltip title="打回"><StatusTag status="驳回">{r.rejected}</StatusTag></Tooltip>
+                <Tooltip title="待验收"><StatusTag status="待处理">{r.pendingAcceptance}</StatusTag></Tooltip>
                 <Text type="secondary">/ {r.totalPacks}</Text>
             </Space>
         )},
@@ -95,10 +96,12 @@ export default function AcceptancePage() {
 
     return (
         <MainLayout>
-            <div className="page-header" style={{ marginBottom: 24 }}>
-                <Title level={3} style={{ margin: 0 }}>验收管理中心</Title>
-                <Text type="secondary">对审核通过的标注题包进行最终验收抽检。验收通过后，数据将正式转入可发布状态。</Text>
-            </div>
+            <div className="ui-page">
+            <PageHeader
+                title="验收管理中心"
+                description="对审核通过的标注题包进行最终验收抽检。验收通过后，数据将正式转入可发布状态。"
+                breadcrumbs={[{ title: '首页' }, { title: '数据标注' }, { title: '验收管理' }]}
+            />
 
             <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col span={6}><Card size="small" style={{ borderRadius: 8 }}><Statistic title="待验收项目" value={2} prefix={<AuditOutlined />} valueStyle={{ color: '#faad14' }} /></Card></Col>
@@ -107,7 +110,7 @@ export default function AcceptancePage() {
                 <Col span={6}><Card size="small" style={{ borderRadius: 8 }}><Statistic title="就绪 Episode" value={1250} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#1677ff' }} /></Card></Col>
             </Row>
 
-            <Card className="search-form" style={{ marginBottom: 16, borderRadius: 8 }}>
+            <FilterPanel>
                 <QueryFilter
                     submitter={{
                         submitButtonProps: { icon: <SearchOutlined /> },
@@ -124,18 +127,19 @@ export default function AcceptancePage() {
                     <ProFormSelect name="type" label="标注场景" placeholder="全部" options={[{ value: '框标注', label: '框标注' }, { value: '范围&框标注', label: '范围&框标注' }]} />
                     <ProFormSelect name="status" label="状态" placeholder="全部" options={[{ value: '进行中', label: '进行中' }, { value: '已完成', label: '已完成' }]} />
                 </QueryFilter>
-            </Card>
+            </FilterPanel>
 
-            <Card styles={{ body: { padding: 0 } }} style={{ borderRadius: 8 }}>
-                <Table columns={columns} dataSource={filteredData} scroll={{ x: 1400 }} style={{ padding: '0 24px 24px' }} pagination={{ pageSize: 10 }} />
+            <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
+                <TableToolbar title="验收项目" count={filteredData.length} />
+                <Table columns={columns} dataSource={filteredData} scroll={{ x: 1400 }} pagination={{ pageSize: 10 }} />
             </Card>
 
             {/* Batch Processing Modal */}
-            <Modal
+            <AppModal
                 title={`批量验收处理 — ${selectedProject?.name || ''}`}
                 open={batchModalVisible}
                 onCancel={() => setBatchModalVisible(false)}
-                width={900}
+                widthSize="large"
                 footer={
                     <Space>
                         <Button onClick={() => setBatchModalVisible(false)}>取消</Button>
@@ -144,7 +148,7 @@ export default function AcceptancePage() {
                     </Space>
                 }
             >
-                <Alert message="以下是该项目下所有已审核通过、等待最终验收的题包。" type="info" showIcon style={{ marginBottom: 16 }} />
+                <Alert title="以下是该项目下所有已审核通过、等待最终验收的题包。" type="info" showIcon style={{ marginBottom: 16 }} />
                 
                 <Table
                     size="small"
@@ -167,7 +171,7 @@ export default function AcceptancePage() {
                     ]}
                     pagination={false}
                 />
-            </Modal>
+            </AppModal>
 
             {/* Acceptance Viewport (Mini version of audit) */}
             <Modal
@@ -210,7 +214,7 @@ export default function AcceptancePage() {
                 </div>
             </Modal>
 
-            <Modal title="验收项目详情" open={detailVisible} onCancel={() => setDetailVisible(false)} footer={null} width={640}>
+            <AppModal title="验收项目详情" open={detailVisible} onCancel={() => setDetailVisible(false)} footer={null} widthSize="medium">
                 {detailRecord && (
                     <Descriptions bordered size="small" column={2} style={{ marginTop: 16 }}>
                         <Descriptions.Item label="项目ID">{detailRecord.projectId}</Descriptions.Item>
@@ -223,7 +227,8 @@ export default function AcceptancePage() {
                         <Descriptions.Item label="最后更新" span={2}>{detailRecord.lastUpdate}</Descriptions.Item>
                     </Descriptions>
                 )}
-            </Modal>
+            </AppModal>
+            </div>
         </MainLayout>
     );
 }

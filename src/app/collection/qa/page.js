@@ -6,6 +6,7 @@ import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progres
 import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 import { assignQaer, loadQaPackages } from '@/lib/annotationQaFlow.mjs';
 
 const { Title, Text } = Typography;
@@ -164,7 +165,7 @@ export default function QaPage() {
     { title: '数据量(分钟)', dataIndex: 'dataMinutes', width: 100, align: 'right', render: (v) => `${v} min` },
     {
       title: '质检状态', dataIndex: 'qcStatus', width: 100, align: 'center',
-      render: (s) => <Badge status={qcStatusColors[s]} text={s} />
+      render: (s) => <StatusTag status={s} />
     },
     { title: '货架任务', dataIndex: 'isShelfTask', width: 80, align: 'center', render: (v) => v === '是' ? <Tag color="orange">是</Tag> : <Text type="secondary">否</Text> },
     { title: '行列号', dataIndex: 'rowCol', width: 80, align: 'center' },
@@ -213,14 +214,14 @@ export default function QaPage() {
 
   return (
     <MainLayout>
-      <div style={{ marginBottom: 16 }}>
-        <Breadcrumb items={[{ title: '任务管理' }, { title: '数据质检' }]} style={{ marginBottom: 16 }} />
-      </div>
+      <div className="ui-page">
+      <PageHeader
+        title="数据质检"
+        description="查看自动生成与历史质检包，分配质检员并跟踪处理结果。"
+        breadcrumbs={[{ title: '首页' }, { title: '任务管理' }, { title: '数据质检' }]}
+      />
 
-      <Card 
-        style={{ marginBottom: 16, borderRadius: 8, background: '#fafafa', border: '1px solid #f0f0f0' }} 
-        styles={{ body: { padding: '24px 24px 16px' } }}
-      >
+      <FilterPanel>
         <QueryFilter
           submitter={{
             submitButtonProps: { icon: <SearchOutlined /> },
@@ -241,11 +242,11 @@ export default function QaPage() {
           <ProFormSelect name="qcStatus" label="质检状态" placeholder="请选择" options={QC_STATUSES.map(s => ({ label: s, value: s }))} />
           <ProFormSelect name="qaer" label="质检员" placeholder="请选择" options={people.map(p => ({ label: p, value: p }))} />
         </QueryFilter>
-      </Card>
+      </FilterPanel>
 
       {/* Table Section */}
       <Card 
-        title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>质检列表</span>}
+        className="ui-table-card"
         tabList={[
           { key: 'all', tab: `全部 (${tableData.length})` },
           { key: 'pending', tab: `待质检 (${tableData.filter(t => t.qcStatus === '待质检').length})` },
@@ -255,17 +256,19 @@ export default function QaPage() {
         ]}
         activeTabKey={activeStatusTab}
         onTabChange={(key) => setActiveStatusTab(key)}
-        extra={
-          <Space style={{ padding: '6px 0' }}>
-            <Button icon={<UserOutlined />} disabled={selectedRowKeys.length === 0} onClick={() => message.info(`已选 ${selectedRowKeys.length} 条，批量分配质检员`)}>
-              批量分配 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
-            </Button>
-            <Button icon={<DownloadOutlined />} onClick={() => message.success('正在导出...')}>导出</Button>
-          </Space>
-        }
         styles={{ body: { padding: 0 } }} 
-        style={{ borderRadius: 8 }}
       >
+        <TableToolbar
+          title="质检列表"
+          count={filteredData.length}
+          selectedCount={selectedRowKeys.length}
+          actions={[
+            <Button key="assign" icon={<UserOutlined />} disabled={selectedRowKeys.length === 0} onClick={() => message.info(`已选 ${selectedRowKeys.length} 条，批量分配质检员`)}>
+              批量分配 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+            </Button>,
+            <Button key="export" icon={<DownloadOutlined />} onClick={() => message.success('正在导出...')}>导出</Button>,
+          ]}
+        />
         <Table
           rowSelection={rowSelection}
           columns={columns}
@@ -282,7 +285,7 @@ export default function QaPage() {
       </Card>
 
       {/* 分配质检员弹窗 */}
-      <Modal
+      <AppModal
         title="分配质检员"
         open={reassignModalOpen}
         onCancel={() => setReassignModalOpen(false)}
@@ -303,8 +306,9 @@ export default function QaPage() {
             </Select>
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
 
+      </div>
     </MainLayout>
   );
 }
