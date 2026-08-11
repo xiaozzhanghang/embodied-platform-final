@@ -150,7 +150,7 @@ export default function TaskInstancePage() {
         </div>
       )
     },
-    { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (s) => <StatusTag status={s === '采集中' ? '进行中' : s}>{s}</StatusTag> },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: (s) => <StatusTag status={s === '采集中' ? '进行中' : s === '待分配' ? '未开始' : s}>{s}</StatusTag> },
     { title: '操作', key: 'action', width: 180, fixed: 'right', render: (_, record) => getStatusActions(record) },
   ];
 
@@ -171,7 +171,7 @@ export default function TaskInstancePage() {
         </div>
       )
     },
-    { title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (s) => <StatusTag status={s === '标注审核中' ? '审核中' : s}>{s}</StatusTag> },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 110, render: (s) => <StatusTag status={s}>{s}</StatusTag> },
     { title: '操作', key: 'action', width: 180, fixed: 'right', render: (_, record) => getStatusActions(record) },
   ];
 

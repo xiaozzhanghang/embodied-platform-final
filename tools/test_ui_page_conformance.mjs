@@ -357,5 +357,24 @@ assert.ok(
   '采集任务兼容入口必须保持重定向到 /collection/collection-tasks',
 );
 
+const collectionTaskDetailSource = await readFile('src/app/collection/tasks/[id]/page.js', 'utf8');
+const collectColumnsSource = collectionTaskDetailSource.match(/const columnsCollect = \[[\s\S]*?const columnsAsset = \[/)?.[0] || '';
+const assetColumnsSource = collectionTaskDetailSource.match(/const columnsAsset = \[[\s\S]*?const mockInstancesNoCollect = \[/)?.[0] || '';
+assert.match(
+  collectColumnsSource,
+  /<StatusTag status=\{s === '采集中' \? '进行中' : s === '待分配' \? '未开始' : s\}>\{s\}<\/StatusTag>/,
+  '采集分包的待分配必须在调用处归一为默认灰色，并保留显示文案',
+);
+assert.match(
+  assetColumnsSource,
+  /<StatusTag status=\{s\}>\{s\}<\/StatusTag>/,
+  '关联资产分包必须将标注审核中原始状态传入 StatusTag',
+);
+assert.doesNotMatch(
+  assetColumnsSource,
+  /s === '标注审核中' \? '审核中'/,
+  '标注审核中不应在调用处被改写为审核中',
+);
+
 assert.ok(UI_ROUTE_MANIFEST.length > 60, '路由清单数量异常');
 console.log('UI_PAGE_CONFORMANCE_OK');

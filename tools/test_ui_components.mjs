@@ -15,6 +15,7 @@ assert.match(statusSource, /'已发布':\s*'success'/, '已发布应使用 succe
 assert.match(statusSource, /'审核中':\s*'processing'/, '审核中应使用 processing 状态色');
 assert.match(statusSource, /'机检通过':\s*'success'/, '机检通过迁移到 StatusTag 后应保留 success 状态色');
 assert.match(statusSource, /'已标注':\s*'success'/, '已标注应使用 success 状态色');
+assert.match(statusSource, /'标注审核中':\s*'purple'/, '标注审核中应保留 purple 业务色');
 for (const [status, semantic] of [
   ['质检中', 'processing'],
   ['已通过', 'success'],

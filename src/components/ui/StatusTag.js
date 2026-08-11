@@ -6,6 +6,7 @@ const STATUS_COLORS = {
   '进行中': 'processing',
   '处理中': 'processing',
   '标注中': 'processing',
+  '标注审核中': 'purple',
   '校验中': 'processing',
   '质检中': 'processing',
   '可领取': 'processing',
