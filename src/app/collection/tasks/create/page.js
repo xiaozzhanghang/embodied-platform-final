@@ -18,7 +18,7 @@ import {
   UnorderedListOutlined, InfoCircleFilled, EditOutlined, MinusCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
+import { ActionFooter, AppModal, FormSection, PageHeader } from '@/components/ui';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -1310,7 +1310,7 @@ function CreateTaskContent() {
           {creationStage === 'selection' ? renderSelection() : renderConfigFlow()}
         </FormSection>
       
-      <Modal
+      <AppModal
           title={`新建${currentField ? fieldLabels[currentField] : ''}`}
           open={modalVisible}
           onOk={handleCreateOption}
@@ -1399,7 +1399,7 @@ function CreateTaskContent() {
                   </Form.Item>
               )}
           </Form>
-        </Modal>
+        </AppModal>
       </div>
     </MainLayout>
   );

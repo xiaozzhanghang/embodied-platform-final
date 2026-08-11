@@ -20,7 +20,7 @@ import {
   SaveOutlined, BulbOutlined, GlobalOutlined, TagOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { StatusTag } from '@/components/ui';
+import { AppModal, StatusTag } from '@/components/ui';
 
 const { Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -2164,7 +2164,7 @@ useEffect(() => {
         </Modal>
 
         {/* ============ POPUP MODAL: 生成标注模版 ============ */}
-        <Modal
+        <AppModal
           title={<span style={{ fontSize: '15px', fontWeight: 'bold' }}>💾 生成并保存标注模版</span>}
           open={isSaveTplModalOpen}
           onCancel={() => setIsSaveTplModalOpen(false)}
@@ -2221,7 +2221,7 @@ useEffect(() => {
               </div>
             </div>
           </div>
-        </Modal>
+        </AppModal>
 
       </div>
     );
@@ -3193,7 +3193,7 @@ useEffect(() => {
       </div>
 
       {/* ============ POPUP MODAL: 生成并保存标注模版 (范围标注页) ============ */}
-      <Modal
+      <AppModal
         title={<span style={{ fontSize: '15px', fontWeight: 'bold' }}>💾 生成并保存标注模版</span>}
         open={isSaveTplModalOpen}
         onCancel={() => setIsSaveTplModalOpen(false)}
@@ -3250,7 +3250,7 @@ useEffect(() => {
             </div>
           </div>
         </div>
-      </Modal>
+      </AppModal>
 
       {/* ============ POPUP MODAL: 批量标注 - 复用标注模版 (范围标注页) ============ */}
       <Modal

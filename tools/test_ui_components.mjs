@@ -61,7 +61,24 @@ assert.ok(modalSource.includes('520'));
 assert.ok(modalSource.includes('720'));
 assert.ok(modalSource.includes('960'));
 assert.ok(modalSource.includes('centered'));
-assert.match(modalSource, /<Modal \{\.\.\.modalProps\} centered width=/);
+assert.match(
+  modalSource,
+  /const DEFAULT_MODAL_STYLES = \{\s*body: \{\s*maxHeight: 'calc\(100vh - 220px\)',\s*overflowY: 'auto',\s*\},\s*\};/,
+  'AppModal 默认应限制内容区高度并仅滚动 body',
+);
+assert.match(
+  modalSource,
+  /const mergeModalStyles = \(styles\) => \{[\s\S]*?if \(typeof styles === 'function'\) \{[\s\S]*?return \(\.\.\.args\) => mergeModalStyleObject\(styles\(\.\.\.args\)\);[\s\S]*?\}[\s\S]*?return mergeModalStyleObject\(styles\);[\s\S]*?\};/,
+  'AppModal 必须兼容 object 与 function 两种 styles，并合并默认 body 样式',
+);
+assert.match(
+  modalSource,
+  /body: \{\s*\.\.\.DEFAULT_MODAL_STYLES\.body,\s*\.\.\.\(styles\?\.body \|\| \{\}\),\s*\}/,
+  '调用方 body 样式应覆盖默认值，其他 semantic styles 应保留',
+);
+assert.match(modalSource, /width,\s*styles,/, 'AppModal 应显式接收 width 与 styles');
+assert.match(modalSource, /centered\s+width=\{width \?\? MODAL_WIDTHS\[widthSize\] \?\? MODAL_WIDTHS\.medium\}/, '显式 width 应优先于 widthSize');
+assert.match(modalSource, /styles=\{mergeModalStyles\(styles\)\}/, '合并后的 semantic styles 必须传递给 Modal');
 assert.match(modalSource, /className=\{mergeClassNames\('ui-app-modal', className\)\}/);
 assert.match(modalSource, /rootClassName=\{mergeClassNames\('ui-app-modal', rootClassName\)\}/);
 

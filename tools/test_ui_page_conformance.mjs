@@ -695,6 +695,134 @@ for (const label of ['修改密码', '编辑', '删除']) {
   );
 }
 
+const findModalBlocksByOpenState = (source, openState) => {
+  const marker = `open={${openState}}`;
+  const blocks = [];
+  let cursor = 0;
+
+  while (cursor < source.length) {
+    const markerIndex = source.indexOf(marker, cursor);
+    if (markerIndex === -1) break;
+
+    const appModalStart = source.lastIndexOf('<AppModal', markerIndex);
+    const nativeModalStart = source.lastIndexOf('<Modal', markerIndex);
+    const start = Math.max(appModalStart, nativeModalStart);
+    const component = start === appModalStart ? 'AppModal' : 'Modal';
+    const closeMarker = `</${component}>`;
+    const end = source.indexOf(closeMarker, markerIndex);
+
+    assert.ok(start >= 0 && end >= 0, `无法解析 open={${openState}} 的弹窗结构`);
+    blocks.push({
+      component,
+      source: source.slice(start, end + closeMarker.length),
+    });
+    cursor = markerIndex + marker.length;
+  }
+
+  return blocks;
+};
+
+const assertEditableModalContract = ({ source, pagePath, openState, titlePattern, widthPattern, expectedCount = 1 }) => {
+  const blocks = findModalBlocksByOpenState(source, openState);
+  assert.equal(blocks.length, expectedCount, `${pagePath} 中 open={${openState}} 的弹窗数量异常`);
+
+  for (const block of blocks) {
+    assert.equal(block.component, 'AppModal', `${pagePath} 中 open={${openState}} 的编辑弹窗不得回退为原生 Modal`);
+    assert.match(block.source, titlePattern, `${pagePath} 中 open={${openState}} 的标题语义不正确`);
+    assert.match(block.source, widthPattern, `${pagePath} 中 open={${openState}} 的宽度契约不正确`);
+  }
+
+  return blocks;
+};
+
+const projectsSource = await readFile('src/app/projects/page.js', 'utf8');
+for (const contract of [
+  { openState: 'createOpen', dirtyState: 'createDirty', formName: 'createForm', closeHandler: 'closeCreateModal' },
+  { openState: 'editOpen', dirtyState: 'editDirty', formName: 'editForm', closeHandler: 'closeEditModal' },
+]) {
+  const [block] = assertEditableModalContract({
+    source: projectsSource,
+    pagePath: 'src/app/projects/page.js',
+    openState: contract.openState,
+    titlePattern: contract.openState === 'createOpen' ? /title="新建项目"/ : /title="项目配置"/,
+    widthPattern: /widthSize="medium"/,
+  });
+  assert.match(block.source, new RegExp(`dirty=\\{${contract.dirtyState}\\}`), `${contract.openState} 未连接 dirty 状态`);
+  assert.match(block.source, new RegExp(`onCancel=\\{${contract.closeHandler}\\}`), `${contract.openState} 未连接统一关闭清理 handler`);
+  assert.match(block.source, new RegExp(`<Form[\\s\\S]*?form=\\{${contract.formName}\\}[\\s\\S]*?onValuesChange=\\{\\(\\) => set${contract.dirtyState === 'createDirty' ? 'CreateDirty' : 'EditDirty'}\\(true\\)\\}`), `${contract.openState} 的 Form 未在值变化时标记 dirty`);
+  assert.match(block.source, /forceRender/, `${contract.openState} 应预渲染 Form，确保打开前 resetFields 已连接表单实例`);
+}
+const [createProjectModal] = findModalBlocksByOpenState(projectsSource, 'createOpen');
+for (const fieldName of ['projectName', 'englishName', 'remark']) {
+  assert.match(
+    createProjectModal.source,
+    new RegExp(`<Form\\.Item[^>]*name=["']${fieldName}["']`),
+    `新建项目字段 ${fieldName} 必须注册到 Form，才能触发 dirty 跟踪`,
+  );
+}
+assert.match(
+  projectsSource,
+  /const closeCreateModal = \(\) => \{\s*setCreateOpen\(false\);\s*createForm\.resetFields\(\);\s*setCreateDirty\(false\);\s*\};/,
+  '新建项目在保存或确认关闭后必须重置表单与 dirty 状态',
+);
+assert.match(
+  projectsSource,
+  /const closeEditModal = \(\) => \{\s*setEditOpen\(false\);\s*editForm\.resetFields\(\);\s*setEditDirty\(false\);\s*\};/,
+  '项目配置在保存或确认关闭后必须重置表单与 dirty 状态',
+);
+
+const collectionTaskCreateSource = await readFile('src/app/collection/tasks/create/page.js', 'utf8');
+const [dynamicCreateModal] = assertEditableModalContract({
+  source: collectionTaskCreateSource,
+  pagePath: 'src/app/collection/tasks/create/page.js',
+  openState: 'modalVisible',
+  titlePattern: /title=\{`新建\$\{currentField \? fieldLabels\[currentField\] : ''\}`\}/,
+  widthPattern: /width=\{currentField === 'sop' \? 800 : 520\}/,
+});
+assert.match(dynamicCreateModal.source, /onOk=\{handleCreateOption\}/, '动态新建弹窗必须保留创建 handler');
+
+const taskDetailModalSource = await readFile('src/app/collection/tasks/[id]/page.js', 'utf8');
+const [addPackModal] = assertEditableModalContract({
+  source: taskDetailModalSource,
+  pagePath: 'src/app/collection/tasks/[id]/page.js',
+  openState: 'isAddPackVisible',
+  titlePattern: /<span>新建任务分包<\/span>/,
+  widthPattern: /width=\{560\}/,
+});
+assert.match(addPackModal.source, /form=\{addPackForm\}/, '新建任务分包必须保留原表单实例');
+const [addAnnotationModal] = assertEditableModalContract({
+  source: taskDetailModalSource,
+  pagePath: 'src/app/collection/tasks/[id]/page.js',
+  openState: 'isAddAnnoVisible',
+  titlePattern: />分配标注任务<\/div>/,
+  widthPattern: /width=\{680\}/,
+});
+assert.match(addAnnotationModal.source, /form=\{annoForm\}/, '分配标注任务必须保留原表单实例');
+const [pauseTaskModal] = findModalBlocksByOpenState(taskDetailModalSource, 'isPauseTaskVisible');
+assert.equal(pauseTaskModal.component, 'Modal', '暂停确认属于确认类弹窗，应保留原生 Modal');
+assert.match(pauseTaskModal.source, /确认暂停采集任务/, '暂停确认弹窗标题不得改变');
+
+const annotationEpisodeSource = await readFile('src/app/annotation/audit/[id]/[episodeId]/page.js', 'utf8');
+const saveTemplateModals = assertEditableModalContract({
+  source: annotationEpisodeSource,
+  pagePath: 'src/app/annotation/audit/[id]/[episodeId]/page.js',
+  openState: 'isSaveTplModalOpen',
+  titlePattern: />💾 生成并保存标注模版<\/span>/,
+  widthPattern: /width=\{580\}/,
+  expectedCount: 2,
+});
+for (const block of saveTemplateModals) {
+  assert.match(block.source, /onOk=\{handleSaveTemplate\}/, '保存标注模版必须保留保存 handler');
+}
+for (const exception of [
+  { openState: 'isAddModalOpen', titlePattern: />添加标注<\/span>/, reason: '复杂标注编辑器' },
+  { openState: 'isApplyTplModalOpen', titlePattern: />🚀 批量标注 - 复用标注模版<\/span>/, reason: '复杂模版预览与套用' },
+]) {
+  const [block] = findModalBlocksByOpenState(annotationEpisodeSource, exception.openState);
+  assert.equal(block.component, 'Modal', `${exception.reason}明确列入原生 Modal 白名单`);
+  assert.match(block.source, exception.titlePattern, `${exception.reason}白名单标题不匹配`);
+}
+
 for (const loginPage of [
   'src/app/login/page.js',
   'src/app/qa-login/page.js',

@@ -15,7 +15,7 @@ import {
   ExclamationCircleOutlined, UserOutlined, ClockCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
+import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
 
 const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -346,7 +346,7 @@ export default function TaskInstancePage() {
       {/* --- MODALS --- */}
 
       {/* 1. 新建分包弹窗 (区分需要采集数据 vs 关联数据资产) */}
-      <Modal
+      <AppModal
         title={
           <div style={{ paddingBottom: 12, borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span>新建任务分包</span>
@@ -418,7 +418,7 @@ export default function TaskInstancePage() {
             <TextArea rows={2} placeholder="请输入分包备注信息..." />
           </Form.Item>
         </Form>
-      </Modal>
+      </AppModal>
 
       {/* 2. 暂停任务弹窗 */}
       <Modal
@@ -444,7 +444,7 @@ export default function TaskInstancePage() {
       </Modal>
 
       {/* 3. 添加标注任务弹窗 (Dynamic Rendering) */}
-      <Modal
+      <AppModal
         title={<div style={{ paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>分配标注任务</div>}
         open={isAddAnnoVisible}
         onCancel={() => setIsAddAnnoVisible(false)}
@@ -560,7 +560,7 @@ export default function TaskInstancePage() {
             </>
           )}
         </Form>
-      </Modal>
+      </AppModal>
       </div>
     </MainLayout>
   );

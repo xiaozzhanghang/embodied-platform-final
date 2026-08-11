@@ -8,10 +8,35 @@ const MODAL_WIDTHS = {
   large: 960,
 };
 
+const DEFAULT_MODAL_STYLES = {
+  body: {
+    maxHeight: 'calc(100vh - 220px)',
+    overflowY: 'auto',
+  },
+};
+
 const mergeClassNames = (...classNames) => classNames.filter(Boolean).join(' ');
+
+const mergeModalStyleObject = (styles) => ({
+  ...(styles || {}),
+  body: {
+    ...DEFAULT_MODAL_STYLES.body,
+    ...(styles?.body || {}),
+  },
+});
+
+const mergeModalStyles = (styles) => {
+  if (typeof styles === 'function') {
+    return (...args) => mergeModalStyleObject(styles(...args));
+  }
+
+  return mergeModalStyleObject(styles);
+};
 
 export default function AppModal({
   widthSize = 'medium',
+  width,
+  styles,
   dirty = false,
   onCancel,
   className,
@@ -33,5 +58,15 @@ export default function AppModal({
     });
   };
 
-  return <Modal {...modalProps} centered width={MODAL_WIDTHS[widthSize] || MODAL_WIDTHS.medium} className={mergeClassNames('ui-app-modal', className)} rootClassName={mergeClassNames('ui-app-modal', rootClassName)} onCancel={handleCancel} />;
+  return (
+    <Modal
+      {...modalProps}
+      centered
+      width={width ?? MODAL_WIDTHS[widthSize] ?? MODAL_WIDTHS.medium}
+      styles={mergeModalStyles(styles)}
+      className={mergeClassNames('ui-app-modal', className)}
+      rootClassName={mergeClassNames('ui-app-modal', rootClassName)}
+      onCancel={handleCancel}
+    />
+  );
 }
