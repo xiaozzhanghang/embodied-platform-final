@@ -9,9 +9,9 @@ import {
 } from 'antd';
 import { 
   PlusOutlined, SearchOutlined, SyncOutlined,
-  ThunderboltOutlined, PauseCircleOutlined, TagsOutlined, InfoCircleOutlined,
+  ThunderboltOutlined, TagsOutlined, InfoCircleOutlined,
   DownloadOutlined, FileSearchOutlined, CloudUploadOutlined, EditOutlined, 
-  DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PauseOutlined,
+  DeleteOutlined, CheckCircleOutlined, ReloadOutlined,
   ExclamationCircleOutlined, UserOutlined, ClockCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
@@ -84,25 +84,14 @@ export default function TaskInstancePage() {
 
   // Modal visibility states
   const [isAddPackVisible, setIsAddPackVisible] = useState(false);
-  const [isPauseTaskVisible, setIsPauseTaskVisible] = useState(false);
   const [isAddAnnoVisible, setIsAddAnnoVisible] = useState(false);
-
-  const handlePausePack = (record) => {
-    Modal.confirm({
-      title: `暂停包 ${record.instanceId}`,
-      content: `暂停后，操作员将无法继续录入。该包内已完成的数据将自动打包解析并流转至质检中心。`,
-      okText: '确认暂停',
-      cancelText: '取消',
-      okButtonProps: { danger: true },
-      onOk: () => message.success(`包 ${record.instanceId} 已暂停`),
-    });
-  };
 
   const handleCompletePack = (record) => {
     Modal.confirm({
       title: `标记分包 ${record.instanceId} 采集完成`,
       content: `确认后，该分包采集数据将自动打包并流转至【数据质检】环节，由指派的质检员 [${record.qaer || '天奇管理员'}] 进行数据质检。`,
       okText: '确认完成并送检',
+      okButtonProps: { style: { background: '#52c41a', borderColor: '#52c41a' } },
       cancelText: '取消',
       onOk: () => {
         message.success(`分包 ${record.instanceId} 已成功流转至数据质检中心`);
@@ -130,7 +119,6 @@ export default function TaskInstancePage() {
     }
     return (
       <Space separator={<Divider orientation="vertical" />} size={0}>
-        <Button type="link" size="small" icon={<PauseCircleOutlined />} style={{ padding: '0 4px', color: '#faad14' }} onClick={() => handlePausePack(record)}>暂停</Button>
         <Button type="link" size="small" icon={<CheckCircleOutlined />} style={{ padding: '0 4px', color: '#52c41a' }} onClick={() => handleCompletePack(record)}>完成</Button>
       </Space>
     );
@@ -328,14 +316,6 @@ export default function TaskInstancePage() {
           </Space>
             <Space size={12}>
               <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddPackVisible(true)}>新建分包</Button>
-              <Button 
-                icon={<PauseOutlined />} 
-                disabled={selectedRowKeys.length === 0} 
-                onClick={() => setIsPauseTaskVisible(true)}
-                style={{ borderRadius: 6, background: selectedRowKeys.length > 0 ? '#e6f7ff' : '#f5f5f5', color: selectedRowKeys.length > 0 ? '#1677ff' : '#bfbfbf', border: 'none' }}
-              >
-                暂停分包
-              </Button>
             </Space>
           </div>
         </FilterPanel>
@@ -492,30 +472,7 @@ export default function TaskInstancePage() {
         </Form>
       </AppModal>
 
-      {/* 2. 暂停任务弹窗 */}
-      <Modal
-        title={<Space><ExclamationCircleOutlined style={{ color: '#faad14' }} /> 确认暂停采集任务</Space>}
-        open={isPauseTaskVisible}
-        onCancel={() => setIsPauseTaskVisible(false)}
-        okText="确认暂停"
-        cancelText="取消"
-        okButtonProps={{ danger: true }}
-        onOk={() => {
-          message.success(`已暂停选中的 ${selectedRowKeys.length} 个分包任务`);
-          setIsPauseTaskVisible(false);
-          setSelectedRowKeys([]);
-        }}
-      >
-        <div style={{ padding: '12px 0' }}>
-          <Paragraph>您已选中 <Text strong type="danger">{selectedRowKeys.length}</Text> 个分包实例。暂停操作将产生以下影响：</Paragraph>
-          <ul style={{ color: '#8c8c8c', fontSize: 13, paddingLeft: 20 }}>
-            <li>对应采集员将立即收到暂停通知，无法继续录入新数据。</li>
-            <li>已采集但未提交的数据将自动保存，采集任务进入“已暂停”状态。</li>
-          </ul>
-        </div>
-      </Modal>
-
-      {/* 3. 添加标注任务弹窗 (Dynamic Rendering) */}
+      {/* 2. 添加标注任务弹窗 (Dynamic Rendering) */}
       <AppModal
         title={<div style={{ paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>分配标注任务</div>}
         open={isAddAnnoVisible}
