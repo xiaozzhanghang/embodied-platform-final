@@ -136,19 +136,19 @@ export default function QaDetailPage() {
   const handleBatchReject = () => {
     if (selectedRowKeys.length === 0) return;
     Modal.confirm({
-      title: '批量质检驳回',
-      content: `确定要将选中的 ${selectedRowKeys.length} 条 Episode 数据标记为质检不通过吗？`,
-      okText: '确定驳回',
+      title: '批量标记未通过',
+      content: `确定要将选中的 ${selectedRowKeys.length} 条 Episode 数据标记为【未通过】标签吗？`,
+      okText: '确定标记',
       okType: 'danger',
       cancelText: '取消',
       onOk() {
         setEpisodes(prev => prev.map(ep => {
           if (selectedRowKeys.includes(ep.key)) {
-            return { ...ep, qcStatus: '未通过', qcRemark: '质检驳回' };
+            return { ...ep, qcStatus: '未通过', qcRemark: '质检未通过' };
           }
           return ep;
         }));
-        message.success(`已驳回 ${selectedRowKeys.length} 条 Episode 数据`);
+        message.warning(`已将 ${selectedRowKeys.length} 条 Episode 数据标记为【未通过】标签`);
         setSelectedRowKeys([]);
         setSelectedRows([]);
       }
@@ -388,7 +388,7 @@ export default function QaDetailPage() {
                 style={{ fontWeight: 'bold' }}
                 onClick={handleBatchReject}
               >
-                批量质检驳回
+                批量标记未通过
               </Button>
               <Button 
                 size="middle"

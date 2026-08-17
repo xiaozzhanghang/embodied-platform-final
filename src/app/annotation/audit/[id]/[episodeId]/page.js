@@ -108,19 +108,31 @@ useEffect(() => {
     }
   };
 
-  // QC Reject action: auto-navigate to next episode or QA detail page
-  const handleRejectQc = () => {
+  // Audit / QC Reject Modal State
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [selectedQuickTag, setSelectedQuickTag] = useState(null);
+
+  // QC / Audit Reject action: pop up modal to get reason, then navigate
+  const handleConfirmReject = () => {
+    if (!rejectReason && !selectedQuickTag) {
+      message.error('请填写或选择审核不通过理由');
+      return;
+    }
+    const finalReason = selectedQuickTag ? `${selectedQuickTag}：${rejectReason || '已打回重新标注'}` : rejectReason;
+    setIsRejectModalOpen(false);
+    
     const currentIdx = allEpisodeIds.findIndex(ep => String(ep.id) === String(episodeId));
     const nextEp = currentIdx >= 0 ? allEpisodeIds[currentIdx + 1] : null;
     if (nextEp) {
-      message.warning(`❌ 质检不通过！标记为缺陷数据，跳转到下一条数据 #${nextEp.id}...`);
+      message.warning(`❌ 审核不通过（理由：${finalReason}），已打回标注员重新标注！跳转到下一条 #${nextEp.id}...`);
       setTimeout(() => {
         router.push(`/annotation/audit/${instanceId}/${nextEp.id}?type=${encodeURIComponent(nextEp.annoType)}&mode=audit`);
       }, 600);
     } else {
-      message.warning('❌ 质检驳回操作完成！返回质检列表');
+      message.warning(`❌ 审核不通过（理由：${finalReason}），已打回标注员重新标注！返回审核列表`);
       setTimeout(() => {
-        router.push(`/collection/qa/${instanceId}`);
+        router.push(`/annotation/review-list?instanceId=${instanceId}`);
       }, 600);
     }
   };
@@ -3184,13 +3196,67 @@ useEffect(() => {
                 borderRadius: 6,
                 padding: '0 20px',
               }}
-              onClick={handleRejectQc}
+              onClick={() => {
+                setRejectReason('');
+                setSelectedQuickTag(null);
+                setIsRejectModalOpen(true);
+              }}
             >
               不通过
             </Button>
           </Space>
         </div>
       </div>
+
+      {/* ============ POPUP MODAL: 审核不通过理由弹窗 ============ */}
+      <AppModal
+        title={<span style={{ fontSize: '15px', fontWeight: 'bold', color: '#ff4d4f' }}>❌ 审核不通过 — 请输入驳回理由</span>}
+        open={isRejectModalOpen}
+        onCancel={() => setIsRejectModalOpen(false)}
+        onOk={handleConfirmReject}
+        okText="确认驳回并重新标注"
+        okButtonProps={{ danger: true }}
+        cancelText="取消"
+        width={560}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 12 }}>
+          <div>
+            <Text type="secondary" style={{ fontSize: 13 }}>快捷选择不合格原因：</Text>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+              {['关键帧时机不准', '3D包围框不紧密', '动作步骤标签选错', '轨迹拟合偏移', '文字描述不规范'].map(tag => (
+                <Tag.CheckableTag
+                  key={tag}
+                  checked={selectedQuickTag === tag}
+                  onChange={checked => {
+                    setSelectedQuickTag(checked ? tag : null);
+                    if (checked && !rejectReason) setRejectReason(tag);
+                  }}
+                  style={{ borderRadius: 16, padding: '3px 12px', fontSize: 12 }}
+                >
+                  {tag}
+                </Tag.CheckableTag>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+              <span style={{ color: '#ff4d4f' }}>*</span> 详细不通过理由：
+            </div>
+            <Input.TextArea
+              rows={4}
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              placeholder="请详细描述标注质量问题（例如：第320-450帧夹爪闭合时机提前、物体3D框包裹未贴合物体边缘等）..."
+              maxLength={300}
+              showCount
+            />
+          </div>
+          <div style={{ padding: '8px 12px', background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 6, fontSize: 12, color: '#d48806' }}>
+            ⚠️ 确认驳回后，该 Episode 状态将变更为【未通过/审核驳回】，并自动回退至标注员工作台重新标注。
+          </div>
+        </div>
+      </AppModal>
 
       {/* ============ POPUP MODAL: 生成并保存标注模版 (范围标注页) ============ */}
       <AppModal
