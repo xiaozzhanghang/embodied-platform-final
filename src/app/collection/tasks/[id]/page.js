@@ -262,9 +262,9 @@ export default function TaskInstancePage() {
                   <div style={{ fontWeight: 600, color: '#262626' }}>{id}</div>
                 </Col>
                 <Col span={6}>
-                  <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>任务模式类型</div>
-                  <Tag color={taskMode === 'collect' ? (isNoCollectTask ? 'cyan' : 'blue') : 'purple'}>
-                    {taskMode === 'collect' ? (isNoCollectTask ? '不需要采集 (外部导入/关联资产)' : '需要采集数据') : '关联数据资产 / 外部导入'}
+                  <div style={{ fontSize: 12, color: '#bfbfbf', marginBottom: 8 }}>任务类型</div>
+                  <Tag color={isAssetTask ? 'purple' : 'blue'}>
+                    {isAssetTask ? '关联资产 (已有采集资产包，仅需质检)' : '采集计划 (需要采集数据)'}
                   </Tag>
                 </Col>
                 <Col span={6}>
@@ -305,23 +305,24 @@ export default function TaskInstancePage() {
           actions={<Button type="text" icon={<ReloadOutlined />} aria-label="刷新分包列表" />}
         />
         <Text type="secondary" style={{ display: 'block', marginBottom: 16, fontSize: 13 }}>
-          {taskMode === 'collect'
-            ? '每个分包包含具体的采集员、标注员、审核员及计划采集数量'
-            : '每个关联分包指定具体的标注员、审核员及分包关联数据数量'}
+          {isAssetTask
+            ? '关联资产任务（已有采集资产包）：无需人工采集录入，直接配置分包数据量与分配质检员，分包后直接进入数据质检流程'
+            : '采集计划任务：每个分包配置单包采集量并分配具体的采集员与质检员'}
         </Text>
 
         <FilterPanel>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space size={16} align="bottom">
             <Form.Item label="分包ID" style={{ marginBottom: 0 }}><Input placeholder="分包ID" style={{ width: 140 }} /></Form.Item>
-            {taskMode !== 'collect' && (
+            {isAssetTask ? (
+              <Form.Item label="质检员" style={{ marginBottom: 0 }}>
+                <Select placeholder="请选择质检员" allowClear style={{ width: 140 }} options={[{value:'李四', label:'李四'}, {value:'王五', label:'王五'}, {value:'天奇管理员', label:'天奇管理员'}]} />
+              </Form.Item>
+            ) : (
               <>
-                <Form.Item label="标注员" style={{ marginBottom: 0 }}><Select placeholder="请选择标注员" style={{ width: 140 }} options={[{value:'李四', label:'李四'}, {value:'张三', label:'张三'}]} /></Form.Item>
-                <Form.Item label="审核员" style={{ marginBottom: 0 }}><Select placeholder="请选择审核员" style={{ width: 140 }} options={[{value:'王五', label:'王五'}, {value:'天奇管理员', label:'天奇管理员'}]} /></Form.Item>
+                <Form.Item label="采集员" style={{ marginBottom: 0 }}><Select placeholder="采集人员" allowClear style={{ width: 140 }} options={[{value:'张三', label:'张三'}, {value:'李四', label:'李四'}]} /></Form.Item>
+                <Form.Item label="质检员" style={{ marginBottom: 0 }}><Select placeholder="质检人员" allowClear style={{ width: 140 }} options={[{value:'王五', label:'王五'}, {value:'天奇管理员', label:'天奇管理员'}]} /></Form.Item>
               </>
-            )}
-            {taskMode === 'collect' && (
-              <Form.Item label="采集员" style={{ marginBottom: 0 }}><Select placeholder="采集人员" style={{ width: 140 }} options={[{value:'张三', label:'张三'}, {value:'李四', label:'李四'}]} /></Form.Item>
             )}
             <Form.Item style={{ marginBottom: 0 }}><Button type="primary" icon={<SearchOutlined />}>搜索</Button></Form.Item>
           </Space>
