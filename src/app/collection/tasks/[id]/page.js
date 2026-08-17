@@ -56,6 +56,7 @@ export default function TaskInstancePage() {
   const searchParams = useSearchParams();
   const { message } = App.useApp();
   const [addPackForm] = Form.useForm();
+  const [editPackForm] = Form.useForm();
   const [annoForm] = Form.useForm();
   
   const typeParam = searchParams ? searchParams.get('type') : null;
@@ -75,6 +76,7 @@ export default function TaskInstancePage() {
       setTaskMode('collect');
     }
   }, [typeParam, id, isAssetTask]);
+
   const [activeTab, setActiveTab] = useState('all');
   const [infoExpanded, setInfoExpanded] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -84,42 +86,133 @@ export default function TaskInstancePage() {
 
   // Modal visibility states
   const [isAddPackVisible, setIsAddPackVisible] = useState(false);
+  const [isEditPackVisible, setIsEditPackVisible] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
   const [isAddAnnoVisible, setIsAddAnnoVisible] = useState(false);
 
+  // Stateful instance list
+  const [instancesCollect, setInstancesCollect] = useState(mockInstancesCollect);
+  const [instancesAsset, setInstancesAsset] = useState([
+    { key: '1', instanceId: 'COLL-PK-AST-844101', taskName: '关联数据资产包 · 分包01', assetSource: '资产包 - Lumos_FastUMI_202606', qaer: '李四', planCount: 100, singlePack: 50, startTime: '2026-04-15 10:00', collectProgress: 100, status: '已完成' },
+    { key: '2', instanceId: 'COLL-PK-AST-844102', taskName: '关联数据资产包 · 分包02', assetSource: '资产包 - Lumos_FastUMI_202606', qaer: '天奇管理员', planCount: 100, singlePack: 50, startTime: '2026-04-15 14:30', collectProgress: 60, status: '进行中' },
+  ]);
+
+  // Edit Pack Handler
+  const handleEditPack = (record) => {
+    setEditingRecord(record);
+    editPackForm.setFieldsValue({
+      taskName: record.taskName,
+      singlePackCount: record.singlePack || record.planCount || 50,
+      collector: record.collector !== '-' ? record.collector : undefined,
+      qaer: record.qaer !== '-' ? record.qaer : undefined,
+    });
+    setIsEditPackVisible(true);
+  };
+
+  // Save Edit Pack
+  const handleSaveEditPack = () => {
+    editPackForm.validateFields().then(values => {
+      if (isAssetTask) {
+        setInstancesAsset(prev => prev.map(item => item.key === editingRecord.key ? {
+          ...item,
+          singlePack: values.singlePackCount,
+          qaer: values.qaer,
+        } : item));
+      } else {
+        setInstancesCollect(prev => prev.map(item => item.key === editingRecord.key ? {
+          ...item,
+          singlePack: values.singlePackCount,
+          collector: values.collector || item.collector,
+          qaer: values.qaer || item.qaer,
+        } : item));
+      }
+      message.success(`分包 [${editingRecord.instanceId}] 配置已更新`);
+      setIsEditPackVisible(false);
+    });
+  };
+
+  // Delete Pack Handler
+  const handleDeletePack = (record) => {
+    Modal.confirm({
+      title: '确认删除该分包？',
+      icon: <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
+      content: `确定要删除分包 [${record.instanceId}] 吗？删除后该分包及关联流水将被移除。`,
+      okText: '确认删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: () => {
+        if (isAssetTask) {
+          setInstancesAsset(prev => prev.filter(item => item.key !== record.key));
+        } else {
+          setInstancesCollect(prev => prev.filter(item => item.key !== record.key));
+        }
+        message.success(`分包 [${record.instanceId}] 已成功删除`);
+      }
+    });
+  };
+
+  // Complete Pack Handler
   const handleCompletePack = (record) => {
     Modal.confirm({
-      title: `标记分包 ${record.instanceId} 采集完成`,
+      title: `标记分包 ${record.instanceId} 采集完成并送检`,
       content: `确认后，该分包采集数据将自动打包并流转至【数据质检】环节，由指派的质检员 [${record.qaer || '天奇管理员'}] 进行数据质检。`,
       okText: '确认完成并送检',
       okButtonProps: { style: { background: '#52c41a', borderColor: '#52c41a' } },
       cancelText: '取消',
       onOk: () => {
+        if (isAssetTask) {
+          setInstancesAsset(prev => prev.map(item => item.key === record.key ? { ...item, status: '已完成', collectProgress: 100 } : item));
+        } else {
+          setInstancesCollect(prev => prev.map(item => item.key === record.key ? { ...item, status: '已完成', collectProgress: 100 } : item));
+        }
         message.success(`分包 ${record.instanceId} 已成功流转至数据质检中心`);
       },
     });
   };
 
   const getStatusActions = (record) => {
-    if (record.status === '已完成') {
-      return (
-        <Space separator={<Divider orientation="vertical" />} size={0}>
-          <Button type="link" size="small" icon={<DownloadOutlined />} style={{ padding: '0 4px' }}>下载</Button>
-          <Button type="link" size="small" icon={<FileSearchOutlined />} style={{ padding: '0 4px', color: '#52c41a' }} onClick={() => router.push('/collection/qa')}>详情</Button>
-          <Button type="link" size="small" icon={<CloudUploadOutlined />} style={{ padding: '0 4px', color: '#722ed1' }}>手动上传</Button>
-        </Space>
-      );
-    }
-    if (record.status === '待分配') {
-      return (
-        <Space separator={<Divider orientation="vertical" />} size={0}>
-          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: '0 4px' }}>编辑</Button>
-          <Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: '0 4px' }} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>删除</Button>
-        </Space>
-      );
-    }
     return (
       <Space separator={<Divider orientation="vertical" />} size={0}>
-        <Button type="link" size="small" icon={<CheckCircleOutlined />} style={{ padding: '0 4px', color: '#52c41a' }} onClick={() => handleCompletePack(record)}>完成</Button>
+        <Button 
+          type="link" 
+          size="small" 
+          icon={<EditOutlined />} 
+          style={{ padding: '0 4px' }} 
+          onClick={() => handleEditPack(record)}
+        >
+          编辑
+        </Button>
+        {record.status !== '已完成' ? (
+          <Button 
+            type="link" 
+            size="small" 
+            icon={<CheckCircleOutlined />} 
+            style={{ padding: '0 4px', color: '#52c41a' }} 
+            onClick={() => handleCompletePack(record)}
+          >
+            完成
+          </Button>
+        ) : (
+          <Button 
+            type="link" 
+            size="small" 
+            icon={<FileSearchOutlined />} 
+            style={{ padding: '0 4px', color: '#52c41a' }} 
+            onClick={() => router.push('/collection/qa')}
+          >
+            详情
+          </Button>
+        )}
+        <Button 
+          type="link" 
+          danger 
+          size="small" 
+          icon={<DeleteOutlined />} 
+          style={{ padding: '0 4px' }} 
+          onClick={() => handleDeletePack(record)}
+        >
+          删除
+        </Button>
       </Space>
     );
   };
@@ -189,13 +282,8 @@ export default function TaskInstancePage() {
     { title: '操作', key: 'action', width: 180, fixed: 'right', render: (_, record) => getStatusActions(record) },
   ];
 
-  const mockInstancesNoCollect = [
-    { key: '1', instanceId: 'COLL-PK-AST-844101', taskName: '关联数据资产包 · 分包01', assetSource: '资产包 - Lumos_FastUMI_202606', qaer: '李四', planCount: 100, singlePack: 50, startTime: '2026-04-15 10:00', collectProgress: 100, status: '已完成' },
-    { key: '2', instanceId: 'COLL-PK-AST-844102', taskName: '关联数据资产包 · 分包02', assetSource: '资产包 - Lumos_FastUMI_202606', qaer: '天奇管理员', planCount: 100, singlePack: 50, startTime: '2026-04-15 14:30', collectProgress: 60, status: '进行中' },
-  ];
-
   const currentColumns = isAssetTask ? columnsAsset : columnsCollect;
-  const rawMockData = isAssetTask ? mockInstancesNoCollect : mockInstancesCollect;
+  const rawMockData = isAssetTask ? instancesAsset : instancesCollect;
 
   const currentMockData = rawMockData.filter(item => {
     if (activeTab === 'pending') return item.status === '待分配';
@@ -472,7 +560,111 @@ export default function TaskInstancePage() {
         </Form>
       </AppModal>
 
-      {/* 2. 添加标注任务弹窗 (Dynamic Rendering) */}
+      {/* 2. 编辑分包弹窗 */}
+      <AppModal
+        title={<span style={{ fontSize: '15px', fontWeight: 'bold' }}>✏️ 编辑分包配置 ({editingRecord?.instanceId})</span>}
+        open={isEditPackVisible}
+        onCancel={() => setIsEditPackVisible(false)}
+        onOk={handleSaveEditPack}
+        okText="保存修改"
+        cancelText="取消"
+        width={560}
+      >
+        <Form 
+          form={editPackForm} 
+          layout="horizontal" 
+          labelCol={{ span: 6 }} 
+          wrapperCol={{ span: 18 }} 
+          style={{ paddingTop: 16 }}
+        >
+          <Form.Item 
+            label="分包ID"
+            style={{ marginBottom: 18 }}
+          >
+            <Input disabled value={editingRecord?.instanceId} style={{ background: '#fafafa', fontFamily: 'monospace' }} />
+          </Form.Item>
+
+          {isAssetTask ? (
+            <>
+              <Form.Item 
+                label="单包数据量" 
+                name="singlePackCount" 
+                rules={[{ required: true, message: '请输入单包数据量' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <InputNumber min={1} max={100} placeholder="请输入单包数据量" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item 
+                label="分配质检员" 
+                name="qaer" 
+                rules={[{ required: true, message: '请选择质检员' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <Select 
+                  placeholder="请选择质检员" 
+                  allowClear
+                  options={[
+                    { value: '李四', label: '李四' },
+                    { value: '王五', label: '王五' },
+                    { value: '赵六', label: '赵六' },
+                    { value: '天奇管理员', label: '天奇管理员' },
+                  ]} 
+                />
+              </Form.Item>
+            </>
+          ) : (
+            <>
+              <Form.Item 
+                label="单包采集量" 
+                name="singlePackCount" 
+                rules={[{ required: true, message: '请输入单包采集量' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <InputNumber min={1} max={500} placeholder="请输入单包采集量" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item 
+                label="分配采集员" 
+                name="collector" 
+                rules={[{ required: true, message: '请选择采集员' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <Select 
+                  placeholder="请选择采集员" 
+                  allowClear
+                  options={[
+                    { value: '张三', label: '张三' },
+                    { value: '李四', label: '李四' },
+                    { value: '王五', label: '王五' },
+                    { value: 'cy00831', label: 'cy00831' },
+                  ]} 
+                />
+              </Form.Item>
+
+              <Form.Item 
+                label="分配质检员" 
+                name="qaer" 
+                rules={[{ required: true, message: '请选择质检员' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <Select 
+                  placeholder="请选择质检员" 
+                  allowClear
+                  options={[
+                    { value: '李四', label: '李四' },
+                    { value: '王五', label: '王五' },
+                    { value: '赵六', label: '赵六' },
+                    { value: '天奇管理员', label: '天奇管理员' },
+                  ]} 
+                />
+              </Form.Item>
+            </>
+          )}
+        </Form>
+      </AppModal>
+
+      {/* 3. 添加标注任务弹窗 (Dynamic Rendering) */}
       <AppModal
         title={<div style={{ paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>分配标注任务</div>}
         open={isAddAnnoVisible}
