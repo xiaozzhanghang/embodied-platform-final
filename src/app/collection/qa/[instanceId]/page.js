@@ -5,7 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal } from 'antd';
 import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, AuditOutlined, CloseCircleOutlined, DeleteOutlined, FileSearchOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { PageHeader, StatusTag } from '@/components/ui';
+import { PageHeader, StatusTag, TableToolbarActions } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
@@ -88,9 +88,36 @@ export default function QaDetailPage() {
     });
   });
 
-  // Table Row Selection States
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [tableDensity, setTableDensity] = useState('small');
+  const [hiddenColumns, setHiddenColumns] = useState([]);
+
+  // 一键全部通过 handler
+  const handlePassAll = () => {
+    const unpassedCount = episodes.filter(ep => ep.qcStatus !== '已通过').length;
+    Modal.confirm({
+      title: '确认一键全部质检通过？',
+      icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
+      content: `当前分包共有 ${episodes.length} 条 Episode 数据（其中 ${unpassedCount} 条未通过/待质检）。确认将全部数据一键标记为【质检已通过】并流转至待标注合格池吗？`,
+      okText: '确认全部通过',
+      okButtonProps: { style: { background: '#52c41a', borderColor: '#52c41a' } },
+      cancelText: '取消',
+      onOk: () => {
+        setEpisodes(prev => prev.map(ep => ({
+          ...ep,
+          qcStatus: '已通过',
+          qcRemark: ''
+        })));
+        message.success({
+          content: `🎉 一键质检完成！分包 [${instanceId}] 内全部 ${episodes.length} 条数据已成功质检通过，已流转至合格待标池。`,
+          duration: 4
+        });
+        setSelectedRowKeys([]);
+        setSelectedRows([]);
+      }
+    });
+  };
 
   // Batch QC handlers
   const handleBatchPass = () => {
@@ -244,7 +271,6 @@ export default function QaDetailPage() {
       <div className="ui-page ui-detail-page">
         <PageHeader
           title={`数采分包质检 — 分包 #${instanceId}`}
-          description={`查看采集计划分包 [${instanceId}] 录入的 Episode 采集数据并执行质量检查`}
           breadcrumbs={[
             { title: '首页' },
             { title: '任务管理' },
@@ -253,7 +279,6 @@ export default function QaDetailPage() {
           ]}
           back={<Button type="text" icon={<LeftOutlined />} onClick={() => router.push('/collection/qa')} style={{ fontWeight: 500 }}>返回列表</Button>}
           extra={[
-            <Button key="pass-all" type="primary" size="small" icon={<CheckCircleOutlined />} style={{ background: '#52c41a', borderColor: '#52c41a' }} onClick={handleBatchPass}>一键全部通过</Button>,
             <Button key="close" type="text" aria-label="关闭" icon={<CloseOutlined />} onClick={() => router.push('/collection/qa')} />,
           ]}
         />
@@ -388,6 +413,26 @@ export default function QaDetailPage() {
               { key: 'rejected', tab: `❌ 未通过 (${rejectedCount})` },
               { key: 'all', tab: `全部 (${totalCount})` },
             ]}
+            tabBarExtraContent={(
+              <Space style={{ paddingRight: 16 }}>
+                <Button 
+                  type="primary" 
+                  icon={<CheckCircleOutlined />} 
+                  style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 600 }} 
+                  onClick={handlePassAll}
+                >
+                  一键全部通过
+                </Button>
+                <TableToolbarActions
+                  columns={columns}
+                  density={tableDensity}
+                  onDensityChange={setTableDensity}
+                  hiddenColumns={hiddenColumns}
+                  onHiddenColumnsChange={setHiddenColumns}
+                  onRefresh={() => message.success('数据已刷新')}
+                />
+              </Space>
+            )}
             activeTabKey={activeQcTab}
             onTabChange={(key) => setActiveQcTab(key)}
             styles={{ body: { padding: 0 } }}
@@ -401,7 +446,7 @@ export default function QaDetailPage() {
                   setSelectedRows(rows);
                 }
               }}
-              columns={columns} 
+              columns={columns.filter(col => !hiddenColumns.includes(col.key))} 
               dataSource={filteredData} 
               pagination={{ 
                 pageSize: 20, 
@@ -409,7 +454,7 @@ export default function QaDetailPage() {
                 showSizeChanger: true,
                 pageSizeOptions: ['10', '20', '50']
               }}
-              size="small"
+              size={tableDensity}
               scroll={{ x: 1600 }}
             />
           </Card>
