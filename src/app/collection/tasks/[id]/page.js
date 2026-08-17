@@ -62,18 +62,19 @@ export default function TaskInstancePage() {
   const needCollectParam = searchParams ? searchParams.get('needCollect') : null;
 
   const isAnno = typeParam === 'asset' || id === '12854' || (typeof id === 'string' && (id.startsWith('ANNO') || id.startsWith('asset')));
-  const isNoCollectTask = needCollectParam === 'false' || id === 'COLL-20260415-002' || (typeof id === 'string' && (id.includes('NOCOLLECT') || id.includes('ASSET_COLLECT')));
+  const isNoCollectTask = needCollectParam === 'false' || id === 'COLL-20260415-002' || (typeof id === 'string' && (id.includes('NOCOLLECT') || id.includes('ASSET_COLLECT') || id.includes('asset')));
+  const isAssetTask = isNoCollectTask || isAnno || typeParam === 'asset';
   
-  const initialMode = isAnno ? 'asset' : 'collect';
+  const initialMode = isAssetTask ? 'asset' : 'collect';
   const [taskMode, setTaskMode] = useState(initialMode);
 
   useEffect(() => {
-    if (isAnno) {
+    if (isAssetTask) {
       setTaskMode('asset');
     } else {
       setTaskMode('collect');
     }
-  }, [typeParam, id, isAnno]);
+  }, [typeParam, id, isAssetTask]);
   const [activeTab, setActiveTab] = useState('all');
   const [infoExpanded, setInfoExpanded] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -175,19 +176,24 @@ export default function TaskInstancePage() {
   ];
 
   const columnsAsset = [
-    { title: '分包实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 120 },
-    { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 140 },
-    { title: '关联资产数据源', dataIndex: 'assetSource', key: 'assetSource', width: 160 },
-    { title: '指派标注员', dataIndex: 'annotator', key: 'annotator', width: 100 },
-    { title: '指派审核员', dataIndex: 'auditor', key: 'auditor', width: 100 },
-    { title: '分包关联数据数', key: 'planCount', width: 130, render: (_, r) => <span>{r.planCount} 条</span> },
+    { title: '分包实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 140, render: (id) => <Text style={{ color: '#722ed1', fontFamily: 'monospace' }}>{id}</Text> },
+    { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 150 },
+    { title: '关联资产数据源', dataIndex: 'assetSource', key: 'assetSource', width: 180 },
+    { 
+      title: '指派质检员', 
+      dataIndex: 'qaer', 
+      key: 'qaer', 
+      width: 110, 
+      render: (q) => <Tag color="cyan">{q || '李四'}</Tag> 
+    },
+    { title: '分包数据量', key: 'planCount', width: 130, render: (_, r) => <span>{r.singlePack || r.planCount || 20} / {r.planCount || 100} 条</span> },
     { title: '开始时间', dataIndex: 'startTime', key: 'startTime', width: 150 },
     {
-      title: '标注审核进度', key: 'collectProgress', width: 140,
+      title: '质检进度', key: 'collectProgress', width: 140,
       render: (_, record) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Progress percent={record.collectProgress} size="small" showInfo={false} style={{ flex: 1 }} strokeColor="#52c41a" />
-          <span style={{ fontSize: 12, color: '#595959' }}>{record.collectProgress}%</span>
+          <Progress percent={record.collectProgress || 100} size="small" showInfo={false} style={{ flex: 1 }} strokeColor="#52c41a" />
+          <span style={{ fontSize: 12, color: '#595959' }}>{record.collectProgress || 100}%</span>
         </div>
       )
     },
@@ -196,17 +202,16 @@ export default function TaskInstancePage() {
   ];
 
   const mockInstancesNoCollect = [
-    { key: '1', instanceId: 'AST-AUTO-844101', taskName: '关联数据资产包导入', autoDataset: true, planCount: 100, singlePack: 100, collector: '外部导入 (自动归档)', deviceInstance: '资产包 - Lumos_FastUMI_202606', startTime: '2026-04-15 10:00', collectProgress: 100, status: '已完成' },
+    { key: '1', instanceId: 'COLL-PK-AST-844101', taskName: '关联数据资产包 · 分包01', assetSource: '资产包 - Lumos_FastUMI_202606', qaer: '李四', planCount: 100, singlePack: 50, startTime: '2026-04-15 10:00', collectProgress: 100, status: '已完成' },
+    { key: '2', instanceId: 'COLL-PK-AST-844102', taskName: '关联数据资产包 · 分包02', assetSource: '资产包 - Lumos_FastUMI_202606', qaer: '天奇管理员', planCount: 100, singlePack: 50, startTime: '2026-04-15 14:30', collectProgress: 60, status: '进行中' },
   ];
 
-  const currentColumns = taskMode === 'collect' ? columnsCollect : columnsAsset;
-  const rawMockData = taskMode === 'collect' 
-    ? (isNoCollectTask ? mockInstancesNoCollect : mockInstancesCollect) 
-    : mockInstancesAsset;
+  const currentColumns = isAssetTask ? columnsAsset : columnsCollect;
+  const rawMockData = isAssetTask ? mockInstancesNoCollect : mockInstancesCollect;
 
   const currentMockData = rawMockData.filter(item => {
     if (activeTab === 'pending') return item.status === '待分配';
-    if (activeTab === 'collecting') return taskMode === 'collect' ? item.status === '采集中' : item.status.includes('标注');
+    if (activeTab === 'collecting') return item.status === '采集中' || item.status === '进行中';
     if (activeTab === 'done') return item.status === '已完成';
     return true;
   });
@@ -215,13 +220,12 @@ export default function TaskInstancePage() {
     <MainLayout>
       <div className="ui-page ui-detail-page">
         <PageHeader
-          title={`${taskMode === 'collect' ? '任务详情：餐具摆放数采任务' : '任务详情：工业纸箱打包封装关联标注任务'} (${id})`}
-          description={taskMode === 'collect' ? '查看采集分包、执行进度与人员分配。' : '查看关联资产分包、标注审核进度与人员分配。'}
+          title={isAssetTask ? `任务详情：工业纸箱打包封装关联资产任务 (${id})` : `任务详情：餐具摆放数采采集计划 (${id})`}
           breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '任务详情' }]}
           back={() => router.back()}
           extra={(
-            <Tag color={taskMode === 'collect' ? (isNoCollectTask ? 'cyan' : 'blue') : 'purple'} variant="borderless">
-              {taskMode === 'collect' ? (isNoCollectTask ? '采集模式：不需要采集 (外部导入/关联资产)' : '采集模式：需要采集数据') : '标注任务模式'}
+            <Tag color={isAssetTask ? 'purple' : 'blue'} variant="borderless" style={{ fontWeight: 600 }}>
+              {isAssetTask ? '任务类型：关联资产 (无需采集，需质检)' : '任务类型：采集计划 (需分配采集员与质检员)'}
             </Tag>
           )}
         />
@@ -322,13 +326,7 @@ export default function TaskInstancePage() {
             <Form.Item style={{ marginBottom: 0 }}><Button type="primary" icon={<SearchOutlined />}>搜索</Button></Form.Item>
           </Space>
             <Space size={12}>
-              {isNoCollectTask ? (
-                <Tooltip title="关联资产数据/外部导入无需人工采集，系统已自动解析归档，新建分包按钮已置灰">
-                  <Button type="primary" disabled icon={<PlusOutlined />}>新建分包</Button>
-                </Tooltip>
-              ) : (
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddPackVisible(true)}>新建分包</Button>
-              )}
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddPackVisible(true)}>新建分包</Button>
               <Button 
                 icon={<PauseOutlined />} 
                 disabled={selectedRowKeys.length === 0} 
@@ -347,7 +345,7 @@ export default function TaskInstancePage() {
           items={[
             { key: 'all', label: <span>全部 <Badge count={rawMockData.length} style={{ backgroundColor: '#e6f4ff', color: '#1677ff', boxShadow: 'none', marginLeft: 4 }} /></span> },
             { key: 'pending', label: '待分配' },
-            { key: 'collecting', label: taskMode === 'collect' ? '采集中' : '标注中' },
+            { key: 'collecting', label: isAssetTask ? '质检中' : '采集中' },
             { key: 'done', label: '已完成' },
           ]}
           style={{ marginBottom: 16 }}
@@ -367,7 +365,7 @@ export default function TaskInstancePage() {
 
       {/* 1. 添加分包弹窗 */}
       <AppModal
-        title="添加分包"
+        title={isAssetTask ? "添加分包 (关联资产)" : "添加分包 (采集计划)"}
         open={isAddPackVisible}
         onCancel={() => setIsAddPackVisible(false)}
         width={560}
@@ -375,7 +373,11 @@ export default function TaskInstancePage() {
         cancelText="取消"
         onOk={() => {
           addPackForm.validateFields().then(values => {
-            message.success('分包创建成功，已分配对应的采集员与质检员！');
+            if (isAssetTask) {
+              message.success('关联资产分包创建成功，已分配对应的质检员！');
+            } else {
+              message.success('采集分包创建成功，已分配对应的采集员与质检员！');
+            }
             setIsAddPackVisible(false);
           });
         }}
@@ -387,7 +389,47 @@ export default function TaskInstancePage() {
           wrapperCol={{ span: 18 }} 
           style={{ paddingTop: 16 }}
         >
-          {taskMode === 'collect' ? (
+          {isAssetTask ? (
+            <>
+              <Form.Item 
+                label="计划关联量" 
+                name="totalPlanCount" 
+                initialValue={100}
+                required
+                extra={<div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>继承任务计划关联资产量，分包内不可修改</div>}
+                style={{ marginBottom: 18 }}
+              >
+                <Input disabled value={100} placeholder="100" style={{ background: '#fafafa', color: '#595959' }} />
+              </Form.Item>
+
+              <Form.Item 
+                label="单包数据量" 
+                name="singlePackCount" 
+                rules={[{ required: true, message: '请输入单包数据量' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <InputNumber min={1} max={100} placeholder="请输入单包数据量" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item 
+                label="分配质检员" 
+                name="qaer" 
+                rules={[{ required: true, message: '请选择质检员' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <Select 
+                  placeholder="请选择质检员" 
+                  allowClear
+                  options={[
+                    { value: '李四', label: '李四' },
+                    { value: '王五', label: '王五' },
+                    { value: '赵六', label: '赵六' },
+                    { value: '天奇管理员', label: '天奇管理员' },
+                  ]} 
+                />
+              </Form.Item>
+            </>
+          ) : (
             <>
               <Form.Item 
                 label="计划采集量" 
@@ -440,61 +482,6 @@ export default function TaskInstancePage() {
                     { value: '李四', label: '李四' },
                     { value: '王五', label: '王五' },
                     { value: '赵六', label: '赵六' },
-                    { value: '天奇管理员', label: '天奇管理员' },
-                  ]} 
-                />
-              </Form.Item>
-            </>
-          ) : (
-            <>
-              <Form.Item 
-                label="计划标注量" 
-                name="totalPlanCount" 
-                initialValue={30}
-                required
-                extra={<div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>继承任务计划标注量，分包内不可修改</div>}
-                style={{ marginBottom: 18 }}
-              >
-                <Input disabled value={30} style={{ background: '#fafafa', color: '#595959' }} />
-              </Form.Item>
-
-              <Form.Item 
-                label="单包标注量" 
-                name="singlePackCount" 
-                rules={[{ required: true, message: '请输入单包标注量' }]}
-                style={{ marginBottom: 18 }}
-              >
-                <InputNumber min={1} placeholder="请输入单包标注量" style={{ width: '100%' }} />
-              </Form.Item>
-
-              <Form.Item 
-                label="分配标注员" 
-                name="annotator" 
-                rules={[{ required: true, message: '请选择标注员' }]}
-                style={{ marginBottom: 18 }}
-              >
-                <Select 
-                  placeholder="请选择标注员" 
-                  allowClear
-                  options={[
-                    { value: '李四', label: '李四' },
-                    { value: '张三', label: '张三' },
-                    { value: '赵六', label: '赵六' },
-                  ]} 
-                />
-              </Form.Item>
-
-              <Form.Item 
-                label="分配审核员" 
-                name="auditor" 
-                rules={[{ required: true, message: '请选择审核员' }]}
-                style={{ marginBottom: 18 }}
-              >
-                <Select 
-                  placeholder="请选择审核员" 
-                  allowClear
-                  options={[
-                    { value: '王五', label: '王五' },
                     { value: '天奇管理员', label: '天奇管理员' },
                   ]} 
                 />

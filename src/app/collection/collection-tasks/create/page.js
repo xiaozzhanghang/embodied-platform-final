@@ -649,7 +649,7 @@ function CreateCollectionTaskContent() {
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 14, fontWeight: 500, color: '#262626', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ color: '#ff4d4f' }}>*</span>
-                  <span>任务模式类型:</span>
+                  <span>任务类型:</span>
                 </div>
                 <Radio.Group 
                   value={taskFormType} 
@@ -659,8 +659,14 @@ function CreateCollectionTaskContent() {
                   }}
                   style={{ display: 'flex', gap: 32 }}
                 >
-                  <Radio value="collect">需要采集数据</Radio>
-                  <Radio value="asset">关联数据资产 / 外部导入</Radio>
+                  <Radio value="collect">
+                    <span style={{ fontWeight: 600 }}>采集计划</span>
+                    <span style={{ color: '#8c8c8c', fontSize: 12, marginLeft: 6 }}>(需要物理/遥操采集，分包时需分配采集员与质检员)</span>
+                  </Radio>
+                  <Radio value="asset">
+                    <span style={{ fontWeight: 600 }}>关联资产</span>
+                    <span style={{ color: '#8c8c8c', fontSize: 12, marginLeft: 6 }}>(关联已有数据资产/外部导入，分包时仅需配置数量与质检员)</span>
+                  </Radio>
                 </Radio.Group>
                 <Divider style={{ borderStyle: 'dashed', margin: '16px 0 24px' }} />
               </div>
