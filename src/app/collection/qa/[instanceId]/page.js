@@ -243,12 +243,13 @@ export default function QaDetailPage() {
     <MainLayout>
       <div className="ui-page ui-detail-page">
         <PageHeader
-          title={`数据质检 — 实例 #${instanceId}`}
-          description="查看当前质检包的 Episode 数据并执行批量质检"
+          title={`数采分包质检 — 分包 #${instanceId}`}
+          description={`查看采集计划分包 [${instanceId}] 录入的 Episode 采集数据并执行质量检查`}
           breadcrumbs={[
+            { title: '首页' },
             { title: '任务管理' },
             { title: '数据质检', href: '/collection/qa' },
-            { title: '质检包详情' },
+            { title: '分包质检详情' },
           ]}
           back={<Button type="text" icon={<LeftOutlined />} onClick={() => router.push('/collection/qa')} style={{ fontWeight: 500 }}>返回列表</Button>}
           extra={[

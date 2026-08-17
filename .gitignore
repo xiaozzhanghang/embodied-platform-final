@@ -43,3 +43,11 @@ public/videos/*.mp4
 public/1780382810146/
 public/assets/videos/
 scratch/
+*.mov
+mov_frames/
+mov_frames_detail/
+output/
+outputs/
+fangwenjie-175-1/
+.claude/
+.playwright-cli/

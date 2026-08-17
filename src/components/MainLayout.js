@@ -81,9 +81,10 @@ const menuItems = [
     roles: [ROLES.ADMIN, ROLES.QA, ROLES.COLLECTOR],
     children: [
       { key: '/collection/collection-tasks', icon: <CameraOutlined />, label: '数据采集', roles: [ROLES.ADMIN] },
-      { key: '/collection/annotation-tasks', icon: <FormOutlined />, label: '数据标注', roles: [ROLES.ADMIN] },
-      { key: '/annotation/audit', icon: <EyeOutlined />, label: '标注工作台', roles: [ROLES.ADMIN, ROLES.QA] },
       { key: '/collection/qa', icon: <FileSearchOutlined />, label: '数据质检', roles: [ROLES.ADMIN, ROLES.QA] },
+      { key: '/collection/annotation-tasks', icon: <FormOutlined />, label: '数据标注', roles: [ROLES.ADMIN] },
+      { key: '/annotation/review', icon: <AuditOutlined />, label: '数据审核', roles: [ROLES.ADMIN, ROLES.QA] },
+      { key: '/annotation/audit', icon: <EyeOutlined />, label: '标注工作台', roles: [ROLES.ADMIN, ROLES.QA] },
       { key: '/collection/templates', icon: <LayoutOutlined />, label: '模版中心', roles: [ROLES.ADMIN] },
       { key: '/collection/taskbooks', icon: <ReadOutlined />, label: '任务书', roles: [ROLES.ADMIN] },
     ],
@@ -125,14 +126,16 @@ const breadcrumbMap = {
   '/collection/devices': ['设备管理', '设备列表'],
   '/collection/device-types': ['设备管理', '设备类型'],
   '/collection/tasks': ['任务管理', '数据采集'],
-  '/collection/annotation-tasks': ['数据标注'],
+  '/collection/collection-tasks': ['任务管理', '数据采集'],
+  '/collection/collection-tasks/create': ['数据采集', '新建采集计划'],
+  '/collection/qa': ['任务管理', '数据质检'],
+  '/collection/annotation-tasks': ['任务管理', '数据标注'],
   '/collection/annotation-tasks/create': ['数据标注', '新建数据标注'],
-  '/collection/collection-tasks': ['数据采集'],
-  '/collection/collection-tasks/create': ['数据采集', '新建数据采集'],
+  '/annotation/review': ['任务管理', '数据审核'],
+  '/annotation/review-list': ['任务管理', '数据审核', '审核详情'],
+  '/annotation/audit': ['任务管理', '标注工作台'],
   '/collection/collect': ['任务中心（采集端）'],
   '/collection/collect-home': ['首页'],
-  '/collection/qa': ['数据质检'],
-  '/annotation/audit': ['标注工作台'],
   '/collection/templates': ['模版中心'],
   '/collection/taskbooks': ['任务书'],
   '/data/raw': ['数据资产', '原始数据'],
@@ -305,10 +308,12 @@ function MainLayoutContent({ children }) {
           selectedKeys={[
             pathname === '/collection/collect-home' ? '/collection/collect-home' :
             pathname.includes('/collection/collection-tasks') ? '/collection/collection-tasks' : 
+            pathname.includes('/collection/qa') ? '/collection/qa' : 
             pathname.includes('/collection/annotation-tasks') ? '/collection/annotation-tasks' : 
+            pathname.includes('/annotation/review') ? '/annotation/review' : 
+            pathname.includes('/annotation/audit') ? '/annotation/audit' : 
             pathname.includes('/collection/collect') ? '/collection/collect' : 
             pathname.includes('/collection/tasks') ? '/collection/tasks' : 
-            pathname.includes('/collection/qa') ? '/collection/qa' : 
             pathname
           ]}
           defaultOpenKeys={getOpenKeys()}

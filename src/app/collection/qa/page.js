@@ -1,100 +1,189 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, Breadcrumb, Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select } from 'antd';
-import { SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, DeleteOutlined } from '@ant-design/icons';
-import { QueryFilter, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-components';
+import { 
+  Table, Button, Tag, Space, Input, Card, Typography, 
+  Progress, App, Row, Col, Tooltip, Badge, Modal, Form, Select, Tabs, Divider 
+} from 'antd';
+import { 
+  SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, 
+  LoginOutlined, DownloadOutlined, UserOutlined, ExportOutlined, 
+  CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, 
+  DeleteOutlined, ClockCircleOutlined, ThunderboltOutlined, CheckSquareOutlined,
+  AppstoreOutlined, SettingOutlined, CameraOutlined, FormOutlined, FileSearchOutlined
+} from '@ant-design/icons';
+import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
-import { AppModal, FilterPanel, PageHeader, StateView, StatusTag, TableToolbar } from '@/components/ui';
-import { assignQaerResult, readQaPackages } from '@/lib/annotationQaFlow.mjs';
+import SpecMarker from '@/components/SpecMarker';
+import { AppModal, FilterPanel, PageHeader, StateView, StatusTag, TableToolbar, TableToolbarActions } from '@/components/ui';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const ANNO_TYPES = ['框标注', '点标注', '范围标注', '范围&框标注'];
 const QC_STATUSES = ['待质检', '质检中', '已通过', '未通过'];
-
 const projectNames = [
-  'SimulatedCollection(模拟采集) sin',
-  '天奇-餐盘整理任务',
-  '垃圾分类抓取项目',
-  'Galbot-厨房场景',
+  'InternalCommercial (内部-商业)',
+  'SimulatedCollection (模拟采集)',
+  'InternalIndustrial (内部-工业)',
+  'ExternalXupaosi (外部合作)',
 ];
-const taskbooks = ['TB-抓取红色方块', 'TB-餐盘整理', 'TB-垃圾分类', 'TB-物品摆放'];
-const taskTypes = ['垃圾清理', '餐盘整理', '物品搬运', '工具使用'];
-const people = ['张三', '李四', '王五', '赵六', '钱七', '孙八'];
+const taskbooks = ['TB-桌面整理采集规范 V1.0', 'TB-货架抓取规范 V1.5', 'TB-线缆管理规范 V2.0', 'TB-厨房操作规范 V1.2'];
+const people = ['张三', '李四', '王五', '赵六', '钱七', 'cy00831', '天奇管理员'];
+const DEVICE_TYPES = ['Galbot_2.2_RGBD', 'Lumos_FastUMI', 'Franka_FR3', 'Galbot_1.16_G2'];
 
-const DEVICE_TYPES = ['galbot', '鹿鸣', '真机', '仿真机'];
-
-const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
-  const dataCount = [186, 240, 312, 156, 420, 198, 88, 520, 164, 276][i % 10];
-  const annoType = ANNO_TYPES[i % 4];
-  // QC statuses: first few are 已通过, then mix
-  const qcStatus = i < 4 ? '已通过' : i < 8 ? '质检中' : i < 14 ? '待质检' : i % 3 === 0 ? '未通过' : '待质检';
-  const qcPassCount = qcStatus === '已通过' ? dataCount : qcStatus === '质检中' ? Math.floor(dataCount * 0.6) : qcStatus === '未通过' ? Math.floor(dataCount * 0.8) : 0;
-  const qcFailCount = qcStatus === '未通过' ? Math.floor(dataCount * 0.2) : qcStatus === '质检中' ? Math.floor(dataCount * 0.1) : 0;
-  const deviceType = DEVICE_TYPES[i % DEVICE_TYPES.length];
-
-  return {
-    key: i,
-    project: projectNames[i % projectNames.length],
-    taskbook: taskbooks[i % taskbooks.length],
-    annoId: 16822 - i,
-    taskId: 21795 - Math.floor(i / 2),
-    instanceId: 19884 - i,
-    taskName: `${taskTypes[i % taskTypes.length]}_任务_${String(i + 1).padStart(3, '0')}`,
-    taskNameEn: `Task_${taskTypes[i % taskTypes.length]}_${String(i + 1).padStart(3, '0')}`,
-    annoTaskName: `${taskTypes[i % taskTypes.length]}_标注_${people[i % people.length]}`,
-    dataCount,
-    dataMinutes: (dataCount * 0.5 / 60).toFixed(1),
-    qcStatus,
-    isShelfTask: i % 3 === 0 ? '是' : '否',
-    rowCol: `R${Math.floor(i / 4) + 1}C${(i % 4) + 1}`,
-    deviceSN: `SN-${String(2024001 + i)}`,
-    deviceType,
-    qaer: people[(i + 1) % people.length],
-    annotator: people[i % people.length],
-    auditor: people[(i + 2) % people.length],
-    collector: people[(i + 3) % people.length],
-    qcPassCount,
-    qcFailCount,
-    qcTotal: dataCount,
-    qcProgress: qcStatus === '已通过' ? 100 : qcStatus === '质检中' ? 60 + ((i * 7) % 30) : qcStatus === '未通过' ? 100 : 0,
-    annoType,
-    taskDesc: `${taskTypes[i % taskTypes.length]}场景数据质检`,
-    creator: people[(i + 4) % people.length],
-    createTime: `2026-0${3 + (i % 4)}-${String(10 + (i % 20)).padStart(2, '0')} ${String(8 + (i % 12)).padStart(2, '0')}:${String(i * 3 % 60).padStart(2, '0')}:00`,
-  };
-});
+// Mock data directly mirroring collection sub-packages as the origin
+const initialQaData = [
+  {
+    key: '1',
+    instanceId: 'COLL-PK-12745',
+    sourcePlanId: 'COLL-20260415-001',
+    sourcePlanName: '货架物品物理采集计划',
+    taskbook: 'TB-货架抓取规范 V1.5',
+    project: 'InternalCommercial (内部-商业)',
+    taskName: '货架物品物理采集 · 分包01',
+    collector: '张三',
+    qaer: '李四',
+    deviceType: 'Galbot_2.2_RGBD',
+    deviceSN: 'SN-20260401',
+    dataCount: 120,
+    dataMinutes: '60.0',
+    totalFrames: 3600,
+    qcStatus: '质检中',
+    qcPassCount: 72,
+    qcFailCount: 2,
+    qcTotal: 120,
+    qcProgress: 62,
+    currentRound: 1,
+    creator: 'ingest_user',
+    createTime: '2026-04-15 11:30:00',
+  },
+  {
+    key: '2',
+    instanceId: 'COLL-PK-12744',
+    sourcePlanId: 'COLL-20260415-001',
+    sourcePlanName: '货架物品物理采集计划',
+    taskbook: 'TB-货架抓取规范 V1.5',
+    project: 'InternalCommercial (内部-商业)',
+    taskName: '货架物品物理采集 · 分包02',
+    collector: '李四',
+    qaer: '天奇管理员',
+    deviceType: 'Galbot_1.16_G2',
+    deviceSN: 'SN-20260402',
+    dataCount: 120,
+    dataMinutes: '58.5',
+    totalFrames: 3510,
+    qcStatus: '待质检',
+    qcPassCount: 0,
+    qcFailCount: 0,
+    qcTotal: 120,
+    qcProgress: 0,
+    currentRound: 1,
+    creator: 'ingest_user',
+    createTime: '2026-04-15 14:00:00',
+  },
+  {
+    key: '3',
+    instanceId: 'COLL-PK-12511',
+    sourcePlanId: 'COLL-20260415-001',
+    sourcePlanName: '货架物品物理采集计划',
+    taskbook: 'TB-货架抓取规范 V1.5',
+    project: 'InternalCommercial (内部-商业)',
+    taskName: '货架物品物理采集 · 分包03',
+    collector: '王五',
+    qaer: '天奇管理员',
+    deviceType: 'Galbot_2.2_RGBD',
+    deviceSN: 'SN-20260401',
+    dataCount: 120,
+    dataMinutes: '62.0',
+    totalFrames: 3720,
+    qcStatus: '已通过',
+    qcPassCount: 120,
+    qcFailCount: 0,
+    qcTotal: 120,
+    qcProgress: 100,
+    currentRound: 1,
+    creator: 'ingest_user',
+    createTime: '2026-04-14 16:30:00',
+  },
+  {
+    key: '4',
+    instanceId: 'COLL-PK-12619',
+    sourcePlanId: 'COLL-20260415-002',
+    sourcePlanName: '桌面操作物理数采计划',
+    taskbook: 'TB-桌面整理采集规范 V1.0',
+    project: 'SimulatedCollection (模拟采集)',
+    taskName: '桌面操作物理数采 · 分包01',
+    collector: 'cy00831',
+    qaer: '王五',
+    deviceType: 'Franka_FR3',
+    deviceSN: 'SN-20260388',
+    dataCount: 80,
+    dataMinutes: '40.0',
+    totalFrames: 2400,
+    qcStatus: '未通过',
+    qcPassCount: 55,
+    qcFailCount: 25,
+    qcTotal: 80,
+    qcProgress: 100,
+    currentRound: 1,
+    creator: 'zhangsan',
+    createTime: '2026-04-13 15:00:00',
+  },
+  {
+    key: '5',
+    instanceId: 'COLL-PK-12620',
+    sourcePlanId: 'COLL-20260414-003',
+    sourcePlanName: '双手整理离线资产采集计划',
+    taskbook: 'TB-厨房操作规范 V1.2',
+    project: 'ExternalXupaosi (外部合作)',
+    taskName: '双手整理离线资产 · 分包01',
+    collector: 'cy00831',
+    qaer: '李四',
+    deviceType: 'Lumos_FastUMI',
+    deviceSN: 'SN-20260399',
+    dataCount: 50,
+    dataMinutes: '25.0',
+    totalFrames: 1500,
+    qcStatus: '已通过',
+    qcPassCount: 50,
+    qcFailCount: 0,
+    qcTotal: 50,
+    qcProgress: 100,
+    currentRound: 1,
+    creator: 'ingest_user',
+    createTime: '2026-04-14 18:20:00',
+  }
+];
 
 export default function QaPage() {
   const router = useRouter();
+  const { message } = App.useApp();
+
+  const [tableData, setTableData] = useState(initialQaData);
   const [activeStatusTab, setActiveStatusTab] = useState('all');
   const [filters, setFilters] = useState({});
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const { message } = App.useApp();
+  const [tableDensity, setTableDensity] = useState('middle');
+  const [hiddenColumns, setHiddenColumns] = useState([]);
+
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
   const [reassignRecord, setReassignRecord] = useState(null);
   const [reassignForm] = Form.useForm();
 
-  const [tableData, setTableData] = useState(instanceMockData);
-  const [storageError, setStorageError] = useState(null);
+  const allCount = tableData.length;
+  const pendingCount = tableData.filter(t => t.qcStatus === '待质检').length;
+  const checkingCount = tableData.filter(t => t.qcStatus === '质检中').length;
+  const passedCount = tableData.filter(t => t.qcStatus === '已通过').length;
+  const failedCount = tableData.filter(t => t.qcStatus === '未通过').length;
 
-  const loadGeneratedPackages = React.useCallback(() => {
-    const { packages: generatedPackages, error } = readQaPackages(window.localStorage);
-    setTableData([
-      ...generatedPackages,
-      ...instanceMockData.filter(mock => (
-        !generatedPackages.some(item => String(item.instanceId) === String(mock.instanceId))
-      )),
-    ]);
-    setStorageError(error ? '质检包数据读取失败，当前仍展示演示数据。' : null);
-  }, []);
-
-  useEffect(() => {
-    loadGeneratedPackages();
-  }, [loadGeneratedPackages]);
+  const tabItems = [
+    { key: 'all', label: `全部 (${allCount})` },
+    { key: 'pending', label: <span><ClockCircleOutlined style={{ marginRight: 6 }} />待质检 ({pendingCount})</span> },
+    { key: 'checking', label: <span><ThunderboltOutlined style={{ marginRight: 6 }} />质检中 ({checkingCount})</span> },
+    { key: 'passed', label: <span><CheckSquareOutlined style={{ marginRight: 6 }} />已通过 ({passedCount})</span> },
+    { key: 'failed', label: <span><CloseCircleOutlined style={{ marginRight: 6 }} />未通过 ({failedCount})</span> },
+  ];
 
   const handleReassign = (record) => {
     setReassignRecord(record);
@@ -106,27 +195,19 @@ export default function QaPage() {
 
   const handleReassignSubmit = () => {
     reassignForm.validateFields().then(values => {
-      if (reassignRecord.qaPackageId) {
-        const assignResult = assignQaerResult(window.localStorage, reassignRecord.qaPackageId, values.qaer);
-        if (!assignResult.persisted) {
-          message.error('质检员分配保存失败，请检查本地存储后重试。');
-          return;
-        }
-      }
       setTableData(prev => prev.map(item => {
         if (item.key === reassignRecord.key) {
           return { ...item, qaer: values.qaer };
         }
         return item;
       }));
-      message.success(`质检员分配成功！`);
+      message.success(`分包 [${reassignRecord.instanceId}] 质检员已成功变更为 [${values.qaer}]`);
       setReassignModalOpen(false);
     });
   };
 
-  const filteredData = React.useMemo(() => {
+  const filteredData = useMemo(() => {
     return tableData.filter(item => {
-      // 状态页签过滤
       if (activeStatusTab === 'pending' && item.qcStatus !== '待质检') return false;
       if (activeStatusTab === 'checking' && item.qcStatus !== '质检中') return false;
       if (activeStatusTab === 'passed' && item.qcStatus !== '已通过') return false;
@@ -134,64 +215,73 @@ export default function QaPage() {
 
       const projectMatch = !filters.project || item.project.includes(filters.project);
       const taskbookMatch = !filters.taskbook || item.taskbook === filters.taskbook;
-      const nameMatch = !filters.name || item.taskName.includes(filters.name);
-      const idMatch = !filters.taskId || String(item.taskId).includes(filters.taskId) || String(item.instanceId).includes(filters.taskId);
-      const typeMatch = !filters.annoType || item.annoType === filters.annoType;
+      const nameMatch = !filters.name || item.taskName.includes(filters.name) || item.sourcePlanName.includes(filters.name);
+      const idMatch = !filters.taskId || item.instanceId.toLowerCase().includes(filters.taskId.toLowerCase()) || item.sourcePlanId.toLowerCase().includes(filters.taskId.toLowerCase());
       const statusMatch = !filters.qcStatus || item.qcStatus === filters.qcStatus;
       const qaerMatch = !filters.qaer || item.qaer === filters.qaer;
-      return projectMatch && taskbookMatch && nameMatch && idMatch && typeMatch && statusMatch && qaerMatch;
+      const collectorMatch = !filters.collector || item.collector === filters.collector;
+
+      return projectMatch && taskbookMatch && nameMatch && idMatch && statusMatch && qaerMatch && collectorMatch;
     });
   }, [filters, tableData, activeStatusTab]);
 
-  const qcStatusColors = {
-    '待质检': 'default',
-    '质检中': 'processing',
-    '已通过': 'success',
-    '未通过': 'error',
-  };
-
-  const annoTypeColors = {
-    '框标注': 'green',
-    '点标注': 'blue',
-    '范围标注': 'purple',
-    '范围&框标注': 'magenta',
-  };
-
   const columns = [
-    { title: '项目', dataIndex: 'project', key: 'project', width: 200, ellipsis: true, fixed: 'left' },
-    { title: '任务书', dataIndex: 'taskbook', key: 'taskbook', width: 140, ellipsis: true },
-    { title: '标注任务ID', dataIndex: 'annoId', key: 'annoId', width: 170, render: (t) => <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{t}</Text> },
-    { title: '来源任务ID', dataIndex: 'taskId', key: 'taskId', width: 170, render: (t) => <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{t}</Text> },
     {
-      title: '质检包/实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 220,
-      render: (t, record) => (
-        <Space size={4}>
-          <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{t}</Text>
-          {record.generatedBy === 'annotation-completed' && <Tag color="cyan">自动生成</Tag>}
-        </Space>
-      ),
+      title: '来源采集分包ID',
+      dataIndex: 'instanceId',
+      key: 'instanceId',
+      width: 170,
+      fixed: 'left',
+      render: (id) => <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>{id}</Text>,
     },
-    { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 180, ellipsis: true },
-    { title: '标注任务名称', dataIndex: 'annoTaskName', width: 180, ellipsis: true },
-    { title: '数据量', dataIndex: 'dataCount', width: 70, align: 'right', render: (v) => <Text strong>{v}</Text> },
-    { title: '数据量(分钟)', dataIndex: 'dataMinutes', width: 100, align: 'right', render: (v) => `${v} min` },
+    { 
+      title: '来源采集计划/任务', 
+      dataIndex: 'taskName', 
+      key: 'taskName', 
+      width: 220, 
+      ellipsis: true,
+      render: (name) => <Text strong>{name}</Text>
+    },
+    { title: '关联任务书', dataIndex: 'taskbook', key: 'taskbook', width: 180, ellipsis: true },
+    { 
+      title: '采集人员', 
+      dataIndex: 'collector', 
+      width: 100, 
+      render: (c) => <Tag color="blue">{c}</Tag>
+    },
+    { 
+      title: '分包指派质检员', 
+      dataIndex: 'qaer', 
+      width: 130, 
+      render: (q) => <Tag color="cyan">{q}</Tag>
+    },
+    { title: '采集数据量', dataIndex: 'dataCount', width: 100, align: 'right', render: (v) => <Text strong>{v} 条</Text> },
+    { title: '时长(分钟)', dataIndex: 'dataMinutes', width: 100, align: 'right', render: (v) => `${v} min` },
     {
-      title: '质检状态', dataIndex: 'qcStatus', width: 100, align: 'center',
+      title: '质检状态', 
+      dataIndex: 'qcStatus', 
+      width: 110, 
+      align: 'center',
       render: (s) => <StatusTag status={s} />
     },
-    { title: '货架任务', dataIndex: 'isShelfTask', width: 80, align: 'center', render: (v) => v === '是' ? <Tag color="orange">是</Tag> : <Text type="secondary">否</Text> },
-    { title: '行列号', dataIndex: 'rowCol', width: 80, align: 'center' },
-    { title: '设备SN', dataIndex: 'deviceSN', width: 120, render: (v) => <Text copyable={{ text: v }} style={{ fontSize: 12, fontFamily: 'monospace' }}>{v}</Text> },
-    { title: '质检员', dataIndex: 'qaer', width: 80 },
-    { title: '标注员', dataIndex: 'annotator', width: 80 },
-    { title: '审核员', dataIndex: 'auditor', width: 80 },
-    { title: '采集员', dataIndex: 'collector', width: 80 },
-    {
-      title: '质检进度', key: 'qcProgressBar', width: 120, align: 'center',
-      render: (_, r) => <Progress percent={r.qcProgress} size="small" strokeColor={r.qcProgress === 100 ? '#52c41a' : '#1677ff'} style={{ margin: 0 }} />
+    { 
+      title: '采集设备', 
+      dataIndex: 'deviceType', 
+      width: 150, 
+      ellipsis: true 
     },
     {
-      title: '通过/不通过', key: 'qcResult', width: 120, align: 'center',
+      title: '质检进度', 
+      key: 'qcProgressBar', 
+      width: 130, 
+      align: 'center',
+      render: (_, r) => <Progress percent={r.qcProgress} size="small" strokeColor={r.qcProgress === 100 ? (r.qcStatus === '未通过' ? '#ff4d4f' : '#52c41a') : '#1677ff'} style={{ margin: 0 }} />
+    },
+    {
+      title: '合格/不合格', 
+      key: 'qcResult', 
+      width: 110, 
+      align: 'center',
       render: (_, r) => (
         <Space size={4}>
           <Text style={{ color: '#52c41a', fontFamily: 'monospace' }}>{r.qcPassCount}</Text>
@@ -200,138 +290,169 @@ export default function QaPage() {
         </Space>
       )
     },
+    { title: '分包送检时间', dataIndex: 'createTime', width: 160, ellipsis: true },
     {
-      title: '标注类型', dataIndex: 'annoType', width: 110, align: 'center',
-      render: (t) => <Tag color={annoTypeColors[t]} style={{ margin: 0 }}>{t}</Tag>
-    },
-    { title: '任务描述', dataIndex: 'taskDesc', width: 160, ellipsis: true },
-    { title: '创建人', dataIndex: 'creator', width: 80 },
-    { title: '质检轮次', dataIndex: 'currentRound', width: 90, align: 'center', render: (v) => v ? `第 ${v} 轮` : '-' },
-    { title: '创建时间', dataIndex: 'createTime', width: 160 },
-    {
-      title: '操作', key: 'action', width: 180, fixed: 'right',
+      title: '操作', 
+      key: 'action', 
+      width: 170, 
+      fixed: 'right', 
+      align: 'center',
       render: (_, r) => (
-        <Space size="small">
-          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => handleReassign(r)}>分配质检员</Button>
-          <Button type="link" size="small" icon={<LoginOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/qa/${r.instanceId}`)}>进入</Button>
+        <Space separator={<Divider orientation="vertical" />} size={0}>
+          <Button 
+            type="link" 
+            size="small" 
+            icon={<LoginOutlined />} 
+            style={{ padding: '0 4px', fontWeight: 600 }} 
+            onClick={() => router.push(`/collection/qa/${r.instanceId}`)}
+          >
+            进入
+          </Button>
+          <Button 
+            type="link" 
+            size="small" 
+            icon={<EditOutlined />} 
+            style={{ padding: '0 4px' }} 
+            onClick={() => handleReassign(r)}
+          >
+            重新分配
+          </Button>
         </Space>
       )
     }
   ];
 
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (keys) => setSelectedRowKeys(keys),
-  };
-
   return (
     <MainLayout>
       <div className="ui-page">
-      <PageHeader
-        title="数据质检"
-        description="查看自动生成与历史质检包，分配质检员并跟踪处理结果。"
-        breadcrumbs={[{ title: '首页' }, { title: '任务管理' }, { title: '数据质检' }]}
-      />
-
-      <FilterPanel>
-        <QueryFilter
-          submitter={{
-            submitButtonProps: { icon: <SearchOutlined /> },
-            resetButtonProps: { icon: <ReloadOutlined /> },
-          }}
-          onFinish={async (values) => {
-            setFilters(values);
-          }}
-          onReset={() => {
-            setFilters({});
-          }}
-        >
-          <ProFormSelect name="project" label="一级项目" placeholder="请选择" options={projectNames.map(n => ({ label: n, value: n }))} />
-          <ProFormSelect name="taskbook" label="任务书" placeholder="请选择" options={taskbooks.map(n => ({ label: n, value: n }))} />
-          <ProFormText name="name" label="任务名称" placeholder="请输入" />
-          <ProFormText name="taskId" label="任务ID/实例ID" placeholder="请输入" />
-          <ProFormSelect name="annoType" label="标注类型" placeholder="请选择" options={ANNO_TYPES.map(t => ({ label: t, value: t }))} />
-          <ProFormSelect name="qcStatus" label="质检状态" placeholder="请选择" options={QC_STATUSES.map(s => ({ label: s, value: s }))} />
-          <ProFormSelect name="qaer" label="质检员" placeholder="请选择" options={people.map(p => ({ label: p, value: p }))} />
-        </QueryFilter>
-      </FilterPanel>
-
-      {storageError && (
-        <StateView
-          type="error"
-          title="质检包数据读取失败"
-          description={storageError}
-          onRetry={loadGeneratedPackages}
+        <PageHeader
+          title="数据质检"
+          description="来源于数据采集计划的分包数据质量检查，支持质检员分配与批量判定。质检合格后流转至数据标注环节。"
+          breadcrumbs={[{ title: '首页' }, { title: '任务管理' }, { title: '数据质检' }]}
         />
-      )}
 
-      {/* Table Section */}
-      <Card 
-        className="ui-table-card"
-        tabList={[
-          { key: 'all', tab: `全部 (${tableData.length})` },
-          { key: 'pending', tab: `待质检 (${tableData.filter(t => t.qcStatus === '待质检').length})` },
-          { key: 'checking', tab: `质检中 (${tableData.filter(t => t.qcStatus === '质检中').length})` },
-          { key: 'passed', tab: `已通过 (${tableData.filter(t => t.qcStatus === '已通过').length})` },
-          { key: 'failed', tab: `未通过 (${tableData.filter(t => t.qcStatus === '未通过').length})` },
-        ]}
-        activeTabKey={activeStatusTab}
-        onTabChange={(key) => setActiveStatusTab(key)}
-        styles={{ body: { padding: 0 } }} 
-      >
-        <TableToolbar
-          title="质检列表"
-          count={filteredData.length}
-          selectedCount={selectedRowKeys.length}
-          actions={[
-            <Button key="assign" icon={<UserOutlined />} disabled={selectedRowKeys.length === 0} onClick={() => message.info(`已选 ${selectedRowKeys.length} 条，批量分配质检员`)}>
-              批量分配 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
-            </Button>,
-            <Button key="export" icon={<DownloadOutlined />} onClick={() => message.success('正在导出...')}>导出</Button>,
+        <SpecMarker
+          id="collection-qa-query"
+          number={1}
+          title="数采分包质检检索与过滤"
+          rules={[
+            "数据质检来源直接对应采集计划的子分包，支持按来源计划、分包编号、采集员及质检员筛选。",
+            "支持一键重置筛选条件并刷新表格。"
           ]}
-        />
-        <Table
-          rowSelection={rowSelection}
-          columns={columns}
-          dataSource={filteredData}
-          locale={{
-            emptyText: <StateView type="no-result" title="暂无符合条件的质检包" />
-          }}
-          scroll={{ x: 3200 }}
-          size="small"
-          pagination={{
-            pageSize: 20,
-            showTotal: (t) => `共 ${t} 条`,
-            showSizeChanger: true,
-            pageSizeOptions: ['10', '20', '50', '100']
-          }}
-        />
-      </Card>
+          remark="数据质检来源采集计划分包"
+          style={{ width: '100%' }}
+        >
+          <FilterPanel>
+            <QueryFilter
+              submitter={{
+                submitButtonProps: { icon: <SearchOutlined /> },
+                resetButtonProps: { icon: <ReloadOutlined /> },
+              }}
+              onFinish={async (values) => setFilters(values)}
+              onReset={() => setFilters({})}
+            >
+              <ProFormSelect name="project" label="所属项目" placeholder="请选择项目" options={projectNames.map(n => ({ label: n, value: n }))} />
+              <ProFormSelect name="taskbook" label="任务书" placeholder="请选择任务书" options={taskbooks.map(n => ({ label: n, value: n }))} />
+              <ProFormText name="taskId" label="分包/计划编号" placeholder="请输入分包ID或计划ID" />
+              <ProFormText name="name" label="任务名称" placeholder="请输入任务名称" />
+              <ProFormSelect name="collector" label="采集员" placeholder="请选择采集员" options={people.map(p => ({ label: p, value: p }))} />
+              <ProFormSelect name="qaer" label="质检员" placeholder="请选择质检员" options={people.map(p => ({ label: p, value: p }))} />
+              <ProFormSelect name="qcStatus" label="质检状态" placeholder="请选择状态" options={QC_STATUSES.map(s => ({ label: s, value: s }))} />
+            </QueryFilter>
+          </FilterPanel>
+        </SpecMarker>
 
-      {/* 分配质检员弹窗 */}
-      <AppModal
-        title="分配质检员"
-        open={reassignModalOpen}
-        onCancel={() => setReassignModalOpen(false)}
-        onOk={handleReassignSubmit}
-        okText="确定"
-        cancelText="取消"
-      >
-        <Form form={reassignForm} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item
-            name="qaer"
-            label="质检员"
-            rules={[{ required: true, message: '请选择质检员' }]}
-          >
-            <Select placeholder="请选择质检员">
-              {people.map(p => (
-                <Select.Option key={p} value={p}>{p}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Form>
-      </AppModal>
+        {/* Table Section */}
+        <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
+          <div style={{ padding: '0 20px', borderBottom: '1px solid #f0f0f0' }}>
+            <Tabs
+              activeKey={activeStatusTab}
+              onChange={setActiveStatusTab}
+              style={{ marginBottom: -1 }}
+              items={tabItems}
+            />
+          </div>
 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '16px 20px',
+          }}>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: '#1f1f1f' }}>
+              质检列表
+            </div>
+            <Space size={12}>
+              <Button 
+                icon={<UserOutlined />} 
+                disabled={selectedRowKeys.length === 0} 
+                onClick={() => message.info(`已选 ${selectedRowKeys.length} 个分包，批量分配质检员`)}
+              >
+                批量分配质检员 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+              </Button>
+              <Button 
+                icon={<DownloadOutlined />} 
+                onClick={() => message.success('正在导出质检报表...')}
+              >
+                导出报表
+              </Button>
+              <TableToolbarActions
+                columns={columns}
+                density={tableDensity}
+                onDensityChange={setTableDensity}
+                hiddenColumns={hiddenColumns}
+                onHiddenColumnsChange={setHiddenColumns}
+                onRefresh={() => message.success('数据已刷新')}
+              />
+            </Space>
+          </div>
+
+          <Table
+            rowSelection={{
+              type: 'checkbox',
+              selectedRowKeys,
+              onChange: (keys) => setSelectedRowKeys(keys),
+            }}
+            columns={columns.filter(col => !hiddenColumns.includes(col.key))}
+            dataSource={filteredData}
+            scroll={{ x: 1900 }}
+            size={tableDensity}
+            pagination={{
+              pageSize: 10,
+              showTotal: (t) => `共 ${t} 条质检分包数据`,
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50']
+            }}
+          />
+        </Card>
+
+        {/* 分配质检员弹窗 */}
+        <AppModal
+          title={`重新分配 — 分包 [${reassignRecord?.instanceId || ''}]`}
+          open={reassignModalOpen}
+          onCancel={() => setReassignModalOpen(false)}
+          onOk={handleReassignSubmit}
+          okText="确定"
+          cancelText="取消"
+        >
+          <Form form={reassignForm} layout="vertical" style={{ marginTop: 16 }}>
+            <div style={{ marginBottom: 16, padding: '10px 14px', background: '#f5f5f5', borderRadius: 6, fontSize: 13 }}>
+              <div><strong>来源计划：</strong>{reassignRecord?.sourcePlanName} ({reassignRecord?.sourcePlanId})</div>
+              <div style={{ marginTop: 4 }}><strong>采集人员：</strong>{reassignRecord?.collector}</div>
+            </div>
+            <Form.Item
+              name="qaer"
+              label="指定质检员"
+              rules={[{ required: true, message: '请选择质检员' }]}
+            >
+              <Select placeholder="请选择质检员">
+                {people.map(p => (
+                  <Select.Option key={p} value={p}>{p}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Form>
+        </AppModal>
       </div>
     </MainLayout>
   );

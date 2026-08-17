@@ -1,390 +1,658 @@
 'use client';
 
-import React, { Suspense, useMemo, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Alert,
-  App,
-  Breadcrumb,
-  Button,
   Card,
+  Row,
   Col,
   Input,
-  Radio,
-  Row,
   Select,
-  Space,
+  Button,
   Table,
+  Space,
   Tag,
   Typography,
+  App,
+  Divider,
+  Radio,
+  Empty
 } from 'antd';
 import {
-  ArrowLeftOutlined,
-  CheckCircleFilled,
-  CheckOutlined,
-  CloudServerOutlined,
-  DatabaseOutlined,
-  ExperimentOutlined,
-  FileDoneOutlined,
-  FileTextOutlined,
-  FormOutlined,
-  InboxOutlined,
-  RobotOutlined,
+  LeftOutlined,
   SearchOutlined,
-  ThunderboltOutlined,
+  ReloadOutlined,
+  DownOutlined,
+  UpOutlined,
+  AppstoreOutlined,
+  UnorderedListOutlined,
+  FileTextOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
-import { ActionFooter, FilterPanel, FormSection, PageHeader, StateView, StatusTag } from '@/components/ui';
-import {
-  canPublishTask,
-  filterEpisodes,
-  summarizeReadyPool,
-} from '@/lib/annotationTaskCreateModel.mjs';
+import { StatusTag } from '@/components/ui';
 
 const { Text, Title } = Typography;
 const { TextArea } = Input;
+const { Option } = Select;
 
-const SOURCE_META = {
-  collection: { label: '采集任务产出', color: 'blue', icon: <RobotOutlined /> },
-  asset: { label: '资产数据', color: 'cyan', icon: <DatabaseOutlined /> },
-  simulation: { label: '仿真数据', color: 'geekblue', icon: <ExperimentOutlined /> },
-};
-
-const EPISODES = [
-  { key: 'EP-20260807-001', id: 'EP-20260807-001', sourceType: 'asset', sourceName: '桌面整理高质量资产包 V2', scene: '厨房', subScene: '操作台', frames: 1860, duration: '01:02', status: '数据就绪' },
-  { key: 'EP-20260807-002', id: 'EP-20260807-002', sourceType: 'asset', sourceName: '桌面整理高质量资产包 V2', scene: '厨房', subScene: '操作台', frames: 1724, duration: '00:57', status: '数据就绪' },
-  { key: 'EP-20260807-003', id: 'EP-20260807-003', sourceType: 'collection', sourceName: '双臂桌面整理实采任务', scene: '客厅', subScene: '餐桌', frames: 2210, duration: '01:14', status: '数据就绪' },
-  { key: 'EP-20260807-004', id: 'EP-20260807-004', sourceType: 'simulation', sourceName: 'Isaac Sim 抓取放置数据集', scene: '仓储', subScene: '货架', frames: 1498, duration: '00:50', status: '数据就绪' },
-  { key: 'EP-20260807-005', id: 'EP-20260807-005', sourceType: 'collection', sourceName: '厨房台面收纳实采任务', scene: '厨房', subScene: '操作台', frames: 1942, duration: '01:05', status: '数据就绪' },
-  { key: 'EP-20260807-006', id: 'EP-20260807-006', sourceType: 'asset', sourceName: '历史双臂操作资产包', scene: '客厅', subScene: '餐桌', frames: 2056, duration: '01:09', status: '数据就绪' },
-  { key: 'EP-20260807-007', id: 'EP-20260807-007', sourceType: 'simulation', sourceName: '货架补货仿真数据 V1', scene: '仓储', subScene: '货架', frames: 1635, duration: '00:55', status: '数据就绪' },
-  { key: 'EP-20260807-008', id: 'EP-20260807-008', sourceType: 'asset', sourceName: '外部导入厨房操作数据', scene: '厨房', subScene: '水槽区', frames: 1788, duration: '00:59', status: '数据就绪' },
+const MOCK_EPISODES = [
+  {
+    key: 'EP-20260415-001',
+    episodeId: 'EP-20260415-001',
+    recCode: 'REC-20260415-01',
+    sceneCategory: '超市场景',
+    subSceneCategory: '货架区',
+    taskName: '货架物品物理采集',
+    completedTime: '2026-04-15 10:23:00',
+    totalFrames: 3600,
+    qcStatus: '已通过',
+  },
+  {
+    key: 'EP-20260415-002',
+    episodeId: 'EP-20260415-002',
+    recCode: 'REC-20260415-02',
+    sceneCategory: '超市场景',
+    subSceneCategory: '货架区',
+    taskName: '货架物品物理采集',
+    completedTime: '2026-04-15 11:45:00',
+    totalFrames: 3510,
+    qcStatus: '已通过',
+  },
+  {
+    key: 'EP-20260415-003',
+    episodeId: 'EP-20260415-003',
+    recCode: 'REC-20260415-03',
+    sceneCategory: '厨房场景',
+    subSceneCategory: '操作台',
+    taskName: '厨房台面整理采集',
+    completedTime: '2026-04-15 14:10:00',
+    totalFrames: 2400,
+    qcStatus: '已通过',
+  },
+  {
+    key: 'EP-20260415-004',
+    episodeId: 'EP-20260415-004',
+    recCode: 'REC-20260415-04',
+    sceneCategory: '客厅场景',
+    subSceneCategory: '餐桌',
+    taskName: '桌面操作物理数采',
+    completedTime: '2026-04-15 16:30:00',
+    totalFrames: 3720,
+    qcStatus: '已通过',
+  },
+  {
+    key: 'EP-20260415-005',
+    episodeId: 'EP-20260415-005',
+    recCode: 'REC-20260415-05',
+    sceneCategory: '工业产线',
+    subSceneCategory: '包装流水线',
+    taskName: '工业纸箱打包封装',
+    completedTime: '2026-04-16 09:20:00',
+    totalFrames: 2880,
+    qcStatus: '已通过',
+  },
 ];
 
-const TEMPLATE_MODES = [
-  {
-    value: 'none',
-    title: '无模板开始',
-    description: '适合新场景，先人工完成首条标注，再决定是否生成模板。',
-    icon: <InboxOutlined />,
-    tone: '#0f766e',
-    background: '#f0fdfa',
-  },
-  {
-    value: 'action',
-    title: '使用动作模板 / SOP',
-    description: '预置动作步骤和帧段结构，标注员仍可在工作台调整。',
-    icon: <FileTextOutlined />,
-    tone: '#2563eb',
-    background: '#eff6ff',
-  },
-  {
-    value: 'sample',
-    title: '使用标注样例模板',
-    description: '套用已审核发布的样例结果，用于成熟任务批量提效。',
-    icon: <ThunderboltOutlined />,
-    tone: '#b45309',
-    background: '#fffbeb',
-  },
+const ACTION_TEMPLATES = [
+  { value: 'tpl-shelf-01', label: '货架抓取放置SOP标准模板 V1.2' },
+  { value: 'tpl-table-02', label: '桌面整理动作时序模板 V2.0' },
+  { value: 'tpl-bimanual-03', label: '双手协同装配动作序列模板 V1.0' },
+  { value: 'tpl-box-04', label: '工业箱包打包SOP模板 V1.5' },
 ];
 
-function CreateAnnotationTaskContent() {
+export default function CreateAnnotationTaskPage() {
   const router = useRouter();
   const { message } = App.useApp();
-  const [taskName, setTaskName] = useState('桌面整理动作切分标注任务');
-  const [annotationType, setAnnotationType] = useState('action-segment');
-  const [usage, setUsage] = useState('training');
-  const [description, setDescription] = useState('对桌面整理过程进行动作阶段切分，并标记操作对象与关键帧。');
-  const [scene, setScene] = useState();
-  const [subScene, setSubScene] = useState();
-  const [keyword, setKeyword] = useState('');
-  const [templateMode, setTemplateMode] = useState('none');
-  const [actionTemplateId, setActionTemplateId] = useState();
-  const [sampleTemplateId, setSampleTemplateId] = useState();
-  const [selectedRowKeys, setSelectedRowKeys] = useState(['EP-20260807-001', 'EP-20260807-002', 'EP-20260807-003']);
 
-  const sceneOptions = useMemo(
-    () => [...new Set(EPISODES.map(item => item.scene))].map(value => ({ value, label: value })),
-    [],
-  );
-  const subSceneOptions = useMemo(
-    () => [...new Set(EPISODES.filter(item => !scene || item.scene === scene).map(item => item.subScene))]
-      .map(value => ({ value, label: value })),
-    [scene],
-  );
-  const filteredEpisodes = useMemo(
-    () => filterEpisodes(EPISODES, { scene, subScene, keyword }),
-    [scene, subScene, keyword],
-  );
-  const poolSummary = useMemo(() => summarizeReadyPool(EPISODES), []);
-  const publishable = canPublishTask({
-    name: taskName,
-    annotationType,
-    selectedEpisodeIds: selectedRowKeys,
-  });
+  // Basic Info Form State
+  const [taskName, setTaskName] = useState('');
+  const [taskNameEn, setTaskNameEn] = useState('');
+  const [annoType, setAnnoType] = useState('范围标注');
+  const [device, setDevice] = useState([]);
+  const [description, setDescription] = useState('');
 
-  const resetFilters = () => {
-    setScene(undefined);
-    setSubScene(undefined);
-    setKeyword('');
+  // Associated Data Filter State
+  const [sceneCategory, setSceneCategory] = useState();
+  const [subSceneCategory, setSubSceneCategory] = useState();
+  const [filterTaskName, setFilterTaskName] = useState();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState({ active: false });
+
+  // Selected Episodes
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+
+  // SOP Steps State
+  const [sopMode, setSopMode] = useState('natural'); // 'structured' | 'natural'
+  const [actionTemplate, setActionTemplate] = useState();
+  const [naturalSteps, setNaturalSteps] = useState([
+    { id: 1, text: '机械臂从初始位姿移动至目标物体上方，夹爪张开准备抓取。' },
+    { id: 2, text: '机械臂下压夹取物体，提升至安全高度并平移至目标容器上方释放。' }
+  ]);
+  const [structuredSteps, setStructuredSteps] = useState([
+    { id: 1, action: 'Approach', target: 'Kiwi', startFrame: 15, endFrame: 45 },
+    { id: 2, action: 'Grasp & Place', target: 'Fruit_Bowl', startFrame: 55, endFrame: 90 }
+  ]);
+
+  const filteredEpisodes = useMemo(() => {
+    if (!appliedFilters.active) {
+      return MOCK_EPISODES;
+    }
+    return MOCK_EPISODES.filter(ep => {
+      if (appliedFilters.scene && ep.sceneCategory !== appliedFilters.scene) return false;
+      if (appliedFilters.subScene && ep.subSceneCategory !== appliedFilters.subScene) return false;
+      if (appliedFilters.taskName && ep.taskName !== appliedFilters.taskName) return false;
+      return true;
+    });
+  }, [appliedFilters]);
+
+  const handleSearch = () => {
+    setAppliedFilters({
+      active: true,
+      scene: sceneCategory,
+      subScene: subSceneCategory,
+      taskName: filterTaskName,
+    });
+  };
+
+  const handleReset = () => {
+    setSceneCategory(undefined);
+    setSubSceneCategory(undefined);
+    setFilterTaskName(undefined);
+    setAppliedFilters({ active: false });
+  };
+
+  const handleAddNaturalStep = () => {
+    setNaturalSteps(prev => [
+      ...prev,
+      { id: Date.now(), text: '' }
+    ]);
+  };
+
+  const handleAddStructuredStep = () => {
+    setStructuredSteps(prev => [
+      ...prev,
+      { id: Date.now(), action: '', target: '', startFrame: 0, endFrame: 0 }
+    ]);
   };
 
   const handlePublish = () => {
-    if (!publishable) return;
-    const templateText = templateMode === 'none'
-      ? '无模板开始'
-      : templateMode === 'action'
-        ? '动作模板'
-        : '标注样例模板';
-    message.success(`标注任务已创建：${selectedRowKeys.length} 条 Episode，${templateText}`);
+    if (!taskName.trim()) {
+      message.error('请输入标注任务名称！');
+      return;
+    }
+    if (selectedRowKeys.length === 0) {
+      message.warning('请至少勾选一条关联 Episode 数据！');
+      return;
+    }
+    message.success(`成功发布标注任务 [${taskName}]，已关联 ${selectedRowKeys.length} 条 Episode 数据！`);
     router.push('/collection/annotation-tasks');
   };
 
   const columns = [
     {
       title: 'Episode ID',
-      dataIndex: 'id',
+      dataIndex: 'episodeId',
+      key: 'episodeId',
+      width: 180,
+      render: (id) => <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{id}</Text>
+    },
+    {
+      title: 'recCode',
+      dataIndex: 'recCode',
+      key: 'recCode',
       width: 170,
-      render: value => <Text style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12, color: '#0f172a' }}>{value}</Text>,
+      render: (c) => <span style={{ fontFamily: 'monospace' }}>{c}</span>
     },
     {
-      title: '原始来源',
-      dataIndex: 'sourceType',
+      title: '采集完成时间',
+      dataIndex: 'completedTime',
+      key: 'completedTime',
+      width: 180,
+    },
+    {
+      title: '总帧数',
+      dataIndex: 'totalFrames',
+      key: 'totalFrames',
       width: 120,
-      render: value => {
-        const meta = SOURCE_META[value];
-        return <Tag color={meta.color} icon={meta.icon} variant="filled">{meta.label}</Tag>;
-      },
+      align: 'right',
+      render: (f) => `${f} f`
     },
-    { title: '原始来源名称', dataIndex: 'sourceName', ellipsis: true },
-    { title: '场景', dataIndex: 'scene', width: 90 },
-    { title: '子场景', dataIndex: 'subScene', width: 100 },
-    { title: '帧数', dataIndex: 'frames', width: 90, align: 'right' },
-    { title: '时长', dataIndex: 'duration', width: 80, align: 'center' },
     {
-      title: '状态',
-      dataIndex: 'status',
-      width: 100,
-      render: value => <StatusTag status="已完成" icon={<CheckCircleFilled />}>{value}</StatusTag>,
+      title: '采集质检状态',
+      dataIndex: 'qcStatus',
+      key: 'qcStatus',
+      width: 140,
+      align: 'center',
+      render: (s) => <StatusTag status={s} />
     },
   ];
 
   return (
     <MainLayout>
-      <div className="ui-page">
-        <PageHeader
-          title="新建标注任务"
-          description="数据统一从可标注数据池选取，模板仅作为可选的效率工具。"
-          breadcrumbs={[
-            { title: '首页' },
-            { title: '数据标注' },
-            { title: '标注任务', href: '/collection/annotation-tasks' },
-            { title: '新建标注任务' },
-          ]}
-          back={() => router.push('/collection/annotation-tasks')}
-        />
+      <div style={{ padding: '0 0 60px 0', background: '#f5f7fa', minHeight: '100vh' }}>
+        {/* Top Navigation Header */}
+        <div style={{
+          background: '#fff',
+          padding: '16px 24px',
+          borderBottom: '1px solid #eef0f4',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Button
+              type="text"
+              icon={<LeftOutlined style={{ fontSize: 14 }} />}
+              onClick={() => router.push('/collection/annotation-tasks')}
+              style={{ fontWeight: 600, fontSize: 16, padding: '4px 8px', color: '#1f1f1f' }}
+            >
+              新建标注任务
+            </Button>
+          </div>
+          <div>
+            <Tag color="purple" style={{ padding: '2px 10px', fontSize: 12, borderRadius: 4 }}>
+              采集/质检成果数据标注
+            </Tag>
+          </div>
+        </div>
 
-        <FormSection
-          title="01 · 任务信息"
-          description="只填写开始标注真正需要的信息，模板和采集任务都不是创建前置条件。"
-        >
-            <Row gutter={20}>
-              <Col span={10}>
-                <Text strong><span style={{ color: '#ef4444' }}>* </span>标注任务名称</Text>
-                <Input value={taskName} onChange={event => setTaskName(event.target.value)} placeholder="请输入标注任务名称" style={{ marginTop: 8 }} />
+        <div style={{ maxWidth: 1240, margin: '20px auto', padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          
+          {/* --- SECTION 1: 基础信息 --- */}
+          <Card
+            style={{ borderRadius: 8, border: '1px solid #eef0f4', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}
+            styles={{ body: { padding: '20px 24px' } }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#1f1f1f', marginBottom: 20 }}>
+              基础信息
+            </div>
+
+            <Row gutter={[24, 20]}>
+              <Col span={12}>
+                <div style={{ marginBottom: 6 }}>
+                  <Text strong><span style={{ color: '#ff4d4f' }}>* </span>标注任务名称</Text>
+                </div>
+                <Input
+                  value={taskName}
+                  onChange={e => setTaskName(e.target.value)}
+                  placeholder="请输入标注任务名称"
+                  style={{ height: 38, borderRadius: 4 }}
+                />
               </Col>
-              <Col span={7}>
-                <Text strong><span style={{ color: '#ef4444' }}>* </span>标注类型</Text>
+              <Col span={12}>
+                <div style={{ marginBottom: 6 }}>
+                  <Text strong>英文名称</Text>
+                </div>
+                <Input
+                  value={taskNameEn}
+                  onChange={e => setTaskNameEn(e.target.value)}
+                  placeholder="例如 Tabletop_Book_Organize_AnnoTask"
+                  style={{ height: 38, borderRadius: 4 }}
+                />
+              </Col>
+
+              <Col span={12}>
+                <div style={{ marginBottom: 6 }}>
+                  <Text strong><span style={{ color: '#ff4d4f' }}>* </span>标注类型</Text>
+                </div>
                 <Select
-                  value={annotationType}
-                  onChange={setAnnotationType}
-                  style={{ width: '100%', marginTop: 8 }}
+                  value={annoType}
+                  onChange={setAnnoType}
+                  style={{ width: '100%', height: 38 }}
                   options={[
-                    { value: 'action-segment', label: '动作切分 / 时间段标注' },
-                    { value: 'object-box', label: '目标框标注' },
-                    { value: 'key-point', label: '关键点标注' },
-                    { value: 'trajectory', label: '轨迹标注' },
-                    { value: 'classification', label: '分类标注' },
+                    { value: '范围标注', label: '范围标注' },
+                    { value: '框标注', label: '框标注' },
+                    { value: '点标注', label: '点标注' },
+                    { value: '范围&框标注', label: '范围&框标注' },
+                    { value: '关键帧标注', label: '关键帧标注' },
                   ]}
                 />
               </Col>
-              <Col span={7}>
-                <Text strong>任务用途</Text>
+
+              <Col span={12}>
+                <div style={{ marginBottom: 6 }}>
+                  <Text strong><span style={{ color: '#ff4d4f' }}>* </span>设备</Text>
+                </div>
                 <Select
-                  value={usage}
-                  onChange={setUsage}
-                  style={{ width: '100%', marginTop: 8 }}
+                  mode="multiple"
+                  allowClear
+                  value={device}
+                  onChange={setDevice}
+                  placeholder="请选择设备"
+                  style={{ width: '100%', minHeight: 38 }}
                   options={[
-                    { value: 'training', label: '模型训练集' },
-                    { value: 'validation', label: '验证评测集' },
-                    { value: 'research', label: '算法研究' },
+                    { value: 'Galbot_2.2_RGBD', label: 'Galbot_2.2_RGBD' },
+                    { value: 'Lumos_FastUMI', label: 'Lumos_FastUMI' },
+                    { value: 'Franka_FR3', label: 'Franka_FR3' },
+                    { value: 'Galbot_1.16_G2', label: 'Galbot_1.16_G2' },
                   ]}
+                />
+              </Col>
+
+              <Col span={24}>
+                <div style={{ marginBottom: 6 }}>
+                  <Text strong>任务描述</Text>
+                </div>
+                <TextArea
+                  rows={3}
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="请输入任务描述"
+                  style={{ borderRadius: 4 }}
                 />
               </Col>
             </Row>
-            <div style={{ marginTop: 18 }}>
-              <Text strong>任务说明</Text>
-              <TextArea value={description} onChange={event => setDescription(event.target.value)} autoSize={{ minRows: 2, maxRows: 3 }} style={{ marginTop: 8 }} />
+          </Card>
+
+          {/* --- SECTION 2: 关联数据筛选与数量设定 --- */}
+          <Card
+            style={{ borderRadius: 8, border: '1px solid #eef0f4', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}
+            styles={{ body: { padding: '20px 24px' } }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#1f1f1f', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <AppstoreOutlined style={{ color: '#1677ff', fontSize: 16 }} />
+              <span>关联数据筛选与数量设定</span>
             </div>
-        </FormSection>
 
-        <FormSection
-          title="02 · 从可标注数据池选择"
-          description="采集完成数据、校验通过的资产数据和仿真数据统一汇入同一个数据池。"
-        >
-            <Alert
-              type="info"
-              showIcon
-              icon={<CloudServerOutlined />}
-              title="数据来源：可标注数据池"
-              description={
-                <Space wrap size="large">
-                  <Text><b>{poolSummary.total}</b> 条就绪</Text>
-                  <Text type="secondary">采集产出 {poolSummary.collection}</Text>
-                  <Text type="secondary">资产数据 {poolSummary.asset}</Text>
-                  <Text type="secondary">仿真数据 {poolSummary.simulation}</Text>
-                  <Text type="secondary">已选择 {selectedRowKeys.length} 条</Text>
-                </Space>
-              }
-            />
-
-            <Alert
-              type="info"
-              showIcon
-              style={{ marginTop: 12, marginBottom: 16 }}
-              title={<span><b>新建标注任务固定从可标注数据池取数。</b> 采集任务和资产包只作为原始来源保留，用于筛选和追溯。</span>}
-            />
-
-            <FilterPanel>
-              <Row gutter={12} align="middle">
-                <Col flex="150px">
-                  <Select allowClear value={scene} onChange={(value) => { setScene(value); setSubScene(undefined); }} placeholder="场景（选填）" style={{ width: '100%' }} options={sceneOptions} />
-                </Col>
-                <Col flex="150px">
-                  <Select allowClear value={subScene} onChange={setSubScene} placeholder="子场景（选填）" style={{ width: '100%' }} options={subSceneOptions} />
-                </Col>
+            {/* Filter Bar */}
+            <div style={{
+              background: '#fafafa',
+              padding: '16px 20px',
+              borderRadius: 6,
+              border: '1px solid #f0f0f0',
+              marginBottom: 16
+            }}>
+              <Row gutter={[16, 12]} align="middle">
                 <Col flex="240px">
-                  <Input allowClear value={keyword} onChange={event => setKeyword(event.target.value)} prefix={<SearchOutlined style={{ color: '#94a3b8' }} />} placeholder="搜索来源名称或 Episode ID" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 13, color: '#595959', whiteSpace: 'nowrap' }}>场景分类：</span>
+                    <Select
+                      allowClear
+                      placeholder="请选择场景分类"
+                      style={{ width: 140 }}
+                      value={sceneCategory}
+                      onChange={setSceneCategory}
+                      options={[
+                        { value: '超市场景', label: '超市场景' },
+                        { value: '厨房场景', label: '厨房场景' },
+                        { value: '客厅场景', label: '客厅场景' },
+                        { value: '工业产线', label: '工业产线' },
+                      ]}
+                    />
+                  </div>
                 </Col>
-                <Col flex="70px">
-                  <Button type="link" onClick={resetFilters}>重置</Button>
+
+                <Col flex="240px">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 13, color: '#595959', whiteSpace: 'nowrap' }}>子场景分类：</span>
+                    <Select
+                      allowClear
+                      placeholder="请选择子场景分类"
+                      style={{ width: 140 }}
+                      value={subSceneCategory}
+                      onChange={setSubSceneCategory}
+                      options={[
+                        { value: '货架区', label: '货架区' },
+                        { value: '操作台', label: '操作台' },
+                        { value: '餐桌', label: '餐桌' },
+                        { value: '包装流水线', label: '包装流水线' },
+                      ]}
+                    />
+                  </div>
+                </Col>
+
+                <Col flex="260px">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 13, color: '#595959', whiteSpace: 'nowrap' }}>任务名（可选）：</span>
+                    <Select
+                      allowClear
+                      placeholder="请选择任务名..."
+                      style={{ width: 140 }}
+                      value={filterTaskName}
+                      onChange={setFilterTaskName}
+                      options={[
+                        { value: '货架物品物理采集', label: '货架物品物理采集' },
+                        { value: '桌面操作物理数采', label: '桌面操作物理数采' },
+                        { value: '厨房台面整理采集', label: '厨房台面整理采集' },
+                        { value: '工业纸箱打包封装', label: '工业纸箱打包封装' },
+                      ]}
+                    />
+                  </div>
+                </Col>
+
+                <Col>
+                  <Space size={8}>
+                    <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+                      查询
+                    </Button>
+                    <Button icon={<ReloadOutlined />} onClick={handleReset}>
+                      重置
+                    </Button>
+                    <Button type="link" onClick={() => setIsExpanded(!isExpanded)} style={{ padding: 0, fontSize: 13 }}>
+                      {isExpanded ? <span>收起 <UpOutlined /></span> : <span>展开 <DownOutlined /></span>}
+                    </Button>
+                  </Space>
                 </Col>
               </Row>
-            </FilterPanel>
 
+              {isExpanded && (
+                <Row gutter={[16, 12]} align="middle" style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #e8e8e8' }}>
+                  <Col span={8}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 13, color: '#595959', whiteSpace: 'nowrap' }}>质检状态：</span>
+                      <Select placeholder="全部状态" defaultValue="已通过" style={{ width: 140 }} options={[{ value: '已通过', label: '已通过' }, { value: '全部', label: '全部' }]} />
+                    </div>
+                  </Col>
+                </Row>
+              )}
+            </div>
+
+            {/* Table */}
             <Table
-              size="middle"
-              rowKey="key"
+              rowSelection={{
+                type: 'checkbox',
+                selectedRowKeys,
+                onChange: (keys) => setSelectedRowKeys(keys)
+              }}
               columns={columns}
               dataSource={filteredEpisodes}
-              pagination={{ pageSize: 5, showSizeChanger: false, showTotal: total => `共 ${total} 条可用数据` }}
-              rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys, preserveSelectedRowKeys: true }}
-              scroll={{ x: 1050 }}
+              size="small"
+              pagination={{
+                pageSize: 5,
+                showTotal: (total) => `共 ${total} 条质检合格可用数据`,
+                showSizeChanger: false
+              }}
             />
-        </FormSection>
+          </Card>
 
-        <FormSection
-          title="03 · 可选加速配置"
-          description="不选模板也能发布任务；需要提效时再选择一种模板。"
-        >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Text type="secondary">模板不是必选条件</Text>
-              <Tag color="default" variant="filled" style={{ background: '#f1f5f9', color: '#475569', padding: '3px 10px' }}>选填</Tag>
+          {/* --- SECTION 3: 预设SOP动作步骤序列 --- */}
+          <Card
+            style={{ borderRadius: 8, border: '1px solid #eef0f4', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}
+            styles={{ body: { padding: '20px 24px' } }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#1f1f1f', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <UnorderedListOutlined style={{ color: '#1677ff', fontSize: 16 }} />
+              <span>预设SOP动作步骤序列</span>
             </div>
 
-            <Radio.Group value={templateMode} onChange={event => setTemplateMode(event.target.value)} style={{ width: '100%', marginTop: 20 }}>
-              <Row gutter={14}>
-                {TEMPLATE_MODES.map(mode => {
-                  const selected = templateMode === mode.value;
-                  return (
-                    <Col span={8} key={mode.value}>
-                      <label style={{ display: 'block', cursor: 'pointer' }}>
-                        <div style={{
-                          minHeight: 116,
-                          padding: '17px 18px',
-                          borderRadius: 8,
-                          border: selected ? '1px solid #1677ff' : '1px solid #e5e6eb',
-                          background: selected ? '#f0f7ff' : '#fff',
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Space size={10}>
-                              <span style={{ color: selected ? '#1677ff' : '#646a73', fontSize: 16 }}>{mode.icon}</span>
-                              <Text strong>{mode.title}</Text>
-                            </Space>
-                            <Radio value={mode.value} />
-                          </div>
-                          <div style={{ color: '#64748b', fontSize: 12, lineHeight: 1.6, marginTop: 12 }}>{mode.description}</div>
-                        </div>
-                      </label>
-                    </Col>
-                  );
-                })}
-              </Row>
-            </Radio.Group>
-
-            {templateMode === 'none' && (
-              <Alert style={{ marginTop: 16 }} type="success" showIcon title="进入工作台后先人工标注首条数据，审核通过后可一键创建样例模板并批量应用。" />
-            )}
-            {templateMode === 'action' && (
-              <div style={{ marginTop: 16 }}>
-                <Text strong>动作模板 / SOP</Text>
-                <Select
-                  allowClear
-                  value={actionTemplateId}
-                  onChange={setActionTemplateId}
-                  placeholder="请选择动作模板（选填）"
-                  style={{ width: '100%', marginTop: 8 }}
-                  options={[
-                    { value: 'sop-table-v2', label: '桌面整理动作步骤 SOP V2.1' },
-                    { value: 'sop-pick-v1', label: '抓取与放置通用动作模板 V1.4' },
-                    { value: 'sop-bimanual-v1', label: '双臂协同操作 SOP V1.0' },
-                  ]}
-                />
-              </div>
-            )}
-            {templateMode === 'sample' && (
-              <div style={{ marginTop: 16 }}>
-                <Text strong>已发布标注样例模板</Text>
-                <Select
-                  allowClear
-                  value={sampleTemplateId}
-                  onChange={setSampleTemplateId}
-                  placeholder="请选择审核通过的样例模板（选填）"
-                  style={{ width: '100%', marginTop: 8 }}
-                  options={[
-                    { value: 'sample-table-022', label: '桌面整理动作切分标准样例 #022 · 已审核' },
-                    { value: 'sample-bimanual-008', label: '双臂整理关键帧样例 #008 · 已审核' },
-                  ]}
-                />
-              </div>
-            )}
-        </FormSection>
-
-        <ActionFooter>
-            <div style={{ marginRight: 'auto' }}>
-              <Text strong style={{ color: '#0f172a' }}>
-                {publishable ? '任务已具备发布条件' : '请完善必填信息并至少选择一条 Episode'}
-              </Text>
-              <Text type="secondary" style={{ marginLeft: 10 }}>
-                来源：可标注数据池 · {selectedRowKeys.length} 条 Episode · {templateMode === 'none' ? '无模板开始' : templateMode === 'action' ? '动作模板模式' : '样例模板模式'}
-              </Text>
-            </div>
-            <Space>
-              <Button onClick={() => router.push('/collection/annotation-tasks')}>取消</Button>
-              <Button type="primary" icon={<CheckOutlined />} disabled={!publishable} onClick={handlePublish} style={{ minWidth: 150 }}>
-                发布标注任务
+            {/* Sub Tabs */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+              <Button
+                icon={<UnorderedListOutlined />}
+                type={sopMode === 'structured' ? 'primary' : 'default'}
+                onClick={() => setSopMode('structured')}
+                style={{ borderRadius: 4 }}
+              >
+                结构化步骤
               </Button>
-            </Space>
-        </ActionFooter>
+              <Button
+                icon={<FileTextOutlined />}
+                type={sopMode === 'natural' ? 'primary' : 'default'}
+                onClick={() => setSopMode('natural')}
+                style={{ borderRadius: 4 }}
+              >
+                自然语言描述
+              </Button>
+            </div>
+
+            {/* Template Selector Bar */}
+            <div style={{
+              background: '#fafafa',
+              padding: '12px 16px',
+              borderRadius: 6,
+              border: '1px solid #f0f0f0',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, color: '#595959', whiteSpace: 'nowrap' }}>动作模版筛选：</span>
+                <Select
+                  allowClear
+                  value={actionTemplate}
+                  onChange={setActionTemplate}
+                  placeholder="请选择动作模板"
+                  style={{ width: 280 }}
+                  options={ACTION_TEMPLATES}
+                />
+              </div>
+              <Text type="secondary" style={{ fontSize: 12, color: '#8c8c8c' }}>
+                未选择任务名时，可通过动作模版快速带入步骤与帧区间
+              </Text>
+            </div>
+
+            {/* Step list body */}
+            {sopMode === 'natural' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {naturalSteps.map((step, idx) => (
+                  <div key={step.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', padding: '8px 12px', border: '1px solid #eef0f4', borderRadius: 4 }}>
+                    <Tag color="blue" style={{ margin: 0 }}>步骤 {idx + 1}</Tag>
+                    <Input
+                      value={step.text}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNaturalSteps(prev => prev.map(s => s.id === step.id ? { ...s, text: val } : s));
+                      }}
+                      placeholder="请输入自然语言步骤描述..."
+                      style={{ flex: 1 }}
+                    />
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => setNaturalSteps(prev => prev.filter(s => s.id !== step.id))}
+                    />
+                  </div>
+                ))}
+                <Button
+                  type="dashed"
+                  block
+                  icon={<PlusOutlined />}
+                  onClick={handleAddNaturalStep}
+                  style={{ marginTop: 8, height: 40, borderRadius: 4 }}
+                >
+                  添加自然语言步骤
+                </Button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {structuredSteps.map((step, idx) => (
+                  <div key={step.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', padding: '8px 12px', border: '1px solid #eef0f4', borderRadius: 4 }}>
+                    <Tag color="cyan" style={{ margin: 0 }}>步骤 {idx + 1}</Tag>
+                    <Input
+                      value={step.action}
+                      placeholder="动作行为 (如 Grasp)"
+                      style={{ width: 160 }}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setStructuredSteps(prev => prev.map(s => s.id === step.id ? { ...s, action: val } : s));
+                      }}
+                    />
+                    <Input
+                      value={step.target}
+                      placeholder="目标实体 (如 Bowl)"
+                      style={{ width: 160 }}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setStructuredSteps(prev => prev.map(s => s.id === step.id ? { ...s, target: val } : s));
+                      }}
+                    />
+                    <Input
+                      value={step.startFrame}
+                      placeholder="起始帧"
+                      style={{ width: 100 }}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setStructuredSteps(prev => prev.map(s => s.id === step.id ? { ...s, startFrame: val } : s));
+                      }}
+                    />
+                    <Text type="secondary">-</Text>
+                    <Input
+                      value={step.endFrame}
+                      placeholder="结束帧"
+                      style={{ width: 100 }}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setStructuredSteps(prev => prev.map(s => s.id === step.id ? { ...s, endFrame: val } : s));
+                      }}
+                    />
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => setStructuredSteps(prev => prev.filter(s => s.id !== step.id))}
+                    />
+                  </div>
+                ))}
+                <Button
+                  type="dashed"
+                  block
+                  icon={<PlusOutlined />}
+                  onClick={handleAddStructuredStep}
+                  style={{ marginTop: 8, height: 40, borderRadius: 4 }}
+                >
+                  添加结构化步骤
+                </Button>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* --- STICKY BOTTOM ACTION FOOTER --- */}
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: '#fff',
+          padding: '12px 32px',
+          borderTop: '1px solid #eef0f4',
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.04)',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: 12,
+          zIndex: 100
+        }}>
+          <Button onClick={() => router.push('/collection/annotation-tasks')}>
+            取消
+          </Button>
+          <Button
+            type="primary"
+            onClick={handlePublish}
+            style={{ minWidth: 160, height: 36, background: '#1677ff', borderColor: '#1677ff' }}
+          >
+            发布标注任务 ({selectedRowKeys.length} 条数据)
+          </Button>
+        </div>
       </div>
     </MainLayout>
-  );
-}
-
-export default function CreateAnnotationTaskPage() {
-  return (
-    <Suspense fallback={<StateView type="loading" />}>
-      <CreateAnnotationTaskContent />
-    </Suspense>
   );
 }

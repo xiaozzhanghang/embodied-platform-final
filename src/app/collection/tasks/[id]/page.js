@@ -21,10 +21,10 @@ const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const mockInstancesCollect = [
-  { key: '1', instanceId: '12745', taskName: '货架物品物理采集', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '张三', annotator: '李四', auditor: '王五', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-11 09:00', collectProgress: 53, status: '采集中' },
-  { key: '2', instanceId: '12744', taskName: '货架物品物理采集', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '李四', annotator: '赵六', auditor: '天奇管理员', deviceInstance: 'R002GB-RGB-102', startTime: '2026-03-11 10:30', collectProgress: 80, status: '采集中' },
-  { key: '3', instanceId: '12619', taskName: '货架物品物理采集', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '-', annotator: '-', auditor: '-', deviceInstance: '—', startTime: '-', collectProgress: 0, status: '待分配' },
-  { key: '4', instanceId: '12511', taskName: '货架物品物理采集', autoDataset: false, annoType: '轨迹标注', singlePack: 15, planCount: 120, collector: '王五', annotator: '李四', auditor: '王五', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-10 14:30', collectProgress: 100, status: '已完成' },
+  { key: '1', instanceId: 'COLL-PK-12745', taskName: '货架物品物理采集', singlePack: 120, planCount: 120, collector: '张三', qaer: '李四', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-11 09:00', collectProgress: 53, status: '采集中' },
+  { key: '2', instanceId: 'COLL-PK-12744', taskName: '货架物品物理采集', singlePack: 120, planCount: 120, collector: '李四', qaer: '天奇管理员', deviceInstance: 'R002GB-RGB-102', startTime: '2026-03-11 10:30', collectProgress: 80, status: '采集中' },
+  { key: '3', instanceId: 'COLL-PK-12619', taskName: '货架物品物理采集', singlePack: 120, planCount: 120, collector: '-', qaer: '-', deviceInstance: '—', startTime: '-', collectProgress: 0, status: '待分配' },
+  { key: '4', instanceId: 'COLL-PK-12511', taskName: '货架物品物理采集', singlePack: 120, planCount: 120, collector: '王五', qaer: '天奇管理员', deviceInstance: 'R002GB-RGB-101', startTime: '2026-03-10 14:30', collectProgress: 100, status: '已完成' },
 ];
 
 const mockInstancesAsset = [
@@ -99,12 +99,13 @@ export default function TaskInstancePage() {
 
   const handleCompletePack = (record) => {
     Modal.confirm({
-      title: `标记包 ${record.instanceId} 为完成`,
-      content: `确认后，该包将结束流程并自动打包解析，数据将流转至质检中心。`,
-      okText: '确认完成',
+      title: `标记分包 ${record.instanceId} 采集完成`,
+      content: `确认后，该分包采集数据将自动打包并流转至【数据质检】环节，由指派的质检员 [${record.qaer || '天奇管理员'}] 进行数据质检。`,
+      okText: '确认完成并送检',
       cancelText: '取消',
-      okButtonProps: { danger: true },
-      onOk: () => message.success(`包 ${record.instanceId} 已完成`),
+      onOk: () => {
+        message.success(`分包 ${record.instanceId} 已成功流转至数据质检中心`);
+      },
     });
   };
 
@@ -113,7 +114,7 @@ export default function TaskInstancePage() {
       return (
         <Space separator={<Divider orientation="vertical" />} size={0}>
           <Button type="link" size="small" icon={<DownloadOutlined />} style={{ padding: '0 4px' }}>下载</Button>
-          <Button type="link" size="small" icon={<FileSearchOutlined />} style={{ padding: '0 4px', color: '#52c41a' }}>质检详情</Button>
+          <Button type="link" size="small" icon={<FileSearchOutlined />} style={{ padding: '0 4px', color: '#52c41a' }} onClick={() => router.push('/collection/qa')}>详情</Button>
           <Button type="link" size="small" icon={<CloudUploadOutlined />} style={{ padding: '0 4px', color: '#722ed1' }}>手动上传</Button>
         </Space>
       );
@@ -135,9 +136,28 @@ export default function TaskInstancePage() {
   };
 
   const columnsCollect = [
-    { title: '分包实例ID', dataIndex: 'instanceId', key: 'instanceId', width: 110 },
+    { 
+      title: '分包实例ID', 
+      dataIndex: 'instanceId', 
+      key: 'instanceId', 
+      width: 140,
+      render: (id) => <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{id}</Text>
+    },
     { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 140 },
-    { title: '采集人员', dataIndex: 'collector', key: 'collector', width: 110 },
+    { 
+      title: '采集人员', 
+      dataIndex: 'collector', 
+      key: 'collector', 
+      width: 110,
+      render: (c) => <Tag color="blue">{c}</Tag>
+    },
+    { 
+      title: '指派质检员', 
+      dataIndex: 'qaer', 
+      key: 'qaer', 
+      width: 110,
+      render: (q) => <Tag color="cyan">{q}</Tag>
+    },
     { title: '分包数/计划数', key: 'planCount', width: 120, render: (_, r) => <span>{r.singlePack} / {r.planCount} 条</span> },
     { title: '分配设备实例', dataIndex: 'deviceInstance', key: 'deviceInstance', width: 140 },
     { title: '开始时间', dataIndex: 'startTime', key: 'startTime', width: 150 },
@@ -345,78 +365,142 @@ export default function TaskInstancePage() {
 
       {/* --- MODALS --- */}
 
-      {/* 1. 新建分包弹窗 (区分需要采集数据 vs 关联数据资产) */}
+      {/* 1. 添加分包弹窗 */}
       <AppModal
-        title={
-          <div style={{ paddingBottom: 12, borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>新建任务分包</span>
-            <Tag color={taskMode === 'collect' ? 'blue' : 'purple'}>
-              {taskMode === 'collect' ? '需要采集数据分包' : '关联数据资产分包'}
-            </Tag>
-          </div>
-        }
+        title="添加分包"
         open={isAddPackVisible}
         onCancel={() => setIsAddPackVisible(false)}
         width={560}
-        okText="确定创建分包"
+        okText="确定"
         cancelText="取消"
         onOk={() => {
-          message.success('分包创建成功，已分配对应的成员与分包数据量！');
-          setIsAddPackVisible(false);
+          addPackForm.validateFields().then(values => {
+            message.success('分包创建成功，已分配对应的采集员与质检员！');
+            setIsAddPackVisible(false);
+          });
         }}
       >
-        <Form form={addPackForm} layout="vertical" style={{ paddingTop: 16 }}>
+        <Form 
+          form={addPackForm} 
+          layout="horizontal" 
+          labelCol={{ span: 6 }} 
+          wrapperCol={{ span: 18 }} 
+          style={{ paddingTop: 16 }}
+        >
           {taskMode === 'collect' ? (
             <>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="选择采集员" name="collector" required rules={[{ required: true, message: '请选择采集员' }]}>
-                    <Select placeholder="请选择采集员" options={[{ value: 'u1', label: '张三 (采集员)' }, { value: 'u2', label: '李四 (采集员)' }, { value: 'u3', label: 'cy00831' }]} defaultValue="u3" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="采集数量" name="planCount" required initialValue={100} rules={[{ required: true, message: '请输入采集数量' }]}>
-                    <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入采集数量" addonAfter="条" />
-                  </Form.Item>
-                </Col>
-              </Row>
+              <Form.Item 
+                label="计划采集量" 
+                name="totalPlanCount" 
+                initialValue={10}
+                required
+                extra={<div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>继承任务计划采集量，分包内不可修改</div>}
+                style={{ marginBottom: 18 }}
+              >
+                <Input disabled value={10} placeholder="10" style={{ background: '#fafafa', color: '#595959' }} />
+              </Form.Item>
 
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item label="分配设备实例" name="deviceInstance">
-                    <Select placeholder="请选择设备" options={[{ value: 'R002GB-RGB-101', label: 'R002GB-RGB-101 (Galbot RGB)' }, { value: 'DEV-FR-301', label: 'DEV-FR-301 (Franka Std)' }]} defaultValue="R002GB-RGB-101" />
-                  </Form.Item>
-                </Col>
-              </Row>
+              <Form.Item 
+                label="单包采集量" 
+                name="singlePackCount" 
+                rules={[{ required: true, message: '请输入单包采集量' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <InputNumber min={1} max={10} placeholder="请输入单包采集量" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item 
+                label="分配采集员" 
+                name="collector" 
+                rules={[{ required: true, message: '请选择采集员' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <Select 
+                  placeholder="请选择采集员" 
+                  allowClear
+                  options={[
+                    { value: '张三', label: '张三' },
+                    { value: '李四', label: '李四' },
+                    { value: '王五', label: '王五' },
+                    { value: 'cy00831', label: 'cy00831' },
+                  ]} 
+                />
+              </Form.Item>
+
+              <Form.Item 
+                label="分配质检员" 
+                name="qaer" 
+                rules={[{ required: true, message: '请选择质检员' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <Select 
+                  placeholder="请选择质检员" 
+                  allowClear
+                  options={[
+                    { value: '李四', label: '李四' },
+                    { value: '王五', label: '王五' },
+                    { value: '赵六', label: '赵六' },
+                    { value: '天奇管理员', label: '天奇管理员' },
+                  ]} 
+                />
+              </Form.Item>
             </>
           ) : (
             <>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="选择标注员" name="annotator" required rules={[{ required: true, message: '请选择标注员' }]}>
-                    <Select placeholder="请选择标注员" options={[{ value: 'a1', label: '李四 (标注员)' }, { value: 'a2', label: '张三 (标注员)' }]} defaultValue="a1" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="选择审核员" name="auditor" required rules={[{ required: true, message: '请选择审核员' }]}>
-                    <Select placeholder="请选择审核员" options={[{ value: 'v1', label: '王五 (审核员)' }, { value: 'v2', label: '天奇管理员' }]} defaultValue="v1" />
-                  </Form.Item>
-                </Col>
-              </Row>
+              <Form.Item 
+                label="计划标注量" 
+                name="totalPlanCount" 
+                initialValue={30}
+                required
+                extra={<div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>继承任务计划标注量，分包内不可修改</div>}
+                style={{ marginBottom: 18 }}
+              >
+                <Input disabled value={30} style={{ background: '#fafafa', color: '#595959' }} />
+              </Form.Item>
 
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item label="标注数量" name="planCount" required initialValue={30} rules={[{ required: true, message: '请输入标注数量' }]}>
-                    <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入标注数量" addonAfter="条" />
-                  </Form.Item>
-                </Col>
-              </Row>
+              <Form.Item 
+                label="单包标注量" 
+                name="singlePackCount" 
+                rules={[{ required: true, message: '请输入单包标注量' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <InputNumber min={1} placeholder="请输入单包标注量" style={{ width: '100%' }} />
+              </Form.Item>
+
+              <Form.Item 
+                label="分配标注员" 
+                name="annotator" 
+                rules={[{ required: true, message: '请选择标注员' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <Select 
+                  placeholder="请选择标注员" 
+                  allowClear
+                  options={[
+                    { value: '李四', label: '李四' },
+                    { value: '张三', label: '张三' },
+                    { value: '赵六', label: '赵六' },
+                  ]} 
+                />
+              </Form.Item>
+
+              <Form.Item 
+                label="分配审核员" 
+                name="auditor" 
+                rules={[{ required: true, message: '请选择审核员' }]}
+                style={{ marginBottom: 18 }}
+              >
+                <Select 
+                  placeholder="请选择审核员" 
+                  allowClear
+                  options={[
+                    { value: '王五', label: '王五' },
+                    { value: '天奇管理员', label: '天奇管理员' },
+                  ]} 
+                />
+              </Form.Item>
             </>
           )}
-
-          <Form.Item label="分包备注说明" name="remarks">
-            <TextArea rows={2} placeholder="请输入分包备注信息..." />
-          </Form.Item>
         </Form>
       </AppModal>
 

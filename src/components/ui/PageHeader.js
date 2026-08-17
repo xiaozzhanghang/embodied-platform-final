@@ -12,12 +12,9 @@ export default function PageHeader({ title, description, breadcrumbs, back, extr
     <header className="ui-page-header">
       <div>
         {breadcrumbs ? <Breadcrumb items={breadcrumbs} /> : null}
-        <Space align="start" size="small">
+        <Space align="center" size="small" style={{ marginTop: breadcrumbs ? 4 : 0 }}>
           {backControl}
-          <div>
-            <Typography.Title level={3}>{title}</Typography.Title>
-            {description ? <Typography.Text type="secondary">{description}</Typography.Text> : null}
-          </div>
+          <Typography.Title level={3} style={{ margin: 0 }}>{title}</Typography.Title>
         </Space>
       </div>
       {extra ? <Space>{extra}</Space> : null}

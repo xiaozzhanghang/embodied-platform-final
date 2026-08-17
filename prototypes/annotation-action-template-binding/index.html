@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="新建标注任务：动作 Schema 与模板匹配交互原型" />
+    <title>新建标注任务 · 动作模板匹配原型</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="product-bar">
+      <div class="product-brand">
+        <span class="brand-mark" aria-hidden="true">TC</span>
+        <span>采集任务中心</span>
+        <span class="brand-divider"></span>
+        <span class="brand-section">数据标注</span>
+      </div>
+      <div class="product-meta">
+        <span class="prototype-flag">交互原型</span>
+        <span>开发评审版 · 2026-08-14</span>
+      </div>
+    </div>
+
+    <main class="page-shell">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <span>首页</span><b>/</b><span>数据标注</span><b>/</b><span>标注任务</span><b>/</b><strong>新建标注任务</strong>
+      </nav>
+
+      <section class="page-heading">
+        <div>
+          <div class="eyebrow">ANNOTATION TASK ASSEMBLY</div>
+          <h1>新建标注任务</h1>
+          <p>先确定数据动作，再自动匹配模板。场景只负责筛选，采集任务可以不选。</p>
+        </div>
+        <ol class="step-rail" aria-label="创建步骤">
+          <li class="is-done"><span>01</span><b>筛选数据</b></li>
+          <li class="is-active"><span>02</span><b>动作归组</b></li>
+          <li><span>03</span><b>绑定模板</b></li>
+          <li><span>04</span><b>校验发布</b></li>
+        </ol>
+      </section>
+
+      <section class="rule-strip" aria-label="核心规则">
+        <div class="rule-index">核心规则</div>
+        <p><strong>一个标注任务只允许一种动作 Schema / 一个动作模板。</strong> 不同采集任务只要动作一致即可合并；动作不一致时必须拆分任务。</p>
+        <button class="text-button" id="open-rule-dialog" type="button">查看开发校验点</button>
+      </section>
+
+      <section class="task-basics panel">
+        <div class="panel-heading compact-heading">
+          <div>
+            <span class="section-no">01</span>
+            <div>
+              <h2>任务与数据范围</h2>
+              <p>采集任务为选填；留空时汇总当前场景下全部可标注数据。</p>
+            </div>
+          </div>
+          <span class="required-note"><i>*</i> 为必填项</span>
+        </div>
+
+        <div class="basic-grid">
+          <label class="field field-wide">
+            <span><i>*</i> 标注任务名称</span>
+            <input id="task-name" type="text" value="天奇新动力 · 装配动作切分标注" />
+          </label>
+          <label class="field">
+            <span><i>*</i> 标注类型</span>
+            <select id="annotation-type">
+              <option value="action-segment" selected>动作切分 / 时间段标注</option>
+              <option value="object-box">目标框标注</option>
+              <option value="key-point">关键点标注</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>场景分类</span>
+            <select id="scene-filter">
+              <option value="">全部场景</option>
+              <option value="真实数据" selected>真实数据</option>
+              <option value="仿真数据">仿真数据</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>子场景分类</span>
+            <select id="subscene-filter">
+              <option value="">全部子场景</option>
+              <option value="天奇新动力" selected>天奇新动力</option>
+              <option value="柔性装配台">柔性装配台</option>
+            </select>
+          </label>
+          <label class="field source-task-field">
+            <span>采集任务 <em>选填</em></span>
+            <select id="source-task-filter">
+              <option value="" selected>不选择，查询该分类全部采集数据</option>
+              <option value="366666">366666</option>
+              <option value="4">4</option>
+              <option value="采集测试0806">采集测试0806</option>
+              <option value="打螺丝装配-资产">打螺丝装配-资产</option>
+            </select>
+          </label>
+          <label class="field keyword-field">
+            <span>搜索数据</span>
+            <input id="keyword-filter" type="search" placeholder="Episode ID / 采集任务名" />
+          </label>
+          <div class="filter-actions">
+            <button class="button secondary" id="reset-filters" type="button">重置</button>
+            <button class="button primary" id="run-query" type="button">查询数据</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="data-overview" aria-live="polite">
+        <div class="query-status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <div>
+            <strong id="query-status-title">采集任务未指定</strong>
+            <p id="query-status-detail">正在汇总“真实数据 / 天奇新动力”分类下的数据</p>
+          </div>
+        </div>
+        <dl class="query-metrics">
+          <div><dt id="metric-episodes">0</dt><dd>查询结果</dd></div>
+          <div><dt id="metric-tasks">0</dt><dd>来源任务</dd></div>
+          <div><dt id="metric-actions">0</dt><dd>动作分组</dd></div>
+          <div><dt id="metric-ready">0</dt><dd>可选数据</dd></div>
+        </dl>
+      </section>
+
+      <section class="action-groups panel">
+        <div class="panel-heading group-heading">
+          <div>
+            <span class="section-no">02</span>
+            <div>
+              <h2>按动作 Schema 归组</h2>
+              <p>先选动作组，再选 Episode。动作组来自采集任务的 SOP 快照，不由场景名称推断。</p>
+            </div>
+          </div>
+          <button class="button outline" id="preview-split" type="button">预览智能拆分</button>
+        </div>
+        <div class="group-grid" id="group-grid" role="list"></div>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="data-panel panel">
+          <div class="table-toolbar">
+            <div>
+              <h2>选择待标注数据</h2>
+              <p><span class="safe-badge">默认不勾选</span> 仅质检通过、帧数大于 0、未占用的数据可选。</p>
+            </div>
+            <div class="toolbar-actions">
+              <button class="text-button" id="clear-selection" type="button">清空已选</button>
+              <button class="button secondary" id="select-current-group" type="button">选择当前动作组</button>
+            </div>
+          </div>
+
+          <div class="schema-lock is-empty" id="schema-lock" data-testid="schema-lock">
+            <div class="lock-symbol" aria-hidden="true">◎</div>
+            <div>
+              <strong>尚未锁定动作</strong>
+              <p>勾选第一条数据后，本任务将锁定到该动作 Schema。</p>
+            </div>
+          </div>
+
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th class="check-cell"><span class="sr-only">选择</span></th>
+                  <th>Episode ID</th>
+                  <th>来源采集任务</th>
+                  <th>动作 / SOP 快照</th>
+                  <th class="number-cell">帧数</th>
+                  <th>质检</th>
+                  <th>模板兼容</th>
+                </tr>
+              </thead>
+              <tbody id="episode-table-body"></tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <span id="table-result-count">共 0 条</span>
+            <span>不同采集任务可合并，但动作 Schema 必须相同</span>
+          </div>
+        </section>
+
+        <aside class="assembly-panel panel" aria-label="任务装配器">
+          <div class="assembly-kicker">TASK ASSEMBLER</div>
+          <div class="assembly-heading">
+            <div>
+              <h2>任务装配器</h2>
+              <p>选择数据后自动推荐兼容模板</p>
+            </div>
+            <span class="live-indicator">实时校验</span>
+          </div>
+
+          <div class="selection-summary">
+            <div><strong id="selected-count">0</strong><span>条 Episode</span></div>
+            <div><strong id="selected-task-count">0</strong><span>个来源任务</span></div>
+            <div><strong id="selected-schema-count">0</strong><span>种动作</span></div>
+          </div>
+
+          <div id="assembly-empty" class="assembly-empty">
+            <div class="empty-target" aria-hidden="true"><span></span></div>
+            <strong>先选择一条可标注数据</strong>
+            <p>系统会读取其动作 Schema，锁定本任务的数据边界并推荐模板。</p>
+          </div>
+
+          <div id="assembly-content" class="assembly-content" hidden>
+            <section class="assembly-section">
+              <div class="section-label">已锁定动作</div>
+              <div class="action-identity">
+                <span class="action-code" id="selected-action-code">—</span>
+                <div>
+                  <strong id="selected-action-label">—</strong>
+                  <p id="selected-action-sop">—</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="assembly-section" id="known-action-config">
+              <div class="section-title-row">
+                <div class="section-label">动作模板 <i>*</i></div>
+                <span class="recommend-tag">自动推荐</span>
+              </div>
+              <select id="template-select" data-testid="template-select"></select>
+              <div class="template-why" id="template-why"></div>
+              <div class="sop-preview" id="sop-preview"></div>
+            </section>
+
+            <section class="assembly-section unknown-config" id="unknown-action-config" hidden>
+              <div class="section-label">未识别动作处理 <i>*</i></div>
+              <label class="choice-card">
+                <input type="radio" name="unknown-handling" value="manual-no-template" />
+                <span><strong>无模板人工标注</strong><small>进入工作台后人工建立首条标注规范</small></span>
+              </label>
+              <label class="choice-card">
+                <input type="radio" name="unknown-handling" value="bind-template" />
+                <span><strong>补充动作分类并绑定模板</strong><small>人工确认动作后再匹配兼容模板</small></span>
+              </label>
+              <div id="manual-binding-fields" class="manual-binding-fields" hidden>
+                <label class="field">
+                  <span>动作分类</span>
+                  <select id="manual-schema-select">
+                    <option value="">请选择动作分类</option>
+                    <option value="screw-assembly:v3">打螺丝装配</option>
+                    <option value="cable-routing:v2">线缆整理归位</option>
+                    <option value="surface-clean:v1">台面清洁整理</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>兼容模板</span>
+                  <select id="manual-template-select">
+                    <option value="">请先选择动作分类</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <section class="assembly-section validation-section">
+              <div class="section-label">发布前校验</div>
+              <ul class="validation-list" id="validation-list"></ul>
+            </section>
+          </div>
+
+          <div class="assembly-footer">
+            <div id="publish-hint">请先选择数据</div>
+            <button class="button publish-button" id="publish-task" type="button" disabled>发布标注任务</button>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <div class="modal-backdrop" id="conflict-modal" hidden>
+      <section class="modal-card conflict-card" role="dialog" aria-modal="true" aria-labelledby="conflict-title">
+        <button class="modal-close" type="button" data-close-modal aria-label="关闭">×</button>
+        <div class="modal-icon warning" aria-hidden="true">!</div>
+        <div class="modal-eyebrow">动作冲突</div>
+        <h2 id="conflict-title">这条数据不能加入当前任务</h2>
+        <p id="conflict-description"></p>
+        <div class="conflict-comparison">
+          <div><span>当前任务已锁定</span><strong id="conflict-current">—</strong></div>
+          <div class="direction-mark">≠</div>
+          <div><span>本次尝试加入</span><strong id="conflict-candidate">—</strong></div>
+        </div>
+        <div class="modal-note">原因：一个标注任务只能绑定一个动作模板。若强行混合，工作台无法确定每条数据该使用哪套动作步骤。</div>
+        <div class="modal-actions">
+          <button class="button secondary" type="button" data-close-modal>保留当前任务</button>
+          <button class="button primary" id="conflict-open-split" type="button">查看拆分方案</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="split-modal" hidden>
+      <section class="modal-card split-card" role="dialog" aria-modal="true" aria-labelledby="split-title">
+        <button class="modal-close" type="button" data-close-modal aria-label="关闭">×</button>
+        <div class="modal-eyebrow">智能拆分预览</div>
+        <h2 id="split-title">系统将按动作 Schema 生成多个标注任务</h2>
+        <p>来源采集任务可以交叉合并，但不同动作各自绑定模板。下列方案只生成草稿，发布前仍由后端逐条复核。</p>
+        <div class="split-plan" id="split-plan"></div>
+        <div class="split-summary" id="split-summary"></div>
+        <div class="modal-actions">
+          <button class="button secondary" type="button" data-close-modal>返回调整</button>
+          <button class="button primary" id="create-split-drafts" type="button">按动作生成任务草稿</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="rule-modal" hidden>
+      <section class="modal-card rule-card" role="dialog" aria-modal="true" aria-labelledby="rule-title">
+        <button class="modal-close" type="button" data-close-modal aria-label="关闭">×</button>
+        <div class="modal-eyebrow">给开发的校验规则</div>
+        <h2 id="rule-title">前端提示，后端必须二次校验</h2>
+        <ol class="developer-rules">
+          <li><b>入池字段</b><span>每条 Episode 必须携带 sourceTaskId、SOP 快照、actionSchemaKey、设备类型、帧数和质检状态。</span></li>
+          <li><b>选择边界</b><span>同一任务内 actionSchemaKey 必须唯一；sourceTaskId 可以不同。</span></li>
+          <li><b>模板过滤</b><span>模板必须同时匹配动作 Schema、设备、标注类型和已发布版本。</span></li>
+          <li><b>异常数据</b><span>0 帧、质检未通过、已占用的数据不可选；未知动作必须显式选择人工路径。</span></li>
+          <li><b>提交校验</b><span>后端基于 Episode 最新状态重新校验，不能信任前端传入的兼容结果。</span></li>
+        </ol>
+        <div class="modal-actions">
+          <button class="button primary" type="button" data-close-modal>知道了</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="success-modal" hidden>
+      <section class="modal-card success-card" role="dialog" aria-modal="true" aria-labelledby="success-title">
+        <button class="modal-close" type="button" data-close-modal aria-label="关闭">×</button>
+        <div class="success-check" aria-hidden="true">✓</div>
+        <div class="modal-eyebrow">校验通过</div>
+        <h2 id="success-title">标注任务可以创建</h2>
+        <p id="success-description"></p>
+        <div class="success-receipt" id="success-receipt"></div>
+        <div class="modal-actions">
+          <button class="button primary" type="button" data-close-modal>继续评审原型</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    <script type="module" src="./app.mjs"></script>
+  </body>
+</html>

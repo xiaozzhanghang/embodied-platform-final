@@ -6,13 +6,15 @@ import { Table, Button, Card, Typography, Space, Tag, Input, Badge, Breadcrumb, 
 import { PlusOutlined, SearchOutlined, ReloadOutlined, EyeOutlined, DownloadOutlined, ColumnHeightOutlined, SettingOutlined, RobotOutlined, DownOutlined, UpOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
-import { FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
+import { FilterPanel, PageHeader, StatusTag, TableToolbar, TableToolbarActions } from '@/components/ui';
 
 const { Title, Text } = Typography;
 
 export default function TaskbooksPage() {
   const router = useRouter();
   const { message } = App.useApp();
+  const [tableDensity, setTableDensity] = useState('middle');
+  const [hiddenColumns, setHiddenColumns] = useState([]);
 
   const mockData = [
     { key: '1', id: 'TB-2025001', name: '桌面抓取SOP规范', scene: '桌面场景', version: 'V1.0', status: '已发布', createTime: '2025-01-10 10:00:00', updateTime: '2025-01-12 14:30:00' },
@@ -44,7 +46,7 @@ export default function TaskbooksPage() {
       title: '操作', key: 'action', width: 360, fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
-          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/taskbooks/detail/${record.id}`)}>查看详情</Button>
+          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/taskbooks/detail/${record.id}`)}>详情</Button>
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/taskbooks/create?mode=edit&id=${record.id}`)}>编辑</Button>
           <Button type="link" size="small" icon={<DownloadOutlined />} style={{ padding: 0 }}>下载</Button>
           <Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: 0 }} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>删除</Button>
@@ -58,7 +60,6 @@ export default function TaskbooksPage() {
       <div className="ui-page">
         <PageHeader
           title="任务书"
-          description="指导数据采集的标准作业程序（SOP），支持 PDF / Word 上传与智能生成。"
           breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '任务书' }]}
           extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/taskbooks/create')}>手动新建</Button>}
         />
@@ -84,18 +85,24 @@ export default function TaskbooksPage() {
             count={mockData.length}
             actions={[
               <Button key="ai" icon={<RobotOutlined />}>AI 智能建书</Button>,
-              <Tooltip key="refresh" title="刷新"><Button icon={<ReloadOutlined />} /></Tooltip>,
-              <Tooltip key="density" title="密度"><Button icon={<ColumnHeightOutlined />} /></Tooltip>,
-              <Tooltip key="columns" title="列设置"><Button icon={<SettingOutlined />} /></Tooltip>,
+              <TableToolbarActions
+                key="tableActions"
+                columns={columns}
+                density={tableDensity}
+                onDensityChange={setTableDensity}
+                hiddenColumns={hiddenColumns}
+                onHiddenColumnsChange={setHiddenColumns}
+                onRefresh={() => message.success('数据已刷新')}
+              />
             ]}
           />
 
           <Table
             rowSelection={{ type: 'checkbox' }}
-            columns={columns}
+            columns={columns.filter(col => !hiddenColumns.includes(col.key))}
             dataSource={mockData}
             scroll={{ x: 1300 }}
-            size="middle"
+            size={tableDensity}
             pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }}
           />
         </Card>

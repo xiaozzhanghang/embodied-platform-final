@@ -8,16 +8,17 @@ import {
   Row, Col, Dropdown, Divider, Switch, Select, Form
 } from 'antd';
 import { 
-  PlusOutlined, SearchOutlined, ReloadOutlined,
+  PlusOutlined, ReloadOutlined,
   SettingOutlined, ColumnHeightOutlined, CopyOutlined, EditOutlined, 
   DeleteOutlined, EyeOutlined, TagsOutlined, 
   NodeIndexOutlined, CheckCircleOutlined, ExclamationCircleOutlined,
-  FormOutlined, FileSearchOutlined
+  FormOutlined, FileSearchOutlined, AuditOutlined, ClockCircleOutlined,
+  ThunderboltOutlined, CheckSquareOutlined, AppstoreOutlined
 } from '@ant-design/icons';
-import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
+import { ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
-import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
+import { AppModal, FilterPanel, PageHeader, QueryFilterBar, StatusTag, TableToolbar, TableToolbarActions } from '@/components/ui';
 import { syncCompletedAnnotationTasks } from '@/lib/annotationQaFlow.mjs';
 
 const { Text } = Typography;
@@ -28,6 +29,8 @@ export default function AnnotationTasksPage() {
 
   const [activeTab, setActiveTab] = useState('all');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [tableDensity, setTableDensity] = useState('middle');
+  const [hiddenColumns, setHiddenColumns] = useState([]);
   const [isAssignModalVisible, setIsAssignModalVisible] = useState(false);
   const [assignForm] = Form.useForm();
   const [qaPackagesByTask, setQaPackagesByTask] = useState({});
@@ -163,7 +166,7 @@ export default function AnnotationTasksPage() {
       render: (p) => <Tag color="cyan">{p}</Tag>
     },
     {
-      title: '操作', key: 'action', width: 320, fixed: 'right', align: 'center',
+      title: '操作', key: 'action', width: 220, fixed: 'right', align: 'center',
       render: (_, record) => (
         <Space separator={<Divider orientation="vertical" />} size={0}>
           <Button 
@@ -173,19 +176,8 @@ export default function AnnotationTasksPage() {
             onClick={() => router.push(`/collection/tasks/${record.taskId}?type=asset`)} 
             style={{ padding: '0 4px', fontWeight: 600 }}
           >
-            查看
+            进入
           </Button>
-          {qaPackagesByTask[record.taskId] && (
-            <Button
-              type="link"
-              size="small"
-              icon={<FileSearchOutlined />}
-              onClick={() => router.push(`/collection/qa/${encodeURIComponent(qaPackagesByTask[record.taskId].qaPackageId)}`)}
-              style={{ padding: '0 4px' }}
-            >
-              查看质检
-            </Button>
-          )}
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
           <Button type="link" size="small" icon={<DeleteOutlined />} danger style={{ padding: '0 4px' }} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>删除</Button>
@@ -194,9 +186,38 @@ export default function AnnotationTasksPage() {
     },
   ];
 
+  const allCount = mockData.length;
+  const pendingCount = mockData.filter(item => item.status === '待分配' || item.status === '待标注').length;
+  const doingCount = mockData.filter(item => item.status === '进行中' || item.status === '标注中').length;
+  const doneCount = mockData.filter(item => item.status === '已完成' || item.status === '标注完成').length;
+
+  const tabItems = [
+    { key: 'all', label: `全部 (${allCount})` },
+    { key: 'pending', label: <span><ClockCircleOutlined style={{ marginRight: 6 }} />待标注 ({pendingCount})</span> },
+    { key: 'doing', label: <span><ThunderboltOutlined style={{ marginRight: 6 }} />标注中 ({doingCount})</span> },
+    { key: 'done', label: <span><CheckSquareOutlined style={{ marginRight: 6 }} />标注完成 ({doneCount})</span> },
+  ];
+
+  const handleBatchDelete = () => {
+    if (selectedRowKeys.length === 0) return;
+    Modal.confirm({
+      title: '确定批量删除选中的标注任务？',
+      icon: <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
+      content: `已选择 ${selectedRowKeys.length} 个标注任务，删除后不可恢复。`,
+      okText: '确定删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: () => {
+        message.success(`已删除 ${selectedRowKeys.length} 个标注任务`);
+        setSelectedRowKeys([]);
+      }
+    });
+  };
+
   const filteredData = mockData.filter(item => {
-    if (activeTab === 'doing') return item.status === '进行中';
-    if (activeTab === 'done') return item.status === '已完成';
+    if (activeTab === 'pending') return item.status === '待分配' || item.status === '待标注';
+    if (activeTab === 'doing') return item.status === '进行中' || item.status === '标注中';
+    if (activeTab === 'done') return item.status === '已完成' || item.status === '标注完成';
     return true;
   });
 
@@ -221,66 +242,78 @@ export default function AnnotationTasksPage() {
           style={{ width: '100%' }}
         >
           <FilterPanel>
-            <QueryFilter
-              submitter={{
-                submitButtonProps: { icon: <SearchOutlined /> },
-                resetButtonProps: { icon: <ReloadOutlined /> },
-              }}
-            >
+            <QueryFilterBar>
               <ProFormSelect name="firstLevel" label="一级项目" placeholder="请选择一级项目" options={[{label:'InternalCommercial', value:'InternalCommercial'}, {label:'ExternalXupaosi', value:'ExternalXupaosi'}, {label:'InternalIndustrial', value:'InternalIndustrial'}]} />
               <ProFormSelect name="secondLevel" label="二级项目" placeholder="请选择二级项目" options={[{label:'GroceryVLA', value:'GroceryVLA'}, {label:'FoundationModel', value:'FoundationModel'}]} />
               <ProFormText name="taskName" label="任务名称" placeholder="请输入任务名称" />
               <ProFormText name="taskId" label="任务ID" placeholder="请输入任务ID" />
               <ProFormText name="assignee" label="标注员" placeholder="请输入标注员" />
-            </QueryFilter>
+            </QueryFilterBar>
           </FilterPanel>
         </SpecMarker>
 
         <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
-          <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            style={{ padding: '0 16px' }}
-            items={[
-              { key: 'all', label: '全部数据标注' },
-              { key: 'doing', label: '进行中' },
-              { key: 'done', label: '已完成' },
-            ]}
-          />
-          <TableToolbar
-            count={filteredData.length}
-            selectedCount={selectedRowKeys.length}
-            actions={[
+          <div style={{ padding: '0 20px', borderBottom: '1px solid #f0f0f0' }}>
+            <Tabs
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              style={{ marginBottom: -1 }}
+              items={tabItems}
+            />
+          </div>
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '16px 20px',
+          }}>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: '#1f1f1f' }}>
+              任务列表
+            </div>
+            <Space size={12}>
               <Button
-                key="create"
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => router.push('/collection/annotation-tasks/create')}
               >
-                新建任务
-              </Button>,
+                创建任务
+              </Button>
               <Button
-                key="assign"
                 icon={<NodeIndexOutlined />}
                 disabled={selectedRowKeys.length === 0}
                 onClick={() => setIsAssignModalVisible(true)}
               >
                 批量分派标注员
-              </Button>,
-              <Tooltip key="refresh" title="刷新"><Button icon={<ReloadOutlined />} /></Tooltip>,
-              <Tooltip key="columns" title="列设置"><Button icon={<SettingOutlined />} /></Tooltip>,
-            ]}
-          />
+              </Button>
+              <Button
+                icon={<DeleteOutlined />}
+                disabled={selectedRowKeys.length === 0}
+                onClick={handleBatchDelete}
+              >
+                批量删除
+              </Button>
+              <TableToolbarActions
+                columns={columns}
+                density={tableDensity}
+                onDensityChange={setTableDensity}
+                hiddenColumns={hiddenColumns}
+                onHiddenColumnsChange={setHiddenColumns}
+                onRefresh={() => message.success('数据已刷新')}
+              />
+            </Space>
+          </div>
+
           <Table
             rowSelection={{ 
               type: 'checkbox',
               selectedRowKeys,
               onChange: (keys) => setSelectedRowKeys(keys)
             }} 
-            columns={columns} 
+            columns={columns.filter(col => !hiddenColumns.includes(col.key))} 
             dataSource={filteredData} 
             scroll={{ x: 1800 }}
-            size="middle"
+            size={tableDensity}
             pagination={{ pageSize: 10 }} 
           />
         </Card>

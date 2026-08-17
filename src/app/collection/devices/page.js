@@ -130,7 +130,7 @@ export default function DeviceListPage() {
       title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
-          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/devices/detail/${record.key}`)}>查看详情</Button>
+          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/devices/detail/${record.key}`)}>详情</Button>
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/devices/detail/${record.key}?edit=true`)}>编辑</Button>
           <Popconfirm title="确定禁用此设备吗？">
             <Button type="link" danger size="small" icon={<StopOutlined />} style={{ padding: 0 }}>禁用</Button>

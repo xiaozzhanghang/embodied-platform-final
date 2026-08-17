@@ -20,7 +20,7 @@ export const antdTheme = {
     Table: {
       headerBg: '#fafafa',
       headerColor: '#1f2329',
-      rowHoverBg: '#f5f9ff',
+      rowHoverBg: '#e6f4ff',
       borderColor: '#e5e6eb',
       cellPaddingBlock: 12,
       cellPaddingInline: 16,
@@ -30,3 +30,4 @@ export const antdTheme = {
     Tabs: { itemSelectedColor: '#1677ff', inkBarColor: '#1677ff' },
   },
 };
+

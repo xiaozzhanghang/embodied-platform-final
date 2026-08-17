@@ -6,7 +6,7 @@ import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select,
 import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
-import { PageHeader, StatusTag } from '@/components/ui';
+import { PageHeader, StatusTag, TableToolbarActions } from '@/components/ui';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -37,6 +37,8 @@ export default function AnnotationAuditEpisodeListPage() {
   const instanceId = params.id;
   const searchParams = useSearchParams();
   const [activeAnnoTab, setActiveAnnoTab] = useState('unannotated');
+  const [tableDensity, setTableDensity] = useState('middle');
+  const [hiddenColumns, setHiddenColumns] = useState([]);
   const { message } = App.useApp();
 
   useEffect(() => {
@@ -492,7 +494,7 @@ export default function AnnotationAuditEpisodeListPage() {
       render: (s) => <StatusTag status={s === '不通过' ? '未通过' : s}>{s}</StatusTag>
     },
     {
-      title: '操作', key: 'action', width: 220, fixed: 'right',
+      title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_, r) => {
         const typeParam = encodeURIComponent(r.annoType);
         return (
@@ -501,21 +503,11 @@ export default function AnnotationAuditEpisodeListPage() {
               type="link" 
               size="small" 
               icon={<EditOutlined />}
-              style={{ padding: '0 4px' }}
+              style={{ padding: '0 4px', fontWeight: 600 }}
               disabled={r.annoStatus === '已标注' || r.annoStatus === '待校验' || activeAnnoTab === 'to_verify'}
               onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=annotate`)}
             >
               标注
-            </Button>
-            <Button 
-              type="link" 
-              size="small" 
-              icon={<AuditOutlined />}
-              style={{ padding: '0 4px', color: (r.annoStatus === '已标注' || r.annoStatus === '待校验') ? '#722ed1' : undefined }}
-              disabled={r.annoStatus !== '已标注' && r.annoStatus !== '待校验'}
-              onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=audit`)}
-            >
-              审核
             </Button>
             <Button 
               type="link" 
@@ -578,7 +570,6 @@ export default function AnnotationAuditEpisodeListPage() {
             >
               上传数据
             </Button>,
-            <Button key="audit-all" type="primary" size="small" icon={<AuditOutlined />} onClick={() => message.success('审核全部数据')}>审核全部数据</Button>,
             <Button key="close" type="text" aria-label="关闭" icon={<CloseOutlined />} onClick={() => router.push('/annotation/audit')} />,
           ]}
         />
@@ -688,25 +679,6 @@ export default function AnnotationAuditEpisodeListPage() {
                 批量清除标注
               </Button>
               <Button 
-                type="primary"
-                size="middle" 
-                icon={<CheckCircleOutlined />}
-                style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 'bold' }}
-                onClick={handleBatchAuditPass}
-              >
-                批量一键通过
-              </Button>
-              <Button 
-                type="primary"
-                size="middle" 
-                danger
-                icon={<CloseOutlined />}
-                style={{ fontWeight: 'bold' }}
-                onClick={handleBatchAuditReject}
-              >
-                批量一键驳回
-              </Button>
-              <Button 
                 size="middle"
                 type="text"
                 onClick={() => { setSelectedRowKeys([]); setSelectedRows([]); }}
@@ -721,11 +693,20 @@ export default function AnnotationAuditEpisodeListPage() {
         <Card
           className="ui-table-card"
           title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>数据列表</span>}
+          extra={
+            <TableToolbarActions
+              columns={columns}
+              density={tableDensity}
+              onDensityChange={setTableDensity}
+              hiddenColumns={hiddenColumns}
+              onHiddenColumnsChange={setHiddenColumns}
+              onRefresh={() => message.success('数据已刷新')}
+            />
+          }
           tabList={[
             { key: 'unannotated', tab: `未标注 (${episodes.filter(e => e.annoStatus === '未标注').length})` },
             { key: 'to_verify', tab: `待校验 (${episodes.filter(e => e.annoStatus === '待校验').length})` },
             { key: 'annotated', tab: `已标注 / 完成 (${episodes.filter(e => e.annoStatus === '已标注').length})` },
-
             { key: 'qc_failed', tab: `❌ 质检不通过 (${episodes.filter(e => e.auditStatus === '不通过').length})` },
             { key: 'all', tab: `全部 (${episodes.length})` },
           ]}
@@ -742,7 +723,7 @@ export default function AnnotationAuditEpisodeListPage() {
                 setSelectedRows(rows);
               }
             }}
-            columns={columns} 
+            columns={columns.filter(col => !hiddenColumns.includes(col.key))} 
             dataSource={filteredData} 
             pagination={{ 
               pageSize: 20, 
@@ -750,7 +731,7 @@ export default function AnnotationAuditEpisodeListPage() {
               showSizeChanger: true,
               pageSizeOptions: ['10', '20', '50']
             }}
-            size="small"
+            size={tableDensity}
             scroll={{ x: 1600 }}
           />
         </Card>

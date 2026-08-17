@@ -18,6 +18,7 @@
   --ui-text-secondary: #646a73;
   --ui-text-tertiary: #8f959e;
   --ui-border: #e5e6eb;
+  --ui-border-secondary: #f0f0f0;
   --ui-radius-control: 6px;
   --ui-radius-card: 8px;
   --ui-control-height: 32px;
@@ -45,7 +46,7 @@
   --text-primary: var(--ui-text-primary);
   --text-secondary: var(--ui-text-secondary);
   --text-tertiary: var(--ui-text-tertiary);
-  --border-color: var(--ui-border);
+  --border-color: var(--ui-border-secondary);
   --border-color-split: #e8e8e8;
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
@@ -101,6 +102,14 @@ body {
   margin-bottom: var(--ui-space-6);
 }
 
+.ui-page-header .ant-breadcrumb {
+  margin-bottom: var(--ui-space-4);
+}
+
+.ui-page-header .ant-typography {
+  margin: 0;
+}
+
 .ui-filter-panel,
 .ui-form-section,
 .ui-table-card {
@@ -117,6 +126,25 @@ body {
 
 .ui-filter-panel .ant-form-item {
   margin-bottom: var(--ui-space-2);
+}
+
+/* QueryFilter 嵌入统一筛选卡片时，内边距由卡片单独负责，避免双层留白。 */
+.ui-filter-panel .ant-pro-query-filter {
+  padding: 0;
+}
+
+.ui-filter-panel .ant-pro-query-filter-row {
+  row-gap: var(--ui-space-2);
+}
+
+/* 查询/重置/展开必须始终单行，容器变窄时不得折字。 */
+.ui-filter-panel .ant-pro-query-filter-actions,
+.ui-filter-panel .ant-pro-query-filter-collapse-button {
+  white-space: nowrap;
+}
+
+.ui-filter-panel .ant-pro-query-filter-actions .ant-space {
+  flex-wrap: nowrap;
 }
 
 .ui-table-card {

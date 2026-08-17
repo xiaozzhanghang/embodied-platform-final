@@ -8,15 +8,16 @@ import {
   Divider
 } from 'antd';
 import { 
-  PlusOutlined, SearchOutlined, ReloadOutlined, 
+  PlusOutlined, ReloadOutlined,
   SettingOutlined, ColumnHeightOutlined, CopyOutlined, EditOutlined, 
   DeleteOutlined, EyeOutlined, CheckCircleOutlined, ExclamationCircleOutlined,
-  CameraOutlined
+  CameraOutlined, ClockCircleOutlined, ThunderboltOutlined, CheckSquareOutlined,
+  AppstoreOutlined
 } from '@ant-design/icons';
-import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
+import { ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
-import { FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
+import { FilterPanel, PageHeader, QueryFilterBar, TableToolbar, TableToolbarActions } from '@/components/ui';
 
 const { Text } = Typography;
 
@@ -26,6 +27,8 @@ export default function CollectionTasksPage() {
 
   const [activeTab, setActiveTab] = useState('all');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [tableDensity, setTableDensity] = useState('middle');
+  const [hiddenColumns, setHiddenColumns] = useState([]);
 
   const mockData = [
     { 
@@ -150,7 +153,7 @@ export default function CollectionTasksPage() {
             }} 
             style={{ padding: '0 4px', fontWeight: 600 }}
           >
-            查看
+            进入
           </Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
@@ -160,9 +163,38 @@ export default function CollectionTasksPage() {
     },
   ];
 
+  const allCount = mockData.length;
+  const pendingCount = mockData.filter(item => item.status === '待采集').length;
+  const doingCount = mockData.filter(item => item.status === '进行中' || item.status === '采集中').length;
+  const doneCount = mockData.filter(item => item.status === '已完成' || item.status === '采集完成').length;
+
+  const tabItems = [
+    { key: 'all', label: `全部 (${allCount})` },
+    { key: 'pending', label: <span><ClockCircleOutlined style={{ marginRight: 6 }} />待采集 ({pendingCount})</span> },
+    { key: 'doing', label: <span><ThunderboltOutlined style={{ marginRight: 6 }} />采集中 ({doingCount})</span> },
+    { key: 'done', label: <span><CheckSquareOutlined style={{ marginRight: 6 }} />采集完成 ({doneCount})</span> },
+  ];
+
+  const handleBatchDelete = () => {
+    if (selectedRowKeys.length === 0) return;
+    Modal.confirm({
+      title: '确定批量删除选中的任务？',
+      icon: <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
+      content: `已选择 ${selectedRowKeys.length} 个采集任务，删除后不可恢复。`,
+      okText: '确定删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: () => {
+        message.success(`已删除 ${selectedRowKeys.length} 个任务`);
+        setSelectedRowKeys([]);
+      }
+    });
+  };
+
   const filteredData = mockData.filter(item => {
-    if (activeTab === 'doing') return item.status === '进行中';
-    if (activeTab === 'done') return item.status === '已完成';
+    if (activeTab === 'pending') return item.status === '待采集';
+    if (activeTab === 'doing') return item.status === '进行中' || item.status === '采集中';
+    if (activeTab === 'done') return item.status === '已完成' || item.status === '采集完成';
     return true;
   });
 
@@ -173,96 +205,87 @@ export default function CollectionTasksPage() {
           title="采集任务"
           description="统一查看采集计划、执行进度与数据交付状态。"
           breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '任务中心' }, { title: '采集任务' }]}
-          extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/collection-tasks/create')}>新建任务</Button>}
         />
 
         <SpecMarker
-        id="collection-tasks-query"
-        number={1}
-        title="采集任务多维度检索过滤"
-        rules={[
-          "支持按一级项目、二级项目、任务书、任务名称、采集模式、遥操类型及设备类型联合筛选。",
-          "所有筛选项支持一键清空状态。"
-        ]}
-        remark="采集任务专属配置页面"
-        style={{ width: '100%' }}
-      >
+          id="collection-tasks-query"
+          number={1}
+          title="采集任务多维度检索过滤"
+          rules={[
+            "支持按一级项目、二级项目、任务书、任务名称、采集模式、遥操类型及设备类型联合筛选。",
+            "所有筛选项支持一键清空状态。"
+          ]}
+          remark="采集任务专属配置页面"
+          style={{ width: '100%' }}
+        >
           <FilterPanel>
-            <QueryFilter
-            submitter={{
-              submitButtonProps: { icon: <SearchOutlined /> },
-              resetButtonProps: { icon: <ReloadOutlined /> },
-            }}
-          >
-            <ProFormSelect name="firstLevel" label="一级项目" placeholder="请选择一级项目" options={[{label:'InternalCommercial', value:'InternalCommercial'}, {label:'ExternalXupaosi', value:'ExternalXupaosi'}, {label:'InternalIndustrial', value:'InternalIndustrial'}]} />
-            <ProFormSelect name="secondLevel" label="二级项目" placeholder="请选择二级项目" options={[{label:'GroceryVLA', value:'GroceryVLA'}, {label:'FoundationModel', value:'FoundationModel'}]} />
-            <ProFormSelect name="collectMode" label="采集模式" placeholder="请选择采集模式" options={[{label:'Physical', value:'Physical'}, {label:'Teleop', value:'Teleop'}, {label:'Simulated', value:'Simulated'}]} />
-            <ProFormSelect name="teleopType" label="遥操类型" placeholder="请选择遥操类型" options={[{label:'Exoskeleton', value:'Exoskeleton'}, {label:'VR_Controller', value:'VR_Controller'}, {label:'Keyboard', value:'Keyboard'}]} />
-            <ProFormSelect name="deviceType" label="设备类型" placeholder="请选择设备类型" options={[{label:'Galbot_2.2_RGBD', value:'Galbot_2.2_RGBD'}, {label:'Franka_FR3', value:'Franka_FR3'}, {label:'Lumos_FastUMI', value:'Lumos_FastUMI'}]} />
-            <ProFormText name="taskName" label="任务名称" placeholder="请输入任务名称" />
-            <ProFormText name="taskId" label="任务ID" placeholder="请输入任务ID" />
-            </QueryFilter>
+            <QueryFilterBar>
+              <ProFormSelect name="firstLevel" label="一级项目" placeholder="请选择一级项目" options={[{label:'InternalCommercial', value:'InternalCommercial'}, {label:'ExternalXupaosi', value:'ExternalXupaosi'}, {label:'InternalIndustrial', value:'InternalIndustrial'}]} />
+              <ProFormSelect name="secondLevel" label="二级项目" placeholder="请选择二级项目" options={[{label:'GroceryVLA', value:'GroceryVLA'}, {label:'FoundationModel', value:'FoundationModel'}]} />
+              <ProFormSelect name="collectMode" label="采集模式" placeholder="请选择采集模式" options={[{label:'Physical', value:'Physical'}, {label:'Teleop', value:'Teleop'}, {label:'Simulated', value:'Simulated'}]} />
+              <ProFormSelect name="teleopType" label="遥操类型" placeholder="请选择遥操类型" options={[{label:'Exoskeleton', value:'Exoskeleton'}, {label:'VR_Controller', value:'VR_Controller'}, {label:'Keyboard', value:'Keyboard'}]} />
+              <ProFormSelect name="deviceType" label="设备类型" placeholder="请选择设备类型" options={[{label:'Galbot_2.2_RGBD', value:'Galbot_2.2_RGBD'}, {label:'Franka_FR3', value:'Franka_FR3'}, {label:'Lumos_FastUMI', value:'Lumos_FastUMI'}]} />
+              <ProFormText name="taskName" label="任务名称" placeholder="请输入任务名称" />
+              <ProFormText name="taskId" label="任务ID" placeholder="请输入任务ID" />
+            </QueryFilterBar>
           </FilterPanel>
         </SpecMarker>
 
         <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
-          <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            style={{ padding: '0 16px' }}
-            items={[
-              { key: 'all', label: '全部采集任务' },
-              { key: 'doing', label: '进行中' },
-              { key: 'done', label: '已完成' },
-            ]}
-          />
-          <TableToolbar
-            count={filteredData.length}
-            selectedCount={selectedRowKeys.length}
-            actions={[
+          <div style={{ padding: '0 20px', borderBottom: '1px solid #f0f0f0' }}>
+            <Tabs
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              style={{ marginBottom: -1 }}
+              items={tabItems}
+            />
+          </div>
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '16px 20px',
+          }}>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: '#1f1f1f' }}>
+              任务列表
+            </div>
+            <Space size={12}>
               <Button 
-                key="complete"
-                icon={<CheckCircleOutlined />} 
-                disabled={selectedRowKeys.length === 0}
-                onClick={() => {
-                  const selectedIds = mockData
-                    .filter(item => selectedRowKeys.includes(item.key))
-                    .map(item => item.taskId);
-                  
-                  Modal.confirm({
-                    title: '完成确认',
-                    icon: <ExclamationCircleOutlined style={{ color: '#faad14' }} />,
-                    content: `确定要标记完成选中的 ${selectedIds.join(', ')} 任务吗？`,
-                    okText: '确认',
-                    cancelText: '关闭',
-                    onOk: () => {
-                      setSelectedRowKeys([]);
-                      Modal.info({
-                        title: '采集完成，自动生成数据标注任务',
-                        content: `采集任务已标记完成！系统已自动生成对应的数据标注任务 [ANNO-20260415-001]。请前往数据标注详情页进行任务分包与人员配给。`,
-                        okText: '前往数据标注',
-                        onOk: () => router.push('/collection/annotation-tasks')
-                      });
-                    }
-                  });
-                }}
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={() => router.push('/collection/collection-tasks/create')}
               >
-                批量完成
-              </Button>,
-              <Tooltip key="refresh" title="刷新"><Button icon={<ReloadOutlined />} /></Tooltip>,
-              <Tooltip key="columns" title="列设置"><Button icon={<SettingOutlined />} /></Tooltip>,
-            ]}
-          />
+                创建任务
+              </Button>
+              <Button 
+                icon={<DeleteOutlined />} 
+                disabled={selectedRowKeys.length === 0}
+                onClick={handleBatchDelete}
+              >
+                批量删除
+              </Button>
+              <TableToolbarActions
+                columns={columns}
+                density={tableDensity}
+                onDensityChange={setTableDensity}
+                hiddenColumns={hiddenColumns}
+                onHiddenColumnsChange={setHiddenColumns}
+                onRefresh={() => message.success('数据已刷新')}
+              />
+            </Space>
+          </div>
+
           <Table 
             rowSelection={{ 
               type: 'checkbox',
               selectedRowKeys,
               onChange: (keys) => setSelectedRowKeys(keys)
             }} 
-            columns={columns} 
+            columns={columns.filter(col => !hiddenColumns.includes(col.key))} 
             dataSource={filteredData} 
             scroll={{ x: 1900 }}
-            size="middle"
+            size={tableDensity}
             pagination={{ pageSize: 10 }} 
           />
         </Card>
