@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Typography, Space, Input, Select, Form, Row, Col, 
   Card, Upload, App, Divider, Checkbox, Tag, InputNumber, 
-  Tooltip, Alert, Popconfirm
+  Tooltip, Alert, Popconfirm, Spin
 } from 'antd';
 import { 
   UploadOutlined, SaveOutlined, FilePdfOutlined, 
@@ -19,7 +19,7 @@ import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-export default function CreateTaskbookPage() {
+function CreateTaskbookContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('id');
@@ -401,5 +401,13 @@ export default function CreateTaskbookPage() {
         </Form>
       </div>
     </MainLayout>
+  );
+}
+
+export default function CreateTaskbookPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}><Spin size="large" /></div>}>
+      <CreateTaskbookContent />
+    </Suspense>
   );
 }
