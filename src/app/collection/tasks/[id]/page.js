@@ -12,7 +12,8 @@ import {
   ThunderboltOutlined, TagsOutlined, InfoCircleOutlined,
   DownloadOutlined, FileSearchOutlined, CloudUploadOutlined, EditOutlined, 
   DeleteOutlined, CheckCircleOutlined, ReloadOutlined,
-  ExclamationCircleOutlined, UserOutlined, ClockCircleOutlined
+  ExclamationCircleOutlined, UserOutlined, ClockCircleOutlined,
+  SafetyCertificateOutlined, AimOutlined, AppstoreOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
@@ -33,20 +34,25 @@ const mockInstancesAsset = [
   { key: '3', instanceId: 'AST-844103', taskName: '工业纸箱打包封装', assetSource: 'Lumos_FastUMI_202606', annoType: '关键帧标注', planCount: 20, annotator: '-', auditor: '-', startTime: '-', collectProgress: 0, status: '待分配' },
 ];
 
-const StatCard = ({ icon, value, label, iconBg, color }) => (
-  <Card size="small" style={{ borderRadius: 12, border: '1px solid #f0f0f0', flex: 1 }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+const StatCard = ({ icon, value, label, iconBg, color, extra }) => (
+  <Card size="small" style={{ borderRadius: 12, border: '1px solid #f0f0f0', flex: 1, background: '#fff' }} styles={{ body: { padding: '16px 18px' } }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
       <div style={{ 
-        width: 48, height: 48, borderRadius: 10, background: iconBg, 
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 
+        width: 44, height: 44, borderRadius: 10, background: iconBg, 
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0
       }}>
         {icon}
       </div>
-      <div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: color }}>{value}</div>
-        <div style={{ fontSize: 12, color: '#8c8c8c' }}>{label}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: color || '#1f1f1f', lineHeight: 1.2 }}>{value}</div>
       </div>
     </div>
+    {extra && (
+      <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px dashed #f0f0f0', fontSize: 12, color: '#8c8c8c' }}>
+        {extra}
+      </div>
+    )}
   </Card>
 );
 
@@ -364,12 +370,45 @@ export default function TaskInstancePage() {
           )}
         </div>
 
-        {/* Statistics Row */}
+        {/* Statistics Row - Business Output & Quality Dashboard */}
         <div style={{ display: 'flex', gap: 16 }}>
-          <StatCard icon="📦" value={currentMockData.length} label="总分包数" iconBg="#e6f4ff" color="#1677ff" />
-          <StatCard icon="✅" value="1" label="已完成分包" iconBg="#f6ffed" color="#52c41a" />
-          <StatCard icon="⚡" value="2" label="处理中分包" iconBg="#fffbe6" color="#faad14" />
-          <StatCard icon="🔢" value={taskMode === 'collect' ? '300/400' : '75/100'} label="总关联/采集条目数" iconBg="#f9f0ff" color="#722ed1" />
+          <StatCard 
+            icon={<AimOutlined style={{ color: '#1677ff', fontSize: 22 }} />} 
+            value={isAssetTask ? '100 条' : '400 条'} 
+            label="计划数据总量" 
+            iconBg="#e6f4ff" 
+            color="#1677ff" 
+            extra={isAssetTask ? '关联已有采集资产包' : '物理数采额定计划总量'}
+          />
+          <StatCard 
+            icon={<CheckCircleOutlined style={{ color: '#13c2c2', fontSize: 22 }} />} 
+            value={isAssetTask ? '75 / 100 条' : '300 / 400 条'} 
+            label="已完成送检量" 
+            iconBg="#e6fffb" 
+            color="#13c2c2" 
+            extra={(
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Progress percent={75} size="small" showInfo={false} style={{ flex: 1, margin: 0 }} strokeColor="#13c2c2" />
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#13c2c2' }}>75%</span>
+              </div>
+            )}
+          />
+          <StatCard 
+            icon={<SafetyCertificateOutlined style={{ color: '#52c41a', fontSize: 22 }} />} 
+            value="100.0%" 
+            label="质检综合通过率" 
+            iconBg="#f6ffed" 
+            color="#52c41a" 
+            extra={<span style={{ color: '#52c41a', fontWeight: 500 }}>已质检 75 条 · 全部合格</span>}
+          />
+          <StatCard 
+            icon={<AppstoreOutlined style={{ color: '#722ed1', fontSize: 22 }} />} 
+            value={`100% (${rawMockData.length}个分包)`} 
+            label="分包配额覆盖率" 
+            iconBg="#f9f0ff" 
+            color="#722ed1" 
+            extra={isAssetTask ? '100 条资产已完全分包' : '400 条配额已划分完毕'}
+          />
         </div>
       </Card>
 
@@ -412,10 +451,30 @@ export default function TaskInstancePage() {
           activeKey={activeTab}
           onChange={setActiveTab}
           items={[
-            { key: 'all', label: <span>全部 <Badge count={rawMockData.length} style={{ backgroundColor: '#e6f4ff', color: '#1677ff', boxShadow: 'none', marginLeft: 4 }} /></span> },
-            { key: 'pending', label: '待分配' },
-            { key: 'collecting', label: isAssetTask ? '质检中' : '采集中' },
-            { key: 'done', label: '已完成' },
+            { 
+              key: 'all', 
+              label: (
+                <span>全部 <Badge count={rawMockData.length} style={{ backgroundColor: activeTab === 'all' ? '#1677ff' : '#f0f0f0', color: activeTab === 'all' ? '#fff' : '#8c8c8c', boxShadow: 'none', marginLeft: 4 }} /></span>
+              ) 
+            },
+            { 
+              key: 'pending', 
+              label: (
+                <span>待分配 <Badge count={rawMockData.filter(i => i.status === '待分配').length} style={{ backgroundColor: '#f0f0f0', color: '#8c8c8c', boxShadow: 'none', marginLeft: 4 }} /></span>
+              ) 
+            },
+            { 
+              key: 'collecting', 
+              label: (
+                <span>{isAssetTask ? '质检中' : '采集中'} <Badge count={rawMockData.filter(i => i.status === '采集中' || i.status === '进行中').length} style={{ backgroundColor: '#fffbe6', color: '#d48806', boxShadow: 'none', marginLeft: 4 }} /></span>
+              ) 
+            },
+            { 
+              key: 'done', 
+              label: (
+                <span>已完成 <Badge count={rawMockData.filter(i => i.status === '已完成').length} style={{ backgroundColor: '#f6ffed', color: '#52c41a', boxShadow: 'none', marginLeft: 4 }} /></span>
+              ) 
+            },
           ]}
           style={{ marginBottom: 16 }}
         />
