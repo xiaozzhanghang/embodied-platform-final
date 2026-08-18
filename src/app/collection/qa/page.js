@@ -340,25 +340,25 @@ export default function QaPage() {
       dataIndex: 'qcProgressCount',
       key: 'qcProgressCount',
       width: 140,
-      align: 'center',
+      align: 'right',
       render: (v, r) => (
-        <div>
-          <Text strong style={{ color: '#1677ff' }}>{v || `${r.qcPassCount || 0} / ${r.dataCount || 120}`}</Text>
-          <div style={{ fontSize: 11, color: '#8c8c8c' }}>条数</div>
-        </div>
+        <span style={{ whiteSpace: 'nowrap' }}>
+          <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>{v || `${r.qcPassCount || 0} / ${r.dataCount || 120}`}</Text>
+          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>条</span>
+        </span>
       )
     },
     {
       title: '质检进度(分钟)',
       dataIndex: 'qcProgressMinutes',
       key: 'qcProgressMinutes',
-      width: 140,
-      align: 'center',
+      width: 150,
+      align: 'right',
       render: (v, r) => (
-        <div>
-          <Text strong style={{ color: '#722ed1' }}>{v || `${r.dataMinutes} / ${r.dataMinutes}`}</Text>
-          <div style={{ fontSize: 11, color: '#8c8c8c' }}>分钟</div>
-        </div>
+        <span style={{ whiteSpace: 'nowrap' }}>
+          <Text strong style={{ color: '#722ed1', fontFamily: 'monospace' }}>{v || `${r.dataMinutes} / ${r.dataMinutes}`}</Text>
+          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>min</span>
+        </span>
       )
     },
     {
