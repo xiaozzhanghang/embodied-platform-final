@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal } from 'antd';
-import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, AuditOutlined, CloseCircleOutlined, DeleteOutlined, FileSearchOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Progress } from 'antd';
+import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, AuditOutlined, CloseCircleOutlined, DeleteOutlined, FileSearchOutlined, AimOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { PageHeader, StatusTag, TableToolbarActions } from '@/components/ui';
 
@@ -40,7 +40,10 @@ const packageMetaMap = {
     planCount: 50,
     taskbook: 'TB-超市场景采集规范 V1.0',
     collector: '张三',
-    qaer: '李四'
+    qaer: '李四',
+    qcCheckedMinutes: '0.0',
+    qcTotalMinutes: '0.0',
+    qcPassedMinutes: '0.0'
   },
   'COLL-PK-12752': { 
     name: '超市场景物品物理采集 · 分包02', 
@@ -52,7 +55,10 @@ const packageMetaMap = {
     planCount: 50,
     taskbook: 'TB-超市场景采集规范 V1.0',
     collector: '李四',
-    qaer: '王五'
+    qaer: '王五',
+    qcCheckedMinutes: '0.0',
+    qcTotalMinutes: '0.0',
+    qcPassedMinutes: '0.0'
   },
   'COLL-PK-12744': { 
     name: '货架物品物理采集 · 分包03', 
@@ -64,7 +70,10 @@ const packageMetaMap = {
     planCount: 50,
     taskbook: 'TB-货架抓取规范 V1.5',
     collector: '张三',
-    qaer: '李四'
+    qaer: '李四',
+    qcCheckedMinutes: '0.3',
+    qcTotalMinutes: '7.0',
+    qcPassedMinutes: '0.3'
   },
   'COLL-PK-12745': { 
     name: '货架物品物理采集 · 分包04', 
@@ -76,7 +85,10 @@ const packageMetaMap = {
     planCount: 50,
     taskbook: 'TB-货架抓取规范 V1.5',
     collector: '李四',
-    qaer: '天奇管理员'
+    qaer: '天奇管理员',
+    qcCheckedMinutes: '16.2',
+    qcTotalMinutes: '16.2',
+    qcPassedMinutes: '15.1'
   },
   'COLL-PK-12760': { 
     name: '桌面整理通用数采 · 分包01', 
@@ -88,7 +100,10 @@ const packageMetaMap = {
     planCount: 10000,
     taskbook: 'TB-桌面整理采集规范 V1.0',
     collector: '王五',
-    qaer: '赵六'
+    qaer: '赵六',
+    qcCheckedMinutes: '0.0',
+    qcTotalMinutes: '0.0',
+    qcPassedMinutes: '0.0'
   },
   'COLL-PK-12761': { 
     name: '桌面整理通用数采 · 分包02', 
@@ -100,7 +115,10 @@ const packageMetaMap = {
     planCount: 5000,
     taskbook: 'TB-桌面整理采集规范 V1.0',
     collector: 'cy00831',
-    qaer: '李四'
+    qaer: '李四',
+    qcCheckedMinutes: '0.0',
+    qcTotalMinutes: '0.0',
+    qcPassedMinutes: '0.0'
   },
   'COLL-PK-12762': { 
     name: '双手装配离线资产 · 分包01', 
@@ -112,7 +130,10 @@ const packageMetaMap = {
     planCount: 5000,
     taskbook: 'TB-厨房操作规范 V1.2',
     collector: '张三',
-    qaer: '天奇管理员'
+    qaer: '天奇管理员',
+    qcCheckedMinutes: '0.0',
+    qcTotalMinutes: '0.0',
+    qcPassedMinutes: '0.0'
   },
   'COLL-PK-12763': { 
     name: '双手装配离线资产 · 分包02', 
@@ -124,7 +145,10 @@ const packageMetaMap = {
     planCount: 5000,
     taskbook: 'TB-厨房操作规范 V1.2',
     collector: '李四',
-    qaer: '王五'
+    qaer: '王五',
+    qcCheckedMinutes: '0.0',
+    qcTotalMinutes: '0.0',
+    qcPassedMinutes: '0.0'
   },
   'COLL-PK-12511': { 
     name: '工业纸箱打包封装 · 分包01', 
@@ -136,7 +160,10 @@ const packageMetaMap = {
     planCount: 5000,
     taskbook: 'TB-纸箱打包规范 V2.0',
     collector: 'cy00831',
-    qaer: '天奇管理员'
+    qaer: '天奇管理员',
+    qcCheckedMinutes: '1103.7',
+    qcTotalMinutes: '1103.7',
+    qcPassedMinutes: '1080.2'
   },
   'COLL-PK-12620': { 
     name: '工业纸箱打包封装 · 分包02', 
@@ -148,7 +175,10 @@ const packageMetaMap = {
     planCount: 5000,
     taskbook: 'TB-纸箱打包规范 V2.0',
     collector: '王五',
-    qaer: '李四'
+    qaer: '李四',
+    qcCheckedMinutes: '38.6',
+    qcTotalMinutes: '38.6',
+    qcPassedMinutes: '38.6'
   },
 };
 
@@ -322,12 +352,18 @@ export default function QaDetailPage() {
     });
   }, [episodes, filterId, filterQcStatus, activeQcTab]);
 
-  // Stats
+  // Stats & Macro Metrics (Plan A)
   const totalCount = episodes.length;
   const pendingCount = episodes.filter(d => d.qcStatus === '待质检').length;
   const checkingCount = episodes.filter(d => d.qcStatus === '质检中').length;
   const passedCount = episodes.filter(d => d.qcStatus === '已通过').length;
   const rejectedCount = episodes.filter(d => d.qcStatus === '未通过').length;
+
+  const checkedCount = passedCount + rejectedCount;
+  const qcProgressRate = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
+  const qcPassRate = checkedCount > 0 
+    ? ((passedCount / checkedCount) * 100).toFixed(1) 
+    : (totalCount === 0 ? '0.0' : '100.0');
 
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 90, render: (t) => <Text style={{ fontFamily: 'monospace', color: '#1677ff' }}>{t}</Text> },
@@ -436,51 +472,70 @@ export default function QaDetailPage() {
           ]}
         />
 
-        {/* Stats Row */}
+        {/* Macro Business & Quality Cards (Plan A) */}
         <div className="ui-form-section" style={{ display: 'flex', gap: 16 }}>
-          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fafafa', border: '1px solid #d9d9d9' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
-            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#1677ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CheckCircleOutlined style={{ color: '#fff', fontSize: 20 }} />
+          {/* 1. 送检总条数 */}
+          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fafafa', border: '1px solid #e2e8f0' }} styles={{ body: { padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 } }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#e6f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AimOutlined style={{ color: '#1677ff', fontSize: 22 }} />
             </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>总数据量</Text>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#1f1f1f' }}>{totalCount}</div>
-            </div>
-          </Card>
-          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fffbe6', border: '1px solid #ffe58f' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
-            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#faad14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ClockCircleOutlined style={{ color: '#fff', fontSize: 20 }} />
-            </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>待质检</Text>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#1f1f1f' }}>{pendingCount} <Text type="secondary" style={{ fontSize: 12 }}>/ {totalCount}</Text></div>
+            <div style={{ flex: 1 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>本包送检总量</Text>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#0f172a' }}>
+                {totalCount} <span style={{ fontSize: 13, fontWeight: 400, color: '#64748b' }}>条</span>
+              </div>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+                计划额定 {packageConfig.planCount || 50} 条
+              </div>
             </div>
           </Card>
-          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#e6f4ff', border: '1px solid #91caff' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
-            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#2f54eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ClockCircleOutlined style={{ color: '#fff', fontSize: 20 }} />
+
+          {/* 2. 质检完成进度 */}
+          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fafafa', border: '1px solid #e2e8f0' }} styles={{ body: { padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 } }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#e6fffb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CheckCircleOutlined style={{ color: '#13c2c2', fontSize: 22 }} />
             </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>质检中</Text>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#1f1f1f' }}>{checkingCount} <Text type="secondary" style={{ fontSize: 12 }}>/ {totalCount}</Text></div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text type="secondary" style={{ fontSize: 12 }}>质检完成进度</Text>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#13c2c2' }}>{qcProgressRate}%</span>
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#0f172a' }}>
+                {checkedCount} <span style={{ fontSize: 13, fontWeight: 400, color: '#64748b' }}>/ {totalCount} 条</span>
+              </div>
+              <Progress percent={qcProgressRate} strokeColor="#13c2c2" size="small" showInfo={false} style={{ margin: '4px 0 0 0' }} />
             </div>
           </Card>
-          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#f6ffed', border: '1px solid #b7eb8f' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
-            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#52c41a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CheckCircleOutlined style={{ color: '#fff', fontSize: 20 }} />
+
+          {/* 3. 质检综合合格率 */}
+          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fafafa', border: '1px solid #e2e8f0' }} styles={{ body: { padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 } }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#f6ffed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <SafetyCertificateOutlined style={{ color: '#52c41a', fontSize: 22 }} />
             </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>已通过</Text>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#1f1f1f' }}>{passedCount} <Text type="secondary" style={{ fontSize: 12 }}>/ {totalCount}</Text></div>
+            <div style={{ flex: 1 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>质检综合合格率</Text>
+              <div style={{ fontSize: 20, fontWeight: 700, color: parseFloat(qcPassRate) >= 90 ? '#52c41a' : '#faad14' }}>
+                {qcPassRate}%
+              </div>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+                合格 {passedCount} 条 · 不合格 {rejectedCount} 条
+              </div>
             </div>
           </Card>
-          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fff2f0', border: '1px solid #ffccc7' }} styles={{ body: { padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 } }}>
-            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#ff4d4f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ExclamationCircleOutlined style={{ color: '#fff', fontSize: 20 }} />
+
+          {/* 4. 累计质检时长 */}
+          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fafafa', border: '1px solid #e2e8f0' }} styles={{ body: { padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 } }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#f9f0ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ClockCircleOutlined style={{ color: '#722ed1', fontSize: 22 }} />
             </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>未通过</Text>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#1f1f1f' }}>{rejectedCount}</div>
+            <div style={{ flex: 1 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>累计质检时长 (已检/总长)</Text>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#722ed1' }}>
+                {packageConfig.qcCheckedMinutes || '0.0'} <span style={{ fontSize: 13, fontWeight: 400, color: '#64748b' }}>/ {packageConfig.qcTotalMinutes || '0.0'} min</span>
+              </div>
+              <div style={{ fontSize: 12, color: '#52c41a', marginTop: 2 }}>
+                合格有效时长 {packageConfig.qcPassedMinutes || '0.0'} min
+              </div>
             </div>
           </Card>
         </div>
@@ -560,11 +615,11 @@ export default function QaDetailPage() {
             className="ui-table-card"
             title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>数据列表</span>}
             tabList={[
-              { key: 'pending', tab: `待质检 (${pendingCount})` },
-              { key: 'checking', tab: `质检中 (${checkingCount})` },
-              { key: 'passed', tab: `已通过 (${passedCount})` },
-              { key: 'rejected', tab: `❌ 未通过 (${rejectedCount})` },
-              { key: 'all', tab: `全部 (${totalCount})` },
+              { key: 'all', tab: <span>全部 <Badge count={totalCount} style={{ backgroundColor: activeQcTab === 'all' ? '#1677ff' : '#f0f0f0', color: activeQcTab === 'all' ? '#fff' : '#8c8c8c', boxShadow: 'none', marginLeft: 4 }} /></span> },
+              { key: 'pending', tab: <span>待质检 <Badge count={pendingCount} style={{ backgroundColor: '#fffbe6', color: '#d48806', border: '1px solid #ffe58f', boxShadow: 'none', marginLeft: 4 }} /></span> },
+              { key: 'checking', tab: <span>质检中 <Badge count={checkingCount} style={{ backgroundColor: '#e6f4ff', color: '#1677ff', border: '1px solid #91caff', boxShadow: 'none', marginLeft: 4 }} /></span> },
+              { key: 'passed', tab: <span>已通过 <Badge count={passedCount} style={{ backgroundColor: '#f6ffed', color: '#52c41a', border: '1px solid #b7eb8f', boxShadow: 'none', marginLeft: 4 }} /></span> },
+              { key: 'rejected', tab: <span>未通过 <Badge count={rejectedCount} style={{ backgroundColor: '#fff2f0', color: '#ff4d4f', border: '1px solid #ffccc7', boxShadow: 'none', marginLeft: 4 }} /></span> },
             ]}
             tabBarExtraContent={(
               <Space style={{ paddingRight: 16 }}>
