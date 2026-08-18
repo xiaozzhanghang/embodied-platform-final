@@ -489,40 +489,30 @@ export default function QaPage() {
     {
       title: '采集进度 (已采/计划)',
       key: 'collectProgress',
-      width: 175,
+      width: 155,
       align: 'right',
-      render: (_, r) => {
-        const percent = Math.round(((r.collectActual || 0) / (r.collectPlan || 1)) * 100);
-        return (
-          <span style={{ whiteSpace: 'nowrap' }}>
-            <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
-              {r.collectActual} / {r.collectPlan}
-            </Text>
-            <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>
-              条 ({percent}%)
-            </span>
-          </span>
-        );
-      }
+      render: (_, r) => (
+        <span style={{ whiteSpace: 'nowrap' }}>
+          <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
+            {r.collectActual} / {r.collectPlan}
+          </Text>
+          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>条</span>
+        </span>
+      )
     },
     {
       title: '解析进度 (已解/已传)',
       key: 'parseProgress',
-      width: 165,
+      width: 155,
       align: 'right',
-      render: (_, r) => {
-        const percent = Math.round(((r.parseActual || 0) / (r.parseTotal || 1)) * 100);
-        return (
-          <span style={{ whiteSpace: 'nowrap' }}>
-            <Text strong style={{ color: '#13c2c2', fontFamily: 'monospace' }}>
-              {r.parseActual} / {r.parseTotal}
-            </Text>
-            <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>
-              条 ({percent}%)
-            </span>
-          </span>
-        );
-      }
+      render: (_, r) => (
+        <span style={{ whiteSpace: 'nowrap' }}>
+          <Text strong style={{ color: '#13c2c2', fontFamily: 'monospace' }}>
+            {r.parseActual} / {r.parseTotal}
+          </Text>
+          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>条</span>
+        </span>
+      )
     },
     {
       title: '任务状态', 
@@ -561,21 +551,16 @@ export default function QaPage() {
     {
       title: '质检进度 (已检/送检)',
       key: 'qcProgressCount',
-      width: 175,
+      width: 155,
       align: 'right',
-      render: (_, r) => {
-        const percent = Math.round(((r.qcCheckedCount || 0) / (r.qcTotalCount || 1)) * 100);
-        return (
-          <span style={{ whiteSpace: 'nowrap' }}>
-            <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
-              {r.qcCheckedCount} / {r.qcTotalCount}
-            </Text>
-            <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>
-              条 ({percent}%)
-            </span>
-          </span>
-        );
-      }
+      render: (_, r) => (
+        <span style={{ whiteSpace: 'nowrap' }}>
+          <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
+            {r.qcCheckedCount} / {r.qcTotalCount}
+          </Text>
+          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>条</span>
+        </span>
+      )
     },
     {
       title: '质检合格数 (合格/已检)',
