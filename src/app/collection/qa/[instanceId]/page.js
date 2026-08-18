@@ -29,13 +29,148 @@ const qcStatusConfig = {
   '未通过': { color: 'error', text: '未通过', icon: <ExclamationCircleOutlined /> },
 };
 
+const packageMetaMap = {
+  'COLL-PK-12751': { 
+    name: '超市场景物品物理采集 · 分包01', 
+    totalCount: 0, 
+    pending: 0, 
+    checking: 0, 
+    passed: 0, 
+    rejected: 0,
+    planCount: 50,
+    taskbook: 'TB-超市场景采集规范 V1.0',
+    collector: '张三',
+    qaer: '李四'
+  },
+  'COLL-PK-12752': { 
+    name: '超市场景物品物理采集 · 分包02', 
+    totalCount: 0, 
+    pending: 0, 
+    checking: 0, 
+    passed: 0, 
+    rejected: 0,
+    planCount: 50,
+    taskbook: 'TB-超市场景采集规范 V1.0',
+    collector: '李四',
+    qaer: '王五'
+  },
+  'COLL-PK-12744': { 
+    name: '货架物品物理采集 · 分包03', 
+    totalCount: 30, 
+    pending: 25, 
+    checking: 4, 
+    passed: 1, 
+    rejected: 0,
+    planCount: 50,
+    taskbook: 'TB-货架抓取规范 V1.5',
+    collector: '张三',
+    qaer: '李四'
+  },
+  'COLL-PK-12745': { 
+    name: '货架物品物理采集 · 分包04', 
+    totalCount: 55, 
+    pending: 0, 
+    checking: 0, 
+    passed: 52, 
+    rejected: 3,
+    planCount: 50,
+    taskbook: 'TB-货架抓取规范 V1.5',
+    collector: '李四',
+    qaer: '天奇管理员'
+  },
+  'COLL-PK-12760': { 
+    name: '桌面整理通用数采 · 分包01', 
+    totalCount: 0, 
+    pending: 0, 
+    checking: 0, 
+    passed: 0, 
+    rejected: 0,
+    planCount: 10000,
+    taskbook: 'TB-桌面整理采集规范 V1.0',
+    collector: '王五',
+    qaer: '赵六'
+  },
+  'COLL-PK-12761': { 
+    name: '桌面整理通用数采 · 分包02', 
+    totalCount: 0, 
+    pending: 0, 
+    checking: 0, 
+    passed: 0, 
+    rejected: 0,
+    planCount: 5000,
+    taskbook: 'TB-桌面整理采集规范 V1.0',
+    collector: 'cy00831',
+    qaer: '李四'
+  },
+  'COLL-PK-12762': { 
+    name: '双手装配离线资产 · 分包01', 
+    totalCount: 0, 
+    pending: 0, 
+    checking: 0, 
+    passed: 0, 
+    rejected: 0,
+    planCount: 5000,
+    taskbook: 'TB-厨房操作规范 V1.2',
+    collector: '张三',
+    qaer: '天奇管理员'
+  },
+  'COLL-PK-12763': { 
+    name: '双手装配离线资产 · 分包02', 
+    totalCount: 0, 
+    pending: 0, 
+    checking: 0, 
+    passed: 0, 
+    rejected: 0,
+    planCount: 5000,
+    taskbook: 'TB-厨房操作规范 V1.2',
+    collector: '李四',
+    qaer: '王五'
+  },
+  'COLL-PK-12511': { 
+    name: '工业纸箱打包封装 · 分包01', 
+    totalCount: 50, 
+    pending: 0, 
+    checking: 0, 
+    passed: 48, 
+    rejected: 2,
+    planCount: 5000,
+    taskbook: 'TB-纸箱打包规范 V2.0',
+    collector: 'cy00831',
+    qaer: '天奇管理员'
+  },
+  'COLL-PK-12620': { 
+    name: '工业纸箱打包封装 · 分包02', 
+    totalCount: 19, 
+    pending: 0, 
+    checking: 0, 
+    passed: 19, 
+    rejected: 0,
+    planCount: 5000,
+    taskbook: 'TB-纸箱打包规范 V2.0',
+    collector: '王五',
+    qaer: '李四'
+  },
+};
+
 export default function QaDetailPage() {
   const router = useRouter();
   const params = useParams();
   const instanceId = params.instanceId;
   const searchParams = useSearchParams();
-  const [activeQcTab, setActiveQcTab] = useState('pending');
+  const [activeQcTab, setActiveQcTab] = useState('all');
   const { message } = App.useApp();
+
+  const packageConfig = packageMetaMap[instanceId] || { 
+    name: `分包 #${instanceId}`, 
+    totalCount: 20, 
+    pending: 10, 
+    checking: 4, 
+    passed: 4, 
+    rejected: 2,
+    planCount: 50,
+    collector: '张三',
+    qaer: '李四'
+  };
 
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab');
@@ -47,17 +182,35 @@ export default function QaDetailPage() {
   const [filterQcStatus, setFilterQcStatus] = useState(null);
   const [filterId, setFilterId] = useState('');
 
-  // Stateful list of episodes for dynamic QC status updates
+  // Stateful list of episodes dynamically mapped from instanceId
   const [episodes, setEpisodes] = useState(() => {
-    return Array.from({ length: 20 }).map((_, i) => {
+    const config = packageMetaMap[instanceId];
+    if (config && config.totalCount === 0) {
+      return [];
+    }
+    const count = config ? config.totalCount : 20;
+    const passedTarget = config ? config.passed : 4;
+    const rejectedTarget = config ? config.rejected : 2;
+    const checkingTarget = config ? config.checking : 4;
+
+    return Array.from({ length: count }).map((_, i) => {
       const isDual = i % 2 === 0;
       const device = isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)';
       const annoType = isDual ? '语义标注' : '范围标注';
 
+      let qcStatus = '待质检';
+      if (i < passedTarget) {
+        qcStatus = '已通过';
+      } else if (i < passedTarget + rejectedTarget) {
+        qcStatus = '未通过';
+      } else if (i < passedTarget + rejectedTarget + checkingTarget) {
+        qcStatus = '质检中';
+      } else {
+        qcStatus = '待质检';
+      }
+
       const annoStatuses = ['已标注', '未标注', '待校验'];
-      const annoStatus = i < 14 ? '已标注' : annoStatuses[i % 3];
-      // Status distribution: 10 待质检, 4 质检中, 4 已通过, 2 未通过
-      const qcStatus = i < 10 ? '待质检' : i < 14 ? '质检中' : i < 18 ? '已通过' : '未通过';
+      const annoStatus = qcStatus === '已通过' || qcStatus === '未通过' ? '已标注' : annoStatuses[i % 3];
       const totalFrames = 120 + (i * 12);
 
       return {
@@ -270,7 +423,7 @@ export default function QaDetailPage() {
     <MainLayout>
       <div className="ui-page ui-detail-page">
         <PageHeader
-          title={`数采分包质检 — 分包 #${instanceId}`}
+          title={packageConfig.name ? `数采分包质检 — ${packageConfig.name} (${instanceId})` : `数采分包质检 — 分包 #${instanceId}`}
           breadcrumbs={[
             { title: '首页' },
             { title: '任务管理' },
