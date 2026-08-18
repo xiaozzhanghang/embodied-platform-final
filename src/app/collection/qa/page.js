@@ -172,17 +172,13 @@ export default function QaPage() {
   const [reassignForm] = Form.useForm();
 
   const allCount = tableData.length;
-  const pendingCount = tableData.filter(t => t.qcStatus === '待质检').length;
-  const checkingCount = tableData.filter(t => t.qcStatus === '质检中').length;
-  const passedCount = tableData.filter(t => t.qcStatus === '已通过').length;
-  const failedCount = tableData.filter(t => t.qcStatus === '未通过').length;
+  const checkingCount = tableData.filter(t => t.qcStatus === '质检中' || t.qcStatus === '待质检').length;
+  const doneCount = tableData.filter(t => t.qcStatus === '已通过' || t.qcStatus === '未通过').length;
 
   const tabItems = [
     { key: 'all', label: `全部 (${allCount})` },
-    { key: 'pending', label: <span><ClockCircleOutlined style={{ marginRight: 6 }} />待质检 ({pendingCount})</span> },
     { key: 'checking', label: <span><ThunderboltOutlined style={{ marginRight: 6 }} />质检中 ({checkingCount})</span> },
-    { key: 'passed', label: <span><CheckSquareOutlined style={{ marginRight: 6 }} />已通过 ({passedCount})</span> },
-    { key: 'failed', label: <span><CloseCircleOutlined style={{ marginRight: 6 }} />未通过 ({failedCount})</span> },
+    { key: 'done', label: <span><CheckSquareOutlined style={{ marginRight: 6 }} />已完成 ({doneCount})</span> },
   ];
 
   const handleReassign = (record) => {
@@ -208,10 +204,8 @@ export default function QaPage() {
 
   const filteredData = useMemo(() => {
     return tableData.filter(item => {
-      if (activeStatusTab === 'pending' && item.qcStatus !== '待质检') return false;
-      if (activeStatusTab === 'checking' && item.qcStatus !== '质检中') return false;
-      if (activeStatusTab === 'passed' && item.qcStatus !== '已通过') return false;
-      if (activeStatusTab === 'failed' && item.qcStatus !== '未通过') return false;
+      if (activeStatusTab === 'checking' && item.qcStatus !== '质检中' && item.qcStatus !== '待质检') return false;
+      if (activeStatusTab === 'done' && item.qcStatus !== '已通过' && item.qcStatus !== '未通过') return false;
 
       const projectMatch = !filters.project || item.project.includes(filters.project);
       const taskbookMatch = !filters.taskbook || item.taskbook === filters.taskbook;
