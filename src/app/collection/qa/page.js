@@ -46,7 +46,6 @@ const initialQaData = [
     collectPlan: 50,
     parseActual: 0,
     parseTotal: 0,
-    qcMode: '全检',
     collector: '张三',
     qaer: '李四',
     qcCheckedCount: 0,
@@ -83,7 +82,6 @@ const initialQaData = [
     collectPlan: 50,
     parseActual: 0,
     parseTotal: 0,
-    qcMode: '全检',
     collector: '李四',
     qaer: '王五',
     qcCheckedCount: 0,
@@ -120,7 +118,6 @@ const initialQaData = [
     collectPlan: 50,
     parseActual: 28,
     parseTotal: 30,
-    qcMode: '全检',
     collector: '张三',
     qaer: '李四',
     qcCheckedCount: 1,
@@ -157,7 +154,6 @@ const initialQaData = [
     collectPlan: 50,
     parseActual: 55,
     parseTotal: 55,
-    qcMode: '全检',
     collector: '李四',
     qaer: '天奇管理员',
     qcCheckedCount: 55,
@@ -194,7 +190,6 @@ const initialQaData = [
     collectPlan: 10000,
     parseActual: 0,
     parseTotal: 0,
-    qcMode: '全检',
     collector: '王五',
     qaer: '赵六',
     qcCheckedCount: 0,
@@ -231,7 +226,6 @@ const initialQaData = [
     collectPlan: 5000,
     parseActual: 0,
     parseTotal: 0,
-    qcMode: '全检',
     collector: 'cy00831',
     qaer: '李四',
     qcCheckedCount: 0,
@@ -268,7 +262,6 @@ const initialQaData = [
     collectPlan: 5000,
     parseActual: 0,
     parseTotal: 0,
-    qcMode: '全检',
     collector: '张三',
     qaer: '天奇管理员',
     qcCheckedCount: 0,
@@ -305,7 +298,6 @@ const initialQaData = [
     collectPlan: 5000,
     parseActual: 0,
     parseTotal: 0,
-    qcMode: '全检',
     collector: '李四',
     qaer: '王五',
     qcCheckedCount: 0,
@@ -342,7 +334,6 @@ const initialQaData = [
     collectPlan: 5000,
     parseActual: 1407,
     parseTotal: 1407,
-    qcMode: '抽检',
     collector: 'cy00831',
     qaer: '天奇管理员',
     qcCheckedCount: 1407,
@@ -379,7 +370,6 @@ const initialQaData = [
     collectPlan: 5000,
     parseActual: 19,
     parseTotal: 19,
-    qcMode: '全检',
     collector: '王五',
     qaer: '李四',
     qcCheckedCount: 19,
@@ -515,18 +505,6 @@ export default function QaPage() {
       width: 110, 
       align: 'center',
       render: (s) => <StatusTag status={s} />
-    },
-    {
-      title: '质检模式',
-      dataIndex: 'qcMode',
-      key: 'qcMode',
-      width: 100,
-      align: 'center',
-      render: (mode) => (
-        <Tag color={mode === '抽检' ? 'orange' : 'blue'}>
-          {mode || '全检'}
-        </Tag>
-      )
     },
     { 
       title: '采集员', 
