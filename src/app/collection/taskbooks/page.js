@@ -327,73 +327,10 @@ export default function TaskbooksPage() {
     <MainLayout>
       <div className="ui-page">
         <PageHeader
-          title="任务书 (SOP 规范中心)"
+          title="任务书"
           description="定义具身智能机器人的动作规范、自然语言指令 (Language Instruction)、目标物体与子步骤切分模板，直接作为下游 taskinfo 与模型训练的基准源头。"
-          breadcrumbs={[{ title: '首页' }, { title: '任务管理' }, { title: '任务书 (SOP)' }]}
-          extra={[
-            <Button key="ai" icon={<RobotOutlined />} onClick={() => message.info('AI 正在根据多模态视频自动提取 SOP 步骤模板...')}>
-              AI 智能生成 SOP
-            </Button>,
-            <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/taskbooks/create')}>
-              新建任务书
-            </Button>
-          ]}
+          breadcrumbs={[{ title: '首页' }, { title: '任务管理' }, { title: '任务书' }]}
         />
-
-        {/* Top 4 Stat Cards */}
-        <div className="ui-form-section" style={{ display: 'flex', gap: 16 }}>
-          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fafafa', border: '1px solid #e2e8f0' }} styles={{ body: { padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 } }}>
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#e6f4ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <BookOutlined style={{ color: '#1677ff', fontSize: 22 }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>标准任务书总量</Text>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#0f172a' }}>
-                {totalCount} <span style={{ fontSize: 13, fontWeight: 400, color: '#64748b' }}>套</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>覆盖 4 大核心领域场景</div>
-            </div>
-          </Card>
-
-          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fafafa', border: '1px solid #e2e8f0' }} styles={{ body: { padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 } }}>
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#f6ffed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 22 }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>已发布生效中</Text>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#52c41a' }}>
-                {publishedCount} <span style={{ fontSize: 13, fontWeight: 400, color: '#64748b' }}>套</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>草稿 / 待审核 {draftCount} 套</div>
-            </div>
-          </Card>
-
-          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fafafa', border: '1px solid #e2e8f0' }} styles={{ body: { padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 } }}>
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#e6fffb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ApiOutlined style={{ color: '#13c2c2', fontSize: 22 }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>关联数采计划数</Text>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#13c2c2' }}>
-                {totalLinkedPlans} <span style={{ fontSize: 13, fontWeight: 400, color: '#64748b' }}>个</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>赋能全量采集流水线</div>
-            </div>
-          </Card>
-
-          <Card size="small" style={{ flex: 1, borderRadius: 8, background: '#fafafa', border: '1px solid #e2e8f0' }} styles={{ body: { padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 } }}>
-            <div style={{ width: 44, height: 44, borderRadius: 10, background: '#f9f0ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ThunderboltOutlined style={{ color: '#722ed1', fontSize: 22 }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>自动 taskinfo 供给率</Text>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#722ed1' }}>
-                100%
-              </div>
-              <div style={{ fontSize: 12, color: '#52c41a', marginTop: 2 }}>语义+指令+物体零配置直通</div>
-            </div>
-          </Card>
-        </div>
 
         {/* Filter Row */}
         <div className="ui-form-section">
@@ -475,9 +412,12 @@ export default function TaskbooksPage() {
         {/* Main Table Card */}
         <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
           <TableToolbar
-            title="SOP 规范任务书列表"
+            title="任务书列表"
             count={filteredData.length}
             actions={[
+              <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/taskbooks/create')}>
+                新建任务书
+              </Button>,
               <TableToolbarActions
                 key="tableActions"
                 columns={columns}

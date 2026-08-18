@@ -78,15 +78,14 @@ const menuItems = [
     key: 'data_collection',
     icon: <DatabaseOutlined />,
     label: '任务管理',
-    roles: [ROLES.ADMIN, ROLES.QA, ROLES.COLLECTOR],
     children: [
-      { key: '/collection/taskbooks', icon: <ReadOutlined />, label: '任务书 (SOP)', roles: [ROLES.ADMIN] },
-      { key: '/collection/templates', icon: <LayoutOutlined />, label: '模版中心', roles: [ROLES.ADMIN] },
       { key: '/collection/collection-tasks', icon: <CameraOutlined />, label: '数据采集', roles: [ROLES.ADMIN] },
       { key: '/collection/qa', icon: <FileSearchOutlined />, label: '数据质检', roles: [ROLES.ADMIN, ROLES.QA] },
       { key: '/collection/annotation-tasks', icon: <FormOutlined />, label: '数据标注', roles: [ROLES.ADMIN] },
       { key: '/annotation/review', icon: <AuditOutlined />, label: '数据审核', roles: [ROLES.ADMIN, ROLES.QA] },
       { key: '/annotation/audit', icon: <EyeOutlined />, label: '标注工作台', roles: [ROLES.ADMIN, ROLES.QA] },
+      { key: '/collection/templates', icon: <LayoutOutlined />, label: '模版中心', roles: [ROLES.ADMIN] },
+      { key: '/collection/taskbooks', icon: <ReadOutlined />, label: '任务书', roles: [ROLES.ADMIN] },
     ],
   },
   {
