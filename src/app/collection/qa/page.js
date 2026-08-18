@@ -487,31 +487,25 @@ export default function QaPage() {
       render: (name) => <Text strong>{name}</Text>
     },
     {
-      title: '采集进度 (已采/计划)',
+      title: '已采/计划',
       key: 'collectProgress',
-      width: 155,
+      width: 120,
       align: 'right',
       render: (_, r) => (
-        <span style={{ whiteSpace: 'nowrap' }}>
-          <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
-            {r.collectActual} / {r.collectPlan}
-          </Text>
-          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>条</span>
-        </span>
+        <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
+          {r.collectActual}/{r.collectPlan}
+        </Text>
       )
     },
     {
-      title: '解析进度 (已解/已传)',
+      title: '已解/已传',
       key: 'parseProgress',
-      width: 155,
+      width: 120,
       align: 'right',
       render: (_, r) => (
-        <span style={{ whiteSpace: 'nowrap' }}>
-          <Text strong style={{ color: '#13c2c2', fontFamily: 'monospace' }}>
-            {r.parseActual} / {r.parseTotal}
-          </Text>
-          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>条</span>
-        </span>
+        <Text strong style={{ color: '#13c2c2', fontFamily: 'monospace' }}>
+          {r.parseActual}/{r.parseTotal}
+        </Text>
       )
     },
     {
@@ -549,54 +543,45 @@ export default function QaPage() {
       render: (q) => <Tag color="cyan">{q}</Tag>
     },
     {
-      title: '质检进度 (已检/送检)',
+      title: '已检/送检',
       key: 'qcProgressCount',
-      width: 155,
+      width: 120,
       align: 'right',
       render: (_, r) => (
-        <span style={{ whiteSpace: 'nowrap' }}>
-          <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
-            {r.qcCheckedCount} / {r.qcTotalCount}
-          </Text>
-          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>条</span>
-        </span>
+        <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
+          {r.qcCheckedCount}/{r.qcTotalCount}
+        </Text>
       )
     },
     {
-      title: '质检合格数 (合格/已检)',
+      title: '合格/已检',
       key: 'qcPassCount',
-      width: 165,
+      width: 120,
       align: 'right',
       render: (_, r) => (
-        <span style={{ whiteSpace: 'nowrap' }}>
-          <Text strong style={{ color: '#52c41a', fontFamily: 'monospace' }}>
-            {r.qcPassCount} / {r.qcCheckedCount}
-          </Text>
-          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>条</span>
-        </span>
+        <Text strong style={{ color: '#52c41a', fontFamily: 'monospace' }}>
+          {r.qcPassCount}/{r.qcCheckedCount}
+        </Text>
       )
     },
     {
-      title: '质检时长 (已检/总长)',
+      title: '已检/总长',
       key: 'qcProgressMinutes',
-      width: 165,
-      align: 'right',
-      render: (_, r) => (
-        <span style={{ whiteSpace: 'nowrap' }}>
-          <Text strong style={{ color: '#722ed1', fontFamily: 'monospace' }}>
-            {r.qcCheckedMinutes} / {r.qcTotalMinutes}
-          </Text>
-          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>min</span>
-        </span>
-      )
-    },
-    {
-      title: '合格有效时长',
-      dataIndex: 'qcPassedMinutes',
-      key: 'qcPassedMinutes',
       width: 130,
       align: 'right',
-      render: (v) => <Text style={{ color: '#52c41a', fontWeight: 600, fontFamily: 'monospace' }}>{v || '0.0'} min</Text>
+      render: (_, r) => (
+        <Text strong style={{ color: '#722ed1', fontFamily: 'monospace' }}>
+          {r.qcCheckedMinutes}/{r.qcTotalMinutes}
+        </Text>
+      )
+    },
+    {
+      title: '合格时长',
+      dataIndex: 'qcPassedMinutes',
+      key: 'qcPassedMinutes',
+      width: 100,
+      align: 'right',
+      render: (v) => <Text style={{ color: '#52c41a', fontWeight: 600, fontFamily: 'monospace' }}>{v || '0.0'}</Text>
     },
     {
       title: '综合合格率',
