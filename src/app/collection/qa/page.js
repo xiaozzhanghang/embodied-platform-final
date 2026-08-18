@@ -32,7 +32,7 @@ const taskbooks = ['TB-桌面整理采集规范 V1.0', 'TB-货架抓取规范 V1
 const people = ['张三', '李四', '王五', '赵六', '钱七', 'cy00831', '天奇管理员'];
 const DEVICE_TYPES = ['Galbot_2.2_RGBD', 'Lumos_FastUMI', 'Franka_FR3', 'Galbot_1.16_G2'];
 
-// Mock data directly mirroring collection sub-packages and all screenshot fields
+// Mock data directly mirroring collection sub-packages and well-sourced fields
 const initialQaData = [
   {
     key: '1',
@@ -44,8 +44,6 @@ const initialQaData = [
     taskName: '货架物品物理采集 · 分包01',
     collectProgress: 100,
     parseProgress: '100%',
-    isShelfTask: true,
-    shelfGridCode: 'R02-C04',
     collector: '张三',
     qaer: '李四',
     qcPassedMinutes: '36.0',
@@ -80,8 +78,6 @@ const initialQaData = [
     taskName: '货架物品物理采集 · 分包02',
     collectProgress: 100,
     parseProgress: '100%',
-    isShelfTask: true,
-    shelfGridCode: 'R01-C02',
     collector: '李四',
     qaer: '天奇管理员',
     qcPassedMinutes: '0.0',
@@ -116,8 +112,6 @@ const initialQaData = [
     taskName: '货架物品物理采集 · 分包03',
     collectProgress: 100,
     parseProgress: '100%',
-    isShelfTask: true,
-    shelfGridCode: 'R03-C01',
     collector: '王五',
     qaer: '天奇管理员',
     qcPassedMinutes: '62.0',
@@ -152,8 +146,6 @@ const initialQaData = [
     taskName: '桌面操作物理数采 · 分包01',
     collectProgress: 100,
     parseProgress: '100%',
-    isShelfTask: false,
-    shelfGridCode: '-',
     collector: 'cy00831',
     qaer: '王五',
     qcPassedMinutes: '27.5',
@@ -188,8 +180,6 @@ const initialQaData = [
     taskName: '双手整理离线资产 · 分包01',
     collectProgress: 100,
     parseProgress: '100%',
-    isShelfTask: false,
-    shelfGridCode: '-',
     collector: 'cy00831',
     qaer: '李四',
     qcPassedMinutes: '25.0',
@@ -322,22 +312,6 @@ export default function QaPage() {
       width: 110, 
       align: 'center',
       render: (s) => <StatusTag status={s} />
-    },
-    {
-      title: '是否货架任务',
-      dataIndex: 'isShelfTask',
-      key: 'isShelfTask',
-      width: 120,
-      align: 'center',
-      render: (isShelf) => isShelf ? <Tag color="purple">是 (货架)</Tag> : <Tag color="default">否</Tag>
-    },
-    {
-      title: '行列号',
-      dataIndex: 'shelfGridCode',
-      key: 'shelfGridCode',
-      width: 110,
-      align: 'center',
-      render: (v) => <span style={{ fontFamily: 'monospace', color: v !== '-' ? '#722ed1' : '#bfbfbf' }}>{v || '-'}</span>
     },
     { 
       title: '采集员', 
