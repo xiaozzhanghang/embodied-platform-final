@@ -170,6 +170,33 @@ function MainLayoutContent({ children }) {
     return () => window.removeEventListener('resize', updateViewport);
   }, []);
 
+  // Proactive Route Prefetching for instantaneous menu switching
+  useEffect(() => {
+    const prefetchRoutes = [
+      '/collection/collection-tasks',
+      '/collection/qa',
+      '/collection/annotation-tasks',
+      '/annotation/review',
+      '/annotation/audit',
+      '/collection/templates',
+      '/collection/taskbooks',
+      '/collection/devices',
+      '/collection/device-types',
+      '/collection/projects',
+      '/data/catalog',
+      '/data/datasets',
+      '/data/reports',
+      '/accounts/list',
+    ];
+    prefetchRoutes.forEach(r => {
+      try {
+        router.prefetch(r);
+      } catch (e) {
+        // ignore
+      }
+    });
+  }, [router]);
+
   const handleRoleChange = (role) => {
     if (role === ROLES.COLLECTOR) {
       router.push('/collector-login');
