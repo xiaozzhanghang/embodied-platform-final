@@ -32,7 +32,7 @@ const taskbooks = ['TB-桌面整理采集规范 V1.0', 'TB-货架抓取规范 V1
 const people = ['张三', '李四', '王五', '赵六', '钱七', 'cy00831', '天奇管理员'];
 const DEVICE_TYPES = ['Galbot_2.2_RGBD', 'Lumos_FastUMI', 'Franka_FR3', 'Galbot_1.16_G2'];
 
-// Mock data directly mirroring collection sub-packages and well-sourced fields
+// Mock data directly mirroring collection sub-packages and explicit ratio metrics
 const initialQaData = [
   {
     key: '1',
@@ -42,13 +42,20 @@ const initialQaData = [
     taskbook: 'TB-货架抓取规范 V1.5',
     project: 'InternalCommercial (内部-商业)',
     taskName: '货架物品物理采集 · 分包01',
-    collectProgress: 100,
-    parseProgress: '100%',
+    collectActual: 120,
+    collectPlan: 120,
+    parseActual: 120,
+    parseTotal: 120,
+    qcMode: '全检',
     collector: '张三',
     qaer: '李四',
+    qcCheckedCount: 74,
+    qcTotalCount: 120,
+    qcPassCount: 72,
+    qcFailCount: 2,
+    qcCheckedMinutes: '37.0',
+    qcTotalMinutes: '60.0',
     qcPassedMinutes: '36.0',
-    qcProgressCount: '74 / 120',
-    qcProgressMinutes: '37.0 / 60.0',
     qcPassRate: '97.3%',
     annoType: '范围标注',
     taskDesc: '超市场景货架顶层零食抓取并放置到移动托盘',
@@ -60,10 +67,6 @@ const initialQaData = [
     dataMinutes: '60.0',
     totalFrames: 3600,
     qcStatus: '质检中',
-    qcCheckedCount: 74,
-    qcPassCount: 72,
-    qcFailCount: 2,
-    qcTotal: 120,
     qcProgress: 62,
     currentRound: 1,
     createTime: '2026-04-15 11:30:00',
@@ -76,29 +79,32 @@ const initialQaData = [
     taskbook: 'TB-货架抓取规范 V1.5',
     project: 'InternalCommercial (内部-商业)',
     taskName: '货架物品物理采集 · 分包02',
-    collectProgress: 100,
-    parseProgress: '100%',
+    collectActual: 28,
+    collectPlan: 50,
+    parseActual: 28,
+    parseTotal: 30,
+    qcMode: '全检',
     collector: '李四',
     qaer: '天奇管理员',
-    qcPassedMinutes: '0.0',
-    qcProgressCount: '0 / 120',
-    qcProgressMinutes: '0.0 / 58.5',
-    qcPassRate: '0.0%',
+    qcCheckedCount: 1,
+    qcTotalCount: 30,
+    qcPassCount: 1,
+    qcFailCount: 0,
+    qcCheckedMinutes: '0.3',
+    qcTotalMinutes: '7.0',
+    qcPassedMinutes: '0.3',
+    qcPassRate: '100.0%',
     annoType: '范围标注',
     taskDesc: '货架底层重物双手搬运与货位对齐',
     creator: '天奇管理员',
     startTime: '2026-04-15 14:00:00',
     deviceType: 'Galbot_1.16_G2',
     deviceSN: 'SN-20260402',
-    dataCount: 120,
-    dataMinutes: '58.5',
+    dataCount: 50,
+    dataMinutes: '7.0',
     totalFrames: 3510,
     qcStatus: '质检中',
-    qcCheckedCount: 0,
-    qcPassCount: 0,
-    qcFailCount: 0,
-    qcTotal: 120,
-    qcProgress: 0,
+    qcProgress: 3,
     currentRound: 1,
     createTime: '2026-04-15 14:00:00',
   },
@@ -110,28 +116,31 @@ const initialQaData = [
     taskbook: 'TB-货架抓取规范 V1.5',
     project: 'InternalCommercial (内部-商业)',
     taskName: '货架物品物理采集 · 分包03',
-    collectProgress: 100,
-    parseProgress: '100%',
+    collectActual: 1407,
+    collectPlan: 5000,
+    parseActual: 1407,
+    parseTotal: 1407,
+    qcMode: '抽检',
     collector: '王五',
     qaer: '天奇管理员',
-    qcPassedMinutes: '62.0',
-    qcProgressCount: '120 / 120',
-    qcProgressMinutes: '62.0 / 62.0',
-    qcPassRate: '100.0%',
+    qcCheckedCount: 1407,
+    qcTotalCount: 1407,
+    qcPassCount: 1367,
+    qcFailCount: 40,
+    qcCheckedMinutes: '1103.7',
+    qcTotalMinutes: '1103.7',
+    qcPassedMinutes: '1080.2',
+    qcPassRate: '97.2%',
     annoType: '3D框标注',
     taskDesc: '货架中层饮料瓶位姿抓取与放置',
     creator: '天奇管理员',
     startTime: '2026-04-14 16:30:00',
     deviceType: 'Galbot_2.2_RGBD',
     deviceSN: 'SN-20260401',
-    dataCount: 120,
-    dataMinutes: '62.0',
+    dataCount: 1407,
+    dataMinutes: '1103.7',
     totalFrames: 3720,
     qcStatus: '已完成',
-    qcCheckedCount: 120,
-    qcPassCount: 120,
-    qcFailCount: 0,
-    qcTotal: 120,
     qcProgress: 100,
     currentRound: 1,
     createTime: '2026-04-14 16:30:00',
@@ -144,28 +153,31 @@ const initialQaData = [
     taskbook: 'TB-桌面整理采集规范 V1.0',
     project: 'SimulatedCollection (模拟采集)',
     taskName: '桌面操作物理数采 · 分包01',
-    collectProgress: 100,
-    parseProgress: '100%',
+    collectActual: 55,
+    collectPlan: 50,
+    parseActual: 55,
+    parseTotal: 55,
+    qcMode: '全检',
     collector: 'cy00831',
     qaer: '王五',
-    qcPassedMinutes: '27.5',
-    qcProgressCount: '80 / 80',
-    qcProgressMinutes: '40.0 / 40.0',
-    qcPassRate: '68.8%',
+    qcCheckedCount: 55,
+    qcTotalCount: 55,
+    qcPassCount: 52,
+    qcFailCount: 3,
+    qcCheckedMinutes: '16.2',
+    qcTotalMinutes: '16.2',
+    qcPassedMinutes: '15.1',
+    qcPassRate: '94.5%',
     annoType: '关键点标注',
     taskDesc: '桌面餐具收纳与托盘规整',
     creator: 'zhangsan',
     startTime: '2026-04-13 15:00:00',
     deviceType: 'Franka_FR3',
     deviceSN: 'SN-20260388',
-    dataCount: 80,
-    dataMinutes: '40.0',
+    dataCount: 55,
+    dataMinutes: '16.2',
     totalFrames: 2400,
     qcStatus: '已完成',
-    qcCheckedCount: 80,
-    qcPassCount: 55,
-    qcFailCount: 25,
-    qcTotal: 80,
     qcProgress: 100,
     currentRound: 1,
     createTime: '2026-04-13 15:00:00',
@@ -178,13 +190,20 @@ const initialQaData = [
     taskbook: 'TB-厨房操作规范 V1.2',
     project: 'ExternalXupaosi (外部合作)',
     taskName: '双手整理离线资产 · 分包01',
-    collectProgress: 100,
-    parseProgress: '100%',
+    collectActual: 19,
+    collectPlan: 5000,
+    parseActual: 19,
+    parseTotal: 19,
+    qcMode: '全检',
     collector: 'cy00831',
     qaer: '李四',
-    qcPassedMinutes: '25.0',
-    qcProgressCount: '50 / 50',
-    qcProgressMinutes: '25.0 / 25.0',
+    qcCheckedCount: 19,
+    qcTotalCount: 19,
+    qcPassCount: 19,
+    qcFailCount: 0,
+    qcCheckedMinutes: '38.6',
+    qcTotalMinutes: '38.6',
+    qcPassedMinutes: '38.6',
     qcPassRate: '100.0%',
     annoType: '语义标注',
     taskDesc: '厨房双臂协同开闭柜门与物品移位',
@@ -192,14 +211,10 @@ const initialQaData = [
     startTime: '2026-04-14 18:20:00',
     deviceType: 'Lumos_FastUMI',
     deviceSN: 'SN-20260399',
-    dataCount: 50,
-    dataMinutes: '25.0',
+    dataCount: 19,
+    dataMinutes: '38.6',
     totalFrames: 1500,
     qcStatus: '已完成',
-    qcCheckedCount: 50,
-    qcPassCount: 50,
-    qcFailCount: 0,
-    qcTotal: 50,
     qcProgress: 100,
     currentRound: 1,
     createTime: '2026-04-14 18:20:00',
@@ -287,23 +302,42 @@ export default function QaPage() {
       render: (name) => <Text strong>{name}</Text>
     },
     {
-      title: '采集进度',
+      title: '采集进度 (已采/计划)',
       key: 'collectProgress',
-      width: 130,
-      render: (_, r) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Progress percent={r.collectProgress || 100} size="small" showInfo={false} style={{ flex: 1 }} strokeColor="#1677ff" />
-          <span style={{ fontSize: 12, color: '#595959' }}>{r.collectProgress || 100}%</span>
-        </div>
-      )
+      width: 175,
+      align: 'right',
+      render: (_, r) => {
+        const percent = Math.round(((r.collectActual || 0) / (r.collectPlan || 1)) * 100);
+        return (
+          <span style={{ whiteSpace: 'nowrap' }}>
+            <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
+              {r.collectActual} / {r.collectPlan}
+            </Text>
+            <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>
+              条 ({percent}%)
+            </span>
+          </span>
+        );
+      }
     },
     {
-      title: '解析进度',
-      dataIndex: 'parseProgress',
+      title: '解析进度 (已解/已传)',
       key: 'parseProgress',
-      width: 110,
-      align: 'center',
-      render: (v) => <Tag color="blue">{v || '100%'}</Tag>
+      width: 165,
+      align: 'right',
+      render: (_, r) => {
+        const percent = Math.round(((r.parseActual || 0) / (r.parseTotal || 1)) * 100);
+        return (
+          <span style={{ whiteSpace: 'nowrap' }}>
+            <Text strong style={{ color: '#13c2c2', fontFamily: 'monospace' }}>
+              {r.parseActual} / {r.parseTotal}
+            </Text>
+            <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>
+              条 ({percent}%)
+            </span>
+          </span>
+        );
+      }
     },
     {
       title: '任务状态', 
@@ -312,6 +346,18 @@ export default function QaPage() {
       width: 110, 
       align: 'center',
       render: (s) => <StatusTag status={s} />
+    },
+    {
+      title: '质检模式',
+      dataIndex: 'qcMode',
+      key: 'qcMode',
+      width: 100,
+      align: 'center',
+      render: (mode) => (
+        <Tag color={mode === '抽检' ? 'orange' : 'blue'}>
+          {mode || '全检'}
+        </Tag>
+      )
     },
     { 
       title: '采集员', 
@@ -328,54 +374,67 @@ export default function QaPage() {
       render: (q) => <Tag color="cyan">{q}</Tag>
     },
     {
-      title: '通过质检(分钟)',
-      dataIndex: 'qcPassedMinutes',
-      key: 'qcPassedMinutes',
-      width: 130,
+      title: '质检进度 (已检/送检)',
+      key: 'qcProgressCount',
+      width: 175,
       align: 'right',
-      render: (v) => <Text style={{ color: '#52c41a', fontWeight: 600 }}>{v || '0.0'} min</Text>
+      render: (_, r) => {
+        const percent = Math.round(((r.qcCheckedCount || 0) / (r.qcTotalCount || 1)) * 100);
+        return (
+          <span style={{ whiteSpace: 'nowrap' }}>
+            <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>
+              {r.qcCheckedCount} / {r.qcTotalCount}
+            </Text>
+            <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>
+              条 ({percent}%)
+            </span>
+          </span>
+        );
+      }
     },
     {
-      title: '质检进度(数量)',
-      dataIndex: 'qcProgressCount',
-      key: 'qcProgressCount',
-      width: 140,
+      title: '质检合格数 (合格/已检)',
+      key: 'qcPassCount',
+      width: 165,
       align: 'right',
-      render: (v, r) => (
+      render: (_, r) => (
         <span style={{ whiteSpace: 'nowrap' }}>
-          <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>{v || `${r.qcPassCount || 0} / ${r.dataCount || 120}`}</Text>
+          <Text strong style={{ color: '#52c41a', fontFamily: 'monospace' }}>
+            {r.qcPassCount} / {r.qcCheckedCount}
+          </Text>
           <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>条</span>
         </span>
       )
     },
     {
-      title: '质检进度(分钟)',
-      dataIndex: 'qcProgressMinutes',
+      title: '质检时长 (已检/总长)',
       key: 'qcProgressMinutes',
-      width: 150,
+      width: 165,
       align: 'right',
-      render: (v, r) => (
+      render: (_, r) => (
         <span style={{ whiteSpace: 'nowrap' }}>
-          <Text strong style={{ color: '#722ed1', fontFamily: 'monospace' }}>{v || `${r.dataMinutes} / ${r.dataMinutes}`}</Text>
+          <Text strong style={{ color: '#722ed1', fontFamily: 'monospace' }}>
+            {r.qcCheckedMinutes} / {r.qcTotalMinutes}
+          </Text>
           <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 4 }}>min</span>
         </span>
       )
     },
     {
-      title: '质检合格率',
+      title: '合格有效时长',
+      dataIndex: 'qcPassedMinutes',
+      key: 'qcPassedMinutes',
+      width: 130,
+      align: 'right',
+      render: (v) => <Text style={{ color: '#52c41a', fontWeight: 600, fontFamily: 'monospace' }}>{v || '0.0'} min</Text>
+    },
+    {
+      title: '综合合格率',
       dataIndex: 'qcPassRate',
       key: 'qcPassRate',
       width: 110,
       align: 'right',
       render: (v) => <Text strong style={{ color: parseFloat(v) >= 90 ? '#52c41a' : '#faad14' }}>{v || '100%'}</Text>
-    },
-    {
-      title: '已质检数量',
-      dataIndex: 'qcCheckedCount',
-      key: 'qcCheckedCount',
-      width: 110,
-      align: 'right',
-      render: (v, r) => <span>{v ?? (r.qcPassCount + r.qcFailCount)} 条</span>
     },
     {
       title: '标注类型',
@@ -384,6 +443,13 @@ export default function QaPage() {
       width: 110,
       align: 'center',
       render: (v) => <Tag color="geekblue">{v || '范围标注'}</Tag>
+    },
+    {
+      title: '设备SN',
+      dataIndex: 'deviceSN',
+      key: 'deviceSN',
+      width: 140,
+      render: (sn) => <Tag style={{ fontFamily: 'monospace' }}>{sn || 'SN-20260401'}</Tag>
     },
     {
       title: '任务描述',
@@ -406,13 +472,6 @@ export default function QaPage() {
       key: 'startTime',
       width: 160,
       render: (t, r) => <span style={{ fontSize: 12, color: '#595959' }}>{t || r.createTime}</span>
-    },
-    {
-      title: '设备SN',
-      dataIndex: 'deviceSN',
-      key: 'deviceSN',
-      width: 140,
-      render: (sn) => <Tag style={{ fontFamily: 'monospace' }}>{sn || 'SN-20260401'}</Tag>
     },
     {
       title: '操作', 
