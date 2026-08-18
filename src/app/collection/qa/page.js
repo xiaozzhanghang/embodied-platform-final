@@ -32,7 +32,7 @@ const taskbooks = ['TB-桌面整理采集规范 V1.0', 'TB-货架抓取规范 V1
 const people = ['张三', '李四', '王五', '赵六', '钱七', 'cy00831', '天奇管理员'];
 const DEVICE_TYPES = ['Galbot_2.2_RGBD', 'Lumos_FastUMI', 'Franka_FR3', 'Galbot_1.16_G2'];
 
-// Mock data directly mirroring collection sub-packages as the origin
+// Mock data directly mirroring collection sub-packages and all screenshot fields
 const initialQaData = [
   {
     key: '1',
@@ -42,20 +42,32 @@ const initialQaData = [
     taskbook: 'TB-货架抓取规范 V1.5',
     project: 'InternalCommercial (内部-商业)',
     taskName: '货架物品物理采集 · 分包01',
+    collectProgress: 100,
+    parseProgress: '100%',
+    isShelfTask: true,
+    shelfGridCode: 'R02-C04',
     collector: '张三',
     qaer: '李四',
+    qcPassedMinutes: '36.0',
+    qcProgressCount: '74 / 120',
+    qcProgressMinutes: '37.0 / 60.0',
+    qcPassRate: '97.3%',
+    annoType: '范围标注',
+    taskDesc: '超市场景货架顶层零食抓取并放置到移动托盘',
+    creator: '天奇管理员',
+    startTime: '2026-04-15 11:30:00',
     deviceType: 'Galbot_2.2_RGBD',
     deviceSN: 'SN-20260401',
     dataCount: 120,
     dataMinutes: '60.0',
     totalFrames: 3600,
     qcStatus: '质检中',
+    qcCheckedCount: 74,
     qcPassCount: 72,
     qcFailCount: 2,
     qcTotal: 120,
     qcProgress: 62,
     currentRound: 1,
-    creator: 'ingest_user',
     createTime: '2026-04-15 11:30:00',
   },
   {
@@ -66,20 +78,32 @@ const initialQaData = [
     taskbook: 'TB-货架抓取规范 V1.5',
     project: 'InternalCommercial (内部-商业)',
     taskName: '货架物品物理采集 · 分包02',
+    collectProgress: 100,
+    parseProgress: '100%',
+    isShelfTask: true,
+    shelfGridCode: 'R01-C02',
     collector: '李四',
     qaer: '天奇管理员',
+    qcPassedMinutes: '0.0',
+    qcProgressCount: '0 / 120',
+    qcProgressMinutes: '0.0 / 58.5',
+    qcPassRate: '0.0%',
+    annoType: '范围标注',
+    taskDesc: '货架底层重物双手搬运与货位对齐',
+    creator: '天奇管理员',
+    startTime: '2026-04-15 14:00:00',
     deviceType: 'Galbot_1.16_G2',
     deviceSN: 'SN-20260402',
     dataCount: 120,
     dataMinutes: '58.5',
     totalFrames: 3510,
-    qcStatus: '待质检',
+    qcStatus: '质检中',
+    qcCheckedCount: 0,
     qcPassCount: 0,
     qcFailCount: 0,
     qcTotal: 120,
     qcProgress: 0,
     currentRound: 1,
-    creator: 'ingest_user',
     createTime: '2026-04-15 14:00:00',
   },
   {
@@ -90,20 +114,32 @@ const initialQaData = [
     taskbook: 'TB-货架抓取规范 V1.5',
     project: 'InternalCommercial (内部-商业)',
     taskName: '货架物品物理采集 · 分包03',
+    collectProgress: 100,
+    parseProgress: '100%',
+    isShelfTask: true,
+    shelfGridCode: 'R03-C01',
     collector: '王五',
     qaer: '天奇管理员',
+    qcPassedMinutes: '62.0',
+    qcProgressCount: '120 / 120',
+    qcProgressMinutes: '62.0 / 62.0',
+    qcPassRate: '100.0%',
+    annoType: '3D框标注',
+    taskDesc: '货架中层饮料瓶位姿抓取与放置',
+    creator: '天奇管理员',
+    startTime: '2026-04-14 16:30:00',
     deviceType: 'Galbot_2.2_RGBD',
     deviceSN: 'SN-20260401',
     dataCount: 120,
     dataMinutes: '62.0',
     totalFrames: 3720,
-    qcStatus: '已通过',
+    qcStatus: '已完成',
+    qcCheckedCount: 120,
     qcPassCount: 120,
     qcFailCount: 0,
     qcTotal: 120,
     qcProgress: 100,
     currentRound: 1,
-    creator: 'ingest_user',
     createTime: '2026-04-14 16:30:00',
   },
   {
@@ -114,20 +150,32 @@ const initialQaData = [
     taskbook: 'TB-桌面整理采集规范 V1.0',
     project: 'SimulatedCollection (模拟采集)',
     taskName: '桌面操作物理数采 · 分包01',
+    collectProgress: 100,
+    parseProgress: '100%',
+    isShelfTask: false,
+    shelfGridCode: '-',
     collector: 'cy00831',
     qaer: '王五',
+    qcPassedMinutes: '27.5',
+    qcProgressCount: '80 / 80',
+    qcProgressMinutes: '40.0 / 40.0',
+    qcPassRate: '68.8%',
+    annoType: '关键点标注',
+    taskDesc: '桌面餐具收纳与托盘规整',
+    creator: 'zhangsan',
+    startTime: '2026-04-13 15:00:00',
     deviceType: 'Franka_FR3',
     deviceSN: 'SN-20260388',
     dataCount: 80,
     dataMinutes: '40.0',
     totalFrames: 2400,
-    qcStatus: '未通过',
+    qcStatus: '已完成',
+    qcCheckedCount: 80,
     qcPassCount: 55,
     qcFailCount: 25,
     qcTotal: 80,
     qcProgress: 100,
     currentRound: 1,
-    creator: 'zhangsan',
     createTime: '2026-04-13 15:00:00',
   },
   {
@@ -138,20 +186,32 @@ const initialQaData = [
     taskbook: 'TB-厨房操作规范 V1.2',
     project: 'ExternalXupaosi (外部合作)',
     taskName: '双手整理离线资产 · 分包01',
+    collectProgress: 100,
+    parseProgress: '100%',
+    isShelfTask: false,
+    shelfGridCode: '-',
     collector: 'cy00831',
     qaer: '李四',
+    qcPassedMinutes: '25.0',
+    qcProgressCount: '50 / 50',
+    qcProgressMinutes: '25.0 / 25.0',
+    qcPassRate: '100.0%',
+    annoType: '语义标注',
+    taskDesc: '厨房双臂协同开闭柜门与物品移位',
+    creator: '天奇管理员',
+    startTime: '2026-04-14 18:20:00',
     deviceType: 'Lumos_FastUMI',
     deviceSN: 'SN-20260399',
     dataCount: 50,
     dataMinutes: '25.0',
     totalFrames: 1500,
-    qcStatus: '已通过',
+    qcStatus: '已完成',
+    qcCheckedCount: 50,
     qcPassCount: 50,
     qcFailCount: 0,
     qcTotal: 50,
     qcProgress: 100,
     currentRound: 1,
-    creator: 'ingest_user',
     createTime: '2026-04-14 18:20:00',
   }
 ];
@@ -229,62 +289,157 @@ export default function QaPage() {
       render: (id) => <Text strong style={{ color: '#1677ff', fontFamily: 'monospace' }}>{id}</Text>,
     },
     { 
-      title: '来源采集计划/任务', 
+      title: '任务名称', 
       dataIndex: 'taskName', 
       key: 'taskName', 
       width: 220, 
       ellipsis: true,
       render: (name) => <Text strong>{name}</Text>
     },
-    { title: '关联任务书', dataIndex: 'taskbook', key: 'taskbook', width: 180, ellipsis: true },
-    { 
-      title: '采集人员', 
-      dataIndex: 'collector', 
-      width: 100, 
-      render: (c) => <Tag color="blue">{c}</Tag>
-    },
-    { 
-      title: '分包指派质检员', 
-      dataIndex: 'qaer', 
-      width: 130, 
-      render: (q) => <Tag color="cyan">{q}</Tag>
-    },
-    { title: '采集数据量', dataIndex: 'dataCount', width: 100, align: 'right', render: (v) => <Text strong>{v} 条</Text> },
-    { title: '时长(分钟)', dataIndex: 'dataMinutes', width: 100, align: 'right', render: (v) => `${v} min` },
     {
-      title: '质检状态', 
+      title: '采集进度',
+      key: 'collectProgress',
+      width: 130,
+      render: (_, r) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Progress percent={r.collectProgress || 100} size="small" showInfo={false} style={{ flex: 1 }} strokeColor="#1677ff" />
+          <span style={{ fontSize: 12, color: '#595959' }}>{r.collectProgress || 100}%</span>
+        </div>
+      )
+    },
+    {
+      title: '解析进度',
+      dataIndex: 'parseProgress',
+      key: 'parseProgress',
+      width: 110,
+      align: 'center',
+      render: (v) => <Tag color="blue">{v || '100%'}</Tag>
+    },
+    {
+      title: '任务状态', 
       dataIndex: 'qcStatus', 
+      key: 'qcStatus', 
       width: 110, 
       align: 'center',
       render: (s) => <StatusTag status={s} />
     },
+    {
+      title: '是否货架任务',
+      dataIndex: 'isShelfTask',
+      key: 'isShelfTask',
+      width: 120,
+      align: 'center',
+      render: (isShelf) => isShelf ? <Tag color="purple">是 (货架)</Tag> : <Tag color="default">否</Tag>
+    },
+    {
+      title: '行列号',
+      dataIndex: 'shelfGridCode',
+      key: 'shelfGridCode',
+      width: 110,
+      align: 'center',
+      render: (v) => <span style={{ fontFamily: 'monospace', color: v !== '-' ? '#722ed1' : '#bfbfbf' }}>{v || '-'}</span>
+    },
     { 
-      title: '采集设备', 
-      dataIndex: 'deviceType', 
-      width: 150, 
-      ellipsis: true 
+      title: '采集员', 
+      dataIndex: 'collector', 
+      key: 'collector',
+      width: 100, 
+      render: (c) => <Tag color="blue">{c}</Tag>
+    },
+    { 
+      title: '质检员', 
+      dataIndex: 'qaer', 
+      key: 'qaer',
+      width: 120, 
+      render: (q) => <Tag color="cyan">{q}</Tag>
     },
     {
-      title: '质检进度', 
-      key: 'qcProgressBar', 
-      width: 130, 
-      align: 'center',
-      render: (_, r) => <Progress percent={r.qcProgress} size="small" strokeColor={r.qcProgress === 100 ? (r.qcStatus === '未通过' ? '#ff4d4f' : '#52c41a') : '#1677ff'} style={{ margin: 0 }} />
+      title: '通过质检(分钟)',
+      dataIndex: 'qcPassedMinutes',
+      key: 'qcPassedMinutes',
+      width: 130,
+      align: 'right',
+      render: (v) => <Text style={{ color: '#52c41a', fontWeight: 600 }}>{v || '0.0'} min</Text>
     },
     {
-      title: '合格/不合格', 
-      key: 'qcResult', 
-      width: 110, 
+      title: '质检进度(数量)',
+      dataIndex: 'qcProgressCount',
+      key: 'qcProgressCount',
+      width: 140,
       align: 'center',
-      render: (_, r) => (
-        <Space size={4}>
-          <Text style={{ color: '#52c41a', fontFamily: 'monospace' }}>{r.qcPassCount}</Text>
-          <Text type="secondary">/</Text>
-          <Text style={{ color: '#ff4d4f', fontFamily: 'monospace' }}>{r.qcFailCount}</Text>
-        </Space>
+      render: (v, r) => (
+        <div>
+          <Text strong style={{ color: '#1677ff' }}>{v || `${r.qcPassCount || 0} / ${r.dataCount || 120}`}</Text>
+          <div style={{ fontSize: 11, color: '#8c8c8c' }}>条数</div>
+        </div>
       )
     },
-    { title: '分包送检时间', dataIndex: 'createTime', width: 160, ellipsis: true },
+    {
+      title: '质检进度(分钟)',
+      dataIndex: 'qcProgressMinutes',
+      key: 'qcProgressMinutes',
+      width: 140,
+      align: 'center',
+      render: (v, r) => (
+        <div>
+          <Text strong style={{ color: '#722ed1' }}>{v || `${r.dataMinutes} / ${r.dataMinutes}`}</Text>
+          <div style={{ fontSize: 11, color: '#8c8c8c' }}>分钟</div>
+        </div>
+      )
+    },
+    {
+      title: '质检合格率',
+      dataIndex: 'qcPassRate',
+      key: 'qcPassRate',
+      width: 110,
+      align: 'right',
+      render: (v) => <Text strong style={{ color: parseFloat(v) >= 90 ? '#52c41a' : '#faad14' }}>{v || '100%'}</Text>
+    },
+    {
+      title: '已质检数量',
+      dataIndex: 'qcCheckedCount',
+      key: 'qcCheckedCount',
+      width: 110,
+      align: 'right',
+      render: (v, r) => <span>{v ?? (r.qcPassCount + r.qcFailCount)} 条</span>
+    },
+    {
+      title: '标注类型',
+      dataIndex: 'annoType',
+      key: 'annoType',
+      width: 110,
+      align: 'center',
+      render: (v) => <Tag color="geekblue">{v || '范围标注'}</Tag>
+    },
+    {
+      title: '任务描述',
+      dataIndex: 'taskDesc',
+      key: 'taskDesc',
+      width: 200,
+      ellipsis: true,
+      render: (text) => <Tooltip title={text}><span>{text || '超市场景物品抓取与放置任务'}</span></Tooltip>
+    },
+    {
+      title: '创建人',
+      dataIndex: 'creator',
+      key: 'creator',
+      width: 110,
+      render: (v) => <span>{v || '天奇管理员'}</span>
+    },
+    {
+      title: '开始上传时间',
+      dataIndex: 'startTime',
+      key: 'startTime',
+      width: 160,
+      render: (t, r) => <span style={{ fontSize: 12, color: '#595959' }}>{t || r.createTime}</span>
+    },
+    {
+      title: '设备SN',
+      dataIndex: 'deviceSN',
+      key: 'deviceSN',
+      width: 140,
+      render: (sn) => <Tag style={{ fontFamily: 'monospace' }}>{sn || 'SN-20260401'}</Tag>
+    },
     {
       title: '操作', 
       key: 'action', 
