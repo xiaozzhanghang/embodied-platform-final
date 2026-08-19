@@ -345,7 +345,7 @@ export default function TaskTemplatesPage() {
           extra={activeTab === 'task'
             ? <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/templates/create')}>创建任务模板</Button>
             : activeTab === 'action'
-              ? <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsActionModalOpen(true)}>创建动作模板</Button>
+              ? <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/templates/action/create')}>创建动作模板</Button>
               : null}
         />
 
