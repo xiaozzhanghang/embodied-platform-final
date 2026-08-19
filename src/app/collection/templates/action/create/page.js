@@ -4,11 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Button, Typography, Space, Input, Select, Form, Row, Col, 
-  Card, App, Breadcrumb, Divider, List, Radio, InputNumber
+  Card, App, Breadcrumb, Divider, List, Radio, InputNumber, 
+  Switch, Tag, Alert, Tooltip
 } from 'antd';
 import { 
   ArrowLeftOutlined, PlusOutlined, DeleteOutlined, 
-  SaveOutlined, UnorderedListOutlined, MinusCircleOutlined
+  SaveOutlined, UnorderedListOutlined, MinusCircleOutlined,
+  ThunderboltOutlined, CheckCircleOutlined, InfoCircleOutlined,
+  RobotOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
@@ -21,19 +24,44 @@ export default function CreateActionTemplatePage() {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   
+  // Selected device state
+  const [selectedDevice, setSelectedDevice] = useState('galbot');
+  
+  // Whether to enable frame range (Auto-adapts to device)
+  const [enableFrameRange, setEnableFrameRange] = useState(false);
+
   // Input mode: structured steps or natural language
   const [inputMode, setInputMode] = useState('structured');
   
-  // List of structured steps matching the audit/create page
+  // List of structured steps
   const [steps, setSteps] = useState([
     { key: '1', arm: '右手 (Right Arm)', skill: '识别', object: '目标物品', goal: '确认位置', startFrame: 0, endFrame: 300 },
     { key: '2', arm: '右手 (Right Arm)', skill: '靠近', object: '目标物品', goal: '避障靠近', startFrame: 301, endFrame: 600 },
     { key: '3', arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧', startFrame: 601, endFrame: 900 }
   ]);
 
-  const [naturalText, setNaturalText] = useState(
-    "1. 右手 (Right Arm) 识别 目标物品 (确认位置) [0 - 300 帧]\n2. 右手 (Right Arm) 靠近 目标物品 (避障靠近) [301 - 600 帧]\n3. 右手 (Right Arm) 抓取 目标物品 (牢固夹紧) [601 - 900 帧]"
-  );
+  // Handle device change and auto-adapt form fields
+  const handleDeviceChange = (deviceVal) => {
+    setSelectedDevice(deviceVal);
+    if (deviceVal === 'galbot' || deviceVal === 'franka_fr3') {
+      setEnableFrameRange(false);
+      message.info(`已选择 [${deviceVal === 'galbot' ? '银河 Galbot 机器人' : 'Franka FR3'}]：表单已自动精简为【无帧数纯动作语义模版】`);
+    } else if (deviceVal === '鹿鸣') {
+      setEnableFrameRange(true);
+      message.info('已选择 [鹿鸣]：表单已自动切换为【时序帧区间切片模版】');
+    }
+  };
+
+  // Synchronize natural language text whenever steps or enableFrameRange changes
+  const naturalText = steps.map((s, idx) => {
+    if (enableFrameRange) {
+      const sFrame = s.startFrame ?? 0;
+      const eFrame = s.endFrame ?? (sFrame + 300);
+      return `${idx + 1}. ${s.arm} ${s.skill} ${s.object} (${s.goal}) [${sFrame} - ${eFrame} 帧]`;
+    } else {
+      return `${idx + 1}. ${s.arm} ${s.skill} ${s.object} (${s.goal})`;
+    }
+  }).join('\n');
 
   const addStep = () => {
     const newKey = (steps.length + 1).toString();
@@ -65,10 +93,14 @@ export default function CreateActionTemplatePage() {
   const onFinish = (values) => {
     let stepTexts = [];
     if (inputMode === 'structured') {
-      stepTexts = steps.map(s => {
-        const sFrame = s.startFrame ?? 0;
-        const eFrame = s.endFrame ?? (sFrame + 30);
-        return `${s.arm} ${s.skill} ${s.object} (${s.goal}) [${sFrame} - ${eFrame} 帧]`;
+      stepTexts = steps.map((s, idx) => {
+        if (enableFrameRange) {
+          const sFrame = s.startFrame ?? 0;
+          const eFrame = s.endFrame ?? (sFrame + 30);
+          return `${s.arm} ${s.skill} ${s.object} (${s.goal}) [${sFrame} - ${eFrame} 帧]`;
+        } else {
+          return `${s.arm} ${s.skill} ${s.object} (${s.goal})`;
+        }
       });
     } else {
       stepTexts = naturalText.split('\n').map(line => line.replace(/^\d+[\.\、\s]*/, '').trim()).filter(Boolean);
@@ -85,6 +117,7 @@ export default function CreateActionTemplatePage() {
       desc: values.desc || '',
       type: '服务数据',
       device: values.device,
+      enableFrameRange: enableFrameRange,
       stepCount: stepTexts.length,
       steps: stepTexts
     };
@@ -112,105 +145,173 @@ export default function CreateActionTemplatePage() {
     <MainLayout>
       <div className="ui-page">
         <PageHeader
-          title="新建动作模版"
-          description="定义动作模板的适配设备与可复用 SOP 步骤序列。"
+          title="新建动作模版 (设备自适应联动演示)"
+          description="选择不同机器人硬件（如银河 Galbot）时，表单将自动自适应切换为无帧数纯动作语义模版，彻底消除冗余录入。"
           breadcrumbs={[
-            { title: '数据采集' },
+            { title: '首页' },
+            { title: '任务管理' },
             { title: '模板中心', href: '/collection/templates' },
             { title: '新建动作模板' },
           ]}
           back={() => router.back()}
         />
 
-        <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ type: '服务数据', device: 'galbot' }}>
+        <Form 
+          form={form} 
+          layout="vertical" 
+          onFinish={onFinish} 
+          initialValues={{ type: '服务数据', device: 'galbot' }}
+        >
         <Row gutter={24}>
           {/* Left Column: Form Config */}
           <Col span={8}>
             <FormSection title="基础配置">
               <Form.Item label="动作模板名称" name="name" rules={[{ required: true, message: '请输入模板名称' }]}>
-                <Input placeholder="请输入模版名称，如：桌面书籍整理与摆放模版" />
+                <Input placeholder="请输入模版名称，如：超市场景零食抓取与放置模版" />
               </Form.Item>
 
-
-
-              <Form.Item label="适配设备类型" name="device" rules={[{ required: true }]}>
-                <Select placeholder="请选择" options={[
-                  { value: 'galbot', label: 'Galbot (单臂/双臂)' },
-                  { value: 'franka_fr3', label: 'Franka FR3' },
-                  { value: '鹿鸣', label: '鹿鸣' }
-                ]} />
+              <Form.Item 
+                label={
+                  <Space>
+                    <span>适配设备类型 (触发自适应联动)</span>
+                    <Tag color="geekblue">智能表单联动</Tag>
+                  </Space>
+                } 
+                name="device" 
+                rules={[{ required: true }]}
+              >
+                <Select 
+                  placeholder="请选择" 
+                  value={selectedDevice}
+                  onChange={handleDeviceChange}
+                  options={[
+                    { value: 'galbot', label: 'Galbot (银河机器人 / 单双臂)' },
+                    { value: 'franka_fr3', label: 'Franka FR3 (桌面机械臂)' },
+                    { value: '鹿鸣', label: '鹿鸣 (时序抽检视频设备)' }
+                  ]} 
+                />
               </Form.Item>
+
+              {/* Dynamic Feature Banner based on Device */}
+              <div style={{ 
+                background: selectedDevice === 'galbot' ? '#f0fdf4' : '#eff6ff', 
+                padding: '12px 16px', 
+                borderRadius: 8, 
+                border: `1px solid ${selectedDevice === 'galbot' ? '#bbf7d0' : '#bfdbfe'}`,
+                marginBottom: 16
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <RobotOutlined style={{ color: selectedDevice === 'galbot' ? '#16a34a' : '#2563eb' }} />
+                  <Text strong style={{ color: selectedDevice === 'galbot' ? '#15803d' : '#1d4ed8', fontSize: 13 }}>
+                    {selectedDevice === 'galbot' ? '银河 Galbot 模式生效中' : (selectedDevice === '鹿鸣' ? '鹿鸣 时序模式生效中' : 'Franka 语义模式生效中')}
+                  </Text>
+                </div>
+                <div style={{ fontSize: 12, color: selectedDevice === 'galbot' ? '#166534' : '#1e40af', lineHeight: 1.5 }}>
+                  {selectedDevice === 'galbot' 
+                    ? '银河机器人执行连续动作流，模版已自动隐去硬编码帧数，聚焦于原子动作和终止判据定义。'
+                    : (selectedDevice === '鹿鸣' 
+                      ? '该设备要求固定帧切片，已自动展开「默认帧数区间」列供精细配置。'
+                      : '已切换为事件语义驱动模式。')}
+                </div>
+              </div>
+
+              {/* Manual Override Switch */}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                padding: '10px 14px', 
+                background: '#fafafa', 
+                borderRadius: 6, 
+                border: '1px solid #e2e8f0',
+                marginBottom: 16 
+              }}>
+                <div>
+                  <Text style={{ fontSize: 13, fontWeight: 500 }}>包含预设帧区间</Text>
+                  <div style={{ fontSize: 11, color: '#8c8c8c' }}>（由设备类型自动设定，支持手动覆盖）</div>
+                </div>
+                <Switch 
+                  checked={enableFrameRange} 
+                  onChange={(checked) => {
+                    setEnableFrameRange(checked);
+                    message.info(`已${checked ? '开启' : '关闭'}动作模版帧区间输入项`);
+                  }} 
+                />
+              </div>
 
               <Form.Item label="模板描述" name="desc">
-                <Input.TextArea rows={4} placeholder="简述该动作模板的适用动作类型和技能点描述" />
+                <Input.TextArea rows={3} placeholder="简述该动作模板的适用动作类型和技能点描述" />
               </Form.Item>
-
-              <div style={{ background: '#f8fafc', padding: 16, borderRadius: 8, border: '1px solid #e2e8f0', marginTop: 24 }}>
-                <Title level={5} style={{ fontSize: 13, margin: '0 0 8px 0', color: '#475569' }}>动作模板说明</Title>
-                <Paragraph style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.6 }}>
-                  动作模板用于定义**机器人执行特定动作的SOP流程**。在新建宏观任务模板或标注任务时，可以直接导入已建好的动作模板以自动填充原子动作编排步骤。
-                </Paragraph>
-              </div>
             </FormSection>
           </Col>
 
           {/* Right Column: SOP Steps List */}
           <Col span={16}>
-            <FormSection title="预设 SOP 动作步骤序列">
-              <div style={{ marginBottom: 20 }}>
+            <FormSection 
+              title={
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <span>预设 SOP 动作步骤序列</span>
+                  <Tag color={enableFrameRange ? 'gold' : 'green'}>
+                    {enableFrameRange ? '含帧区间模式 [Start - End]' : '纯动作语义模式 (推荐用于银河)'}
+                  </Tag>
+                </div>
+              }
+            >
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Radio.Group 
                   value={inputMode} 
                   onChange={e => setInputMode(e.target.value)} 
                   optionType="button" 
                   buttonStyle="solid"
                 >
-                  <Radio.Button value="structured">结构化步骤</Radio.Button>
-                  <Radio.Button value="natural">自然语言描述</Radio.Button>
+                  <Radio.Button value="structured">结构化步骤配置</Radio.Button>
+                  <Radio.Button value="natural">自然语言实时预览</Radio.Button>
                 </Radio.Group>
+
+                <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addStep}>
+                  添加动作步骤
+                </Button>
               </div>
 
               {inputMode === 'structured' ? (
                 <div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
                     {steps.map((item, index) => (
                       <div 
                         key={item.key}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 16,
-                          padding: '16px 20px',
+                          gap: 14,
+                          padding: '14px 18px',
                           background: '#ffffff',
                           border: '1px solid #e2e8f0',
-                          borderRadius: 12,
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                          transition: 'all 0.2s'
+                          borderRadius: 10,
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                         }}
                       >
                         {/* Step Number Badge */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#ffffff',
-                            fontWeight: 'bold',
-                            fontSize: 14,
-                            boxShadow: '0 2px 6px rgba(37, 99, 235, 0.3)'
-                          }}>
-                            {String(index + 1).padStart(2, '0')}
-                          </div>
+                        <div style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          background: '#1677ff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                          fontWeight: 'bold',
+                          fontSize: 13,
+                          flexShrink: 0
+                        }}>
+                          {index + 1}
                         </div>
 
-                        {/* Dropdowns row */}
+                        {/* Dropdowns row - Dynamically adjusts widths when frame range is hidden */}
                         <div style={{ flex: 1 }}>
-                          <Row gutter={[12, 12]}>
-                            <Col span={5}>
-                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>执行末端类型</div>
+                          <Row gutter={[10, 10]}>
+                            <Col span={enableFrameRange ? 5 : 6}>
+                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>执行末端</div>
                               <Select 
                                 value={item.arm} 
                                 onChange={(val) => updateStepField(item.key, 'arm', val)}
@@ -225,8 +326,8 @@ export default function CreateActionTemplatePage() {
                               </Select>
                             </Col>
 
-                            <Col span={4}>
-                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>原子技能</div>
+                            <Col span={enableFrameRange ? 4 : 5}>
+                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>原子技能</div>
                               <Select 
                                 value={item.skill} 
                                 onChange={(val) => updateStepField(item.key, 'skill', val)}
@@ -243,8 +344,8 @@ export default function CreateActionTemplatePage() {
                               </Select>
                             </Col>
 
-                            <Col span={4}>
-                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>操作对象</div>
+                            <Col span={enableFrameRange ? 4 : 6}>
+                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>操作对象</div>
                               <Select 
                                 value={item.object} 
                                 onChange={(val) => updateStepField(item.key, 'object', val)}
@@ -252,138 +353,100 @@ export default function CreateActionTemplatePage() {
                                 style={{ width: '100%' }}
                               >
                                 <Option value="目标物品">目标物品</Option>
+                                <Option value="薯片盒">薯片盒</Option>
+                                <Option value="饮料瓶">饮料瓶</Option>
+                                <Option value="移动托盘">移动托盘</Option>
+                                <Option value="瓦楞纸箱">瓦楞纸箱</Option>
                                 <Option value="阀门">阀门</Option>
-                                <Option value="垃圾桶">垃圾桶</Option>
-                                <Option value="餐盘">餐盘</Option>
                                 <Option value="抽屉">抽屉</Option>
-                                <Option value="螺丝刀">螺丝刀</Option>
-                                <Option value="桌面">桌面</Option>
-                                <Option value="纸箱">纸箱</Option>
-                                <Option value="泡沫填充纸">泡沫填充纸</Option>
-                                <Option value="工厂部件">工厂部件</Option>
-                                <Option value="胶带封装器">胶带封装器</Option>
                               </Select>
                             </Col>
 
-                            <Col span={5}>
-                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>操作目标</div>
+                            <Col span={enableFrameRange ? 5 : 7}>
+                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>
+                                {enableFrameRange ? '操作目标' : '操作目标 / 终止判据'}
+                              </div>
                               <Select 
                                 value={item.goal} 
                                 onChange={(val) => updateStepField(item.key, 'goal', val)}
                                 size="middle" 
                                 style={{ width: '100%' }}
                               >
-                                <Option value="确认位置">确认位置</Option>
-                                <Option value="避障靠近">避障靠近</Option>
-                                <Option value="牢固夹紧">牢固夹紧</Option>
-                                <Option value="稳定释放">稳定释放</Option>
-                                <Option value="扭转至角度">扭转至角度</Option>
-                                <Option value="对齐插槽">对齐插槽</Option>
-                                <Option value="推拉合拢">推拉合拢</Option>
+                                <Option value="确认位置">确认位置 (Visual Match)</Option>
+                                <Option value="避障靠近">避障靠近 (Approach &lt;3cm)</Option>
+                                <Option value="牢固夹紧">牢固夹紧 (Torque Threshold)</Option>
+                                <Option value="稳定释放">稳定释放 (Placement Safe)</Option>
+                                <Option value="对齐插槽">对齐插槽 (Peg-in-hole Align)</Option>
+                                <Option value="推拉合拢">推拉合拢 (Door Closed)</Option>
                               </Select>
                             </Col>
 
-                            <Col span={6}>
-                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontWeight: 500 }}>默认帧数区间</div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <InputNumber 
-                                  value={item.startFrame ?? 0} 
-                                  onChange={(val) => updateStepField(item.key, 'startFrame', val ?? 0)}
-                                  min={0}
-                                  size="middle"
-                                  placeholder="起始帧"
-                                  style={{ width: '48%' }}
-                                />
-                                <span style={{ fontSize: 11, color: '#94a3b8' }}>-</span>
-                                <InputNumber 
-                                  value={item.endFrame ?? 30} 
-                                  onChange={(val) => updateStepField(item.key, 'endFrame', val ?? 30)}
-                                  min={0}
-                                  size="middle"
-                                  placeholder="结束帧"
-                                  style={{ width: '48%' }}
-                                />
-                              </div>
-                            </Col>
+                            {/* Frame Range Column: Rendered only when enabled */}
+                            {enableFrameRange && (
+                              <Col span={6}>
+                                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>默认帧数区间</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <InputNumber 
+                                    value={item.startFrame ?? 0} 
+                                    onChange={(val) => updateStepField(item.key, 'startFrame', val ?? 0)}
+                                    min={0}
+                                    size="middle"
+                                    placeholder="起始帧"
+                                    style={{ width: '48%' }}
+                                  />
+                                  <span style={{ fontSize: 11, color: '#94a3b8' }}>-</span>
+                                  <InputNumber 
+                                    value={item.endFrame ?? 300} 
+                                    onChange={(val) => updateStepField(item.key, 'endFrame', val ?? 300)}
+                                    min={0}
+                                    size="middle"
+                                    placeholder="结束帧"
+                                    style={{ width: '48%' }}
+                                  />
+                                </div>
+                              </Col>
+                            )}
                           </Row>
                         </div>
 
                         {/* Delete Button */}
-                        <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
                           <Button 
                             type="text" 
                             danger 
-                            size="middle" 
+                            size="small" 
                             disabled={steps.length <= 1}
                             icon={<MinusCircleOutlined style={{ fontSize: 16 }} />}
                             onClick={() => removeStep(item.key)}
-                            style={{
-                              borderRadius: 8,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              background: '#fef2f2',
-                              border: '1px solid #fee2e2',
-                              width: 36,
-                              height: 36,
-                              marginTop: 16
-                            }}
                           />
                         </div>
                       </div>
                     ))}
                   </div>
-
-                  <Button
-                    type="dashed"
-                    onClick={addStep}
-                    icon={<PlusOutlined />}
-                    style={{
-                      width: '100%',
-                      height: 48,
-                      borderRadius: 12,
-                      color: '#2563eb',
-                      borderColor: '#93c5fd',
-                      background: '#f0f7ff',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      marginBottom: 16
-                    }}
-                  >
-                    添加结构化步骤
-                  </Button>
                 </div>
               ) : (
-                <div style={{ marginBottom: 16 }}>
+                <div>
                   <Input.TextArea 
-                    rows={12} 
+                    rows={8} 
                     value={naturalText}
-                    onChange={e => setNaturalText(e.target.value)}
-                    placeholder="请输入自然语言描述的动作步骤流程，每行代表一个步骤。例如：&#10;1. 右手 (Right Arm) 识别 目标物品 (确认位置)&#10;2. 右手 (Right Arm) 靠近 目标物品 (避障靠近)"
-                    style={{ fontFamily: 'monospace', fontSize: 13 }}
+                    readOnly
+                    style={{ fontFamily: 'monospace', fontSize: 13, background: '#f8fafc' }}
                   />
-                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
-                    支持直接复制大段以空格/符号分隔的动作文本描述，每行文字将自动转换为模板中的独立工作步骤。
-                  </Text>
+                  <div style={{ marginTop: 8, fontSize: 12, color: '#94a3b8' }}>
+                    💡 自然语言文本根据结构化配置实时同步生成，创建银河模版时自动省略帧数后缀。
+                  </div>
                 </div>
               )}
-
-              <div style={{ background: '#fafafa', padding: 16, borderRadius: 4, border: '1px dashed #d9d9d9', marginTop: 16 }}>
-                <Text type="secondary" style={{ fontSize: 13 }}>
-                  提示：编排后的动作步骤序列将在新建任务模板阶段被引入，作为原子动作编排映射的基础指引。
-                </Text>
-              </div>
-
-              <ActionFooter>
-                <Button style={{ width: 120 }} onClick={() => router.back()}>取消</Button>
-                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} style={{ width: 120 }}>保存模板</Button>
-              </ActionFooter>
             </FormSection>
           </Col>
         </Row>
+
+        <ActionFooter>
+          <Button style={{ width: 120 }} onClick={() => router.back()}>取消</Button>
+          <Button type="primary" htmlType="submit" icon={<SaveOutlined />} style={{ width: 160 }}>
+            保存模版
+          </Button>
+        </ActionFooter>
         </Form>
       </div>
     </MainLayout>
