@@ -348,11 +348,6 @@ export default function TaskTemplatesPage() {
           title="模板中心"
           description="统一管理任务模板、动作 SOP 模板与已审核的标注样例。"
           breadcrumbs={[{ title: '首页' }, { title: '数据采集' }, { title: '模板中心' }]}
-          extra={activeTab === 'task'
-            ? <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/templates/create')}>创建任务模板</Button>
-            : activeTab === 'action'
-              ? <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsActionModalOpen(true)}>创建动作模板</Button>
-              : null}
         />
 
       {/* Tab 分类切换 */}
@@ -380,7 +375,15 @@ export default function TaskTemplatesPage() {
               <Button icon={<ReloadOutlined />}>重置</Button>
             </div>
           </FilterPanel>
-          <TableToolbar title="任务模板" count={mockTemplates.length} />
+          <TableToolbar 
+            title="任务模板" 
+            count={mockTemplates.length} 
+            actions={[
+              <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/templates/create')}>
+                新建任务模板
+              </Button>
+            ]}
+          />
 
           <Row gutter={[16, 16]}>
             {mockTemplates.map((tpl) => (
