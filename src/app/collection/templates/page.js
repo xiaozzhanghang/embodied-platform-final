@@ -69,6 +69,7 @@ export default function TaskTemplatesPage() {
 
   // Modal states for creating action templates
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [modalDevice, setModalDevice] = useState('galbot');
   const [actionForm] = Form.useForm();
   const [actionInputMode, setActionInputMode] = useState('structured');
   const [actionSteps, setActionSteps] = useState([
@@ -345,7 +346,7 @@ export default function TaskTemplatesPage() {
           extra={activeTab === 'task'
             ? <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/templates/create')}>创建任务模板</Button>
             : activeTab === 'action'
-              ? <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/collection/templates/action/create')}>创建动作模板</Button>
+              ? <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsActionModalOpen(true)}>创建动作模板</Button>
               : null}
         />
 
@@ -447,7 +448,15 @@ export default function TaskTemplatesPage() {
               <Button type="primary" icon={<SearchOutlined />}>查询</Button>
             </div>
           </FilterPanel>
-          <TableToolbar title="动作模板" count={actionTemplates.length} />
+          <TableToolbar 
+            title="动作模板" 
+            count={actionTemplates.length} 
+            actions={[
+              <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => setIsActionModalOpen(true)}>
+                新建动作模版
+              </Button>
+            ]}
+          />
           <Row gutter={[16, 16]}>
           {actionTemplates.map((tpl) => (
             <Col span={12} key={tpl.key}>
@@ -577,253 +586,282 @@ export default function TaskTemplatesPage() {
         </div>
       )}
 
-      {/* Create Action Template Modal */}
-      <AppModal
+      {/* Create Action Template Modal matching User Screenshot */}
+      <Modal
         title={
-          <span style={{ fontSize: 16, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <PlusOutlined style={{ color: '#1677ff' }} /> 新建动作模版
+          <span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>
+            新建动作模版
           </span>
         }
         open={isActionModalOpen}
-        onOk={handleActionModalSubmit}
         onCancel={() => {
           setIsActionModalOpen(false);
           actionForm.resetFields();
         }}
-        widthSize="large"
-        okText="保存模板"
-        cancelText="取消"
-        destroyOnHidden
+        footer={[
+          <Button key="cancel" onClick={() => setIsActionModalOpen(false)}>
+            取 消
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleActionModalSubmit}>
+            保 存
+          </Button>
+        ]}
+        width={860}
+        destroyOnClose
       >
-        <Form form={actionForm} layout="vertical" initialValues={{ device: 'galbot' }}>
-          {/* Top Section: Basic Config */}
-          <div style={{ background: '#fafafa', padding: '16px 20px', borderRadius: 8, marginBottom: 20, border: '1px solid #f0f0f0' }}>
-            <div style={{ fontWeight: 'bold', fontSize: 13, marginBottom: 12, color: '#334155' }}>基础配置</div>
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item label="动作模板名称" name="name" rules={[{ required: true, message: '请输入模板名称' }]} style={{ marginBottom: 12 }}>
-                  <Input placeholder="请输入模版名称，如：桌面书籍整理与摆放模版" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label="适配设备类型" name="device" rules={[{ required: true }]} style={{ marginBottom: 12 }}>
-                  <Select placeholder="请选择" options={[
-                    { value: 'galbot', label: 'Galbot (单臂/双臂)' },
-                    { value: 'franka_fr3', label: 'Franka FR3' },
-                    { value: '鹿鸣', label: '鹿鸣' }
-                  ]} />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Form.Item label="模板描述" name="desc" style={{ marginBottom: 0 }}>
-              <Input.TextArea rows={2} placeholder="简述该动作模板的适用动作类型 and 技能点描述" />
-            </Form.Item>
-          </div>
+        <Form 
+          form={actionForm} 
+          layout="vertical" 
+          initialValues={{ device: 'galbot' }}
+          style={{ marginTop: 16 }}
+        >
+          {/* Row 1: Name and Device */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item 
+                label={<span style={{ fontWeight: 500 }}><span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>模板名称</span>} 
+                name="name" 
+                rules={[{ required: true, message: '请输入模板名称' }]} 
+                style={{ marginBottom: 16 }}
+              >
+                <Input placeholder="例如：工业纸箱打包封装与装箱模版" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item 
+                label={<span style={{ fontWeight: 500 }}>适配设备</span>} 
+                name="device" 
+                style={{ marginBottom: 16 }}
+              >
+                <Select 
+                  placeholder="请下拉选择设备" 
+                  value={modalDevice}
+                  onChange={(v) => {
+                    setModalDevice(v);
+                    if (v === 'galbot') {
+                      message.info('已选择 Galbot (银河机器人)：步骤表单已自适应精简（隐藏帧数硬编码）');
+                    }
+                  }}
+                  options={[
+                    { value: 'galbot', label: 'Galbot (银河机器人 / 单双臂)' },
+                    { value: 'franka_fr3', label: 'Franka FR3 (桌面机械臂)' },
+                    { value: '鹿鸣', label: '鹿鸣 (时序抽检设备)' },
+                    { value: 'xinsong', label: '新松工业机械臂' }
+                  ]} 
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          {/* Bottom Section: SOP Steps */}
-          <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <span style={{ fontWeight: 'bold', fontSize: 13, color: '#334155' }}>
-                <UnorderedListOutlined style={{ marginRight: 6 }} />预设SOP动作步骤序列
+          {/* Row 2: Description with counter */}
+          <Form.Item 
+            label={<span style={{ fontWeight: 500 }}><span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>模板描述</span>} 
+            name="desc" 
+            rules={[{ required: true, message: '请输入模板描述' }]}
+            style={{ marginBottom: 16 }}
+          >
+            <Input.TextArea 
+              rows={3} 
+              maxLength={200} 
+              showCount 
+              placeholder="简要说明此动作模板的适用场景..." 
+            />
+          </Form.Item>
+
+          {/* Row 3: Action Steps Section */}
+          <div style={{ marginTop: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span style={{ fontWeight: 500, fontSize: 14 }}>
+                <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>动作步骤
               </span>
               <Radio.Group 
                 value={actionInputMode} 
                 onChange={e => setActionInputMode(e.target.value)} 
                 optionType="button" 
                 buttonStyle="solid"
-                size="small"
+                size="middle"
               >
-                <Radio.Button value="structured">结构化步骤</Radio.Button>
-                <Radio.Button value="natural">自然语言描述</Radio.Button>
+                <Radio.Button value="structured">
+                  <UnorderedListOutlined style={{ marginRight: 4 }} /> 结构化步骤
+                </Radio.Button>
+                <Radio.Button value="natural">
+                  <EditOutlined style={{ marginRight: 4 }} /> 自然语言描述
+                </Radio.Button>
               </Radio.Group>
             </div>
 
             {actionInputMode === 'structured' ? (
               <div>
-                <div style={{ maxHeight: 280, overflowY: 'auto', paddingRight: 4, marginBottom: 12 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
-                    {actionSteps.map((item, index) => (
-                      <div 
-                        key={item.key}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: '12px 16px',
-                          background: '#ffffff',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: 8,
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.01)'
-                        }}
-                      >
-                        {/* Step Number Badge */}
-                        <div style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#ffffff',
-                          fontWeight: 'bold',
-                          fontSize: 12,
-                          boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)',
-                          flexShrink: 0
-                        }}>
-                          {String(index + 1).padStart(2, '0')}
-                        </div>
+                <div style={{ maxHeight: 320, overflowY: 'auto', paddingRight: 4, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {actionSteps.map((item, index) => (
+                    <div 
+                      key={item.key}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '12px 14px',
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: 8,
+                      }}
+                    >
+                      {/* Step Number Badge */}
+                      <div style={{
+                        width: 22,
+                        height: 22,
+                        borderRadius: '50%',
+                        background: '#1677ff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#ffffff',
+                        fontWeight: 'bold',
+                        fontSize: 12,
+                        flexShrink: 0
+                      }}>
+                        {index + 1}
+                      </div>
 
-                        {/* Dropdowns row */}
-                        <div style={{ flex: 1 }}>
-                          <Row gutter={[8, 8]}>
-                            <Col span={5}>
-                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>执行末端类型</div>
-                              <Select 
-                                value={item.arm} 
-                                onChange={(val) => updateActionStepField(item.key, 'arm', val)}
-                                size="small" 
-                                style={{ width: '100%' }}
-                              >
-                                <Select.Option value="右手 (Right Arm)">右手 (Right Arm)</Select.Option>
-                                <Select.Option value="左手 (Left Arm)">左手 (Left Arm)</Select.Option>
-                                <Select.Option value="双手 (Dual Arms)">双手 (Dual Arms)</Select.Option>
-                                <Select.Option value="底盘 (Base)">底盘 (Base)</Select.Option>
-                                <Select.Option value="相机 (Camera)">相机 (Camera)</Select.Option>
-                              </Select>
-                            </Col>
+                      {/* Select Dropdowns Row */}
+                      <div style={{ flex: 1 }}>
+                        <Row gutter={[8, 8]}>
+                          <Col span={modalDevice === 'galbot' ? 6 : 5}>
+                            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>执行末端类型</div>
+                            <Select 
+                              value={item.arm} 
+                              placeholder="请选择"
+                              onChange={(val) => updateActionStepField(item.key, 'arm', val)}
+                              size="middle" 
+                              style={{ width: '100%' }}
+                            >
+                              <Select.Option value="右手 (Right Arm)">右手 (Right Arm)</Select.Option>
+                              <Select.Option value="左手 (Left Arm)">左手 (Left Arm)</Select.Option>
+                              <Select.Option value="双手 (Dual Arms)">双手 (Dual Arms)</Select.Option>
+                              <Select.Option value="底盘 (Base)">底盘 (Base)</Select.Option>
+                              <Select.Option value="相机 (Camera)">相机 (Camera)</Select.Option>
+                            </Select>
+                          </Col>
 
-                            <Col span={4}>
-                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>原子技能</div>
-                              <Select 
-                                value={item.skill} 
-                                onChange={(val) => updateActionStepField(item.key, 'skill', val)}
-                                size="small" 
-                                style={{ width: '100%' }}
-                              >
-                                <Select.Option value="识别">识别</Select.Option>
-                                <Select.Option value="靠近">靠近</Select.Option>
-                                <Select.Option value="抓取">抓取</Select.Option>
-                                <Select.Option value="放置">放置</Select.Option>
-                                <Select.Option value="旋转">旋转</Select.Option>
-                                <Select.Option value="对准">对准</Select.Option>
-                                <Select.Option value="松开">松开</Select.Option>
-                              </Select>
-                            </Col>
+                          <Col span={modalDevice === 'galbot' ? 6 : 4}>
+                            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>原子技能</div>
+                            <Select 
+                              value={item.skill} 
+                              placeholder="请选择"
+                              onChange={(val) => updateActionStepField(item.key, 'skill', val)}
+                              size="middle" 
+                              style={{ width: '100%' }}
+                            >
+                              <Select.Option value="识别">识别</Select.Option>
+                              <Select.Option value="靠近">靠近</Select.Option>
+                              <Select.Option value="抓取">抓取</Select.Option>
+                              <Select.Option value="放置">放置</Select.Option>
+                              <Select.Option value="旋转">旋转</Select.Option>
+                              <Select.Option value="对准">对准</Select.Option>
+                              <Select.Option value="松开">松开</Select.Option>
+                            </Select>
+                          </Col>
 
-                            <Col span={4}>
-                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>操作对象</div>
-                              <Select 
-                                value={item.object} 
-                                onChange={(val) => updateActionStepField(item.key, 'object', val)}
-                                size="small" 
-                                style={{ width: '100%' }}
-                              >
-                                <Select.Option value="目标物品">目标物品</Select.Option>
-                                <Select.Option value="阀门">阀门</Select.Option>
-                                <Select.Option value="垃圾桶">垃圾桶</Select.Option>
-                                <Select.Option value="餐盘">餐盘</Select.Option>
-                                <Select.Option value="抽屉">抽屉</Select.Option>
-                                <Select.Option value="螺丝刀">螺丝刀</Select.Option>
-                                <Select.Option value="桌面">桌面</Select.Option>
-                                <Select.Option value="纸箱">纸箱</Select.Option>
-                                <Select.Option value="泡沫填充纸">泡沫填充纸</Select.Option>
-                                <Select.Option value="工厂部件">工厂部件</Select.Option>
-                                <Select.Option value="胶带封装器">胶带封装器</Select.Option>
-                              </Select>
-                            </Col>
+                          <Col span={modalDevice === 'galbot' ? 6 : 4}>
+                            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>操作对象</div>
+                            <Select 
+                              value={item.object} 
+                              placeholder="请选择"
+                              onChange={(val) => updateActionStepField(item.key, 'object', val)}
+                              size="middle" 
+                              style={{ width: '100%' }}
+                            >
+                              <Select.Option value="目标物品">目标物品</Select.Option>
+                              <Select.Option value="纸箱">纸箱</Select.Option>
+                              <Select.Option value="胶带机">胶带机</Select.Option>
+                              <Select.Option value="托盘">托盘</Select.Option>
+                              <Select.Option value="零食盒">零食盒</Select.Option>
+                              <Select.Option value="阀门">阀门</Select.Option>
+                              <Select.Option value="抽屉">抽屉</Select.Option>
+                              <Select.Option value="螺丝刀">螺丝刀</Select.Option>
+                            </Select>
+                          </Col>
 
-                            <Col span={5}>
-                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>操作目标</div>
-                              <Select 
-                                value={item.goal} 
-                                onChange={(val) => updateActionStepField(item.key, 'goal', val)}
-                                size="small" 
-                                style={{ width: '100%' }}
-                              >
-                                <Select.Option value="确认位置">确认位置</Select.Option>
-                                <Select.Option value="避障靠近">避障靠近</Select.Option>
-                                <Select.Option value="牢固夹紧">牢固夹紧</Select.Option>
-                                <Select.Option value="稳定释放">稳定释放</Select.Option>
-                                <Select.Option value="扭转至角度">扭转至角度</Select.Option>
-                                <Select.Option value="对齐插槽">对齐插槽</Select.Option>
-                                <Select.Option value="推拉合拢">推拉合拢</Select.Option>
-                              </Select>
-                            </Col>
+                          <Col span={modalDevice === 'galbot' ? 6 : 5}>
+                            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>操作目标</div>
+                            <Select 
+                              value={item.goal} 
+                              placeholder="请选择"
+                              onChange={(val) => updateActionStepField(item.key, 'goal', val)}
+                              size="middle" 
+                              style={{ width: '100%' }}
+                            >
+                              <Select.Option value="确认位置">确认位置</Select.Option>
+                              <Select.Option value="避障靠近">避障靠近</Select.Option>
+                              <Select.Option value="牢固夹紧">牢固夹紧</Select.Option>
+                              <Select.Option value="稳定释放">稳定释放</Select.Option>
+                              <Select.Option value="对齐插槽">对齐插槽</Select.Option>
+                              <Select.Option value="推拉合拢">推拉合拢</Select.Option>
+                            </Select>
+                          </Col>
 
+                          {/* Render Frame Range only when device is NOT Galbot */}
+                          {modalDevice !== 'galbot' && (
                             <Col span={6}>
-                              <div style={{ fontSize: 10, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>默认帧数区间</div>
+                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>默认帧数区间</div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                 <InputNumber 
                                   value={item.startFrame ?? 0} 
                                   onChange={(val) => updateActionStepField(item.key, 'startFrame', val ?? 0)}
                                   min={0}
-                                  size="small"
-                                  placeholder="起始帧"
+                                  size="middle"
+                                  placeholder="0"
                                   style={{ width: '48%' }}
                                 />
-                                <span style={{ fontSize: 10, color: '#94a3b8' }}>-</span>
+                                <span style={{ fontSize: 11, color: '#94a3b8' }}>-</span>
                                 <InputNumber 
-                                  value={item.endFrame ?? 30} 
-                                  onChange={(val) => updateActionStepField(item.key, 'endFrame', val ?? 30)}
+                                  value={item.endFrame ?? 300} 
+                                  onChange={(val) => updateActionStepField(item.key, 'endFrame', val ?? 300)}
                                   min={0}
-                                  size="small"
-                                  placeholder="结束帧"
+                                  size="middle"
+                                  placeholder="300"
                                   style={{ width: '48%' }}
                                 />
                               </div>
                             </Col>
-                          </Row>
-                        </div>
+                          )}
+                        </Row>
+                      </div>
 
-                        {/* Delete Button */}
+                      {/* Delete Button */}
+                      <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
                         <Button 
                           type="text" 
                           danger 
+                          shape="circle"
                           size="small" 
                           disabled={actionSteps.length <= 1}
-                          icon={<MinusCircleOutlined style={{ fontSize: 14 }} />}
+                          icon={<MinusCircleOutlined style={{ fontSize: 18, color: '#ff4d4f' }} />}
                           onClick={() => removeActionStep(item.key)}
-                          style={{
-                            borderRadius: 6,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: '#fef2f2',
-                            border: '1px solid #fee2e2',
-                            width: 28,
-                            height: 28,
-                            marginTop: 14
-                          }}
                         />
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
 
                 <Button
-                    type="dashed"
-                    onClick={addActionStep}
-                    icon={<PlusOutlined />}
-                    style={{
-                      width: '100%',
-                      height: 38,
-                      borderRadius: 8,
-                      color: '#2563eb',
-                      borderColor: '#93c5fd',
-                      background: '#f0f7ff',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6
-                    }}
-                  >
-                    添加结构化步骤
-                  </Button>
-                </div>
-              ) : (
-                <div style={{ marginBottom: 12 }}>
+                  type="dashed"
+                  block
+                  onClick={addActionStep}
+                  style={{
+                    height: 38,
+                    marginTop: 10,
+                    borderRadius: 6,
+                    color: '#334155',
+                    borderColor: '#cbd5e1',
+                    fontSize: 13
+                  }}
+                >
+                  + 添加结构化步骤
+                </Button>
+              </div>
+            ) : (
+              <div style={{ marginBottom: 12 }}>
                 <Input.TextArea 
                   rows={6} 
                   value={actionNaturalText}
@@ -831,14 +869,11 @@ export default function TaskTemplatesPage() {
                   placeholder="请输入自然语言描述的动作步骤流程，每行代表一个步骤。例如：&#10;1. 右手 (Right Arm) 识别 目标物品 (确认位置)&#10;2. 右手 (Right Arm) 靠近 目标物品 (避障靠近)"
                   style={{ fontFamily: 'monospace', fontSize: 12 }}
                 />
-                <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 6 }}>
-                  支持直接复制大段以空格/符号分隔的动作文本描述，每行文字将自动转换为模板中的独立工作步骤。
-                </Text>
               </div>
             )}
           </div>
         </Form>
-      </AppModal>
+      </Modal>
 
       <style jsx>{`
         .hover-action:hover {
