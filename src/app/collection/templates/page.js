@@ -70,6 +70,7 @@ export default function TaskTemplatesPage() {
   // Modal states for creating action templates
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [modalDevice, setModalDevice] = useState('galbot');
+  const [enableFrameRange, setEnableFrameRange] = useState(false);
   const [actionForm] = Form.useForm();
   const [actionInputMode, setActionInputMode] = useState('structured');
   const [actionSteps, setActionSteps] = useState([
@@ -78,7 +79,7 @@ export default function TaskTemplatesPage() {
     { key: '3', arm: '右手 (Right Arm)', skill: '抓取', object: '目标物品', goal: '牢固夹紧', startFrame: 601, endFrame: 900 }
   ]);
   const [actionNaturalText, setActionNaturalText] = useState(
-    "1. 右手 (Right Arm) 识别 目标物品 (确认位置) [0 - 300 帧]\n2. 右手 (Right Arm) 靠近 目标物品 (避障靠近) [301 - 600 帧]\n3. 右手 (Right Arm) 抓取 目标物品 (牢固夹紧) [601 - 900 帧]"
+    "1. 右手 (Right Arm) 识别 目标物品 (确认位置)\n2. 右手 (Right Arm) 靠近 目标物品 (避障靠近)\n3. 右手 (Right Arm) 抓取 目标物品 (牢固夹紧)"
   );
 
   const addActionStep = () => {
@@ -113,9 +114,13 @@ export default function TaskTemplatesPage() {
       let stepTexts = [];
       if (actionInputMode === 'structured') {
         stepTexts = actionSteps.map(s => {
-          const sFrame = s.startFrame ?? 0;
-          const eFrame = s.endFrame ?? (sFrame + 30);
-          return `${s.arm} ${s.skill} ${s.object} (${s.goal}) [${sFrame} - ${eFrame} 帧]`;
+          if (enableFrameRange) {
+            const sFrame = s.startFrame ?? 0;
+            const eFrame = s.endFrame ?? (sFrame + 300);
+            return `${s.arm} ${s.skill} ${s.object} (${s.goal}) [${sFrame} - ${eFrame} 帧]`;
+          } else {
+            return `${s.arm} ${s.skill} ${s.object} (${s.goal})`;
+          }
         });
       } else {
         stepTexts = actionNaturalText.split('\n').map(line => line.replace(/^\d+[\.\、\s]*/, '').trim()).filter(Boolean);
@@ -638,8 +643,12 @@ export default function TaskTemplatesPage() {
                   value={modalDevice}
                   onChange={(v) => {
                     setModalDevice(v);
-                    if (v === 'galbot') {
-                      message.info('已选择 Galbot (银河机器人)：步骤表单已自适应精简（隐藏帧数硬编码）');
+                    if (v === 'galbot' || v === 'franka_fr3') {
+                      setEnableFrameRange(false);
+                      message.info(`已选择 [${v === 'galbot' ? 'Galbot (银河机器人)' : 'Franka FR3'}]：已自动适配为无帧数语义模式`);
+                    } else {
+                      setEnableFrameRange(true);
+                      message.info(`已选择 [${v === '鹿鸣' ? '鹿鸣' : '新松工业机械臂'}]：已自动开启时序帧区间`);
                     }
                   }}
                   options={[
@@ -674,20 +683,33 @@ export default function TaskTemplatesPage() {
               <span style={{ fontWeight: 500, fontSize: 14 }}>
                 <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>动作步骤
               </span>
-              <Radio.Group 
-                value={actionInputMode} 
-                onChange={e => setActionInputMode(e.target.value)} 
-                optionType="button" 
-                buttonStyle="solid"
-                size="middle"
-              >
-                <Radio.Button value="structured">
-                  <UnorderedListOutlined style={{ marginRight: 4 }} /> 结构化步骤
-                </Radio.Button>
-                <Radio.Button value="natural">
-                  <EditOutlined style={{ marginRight: 4 }} /> 自然语言描述
-                </Radio.Button>
-              </Radio.Group>
+              <Space size="middle" align="center">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: 12, color: '#475569' }}>预设帧区间</span>
+                  <Switch 
+                    size="small" 
+                    checked={enableFrameRange} 
+                    onChange={(checked) => {
+                      setEnableFrameRange(checked);
+                      message.info(`已${checked ? '开启' : '关闭'}动作模版帧区间配置`);
+                    }} 
+                  />
+                </div>
+                <Radio.Group 
+                  value={actionInputMode} 
+                  onChange={e => setActionInputMode(e.target.value)} 
+                  optionType="button" 
+                  buttonStyle="solid"
+                  size="middle"
+                >
+                  <Radio.Button value="structured">
+                    <UnorderedListOutlined style={{ marginRight: 4 }} /> 结构化步骤
+                  </Radio.Button>
+                  <Radio.Button value="natural">
+                    <EditOutlined style={{ marginRight: 4 }} /> 自然语言描述
+                  </Radio.Button>
+                </Radio.Group>
+              </Space>
             </div>
 
             {actionInputMode === 'structured' ? (
@@ -726,7 +748,7 @@ export default function TaskTemplatesPage() {
                       {/* Select Dropdowns Row */}
                       <div style={{ flex: 1 }}>
                         <Row gutter={[8, 8]}>
-                          <Col span={modalDevice === 'galbot' ? 6 : 5}>
+                          <Col span={enableFrameRange ? 5 : 6}>
                             <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>执行末端类型</div>
                             <Select 
                               value={item.arm} 
@@ -743,7 +765,7 @@ export default function TaskTemplatesPage() {
                             </Select>
                           </Col>
 
-                          <Col span={modalDevice === 'galbot' ? 6 : 4}>
+                          <Col span={enableFrameRange ? 4 : 6}>
                             <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>原子技能</div>
                             <Select 
                               value={item.skill} 
@@ -762,7 +784,7 @@ export default function TaskTemplatesPage() {
                             </Select>
                           </Col>
 
-                          <Col span={modalDevice === 'galbot' ? 6 : 4}>
+                          <Col span={enableFrameRange ? 4 : 6}>
                             <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>操作对象</div>
                             <Select 
                               value={item.object} 
@@ -782,7 +804,7 @@ export default function TaskTemplatesPage() {
                             </Select>
                           </Col>
 
-                          <Col span={modalDevice === 'galbot' ? 6 : 5}>
+                          <Col span={enableFrameRange ? 5 : 6}>
                             <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>操作目标</div>
                             <Select 
                               value={item.goal} 
@@ -800,8 +822,8 @@ export default function TaskTemplatesPage() {
                             </Select>
                           </Col>
 
-                          {/* Render Frame Range only when device is NOT Galbot */}
-                          {modalDevice !== 'galbot' && (
+                          {/* Render Frame Range only when enabled */}
+                          {enableFrameRange && (
                             <Col span={6}>
                               <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>默认帧数区间</div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
