@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>具身智能标注工作台 (长短视频自适应/步骤拖拽换位/时间轴联动原型)</title>
+  <title>具身智能标注工作台 (步骤拖拽换位/多选批量复制/时间轴联动原型)</title>
   
   <!-- Tailwind CSS & Ant Design CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -50,7 +50,7 @@
     const { useState, useEffect, useRef } = React;
     const { 
       Button, Tag, Space, Typography, App, Divider, Select, 
-      Input, Row, Col, Radio, Tooltip, InputNumber, Slider, message, Checkbox 
+      Input, Row, Col, Tooltip, InputNumber, Slider, message, Checkbox 
     } = antd;
     
     // Icons from Ant Design Icons UMD
@@ -65,31 +65,13 @@
     const DeleteOutlined = icons.DeleteOutlined || (() => <span>🗑</span>);
     const CopyOutlined = icons.CopyOutlined || (() => <span>📄</span>);
     const CheckOutlined = icons.CheckOutlined || (() => <span>✔</span>);
-    const ArrowUpOutlined = icons.ArrowUpOutlined || (() => <span>▲</span>);
-    const ArrowDownOutlined = icons.ArrowDownOutlined || (() => <span>▼</span>);
-    const SortAscendingOutlined = icons.SortAscendingOutlined || (() => <span>⏱</span>);
     const HolderOutlined = icons.HolderOutlined || (() => <span>⠿</span>);
-    const ThunderboltOutlined = icons.ThunderboltOutlined || (() => <span>⚡</span>);
-    const VideoCameraFilled = icons.VideoCameraFilled || (() => <span>📹</span>);
-    const PlaySquareOutlined = icons.PlaySquareOutlined || (() => <span>🎬</span>);
     const CheckSquareOutlined = icons.CheckSquareOutlined || (() => <span>☑️</span>);
 
     const { Option } = Select;
 
-    // Standard SOP Template
-    const SOP_CYCLE_TEMPLATE = [
-      { text: '双手抓取纸箱并开箱定位', arm: '双手', skill: '折叠定位', defaultDur: 200, color: '#13c2c2' },
-      { text: '右手取底部泡沫垫并放入纸箱', arm: '右手', skill: '抓取放置', defaultDur: 250, color: '#722ed1' },
-      { text: '右手抓取核心金属支架入箱', arm: '右手', skill: '精密装配', defaultDur: 250, color: '#1890ff' },
-      { text: '双手折叠合拢箱盖并封箱', arm: '双手', skill: '封盖封箱', defaultDur: 200, color: '#52c41a' },
-    ];
-
     function WorkbenchApp() {
-      // Mode: 'short' (30s / 900f) vs 'long' (1h / 108,000f)
-      const [videoMode, setVideoMode] = useState('short');
-      const [longVideoSolution, setLongVideoSolution] = useState('solution_2');
-
-      const totalFrames = videoMode === 'short' ? 900 : 108000;
+      const totalFrames = 900;
       const [isPlaying, setIsPlaying] = useState(false);
       const [currentFrame, setCurrentFrame] = useState(120);
       const [redLineFrame, setRedLineFrame] = useState(120);
@@ -97,99 +79,17 @@
       const playTimerRef = useRef(null);
       const timelineRef = useRef(null);
 
-      // Short video steps
-      const [shortSteps, setShortSteps] = useState([
+      // Steps state
+      const [steps, setSteps] = useState([
         { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
         { id: 2, text: '右手取底部泡沫垫并放入纸箱', startFrame: 201, endFrame: 450, color: '#722ed1', arm: '右手' },
         { id: 3, text: '右手抓取核心金属支架入箱', startFrame: 451, endFrame: 700, color: '#1890ff', arm: '右手' },
         { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 701, endFrame: 900, color: '#52c41a', arm: '双手' },
       ]);
-      const [shortSelectedId, setShortSelectedId] = useState(1);
+      const [selectedId, setSelectedId] = useState(1);
       const [draggedStepIdx, setDraggedStepIdx] = useState(null);
       const [dragOverStepIdx, setDragOverStepIdx] = useState(null);
       const [selectedBatchIds, setSelectedBatchIds] = useState([]); // 多选勾选的步骤
-
-      // Multi-select Batch Handlers
-      const handleToggleBatchSelect = (stepId) => {
-        setSelectedBatchIds(prev => 
-          prev.includes(stepId) ? prev.filter(id => id !== stepId) : [...prev, stepId]
-        );
-      };
-
-      const handleSelectAllBatch = () => {
-        if (selectedBatchIds.length === shortSteps.length) {
-          setSelectedBatchIds([]);
-        } else {
-          setSelectedBatchIds(shortSteps.map(s => s.id));
-        }
-      };
-
-      const handleBatchCopySelected = () => {
-        if (selectedBatchIds.length === 0) return;
-        const stepsToCopy = shortSteps.filter(s => selectedBatchIds.includes(s.id));
-        const lastEndFrame = shortSteps.length > 0 ? shortSteps[shortSteps.length - 1].endFrame : currentFrame;
-        let runningStart = lastEndFrame + 1;
-
-        const clonedSteps = stepsToCopy.map((step, idx) => {
-          const dur = Math.max(1, (step.endFrame - step.startFrame) || 200);
-          const start = runningStart;
-          const end = start + dur;
-          runningStart = end + 1;
-          return {
-            id: shortSteps.length + idx + 1,
-            text: `${step.text} (批量复制)`,
-            startFrame: start,
-            endFrame: end,
-            color: step.color,
-            arm: step.arm
-          };
-        });
-
-        const updated = [...shortSteps, ...clonedSteps];
-        const reindexed = updated.map((s, idx) => ({ ...s, id: idx + 1 }));
-        setShortSteps(reindexed);
-        setSelectedBatchIds([]);
-        setShortSelectedId(shortSteps.length + 1);
-      };
-
-      const handleBatchDeleteSelected = () => {
-        if (selectedBatchIds.length === 0) return;
-        const remaining = shortSteps.filter(s => !selectedBatchIds.includes(s.id));
-        const reindexed = remaining.map((s, idx) => ({ ...s, id: idx + 1 }));
-        const synced = realignStepTimeframes(reindexed, reindexed[0]?.startFrame || 0);
-        setShortSteps(synced);
-        setSelectedBatchIds([]);
-      };
-
-      // Long video state
-      const [s1Steps, setS1Steps] = useState([
-        { id: 1, cycle: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 300, color: '#13c2c2' },
-        { id: 2, cycle: 1, text: '右手取底部泡沫垫并放入纸箱', startFrame: 301, endFrame: 600, color: '#722ed1' },
-        { id: 3, cycle: 1, text: '右手抓取核心金属支架入箱', startFrame: 601, endFrame: 950, color: '#1890ff' },
-        { id: 4, cycle: 1, text: '双手折叠合拢箱盖并封箱', startFrame: 951, endFrame: 1200, color: '#52c41a' },
-      ]);
-      const [s1SelectedId, setS1SelectedId] = useState(1);
-      const [s2Steps, setS2Steps] = useState([
-        { id: 1, cycle: 1, text: '双手抓取纸箱并开箱定位', startFrame: 13200, endFrame: 13500, color: '#13c2c2' },
-        { id: 2, cycle: 1, text: '右手取底部泡沫垫并放入纸箱', startFrame: 13501, endFrame: 13800, color: '#722ed1' },
-        { id: 3, cycle: 1, text: '右手抓取核心金属支架入箱', startFrame: 13801, endFrame: 14100, color: '#1890ff' },
-      ]);
-      const [s2CurrentStepIdx, setS2CurrentStepIdx] = useState(3);
-      const [s2CycleCount, setS2CycleCount] = useState(1);
-      const [s2StepStartFrame, setS2StepStartFrame] = useState(14101);
-
-      // Switch video mode
-      const handleSwitchVideoMode = (mode) => {
-        setVideoMode(mode);
-        setIsPlaying(false);
-        if (mode === 'short') {
-          setCurrentFrame(120);
-          setRedLineFrame(120);
-        } else {
-          setCurrentFrame(14400);
-          setRedLineFrame(14400);
-        }
-      };
 
       // Playback simulation
       useEffect(() => {
@@ -200,7 +100,7 @@
                 setIsPlaying(false);
                 return totalFrames;
               }
-              const stepSize = videoMode === 'short' ? 4 : Math.floor(15 * playbackSpeed);
+              const stepSize = Math.max(1, Math.floor(3 * playbackSpeed));
               const next = Math.min(totalFrames, prev + stepSize);
               setRedLineFrame(next);
               return next;
@@ -212,7 +112,7 @@
         return () => {
           if (playTimerRef.current) clearInterval(playTimerRef.current);
         };
-      }, [isPlaying, playbackSpeed, totalFrames, videoMode]);
+      }, [isPlaying, playbackSpeed, totalFrames]);
 
       // Re-align frames sequentially to keep timeline synchronized
       const realignStepTimeframes = (stepsList, baseStart = 0) => {
@@ -231,9 +131,61 @@
         });
       };
 
+      // Multi-select Batch Handlers
+      const handleToggleBatchSelect = (stepId) => {
+        setSelectedBatchIds(prev => 
+          prev.includes(stepId) ? prev.filter(id => id !== stepId) : [...prev, stepId]
+        );
+      };
+
+      const handleSelectAllBatch = () => {
+        if (selectedBatchIds.length === steps.length) {
+          setSelectedBatchIds([]);
+        } else {
+          setSelectedBatchIds(steps.map(s => s.id));
+        }
+      };
+
+      const handleBatchCopySelected = () => {
+        if (selectedBatchIds.length === 0) return;
+        const stepsToCopy = steps.filter(s => selectedBatchIds.includes(s.id));
+        const lastEndFrame = steps.length > 0 ? steps[steps.length - 1].endFrame : currentFrame;
+        let runningStart = lastEndFrame + 1;
+
+        const clonedSteps = stepsToCopy.map((step, idx) => {
+          const dur = Math.max(1, (step.endFrame - step.startFrame) || 200);
+          const start = runningStart;
+          const end = start + dur;
+          runningStart = end + 1;
+          return {
+            id: steps.length + idx + 1,
+            text: `${step.text} (批量复制)`,
+            startFrame: start,
+            endFrame: end,
+            color: step.color,
+            arm: step.arm
+          };
+        });
+
+        const updated = [...steps, ...clonedSteps];
+        const reindexed = updated.map((s, idx) => ({ ...s, id: idx + 1 }));
+        setSteps(reindexed);
+        setSelectedBatchIds([]);
+        setSelectedId(steps.length + 1);
+      };
+
+      const handleBatchDeleteSelected = () => {
+        if (selectedBatchIds.length === 0) return;
+        const remaining = steps.filter(s => !selectedBatchIds.includes(s.id));
+        const reindexed = remaining.map((s, idx) => ({ ...s, id: idx + 1 }));
+        const synced = realignStepTimeframes(reindexed, reindexed[0]?.startFrame || 0);
+        setSteps(synced);
+        setSelectedBatchIds([]);
+      };
+
       // Copy single step
       const handleCopySingleStep = (step) => {
-        const targetIdx = shortSteps.findIndex(s => s.id === step.id);
+        const targetIdx = steps.findIndex(s => s.id === step.id);
         const newStep = {
           id: Date.now(),
           text: `${step.text} (调整/复用)`,
@@ -242,26 +194,12 @@
           color: step.color,
           arm: step.arm
         };
-        const updated = [...shortSteps];
+        const updated = [...steps];
         updated.splice(targetIdx + 1, 0, newStep);
         const reindexed = updated.map((s, idx) => ({ ...s, id: idx + 1 }));
-        const synced = realignStepTimeframes(reindexed, shortSteps[0]?.startFrame || 0);
-        setShortSteps(synced);
-        setShortSelectedId(targetIdx + 2);
-      };
-
-      // Move Step Up/Down
-      const handleMoveStep = (idx, direction) => {
-        const targetIdx = idx + direction;
-        if (targetIdx < 0 || targetIdx >= shortSteps.length) return;
-        const updated = [...shortSteps];
-        const currentStep = updated[idx];
-        updated[idx] = updated[targetIdx];
-        updated[targetIdx] = currentStep;
-        
-        const synced = realignStepTimeframes(updated, shortSteps[0]?.startFrame || 0);
-        setShortSteps(synced);
-        setShortSelectedId(targetIdx + 1);
+        const synced = realignStepTimeframes(reindexed, steps[0]?.startFrame || 0);
+        setSteps(synced);
+        setSelectedId(targetIdx + 2);
       };
 
       // Drag and Drop
@@ -280,80 +218,14 @@
         e.preventDefault();
         setDragOverStepIdx(null);
         if (draggedStepIdx === null || draggedStepIdx === targetIdx) return;
-        const updated = [...shortSteps];
+        const updated = [...steps];
         const [draggedItem] = updated.splice(draggedStepIdx, 1);
         updated.splice(targetIdx, 0, draggedItem);
-        const synced = realignStepTimeframes(updated, shortSteps[0]?.startFrame || 0);
-        setShortSteps(synced);
-        setShortSelectedId(targetIdx + 1);
+        const synced = realignStepTimeframes(updated, steps[0]?.startFrame || 0);
+        setSteps(synced);
+        setSelectedId(targetIdx + 1);
         setDraggedStepIdx(null);
       };
-
-      // Auto sort steps
-      const handleAutoSortSteps = () => {
-        const sorted = [...shortSteps].sort((a, b) => a.startFrame - b.startFrame);
-        const reindexed = sorted.map((s, i) => ({ ...s, id: i + 1 }));
-        setShortSteps(reindexed);
-      };
-
-      // Long video S1 Duplicate Cycle
-      const handleS1DuplicateCycle = () => {
-        const currentMaxCycle = Math.max(...s1Steps.map(s => s.cycle || 1), 1);
-        const nextCycle = currentMaxCycle + 1;
-        const baseStart = redLineFrame || currentFrame;
-        let runningStart = baseStart;
-        const newCycleSteps = SOP_CYCLE_TEMPLATE.map((tpl, idx) => {
-          const stepStart = runningStart;
-          const stepEnd = stepStart + tpl.defaultDur;
-          runningStart = stepEnd + 1;
-          return {
-            id: s1Steps.length + idx + 1,
-            cycle: nextCycle,
-            text: tpl.text,
-            startFrame: stepStart,
-            endFrame: stepEnd,
-            color: tpl.color
-          };
-        });
-        setS1Steps([...s1Steps, ...newCycleSteps]);
-        setS1SelectedId(s1Steps.length + 1);
-      };
-
-      // Long video S2 Stamp Cut
-      const handleS2StampCut = () => {
-        const currentTpl = SOP_CYCLE_TEMPLATE[s2CurrentStepIdx];
-        const stampedEnd = currentFrame;
-        if (stampedEnd <= s2StepStartFrame) return;
-        const newStepItem = {
-          id: s2Steps.length + 1,
-          cycle: s2CycleCount,
-          text: currentTpl.text,
-          startFrame: s2StepStartFrame,
-          endFrame: stampedEnd,
-          color: currentTpl.color
-        };
-        setS2Steps([...s2Steps, newStepItem]);
-        const nextIdx = (s2CurrentStepIdx + 1) % SOP_CYCLE_TEMPLATE.length;
-        if (nextIdx === 0) setS2CycleCount(c => c + 1);
-        setS2CurrentStepIdx(nextIdx);
-        setS2StepStartFrame(stampedEnd + 1);
-      };
-
-      // Keyboard listener for Spacebar in Solution 2
-      useEffect(() => {
-        const handleKeyDown = (e) => {
-          if (videoMode === 'long' && longVideoSolution === 'solution_2') {
-            if (e.code === 'Space' && !e.target.tagName.match(/INPUT|TEXTAREA/)) {
-              e.preventDefault();
-              handleS2StampCut();
-            }
-          }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-      }, [videoMode, longVideoSolution, currentFrame, s2StepStartFrame, s2CurrentStepIdx, s2CycleCount, s2Steps]);
-
-      const currentDisplayedSteps = videoMode === 'short' ? shortSteps : (longVideoSolution === 'solution_1' ? s1Steps : s2Steps);
 
       const formatTime = (frame) => {
         const sec = Math.floor(frame / 30);
@@ -366,54 +238,19 @@
       return (
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc', overflow: 'hidden' }}>
           
-          {/* HEADER */}
-          <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '8px 20px', display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>test_job_范围标注 (自适应长短视频工作台)</span>
-                <Divider type="vertical" style={{ height: 16 }} />
-                
-                {/* Mode Selector */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', padding: '3px 8px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#334155' }}>视频时长规格：</span>
-                  <Radio.Group value={videoMode} onChange={e => handleSwitchVideoMode(e.target.value)} size="small" buttonStyle="solid">
-                    <Radio.Button value="short">🎬 短视频模式 (30秒 / 900帧)</Radio.Button>
-                    <Radio.Button value="long">📹 长视频模式 (1小时 / 108,000帧)</Radio.Button>
-                  </Radio.Group>
-                </div>
+          {/* TOP HEADER */}
+          <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>test_job_范围标注 (具身智能标注工作台)</span>
+              <Divider type="vertical" style={{ height: 16 }} />
+              <div style={{ fontSize: 12, color: '#64748b', display: 'flex', gap: 12 }}>
+                <span>任务ID: <strong style={{ color: '#0f172a' }}>8751</strong></span>
+                <span>实例ID: <strong style={{ color: '#0f172a' }}>19884</strong></span>
+                <span>数据序号: <strong style={{ color: '#0f172a' }}>744108</strong></span>
               </div>
-
-              {videoMode === 'long' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#eff6ff', padding: '3px 8px', borderRadius: 6, border: '1px solid #bfdbfe' }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#1e40af' }}>长视频工具：</span>
-                  <Radio.Group value={longVideoSolution} onChange={e => setLongVideoSolution(e.target.value)} size="small">
-                    <Radio.Button value="solution_1">✨ 整组复制</Radio.Button>
-                    <Radio.Button value="solution_2">⚡ 空格打点(推荐)</Radio.Button>
-                    <Radio.Button value="solution_3">🌳 两级拆解</Radio.Button>
-                  </Radio.Group>
-                </div>
-              )}
-
-              <Button type="primary" size="small" icon={<CheckOutlined />}>保存标注</Button>
             </div>
 
-            {/* Hint banner */}
-            <div style={{ 
-              background: videoMode === 'short' ? '#f0fdf4' : '#eff6ff',
-              border: `1px solid ${videoMode === 'short' ? '#bbf7d0' : '#bfdbfe'}`,
-              borderRadius: 6, padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11
-            }}>
-              {videoMode === 'short' ? (
-                <span style={{ color: '#166534' }}>
-                  💡 <strong>【短视频模式（单次任务极简标注）】</strong>：右侧步骤支持<strong>按住鼠标直接拖拽调换位置</strong>或点击 <strong>[ ⬆️ / ⬇️ ]</strong>，下方时间轴色块<strong>带着文字标签同步滑动换位</strong>！
-                </span>
-              ) : (
-                <span style={{ color: '#1e40af' }}>
-                  ⚡ <strong>【长视频模式（重复循环）】</strong>：支持 <strong>「✨ 整组复制」</strong> 或 <strong>「⚡ 按空格键 Space 极速切断打点」</strong>，大幅提升长视频标注效率！
-                </span>
-              )}
-              <Tag color={videoMode === 'short' ? 'green' : 'blue'}>{videoMode === 'short' ? '短视频模式' : '长视频模式'}</Tag>
-            </div>
+            <Button type="primary" size="small" icon={<CheckOutlined />}>保存标注</Button>
           </div>
 
           {/* MAIN PANELS */}
@@ -473,228 +310,169 @@
             {/* RIGHT ACTION STEPS (1.0) */}
             <div style={{ flex: 1, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#1677ff', borderBottomColor: '#1677ff' }}>
-                动作步骤管理 ({currentDisplayedSteps.length})
+                动作步骤管理 ({steps.length})
               </div>
 
               <div className="custom-scrollbar" style={{ flex: 1, padding: 12, overflowY: 'auto' }}>
-                {videoMode === 'short' && (
-                  <div>
-                    {/* Header Toolbar */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 12, fontWeight: 'bold' }}>步骤列表 ({shortSteps.length})</span>
-                        <Tooltip title="一键全选或取消全选">
-                          <Button size="small" icon={<CheckSquareOutlined />} onClick={handleSelectAllBatch} style={{ fontSize: 10, height: 22, padding: '0 6px', color: selectedBatchIds.length === shortSteps.length ? '#2563eb' : '#475569' }}>
-                            {selectedBatchIds.length === shortSteps.length ? '取消全选' : '全选'}
-                          </Button>
-                        </Tooltip>
-                      </div>
-
-                      <Button size="small" type="primary" ghost icon={<PlusOutlined />} style={{ fontSize: 11 }} onClick={() => {
-                        const newStep = {
-                          id: shortSteps.length + 1,
-                          text: '新动作步骤',
-                          startFrame: currentFrame,
-                          endFrame: Math.min(totalFrames, currentFrame + 100),
-                          color: '#eab308',
-                          arm: '双手'
-                        };
-                        setShortSteps([...shortSteps, newStep]);
-                        setShortSelectedId(newStep.id);
-                      }}>
-                        增加步骤
+                {/* Header Toolbar */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 12, fontWeight: 'bold' }}>步骤列表 ({steps.length})</span>
+                    <Tooltip title="一键全选或取消全选">
+                      <Button size="small" icon={<CheckSquareOutlined />} onClick={handleSelectAllBatch} style={{ fontSize: 10, height: 22, padding: '0 6px', color: selectedBatchIds.length === steps.length ? '#2563eb' : '#475569' }}>
+                        {selectedBatchIds.length === steps.length ? '取消全选' : '全选'}
                       </Button>
-                    </div>
-
-                    {/* STICKY BATCH ACTIONS BAR (多选勾选时浮现) */}
-                    {selectedBatchIds.length > 0 && (
-                      <div style={{
-                        marginBottom: 10,
-                        padding: '8px 12px',
-                        background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)',
-                        borderRadius: 8,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
-                        color: '#fff'
-                      }}>
-                        <div style={{ fontSize: 12, fontWeight: 700 }}>
-                          已勾选 <span style={{ color: '#fde047', fontSize: 14 }}>{selectedBatchIds.length}</span> 项步骤
-                        </div>
-                        <Space size={6}>
-                          <Button
-                            size="small"
-                            type="primary"
-                            icon={<CopyOutlined />}
-                            onClick={handleBatchCopySelected}
-                            style={{ background: '#fff', color: '#1e40af', fontWeight: 700, borderColor: '#fff' }}
-                          >
-                            📋 批量复制所选 ({selectedBatchIds.length}) 步
-                          </Button>
-                          <Button
-                            size="small"
-                            danger
-                            type="primary"
-                            icon={<DeleteOutlined />}
-                            onClick={handleBatchDeleteSelected}
-                            style={{ fontWeight: 600 }}
-                          >
-                            删除
-                          </Button>
-                          <Button
-                            size="small"
-                            type="text"
-                            onClick={() => setSelectedBatchIds([])}
-                            style={{ color: '#bfdbfe', fontSize: 11 }}
-                          >
-                            取消
-                          </Button>
-                        </Space>
-                      </div>
-                    )}
-
-                    {/* Step Cards with Drag & Drop */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {shortSteps.map((step, idx) => {
-                        const isSelected = shortSelectedId === step.id;
-                        const isBatchChecked = selectedBatchIds.includes(step.id);
-                        const isDragged = draggedStepIdx === idx;
-                        const isDragOver = dragOverStepIdx === idx;
-                        return (
-                          <div 
-                            key={step.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, idx)}
-                            onDragOver={(e) => handleDragOver(e, idx)}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => handleDrop(e, idx)}
-                            onClick={() => setShortSelectedId(step.id)}
-                            style={{
-                              border: isDragOver ? '2px solid #2563eb' : isBatchChecked ? '2px solid #3b82f6' : isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                              borderLeft: `5px solid ${step.color}`,
-                              borderRadius: 8,
-                              background: isDragOver ? '#dbeafe' : isBatchChecked ? '#f0f9ff' : isSelected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#fafafa',
-                              opacity: isDragged ? 0.45 : 1,
-                              padding: '8px 10px',
-                              cursor: 'grab',
-                              transform: isDragOver ? 'scale(1.02)' : 'none',
-                              boxShadow: isDragOver ? '0 4px 12px rgba(37, 99, 235, 0.25)' : isSelected ? '0 2px 8px rgba(37, 99, 235, 0.15)' : 'none',
-                              transition: 'all 0.15s ease'
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                                <Checkbox 
-                                  checked={isBatchChecked}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleBatchSelect(step.id);
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                                <Tooltip title="按住拖拽可直接调换步骤位置">
-                                  <HolderOutlined style={{ color: '#94a3b8', cursor: 'grab', fontSize: 13 }} />
-                                </Tooltip>
-                                <span style={{ fontSize: 11, fontWeight: 'bold', color: isSelected ? '#1d4ed8' : '#64748b', background: isSelected ? '#bfdbfe' : '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>
-                                  {String(idx + 1).padStart(2, '0')}
-                                </span>
-                                <Input 
-                                  size="small"
-                                  value={step.text}
-                                  onChange={e => {
-                                    const updated = shortSteps.map(s => s.id === step.id ? { ...s, text: e.target.value } : s);
-                                    setShortSteps(updated);
-                                  }}
-                                  style={{ fontSize: 11, fontWeight: isSelected ? 600 : 400, background: '#fff' }}
-                                />
-                              </div>
-
-                              <Space size={3} style={{ marginLeft: 6 }}>
-                                <Tooltip title="复制单步">
-                                  <Button size="small" icon={<CopyOutlined style={{ color: '#2563eb' }} />} onClick={(e) => { e.stopPropagation(); handleCopySingleStep(step); }} style={{ height: 22, fontSize: 10, padding: '0 6px' }}>
-                                    复制单步
-                                  </Button>
-                                </Tooltip>
-                                <DeleteOutlined style={{ color: '#ef4444', fontSize: 12, cursor: 'pointer', marginLeft: 2 }} onClick={(e) => { e.stopPropagation(); const f = shortSteps.filter(s => s.id !== step.id); setShortSteps(f.map((s, i) => ({ ...s, id: i + 1 }))); }} />
-                              </Space>
-                            </div>
-
-                            <Row gutter={6}>
-                              <Col span={8}>
-                                <div style={{ fontSize: 9, color: '#64748b' }}>起始帧</div>
-                                <InputNumber size="small" value={step.startFrame} style={{ width: '100%', fontSize: 11 }} />
-                              </Col>
-                              <Col span={8}>
-                                <div style={{ fontSize: 9, color: '#64748b' }}>结束帧</div>
-                                <InputNumber size="small" value={step.endFrame} style={{ width: '100%', fontSize: 11 }} />
-                              </Col>
-                              <Col span={8}>
-                                <div style={{ fontSize: 9, color: '#64748b' }}>帧总数</div>
-                                <InputNumber size="small" disabled value={step.endFrame - step.startFrame} style={{ width: '100%', fontSize: 11 }} />
-                              </Col>
-                            </Row>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    </Tooltip>
                   </div>
-                )}
 
-                {videoMode === 'long' && longVideoSolution === 'solution_1' && (
-                  <div>
-                    <div style={{ marginBottom: 10, padding: '10px 12px', background: '#eff6ff', borderRadius: 8, border: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1e40af' }}>SOP循环批量复制</span>
-                      <Button type="primary" icon={<CopyOutlined />} onClick={handleS1DuplicateCycle} style={{ background: '#2563eb', fontWeight: 600, fontSize: 12 }}>
-                        ✨ 复制整组循环至当前游标
-                      </Button>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {s1Steps.map((step) => (
-                        <div key={step.id} style={{ border: s1SelectedId === step.id ? '2px solid #2563eb' : '1px solid #e2e8f0', borderLeft: `5px solid ${step.color}`, borderRadius: 6, padding: '6px 10px', background: '#fff', display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: 11, fontWeight: 600 }}>{String(step.id).padStart(2, '0')}. {step.text}</span>
-                          <Tag style={{ margin: 0, fontSize: 10 }}>{step.startFrame} - {step.endFrame} 帧</Tag>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  <Button size="small" type="primary" ghost icon={<PlusOutlined />} style={{ fontSize: 11 }} onClick={() => {
+                    const newStep = {
+                      id: steps.length + 1,
+                      text: '新动作步骤',
+                      startFrame: currentFrame,
+                      endFrame: Math.min(totalFrames, currentFrame + 100),
+                      color: '#eab308',
+                      arm: '双手'
+                    };
+                    setSteps([...steps, newStep]);
+                    setSelectedId(newStep.id);
+                  }}>
+                    增加步骤
+                  </Button>
+                </div>
 
-                {videoMode === 'long' && longVideoSolution === 'solution_3' && (
-                  <div>
-                    <div style={{ marginBottom: 12, padding: '10px 12px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#166534', marginBottom: 4 }}>宏观大循环 Episode 批量注入</div>
-                      <div style={{ fontSize: 11, color: '#15803d', marginBottom: 10 }}>先将 1 小时长视频切出 20 个大 Episode，一键自动铺满 4 动作子步骤。</div>
+                {/* STICKY BATCH ACTIONS BAR (多选勾选时浮现) */}
+                {selectedBatchIds.length > 0 && (
+                  <div style={{
+                    marginBottom: 10,
+                    padding: '8px 12px',
+                    background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)',
+                    borderRadius: 8,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
+                    color: '#fff'
+                  }}>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>
+                      已勾选 <span style={{ color: '#fde047', fontSize: 14 }}>{selectedBatchIds.length}</span> 项步骤
+                    </div>
+                    <Space size={6}>
                       <Button
+                        size="small"
                         type="primary"
-                        block
-                        icon={<ThunderboltOutlined />}
-                        onClick={() => message.success('🚀 已向 1 小时长视频所有 20 个大循环 Episode 注入 SOP 动作模版！')}
-                        style={{ background: '#16a34a', borderColor: '#16a34a', height: 38, fontWeight: 700 }}
+                        icon={<CopyOutlined />}
+                        onClick={handleBatchCopySelected}
+                        style={{ background: '#fff', color: '#1e40af', fontWeight: 700, borderColor: '#fff' }}
                       >
-                        🚀 批量向所有大循环注入 SOP 模版
+                        📋 批量复制所选 ({selectedBatchIds.length}) 步
                       </Button>
-                    </div>
-
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>大循环分段列表 (Episodes)：</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {[
-                        { name: 'Episode 01 (第 1 轮打包)', range: '0 - 5,400 帧', status: '已注入模版' },
-                        { name: 'Episode 02 (第 2 轮打包)', range: '5,401 - 10,800 帧', status: '已注入模版' },
-                        { name: 'Episode 03 (第 3 轮打包)', range: '10,801 - 16,200 帧', status: '已注入模版' },
-                        { name: 'Episode 04 (第 4 轮打包)', range: '16,201 - 21,600 帧', status: '待注入' },
-                      ].map((ep, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '8px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
-                          <div>
-                            <strong style={{ fontSize: 12, color: '#334155' }}>{ep.name}</strong>
-                            <span style={{ fontSize: 11, color: '#64748b', marginLeft: 8 }}>[{ep.range}]</span>
-                          </div>
-                          <Tag color={ep.status.includes('已注入') ? 'green' : 'orange'} style={{ margin: 0 }}>{ep.status}</Tag>
-                        </div>
-                      ))}
-                    </div>
+                      <Button
+                        size="small"
+                        danger
+                        type="primary"
+                        icon={<DeleteOutlined />}
+                        onClick={handleBatchDeleteSelected}
+                        style={{ fontWeight: 600 }}
+                      >
+                        删除
+                      </Button>
+                      <Button
+                        size="small"
+                        type="text"
+                        onClick={() => setSelectedBatchIds([])}
+                        style={{ color: '#bfdbfe', fontSize: 11 }}
+                      >
+                        取消
+                      </Button>
+                    </Space>
                   </div>
                 )}
+
+                {/* Step Cards with Drag & Drop */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {steps.map((step, idx) => {
+                    const isSelected = selectedId === step.id;
+                    const isBatchChecked = selectedBatchIds.includes(step.id);
+                    const isDragged = draggedStepIdx === idx;
+                    const isDragOver = dragOverStepIdx === idx;
+                    return (
+                      <div 
+                        key={step.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, idx)}
+                        onDragOver={(e) => handleDragOver(e, idx)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, idx)}
+                        onClick={() => setSelectedId(step.id)}
+                        style={{
+                          border: isDragOver ? '2px solid #2563eb' : isBatchChecked ? '2px solid #3b82f6' : isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                          borderLeft: `5px solid ${step.color}`,
+                          borderRadius: 8,
+                          background: isDragOver ? '#dbeafe' : isBatchChecked ? '#f0f9ff' : isSelected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#fafafa',
+                          opacity: isDragged ? 0.45 : 1,
+                          padding: '8px 10px',
+                          cursor: 'grab',
+                          transform: isDragOver ? 'scale(1.02)' : 'none',
+                          boxShadow: isDragOver ? '0 4px 12px rgba(37, 99, 235, 0.25)' : isSelected ? '0 2px 8px rgba(37, 99, 235, 0.15)' : 'none',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                            <Checkbox 
+                              checked={isBatchChecked}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleToggleBatchSelect(step.id);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <Tooltip title="按住拖拽可直接调换步骤位置">
+                              <HolderOutlined style={{ color: '#94a3b8', cursor: 'grab', fontSize: 13 }} />
+                            </Tooltip>
+                            <span style={{ fontSize: 11, fontWeight: 'bold', color: isSelected ? '#1d4ed8' : '#64748b', background: isSelected ? '#bfdbfe' : '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>
+                              {String(idx + 1).padStart(2, '0')}
+                            </span>
+                            <Input 
+                              size="small"
+                              value={step.text}
+                              onChange={e => {
+                                const updated = steps.map(s => s.id === step.id ? { ...s, text: e.target.value } : s);
+                                setSteps(updated);
+                              }}
+                              style={{ fontSize: 11, fontWeight: isSelected ? 600 : 400, background: '#fff' }}
+                            />
+                          </div>
+
+                          <Space size={3} style={{ marginLeft: 6 }}>
+                            <Tooltip title="复制单步">
+                              <Button size="small" icon={<CopyOutlined style={{ color: '#2563eb' }} />} onClick={(e) => { e.stopPropagation(); handleCopySingleStep(step); }} style={{ height: 22, fontSize: 10, padding: '0 6px' }}>
+                                复制单步
+                              </Button>
+                            </Tooltip>
+                            <DeleteOutlined style={{ color: '#ef4444', fontSize: 12, cursor: 'pointer', marginLeft: 2 }} onClick={(e) => { e.stopPropagation(); const f = steps.filter(s => s.id !== step.id); setSteps(f.map((s, i) => ({ ...s, id: i + 1 }))); }} />
+                          </Space>
+                        </div>
+
+                        <Row gutter={6}>
+                          <Col span={8}>
+                            <div style={{ fontSize: 9, color: '#64748b' }}>起始帧</div>
+                            <InputNumber size="small" value={step.startFrame} style={{ width: '100%', fontSize: 11 }} />
+                          </Col>
+                          <Col span={8}>
+                            <div style={{ fontSize: 9, color: '#64748b' }}>结束帧</div>
+                            <InputNumber size="small" value={step.endFrame} style={{ width: '100%', fontSize: 11 }} />
+                          </Col>
+                          <Col span={8}>
+                            <div style={{ fontSize: 9, color: '#64748b' }}>帧总数</div>
+                            <InputNumber size="small" disabled value={step.endFrame - step.startFrame} style={{ width: '100%', fontSize: 11 }} />
+                          </Col>
+                        </Row>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -735,8 +513,8 @@
                 }
               }}
             >
-              {currentDisplayedSteps.map((step) => {
-                const isSelected = videoMode === 'short' ? shortSelectedId === step.id : s1SelectedId === step.id;
+              {steps.map((step) => {
+                const isSelected = selectedId === step.id;
                 const leftPct = (step.startFrame / totalFrames) * 100;
                 const widthPct = Math.max(0.3, ((step.endFrame - step.startFrame) / totalFrames) * 100);
 
@@ -746,11 +524,9 @@
                     className="timeline-block"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (videoMode === 'short') {
-                        setShortSelectedId(step.id);
-                        setRedLineFrame(step.startFrame);
-                        setCurrentFrame(step.startFrame);
-                      }
+                      setSelectedId(step.id);
+                      setRedLineFrame(step.startFrame);
+                      setCurrentFrame(step.startFrame);
                     }}
                     style={{
                       position: 'absolute',
@@ -805,20 +581,20 @@
               <Space size={12} align="center">
                 <Button type="text" icon={<LeftOutlined />} onClick={() => { setCurrentFrame(0); setRedLineFrame(0); }} />
                 <div style={{ fontSize: 12, fontWeight: 'bold', fontFamily: 'monospace' }}>
-                  ⏱️ {formatTime(currentFrame)} / {videoMode === 'short' ? '00:00:30.000' : '01:00:00.000'}
+                  ⏱️ {formatTime(currentFrame)} / 00:00:30.000
                 </div>
                 <Button type="text" icon={<RightOutlined />} onClick={() => { setCurrentFrame(totalFrames); setRedLineFrame(totalFrames); }} />
               </Space>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', borderRadius: 20, padding: '2px 12px', border: '1px solid #e2e8f0' }}>
-                <Button type="text" icon={<StepBackwardOutlined />} onClick={() => setCurrentFrame(Math.max(0, currentFrame - (videoMode === 'short' ? 10 : 30)))} />
+                <Button type="text" icon={<StepBackwardOutlined />} onClick={() => setCurrentFrame(Math.max(0, currentFrame - 10))} />
                 <Button
                   type="primary"
                   icon={isPlaying ? <PauseOutlined /> : <PlayCircleOutlined />}
                   onClick={() => setIsPlaying(!isPlaying)}
                   style={{ borderRadius: '50%', width: 32, height: 32, minWidth: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#2563eb' }}
                 />
-                <Button type="text" icon={<StepForwardOutlined />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + (videoMode === 'short' ? 10 : 30)))} />
+                <Button type="text" icon={<StepForwardOutlined />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + 10))} />
                 <Divider type="vertical" style={{ height: 14, margin: '0 4px' }} />
                 <Select value={playbackSpeed} size="small" variant="borderless" style={{ width: 65 }} onChange={setPlaybackSpeed}>
                   <Option value={1}>1.0x</Option>
@@ -827,8 +603,8 @@
                 </Select>
               </div>
 
-              <Tag color={videoMode === 'short' ? 'green' : 'blue'}>
-                {videoMode === 'short' ? '短视频单次任务 (30s)' : '长视频多轮循环 (1h)'}
+              <Tag color="blue">
+                范围标注模式 (30 FPS)
               </Tag>
             </div>
 
