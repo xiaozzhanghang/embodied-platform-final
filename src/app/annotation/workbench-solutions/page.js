@@ -621,7 +621,7 @@ function WorkbenchSolutionsContent() {
                     </div>
                   </div>
 
-                  {/* Header: Template & Add Step & Auto Sort & Batch Select */}
+                  {/* Header: Add Step & Batch Select */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 'bold', color: '#1e293b' }}>
@@ -637,53 +637,30 @@ function WorkbenchSolutionsContent() {
                           {selectedBatchIds.length === shortSteps.length ? '取消全选' : '全选'}
                         </Button>
                       </Tooltip>
-                      <Tooltip title="按每个步骤的起始帧从早到晚自动重新排序并编号">
-                        <Button 
-                          size="small" 
-                          icon={<SortAscendingOutlined />} 
-                          onClick={handleAutoSortSteps}
-                          style={{ fontSize: 10, padding: '0 6px', height: 22, color: '#475569' }}
-                        >
-                          按时间排序
-                        </Button>
-                      </Tooltip>
                     </div>
 
-                    <Space size={6}>
-                      <Select
-                        placeholder="套用动作模版"
-                        size="small"
-                        style={{ width: 110, fontSize: 11 }}
-                        defaultValue="act_1"
-                        options={[
-                          { value: 'act_1', label: '📦 工业打包模版' },
-                          { value: 'act_2', label: '📚 桌面整理模版' },
-                          { value: 'act_3', label: '🍽️ 餐盘收拾模版' }
-                        ]}
-                      />
-                      <Button 
-                        size="small" 
-                        type="primary" 
-                        ghost 
-                        icon={<PlusOutlined />} 
-                        onClick={() => {
-                          const newStep = {
-                            id: shortSteps.length + 1,
-                            text: '新自定义动作步骤',
-                            startFrame: currentFrame,
-                            endFrame: Math.min(totalFrames, currentFrame + 100),
-                            color: '#eab308',
-                            arm: '双手'
-                          };
-                          setShortSteps([...shortSteps, newStep]);
-                          setShortSelectedId(newStep.id);
-                          message.success('已新增动作步骤');
-                        }}
-                        style={{ fontSize: 11 }}
-                      >
-                        增加步骤
-                      </Button>
-                    </Space>
+                    <Button 
+                      size="small" 
+                      type="primary" 
+                      ghost 
+                      icon={<PlusOutlined />} 
+                      onClick={() => {
+                        const newStep = {
+                          id: shortSteps.length + 1,
+                          text: '新自定义动作步骤',
+                          startFrame: currentFrame,
+                          endFrame: Math.min(totalFrames, currentFrame + 100),
+                          color: '#eab308',
+                          arm: '双手'
+                        };
+                        setShortSteps([...shortSteps, newStep]);
+                        setShortSelectedId(newStep.id);
+                        message.success('已新增动作步骤');
+                      }}
+                      style={{ fontSize: 11 }}
+                    >
+                      增加步骤
+                    </Button>
                   </div>
 
                   {/* STICKY BATCH ACTIONS BAR (当勾选步骤时浮现) */}
@@ -734,7 +711,7 @@ function WorkbenchSolutionsContent() {
                     </div>
                   )}
 
-                  {/* Short Video Steps List with [📄 复制单步] & [📋 多选批量复制] & [↕️ 拖拽换位 / ⬆️/⬇️ 调换顺序] feature */}
+                  {/* Short Video Steps List with [📄 复制单步] & [📋 多选批量复制] & [⠿ 拖拽换位] feature */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
                     {shortSteps.map((step, idx) => {
                       const isSelected = shortSelectedId === step.id;
@@ -764,7 +741,7 @@ function WorkbenchSolutionsContent() {
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          {/* Title + Action Toolbar: Checkbox, Drag Grip, Move Up/Down, Copy Single Step & Delete */}
+                          {/* Title + Action Toolbar: Checkbox, Drag Grip, Copy Single Step & Delete */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
                               {/* ☑️ MULTI-SELECT CHECKBOX */}
@@ -796,34 +773,6 @@ function WorkbenchSolutionsContent() {
                               />
                             </div>
                             <Space size={3} style={{ flexShrink: 0, marginLeft: 6 }}>
-                              {/* ⬆️ MOVE UP BUTTON */}
-                              <Tooltip title="上移此步骤位置">
-                                <Button 
-                                  size="small" 
-                                  icon={<ArrowUpOutlined />} 
-                                  disabled={idx === 0}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMoveStep(idx, -1);
-                                  }}
-                                  style={{ fontSize: 10, padding: '0 4px', height: 22, width: 22 }}
-                                />
-                              </Tooltip>
-
-                              {/* ⬇️ MOVE DOWN BUTTON */}
-                              <Tooltip title="下移此步骤位置">
-                                <Button 
-                                  size="small" 
-                                  icon={<ArrowDownOutlined />} 
-                                  disabled={idx === shortSteps.length - 1}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMoveStep(idx, 1);
-                                  }}
-                                  style={{ fontSize: 10, padding: '0 4px', height: 22, width: 22 }}
-                                />
-                              </Tooltip>
-
                               {/* 📄 COPY SINGLE STEP BUTTON */}
                               <Tooltip title="复制此单步：在下方立即克隆一个相同动作，方便重试或多次调整">
                                 <Button 

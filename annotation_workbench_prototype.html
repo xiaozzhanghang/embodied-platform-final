@@ -488,33 +488,22 @@
                             {selectedBatchIds.length === shortSteps.length ? '取消全选' : '全选'}
                           </Button>
                         </Tooltip>
-                        <Tooltip title="按起始帧从早到晚自动排序">
-                          <Button size="small" icon={<SortAscendingOutlined />} onClick={handleAutoSortSteps} style={{ fontSize: 10, height: 22, padding: '0 6px' }}>
-                            时间排序
-                          </Button>
-                        </Tooltip>
                       </div>
 
-                      <Space size={6}>
-                        <Select size="small" defaultValue="act_1" style={{ width: 110, fontSize: 11 }}>
-                          <Option value="act_1">📦 工业打包模版</Option>
-                          <Option value="act_2">📚 桌面整理模版</Option>
-                        </Select>
-                        <Button size="small" type="primary" ghost icon={<PlusOutlined />} style={{ fontSize: 11 }} onClick={() => {
-                          const newStep = {
-                            id: shortSteps.length + 1,
-                            text: '新动作步骤',
-                            startFrame: currentFrame,
-                            endFrame: Math.min(totalFrames, currentFrame + 100),
-                            color: '#eab308',
-                            arm: '双手'
-                          };
-                          setShortSteps([...shortSteps, newStep]);
-                          setShortSelectedId(newStep.id);
-                        }}>
-                          加步骤
-                        </Button>
-                      </Space>
+                      <Button size="small" type="primary" ghost icon={<PlusOutlined />} style={{ fontSize: 11 }} onClick={() => {
+                        const newStep = {
+                          id: shortSteps.length + 1,
+                          text: '新动作步骤',
+                          startFrame: currentFrame,
+                          endFrame: Math.min(totalFrames, currentFrame + 100),
+                          color: '#eab308',
+                          arm: '双手'
+                        };
+                        setShortSteps([...shortSteps, newStep]);
+                        setShortSelectedId(newStep.id);
+                      }}>
+                        增加步骤
+                      </Button>
                     </div>
 
                     {/* STICKY BATCH ACTIONS BAR (多选勾选时浮现) */}
@@ -622,15 +611,9 @@
                               </div>
 
                               <Space size={3} style={{ marginLeft: 6 }}>
-                                <Tooltip title="上移">
-                                  <Button size="small" icon={<ArrowUpOutlined />} disabled={idx === 0} onClick={(e) => { e.stopPropagation(); handleMoveStep(idx, -1); }} style={{ height: 22, width: 22, padding: 0 }} />
-                                </Tooltip>
-                                <Tooltip title="下移">
-                                  <Button size="small" icon={<ArrowDownOutlined />} disabled={idx === shortSteps.length - 1} onClick={(e) => { e.stopPropagation(); handleMoveStep(idx, 1); }} style={{ height: 22, width: 22, padding: 0 }} />
-                                </Tooltip>
                                 <Tooltip title="复制单步">
                                   <Button size="small" icon={<CopyOutlined style={{ color: '#2563eb' }} />} onClick={(e) => { e.stopPropagation(); handleCopySingleStep(step); }} style={{ height: 22, fontSize: 10, padding: '0 6px' }}>
-                                    复制
+                                    复制单步
                                   </Button>
                                 </Tooltip>
                                 <DeleteOutlined style={{ color: '#ef4444', fontSize: 12, cursor: 'pointer', marginLeft: 2 }} onClick={(e) => { e.stopPropagation(); const f = shortSteps.filter(s => s.id !== step.id); setShortSteps(f.map((s, i) => ({ ...s, id: i + 1 }))); }} />
