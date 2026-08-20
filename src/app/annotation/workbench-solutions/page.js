@@ -776,11 +776,63 @@ function WorkbenchSolutionsContent() {
               />
             </div>
 
-            {/* Right Meta tags */}
-            <Space size={8}>
-              <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
-                范围标注模式 (30 FPS)
-              </Tag>
+            {/* Right: Action Buttons (完成标注 & 质检/抽检操作) */}
+            <Space size={6} style={{ flexWrap: 'wrap' }}>
+              <Button
+                size="small"
+                style={{
+                  background: '#f9f0ff',
+                  borderColor: '#d3adf7',
+                  color: '#722ed1',
+                  borderRadius: 4,
+                  fontSize: 12
+                }}
+                onClick={() => message.success('📋 已根据当前步骤生成动作模版！')}
+              >
+                生成标注模版
+              </Button>
+              <Button
+                size="small"
+                type="primary"
+                style={{ borderRadius: 4, fontSize: 12, fontWeight: 600, background: '#2563eb' }}
+                onClick={() => message.success('🎉 恭喜！数据序号 744108 标注完成并已提交！')}
+              >
+                完成标注(T)
+              </Button>
+              <Button
+                size="small"
+                style={{
+                  background: '#fff2e8',
+                  borderColor: '#ffbb96',
+                  color: '#d48806',
+                  borderRadius: 4,
+                  fontSize: 12
+                }}
+                onClick={() => message.warning('⚠️ 已标记为质检不合格')}
+              >
+                质检不合格
+              </Button>
+              <Button
+                size="small"
+                style={{
+                  background: '#f6ffed',
+                  borderColor: '#b7eb8f',
+                  color: '#52c41a',
+                  borderRadius: 4,
+                  fontSize: 12
+                }}
+                onClick={() => message.success('✅ 抽检通过')}
+              >
+                抽检通过
+              </Button>
+              <Button
+                size="small"
+                danger
+                style={{ borderRadius: 4, fontSize: 12 }}
+                onClick={() => message.error('❌ 抽检不通过')}
+              >
+                抽检不通过
+              </Button>
             </Space>
           </div>
 
