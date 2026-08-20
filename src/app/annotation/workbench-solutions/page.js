@@ -1008,7 +1008,7 @@ function WorkbenchSolutionsContent() {
               );
             })}
 
-            {/* Ultra-Prominent Glowing Blue / Red Playhead line & top frame pin (支持鼠标按住随意左右拖动) */}
+            {/* Ultra-Prominent Glowing Red Playhead line & top frame pin (支持鼠标按住随意左右拖动) */}
             <div 
               onMouseDown={(e) => {
                 e.stopPropagation();
@@ -1036,26 +1036,26 @@ function WorkbenchSolutionsContent() {
                 userSelect: 'none',
                 pointerEvents: 'auto'
               }}
-              title={`游标: ${redLineFrame} 帧 (在时间轴上点击或按住鼠标可左右自由拖动)`}
+              title={`🔴 标注游标: ${redLineFrame} 帧 (在时间轴上点击或按住鼠标可左右自由拖动)`}
             >
               {/* Top Frame Tag */}
               <div style={{
-                background: isRecordingStepId !== null ? '#2563eb' : '#2563eb',
+                background: '#ff1e1e',
                 color: '#fff',
                 fontSize: '9px',
                 fontWeight: 900,
                 padding: '0 5px',
                 borderRadius: '3px',
                 boxShadow: isRecordingStepId !== null 
-                  ? '0 0 12px rgba(37, 99, 235, 1), 0 0 0 1.5px #fff' 
-                  : '0 2px 6px rgba(37, 99, 235, 0.8), 0 0 0 1px #fff',
+                  ? '0 0 12px rgba(255, 30, 30, 1), 0 0 0 1.5px #fff' 
+                  : '0 2px 6px rgba(255, 30, 30, 0.85), 0 0 0 1px #fff',
                 marginBottom: '-1px',
                 whiteSpace: 'nowrap',
                 lineHeight: '13px',
                 pointerEvents: 'none',
                 letterSpacing: '0.5px'
               }}>
-                {isRecordingStepId !== null ? `🔵 REC ${redLineFrame}f` : `${redLineFrame}f`}
+                {isRecordingStepId !== null ? `🔴 REC ${redLineFrame}f` : `${redLineFrame}f`}
               </div>
 
               {/* Triangle Pin */}
@@ -1064,19 +1064,19 @@ function WorkbenchSolutionsContent() {
                 height: 0, 
                 borderLeft: '6px solid transparent', 
                 borderRight: '6px solid transparent', 
-                borderTop: '8px solid #2563eb', 
-                filter: 'drop-shadow(0 2px 4px rgba(37,99,235,0.9))', 
+                borderTop: '8px solid #ff1e1e', 
+                filter: 'drop-shadow(0 2px 4px rgba(255,30,30,0.9))', 
                 cursor: isDraggingRedLine ? 'grabbing' : 'grab' 
               }} />
 
-              {/* Super-Visible 3px Solid Blue Glowing Laser Line */}
+              {/* Super-Visible 3px Solid Red Glowing Laser Line */}
               <div style={{ 
                 width: 3, 
                 flex: 1, 
-                background: '#2563eb', 
+                background: '#ff1e1e', 
                 boxShadow: isRecordingStepId !== null 
-                  ? '0 0 14px 2px rgba(37, 99, 235, 1), 0 0 4px rgba(255, 255, 255, 1)' 
-                  : '0 0 8px 1px rgba(37, 99, 235, 0.95), 0 0 2px rgba(255, 255, 255, 0.9)',
+                  ? '0 0 14px 2px rgba(255, 30, 30, 1), 0 0 4px rgba(255, 255, 255, 1)' 
+                  : '0 0 10px 1.5px rgba(255, 30, 30, 0.95), 0 0 2px rgba(255, 255, 255, 0.9)',
                 borderRadius: 1
               }} />
             </div>
