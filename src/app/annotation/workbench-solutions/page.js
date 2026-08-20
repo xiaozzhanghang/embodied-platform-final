@@ -319,6 +319,47 @@ function WorkbenchSolutionsContent() {
               <span>总视频规格: <strong style={{ color: '#0284c7' }}>01:00:00 (108,000 帧 / 30 FPS / 4 路相机)</strong></span>
             </Space>
           </div>
+
+          {/* Interactive Step-by-Step Operation Guide Bar */}
+          <div style={{ 
+            marginTop: 4, 
+            background: activeSolution === 'solution_1' ? '#eff6ff' : activeSolution === 'solution_2' ? '#fefce8' : '#f0fdf4',
+            border: `1px solid ${activeSolution === 'solution_1' ? '#bfdbfe' : activeSolution === 'solution_2' ? '#fef08a' : '#bbf7d0'}`,
+            borderRadius: 6, 
+            padding: '8px 12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: 12
+          }}>
+            {activeSolution === 'solution_1' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#1e40af', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700 }}>📋【方案一·操作三步法】：</span>
+                <span><strong>第①步：</strong>拖动下方播放轴或点击时间轴，将游标移到下一轮动作起点 (如 14400 帧)</span>
+                <span>&rarr; <strong>第②步：</strong>点击右侧栏蓝色按钮 <strong>「✨ 复制整组循环至当前游标」</strong></span>
+                <span>&rarr; <strong>第③步：</strong>瞬间自动生成 4 个步骤，自动继承手爪/技能，无需新建！</span>
+              </div>
+            )}
+            {activeSolution === 'solution_2' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#854d0e', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700 }}>⚡【方案二·操作三步法 (最推荐)】：</span>
+                <span><strong>第①步：</strong>点击底部「播放」视频 (可开 1.5x 倍速)</span>
+                <span>&rarr; <strong>第②步：</strong>眼睛看视频，当看到当前动作做完的瞬间，<strong>敲一下键盘【空格键 Space】</strong> (或点右侧大按钮)</span>
+                <span>&rarr; <strong>第③步：</strong>系统自动把当前帧切断作为上一动作终点，并自动开启下一步，全程 0 敲字！</span>
+              </div>
+            )}
+            {activeSolution === 'solution_3' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#166534', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700 }}>🌳【方案三·操作三步法】：</span>
+                <span><strong>第①步：</strong>在 1 小时长视频宏观轴上标记出 20 次大循环的大断点 (Episode 1~20)</span>
+                <span>&rarr; <strong>第②步：</strong>点击右侧绿色 <strong>「🚀 批量向所有大循环注入 SOP 模版」</strong> 按钮</span>
+                <span>&rarr; <strong>第③步：</strong>全量 20 个大循环内部的 80 个原子步骤自动等比例全部生成！</span>
+              </div>
+            )}
+            <Tag color={activeSolution === 'solution_1' ? 'blue' : activeSolution === 'solution_2' ? 'gold' : 'green'} style={{ margin: 0, fontWeight: 600 }}>
+              {activeSolution === 'solution_1' ? '复制模式' : activeSolution === 'solution_2' ? '节拍器打点模式' : '大循环拆解模式'}
+            </Tag>
+          </div>
         </div>
 
         {/* ========================================================================= */}
