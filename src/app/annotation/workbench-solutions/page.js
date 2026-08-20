@@ -1280,24 +1280,24 @@ function WorkbenchSolutionsContent() {
                           <div style={{ fontSize: 12, color: '#64748b' }}>任务元信息、状态保存与返回</div>
                         </div>
                         <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
-                          <strong style={{ color: '#0f172a' }}>模块二：多相机 4 视角矩阵</strong>
-                          <div style={{ fontSize: 12, color: '#64748b' }}>头部双目 + 左右机械爪特写</div>
-                        </div>
-                        <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
-                          <strong style={{ color: '#0f172a' }}>模块三：动作步骤与录制</strong>
+                          <strong style={{ color: '#0f172a' }}>模块二：动作步骤与录制</strong>
                           <div style={{ fontSize: 12, color: '#64748b' }}>手柄控制、单步/批量复制、拖拽换位</div>
                         </div>
                         <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
-                          <strong style={{ color: '#0f172a' }}>模块四：动态 HUD 与时序轴</strong>
+                          <strong style={{ color: '#0f172a' }}>模块三：动态 HUD 与时序轴</strong>
                           <div style={{ fontSize: 12, color: '#64748b' }}>蓝白动态斜纹、向右实时拉伸</div>
                         </div>
                         <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
-                          <strong style={{ color: '#0f172a' }}>模块五：3px 鲜艳激光红游标</strong>
+                          <strong style={{ color: '#0f172a' }}>模块四：3px 鲜艳激光红游标</strong>
                           <div style={{ fontSize: 12, color: '#64748b' }}>全屏发光投影、按住拖拽自由寻帧</div>
                         </div>
                         <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
-                          <strong style={{ color: '#0f172a' }}>模块六：播放控制器与质检</strong>
+                          <strong style={{ color: '#0f172a' }}>模块五：播放控制器与质检</strong>
                           <div style={{ fontSize: 12, color: '#64748b' }}>时间码、倍速、抽检通过/驳回</div>
+                        </div>
+                        <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
+                          <strong style={{ color: '#0f172a' }}>模块六：快捷键与数据契约</strong>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>Q/R/Space/T 键盘映射与 JSON</div>
                         </div>
                       </div>
                     </Card>
@@ -1305,32 +1305,8 @@ function WorkbenchSolutionsContent() {
                 )
               },
               {
-                key: 'camera',
-                label: '🎥 1. 多视角相机',
-                children: (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <Card size="small" title="四相机 2×2 矩阵同步渲染" style={{ borderRadius: 8 }}>
-                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
-                        <li><strong>CAM 01 (左上)</strong>：<code>camera_head_left_color</code>（RGB 头部主视角）</li>
-                        <li><strong>CAM 02 (右上)</strong>：<code>camera_head_right_color</code>（RGB 头部右侧辅助视）</li>
-                        <li><strong>CAM 03 (左下)</strong>：<code>camera_hand_left_color</code>（左机械臂腕部特写）</li>
-                        <li><strong>CAM 04 (右下)</strong>：<code>camera_hand_right_color</code>（右机械臂腕部特写）</li>
-                      </ul>
-                    </Card>
-
-                    <Card size="small" title="交互与渲染规范" style={{ borderRadius: 8 }}>
-                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
-                        <li><strong>绝对帧级同步</strong>：4 个视口渲染帧必须与 <code>currentFrame</code> 严格 1:1 锁步对齐。</li>
-                        <li><strong>播放中状态</strong>：左上角闪烁红底白字 <code>● REC LIVE 30FPS</code> 呼吸角标，中心叠加轻量扫描网格与机械爪跟踪框。</li>
-                        <li><strong>暂停中状态</strong>：角标切换为灰色 <code>已暂停</code>，中心展示半透明播放指示器。</li>
-                      </ul>
-                    </Card>
-                  </div>
-                )
-              },
-              {
                 key: 'steps',
-                label: '✋ 2. 步骤录制与管理',
+                label: '✋ 1. 步骤录制与管理',
                 children: (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <Card size="small" title="顶部「操作手柄录制」控制" style={{ borderRadius: 8 }}>
@@ -1368,7 +1344,7 @@ function WorkbenchSolutionsContent() {
               },
               {
                 key: 'timeline',
-                label: '📊 3. 动态HUD与时间轴',
+                label: '📊 2. 动态HUD与时间轴',
                 children: (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <Card size="small" title="实时录制动态 HUD 横幅" style={{ borderRadius: 8 }}>
@@ -1396,7 +1372,7 @@ function WorkbenchSolutionsContent() {
               },
               {
                 key: 'playhead',
-                label: '🔴 4. 激光红游标',
+                label: '🔴 3. 激光红游标',
                 children: (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                     <Card size="small" title="3px 鲜艳激光红游标视觉规范" style={{ borderRadius: 8 }}>
@@ -1418,7 +1394,7 @@ function WorkbenchSolutionsContent() {
               },
               {
                 key: 'hotkeys',
-                label: '⌨️ 6. 快捷键速查表',
+                label: '⌨️ 4. 快捷键速查表',
                 children: (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <Card size="small" title="全局键盘快捷键配置" style={{ borderRadius: 8 }}>
@@ -1469,7 +1445,7 @@ function WorkbenchSolutionsContent() {
               },
               {
                 key: 'schema',
-                label: '📦 7. 数据接口契约',
+                label: '📦 5. 数据接口契约',
                 children: (
                   <Card size="small" title="标注数据前后端持久化 JSON 规范" style={{ borderRadius: 8 }}>
                     <pre style={{ background: '#0f172a', color: '#f8fafc', padding: 12, borderRadius: 6, fontSize: 11, overflowX: 'auto', lineHeight: 1.5 }}>
