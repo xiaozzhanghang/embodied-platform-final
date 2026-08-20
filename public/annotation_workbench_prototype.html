@@ -125,7 +125,7 @@
         };
       }, [totalFrames, steps]);
 
-      // Playback simulation
+      // Playback simulation (30 FPS, 33ms interval)
       useEffect(() => {
         if (isPlaying) {
           playTimerRef.current = setInterval(() => {
@@ -134,12 +134,12 @@
                 setIsPlaying(false);
                 return totalFrames;
               }
-              const stepSize = Math.max(1, Math.floor(3 * playbackSpeed));
+              const stepSize = Math.max(1, Math.round(1 * playbackSpeed));
               const next = Math.min(totalFrames, prev + stepSize);
               setRedLineFrame(next);
               return next;
             });
-          }, 100);
+          }, 33);
         } else {
           if (playTimerRef.current) clearInterval(playTimerRef.current);
         }
@@ -148,7 +148,7 @@
         };
       }, [isPlaying, playbackSpeed, totalFrames]);
 
-      // Re-align frames sequentially: 每步开始帧为上一步结束帧+1，帧总数严格保持
+      // Re-align frames sequentially
       const realignStepTimeframes = (stepsList, baseStart = 0) => {
         let current = baseStart;
         return stepsList.map((step, idx) => {
@@ -186,7 +186,6 @@
         const totalBatchDur = stepsToCopy.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
         const currentTotalSpan = steps.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
 
-        // 检查剩余帧数是否足够
         if (currentTotalSpan + totalBatchDur > totalFrames) {
           alert(`⚠️ 视频剩余帧数不足（当前已占用 ${currentTotalSpan} 帧 / 总上限 ${totalFrames} 帧，批量复制需要 ${totalBatchDur} 帧），帧数不够不可以复制！`);
           return;
@@ -219,66 +218,11 @@
 
       const handleBatchDeleteSelected = () => {
         if (selectedBatchIds.length === 0) return;
-        const remaining = steps.filter(s => !selectedBatchIds.includes(s.id));
-        const reindexed = remaining.map((s, idx) => ({ ...s, id: idx + 1 }));
-        const synced = realignStepTimeframes(reindexed, reindexed[0]?.startFrame || 0);
-        setSteps(synced);
-        setSelectedBatchIds([]);
-      };
-
-      // Copy single step: 帧总数为复制步骤的帧总数，开始帧为上一步结束帧+1
-      const handleCopySingleStep = (step) => {
-        const dur = Math.max(1, step.endFrame - step.startFrame);
-        const currentTotalSpan = steps.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
-
-        // 检查剩余帧数是否足够
-        if (currentTotalSpan + dur > totalFrames) {
-          alert(`⚠️ 视频剩余帧数不足（当前已占用 ${currentTotalSpan} 帧 / 总上限 ${totalFrames} 帧，复制需要 ${dur} 帧），帧数不够不可以复制！`);
-          return;
-        }
-
-        const targetIdx = steps.findIndex(s => s.id === step.id);
-        const newStart = step.endFrame + 1;
-        const newEnd = newStart + dur;
-        const newStep = {
-          id: Date.now(),
-          text: `${step.text} (复制)`,
-          startFrame: newStart,
-          endFrame: newEnd,
-          color: step.color,
-          arm: step.arm
-        };
-        const updated = [...steps];
-        updated.splice(targetIdx + 1, 0, newStep);
-        const reindexed = updated.map((s, idx) => ({ ...s, id: idx + 1 }));
-        const synced = realignStepTimeframes(reindexed, steps[0]?.startFrame || 0);
-        setSteps(synced);
-        setSelectedId(targetIdx + 2);
-      };
-
-      // Drag and Drop
-      const handleDragStart = (e, idx) => {
-        setDraggedStepIdx(idx);
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', String(idx));
-      };
-      const handleDragOver = (e, idx) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        if (dragOverStepIdx !== idx) setDragOverStepIdx(idx);
-      };
-      const handleDragLeave = () => setDragOverStepIdx(null);
-      const handleDrop = (e, targetIdx) => {
-        e.preventDefault();
-        setDragOverStepIdx(null);
-        if (draggedStepIdx === null || draggedStepIdx === targetIdx) return;
-        const updated = [...steps];
-        const [draggedItem] = updated.splice(draggedStepIdx, 1);
-        updated.splice(targetIdx, 0, draggedItem);
+        const updated = steps.filter(s => !selectedBatchIds.includes(s.id));
         const synced = realignStepTimeframes(updated, steps[0]?.startFrame || 0);
         setSteps(synced);
-        setSelectedId(targetIdx + 1);
-        setDraggedStepIdx(null);
+        setSelectedBatchIds([]);
+        setSelectedId(synced[0]?.id || null);
       };
 
       // Start [Q] & End/Mark [R] Frame Handlers
@@ -298,6 +242,13 @@
           s.id === selectedId ? { ...s, startFrame: currentFrame, endFrame: newEnd } : s
         );
         setSteps(updated);
+
+        // 如果播放已到末尾，重置到起始帧并自动开启流畅播放
+        if (currentFrame >= totalFrames) {
+          setCurrentFrame(0);
+          setRedLineFrame(0);
+        }
+        setIsPlaying(true);
       };
 
       const handleSetEndFrame = () => {
@@ -316,6 +267,16 @@
           s.id === selectedId ? { ...s, endFrame: currentFrame } : s
         );
         setSteps(updated);
+        // 标记结束帧时自动暂停视频
+        setIsPlaying(false);
+      };
+
+      const handleTogglePlay = () => {
+        if (!isPlaying && currentFrame >= totalFrames) {
+          setCurrentFrame(0);
+          setRedLineFrame(0);
+        }
+        setIsPlaying(p => !p);
       };
 
       // Keyboard shortcut listener (Q: 开始, R: 结束/标记, T: 完成标注, Space: 播放/暂停)
@@ -334,7 +295,7 @@
             alert('🎉 恭喜！数据序号 744108 标注完成并已提交！');
           } else if (e.code === 'Space') {
             e.preventDefault();
-            setIsPlaying(p => !p);
+            handleTogglePlay();
           }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -378,10 +339,7 @@
                   <span>● camera_head_left_color (主视角)</span>
                   <Tag color="blue" style={{ margin: 0 }}>CAM 01</Tag>
                 </div>
-                <div style={{ flex: 1, background: '#f0f9ff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <PlayCircleOutlined style={{ fontSize: 30, color: '#0284c7', opacity: 0.5, marginBottom: 4 }} />
-                  <span style={{ fontSize: 11, color: '#64748b' }}>RGB 头部主视角 (当前帧: {currentFrame})</span>
-                </div>
+                {renderGridContent('头部主视角 RGB (Top Head)', '#0284c7', '#f0f9ff')}
               </div>
 
               {/* CAM 2 */}
@@ -390,10 +348,7 @@
                   <span>● camera_head_right_color (辅助视)</span>
                   <Tag color="purple" style={{ margin: 0 }}>CAM 02</Tag>
                 </div>
-                <div style={{ flex: 1, background: '#f5f3ff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <PlayCircleOutlined style={{ fontSize: 30, color: '#7c3aed', opacity: 0.5, marginBottom: 4 }} />
-                  <span style={{ fontSize: 11, color: '#64748b' }}>RGB 头部右侧视角</span>
-                </div>
+                {renderGridContent('头部右侧视 (Head Right)', '#7c3aed', '#f5f3ff')}
               </div>
 
               {/* CAM 3 */}
@@ -402,10 +357,7 @@
                   <span>● camera_hand_left_color (左机械臂)</span>
                   <Tag color="green" style={{ margin: 0 }}>CAM 03</Tag>
                 </div>
-                <div style={{ flex: 1, background: '#ecfdf5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <PlayCircleOutlined style={{ fontSize: 30, color: '#059669', opacity: 0.5, marginBottom: 4 }} />
-                  <span style={{ fontSize: 11, color: '#64748b' }}>左手腕部特写</span>
-                </div>
+                {renderGridContent('左机械臂腕部 (Wrist L)', '#059669', '#ecfdf5')}
               </div>
 
               {/* CAM 4 */}
@@ -414,10 +366,7 @@
                   <span>● camera_hand_right_color (右机械臂)</span>
                   <Tag color="gold" style={{ margin: 0 }}>CAM 04</Tag>
                 </div>
-                <div style={{ flex: 1, background: '#fffbeb', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <PlayCircleOutlined style={{ fontSize: 30, color: '#d97706', opacity: 0.5, marginBottom: 4 }} />
-                  <span style={{ fontSize: 11, color: '#64748b' }}>右手腕部特写</span>
-                </div>
+                {renderGridContent('右机械臂腕部 (Wrist R)', '#d97706', '#fffbeb')}
               </div>
             </div>
 
@@ -828,7 +777,7 @@
                 <Button
                   type="primary"
                   icon={isPlaying ? <PauseOutlined /> : <PlayCircleOutlined />}
-                  onClick={() => setIsPlaying(!isPlaying)}
+                  onClick={handleTogglePlay}
                   style={{ borderRadius: '50%', width: 32, height: 32, minWidth: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#2563eb' }}
                 />
                 <Button type="text" icon={<StepForwardOutlined />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + 10))} />

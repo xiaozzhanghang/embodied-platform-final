@@ -234,7 +234,14 @@ function WorkbenchSolutionsContent() {
       s.id === shortSelectedId ? { ...s, startFrame: currentFrame, endFrame: newEnd } : s
     );
     setShortSteps(updated);
-    message.success(`🚩 步骤 #${shortSelectedId}「${currentStep.text}」起始帧已设为 [${currentFrame} 帧]！`);
+    
+    // 如果播放已到末尾，重置到起始帧并自动开启流畅播放
+    if (currentFrame >= totalFrames) {
+      setCurrentFrame(0);
+      setRedLineFrame(0);
+    }
+    setIsPlaying(true);
+    message.success(`🚩 步骤 #${shortSelectedId}「${currentStep.text}」起始帧已设为 [${currentFrame} 帧]，视频开始播放！`);
   };
 
   const handleSetEndFrame = () => {
@@ -253,7 +260,17 @@ function WorkbenchSolutionsContent() {
       s.id === shortSelectedId ? { ...s, endFrame: currentFrame } : s
     );
     setShortSteps(updated);
-    message.success(`🏁 步骤 #${shortSelectedId}「${currentStep.text}」结束帧已标记为 [${currentFrame} 帧]（总计: ${currentFrame - currentStep.startFrame} 帧）！`);
+    // 标记结束帧时自动暂停视频
+    setIsPlaying(false);
+    message.success(`🏁 步骤 #${shortSelectedId}「${currentStep.text}」结束帧已标记为 [${currentFrame} 帧]（总计: ${currentFrame - currentStep.startFrame} 帧），视频已暂停！`);
+  };
+
+  const handleTogglePlay = () => {
+    if (!isPlaying && currentFrame >= totalFrames) {
+      setCurrentFrame(0);
+      setRedLineFrame(0);
+    }
+    setIsPlaying(p => !p);
   };
 
   // Keyboard shortcut listener (Q: 开始, R: 结束/标记, T: 完成标注, Space: 播放/暂停)
@@ -272,12 +289,12 @@ function WorkbenchSolutionsContent() {
         message.success('🎉 恭喜！数据序号 744108 标注完成并已提交！');
       } else if (e.code === 'Space') {
         e.preventDefault();
-        setIsPlaying(p => !p);
+        handleTogglePlay();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentFrame, shortSelectedId, shortSteps]);
+  }, [currentFrame, shortSelectedId, shortSteps, isPlaying]);
 
   // Drag & Drop Step Handlers (鼠标按住直接拖拽换位，时间轴同步联动换位)
   const handleDragStart = (e, idx) => {
@@ -333,11 +350,72 @@ function WorkbenchSolutionsContent() {
     };
     const info = camNames[camKey] || { title: camKey, color: '#0284c7', bg: '#f8fafc' };
 
+    // Dynamic bounding box motion simulation
+    const motionX = 30 + ((currentFrame * 7) % 40);
+    const motionY = 35 + ((currentFrame * 5) % 30);
+
     return (
-      <div style={{ flex: 1, background: info.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-        <PlayCircleOutlined style={{ fontSize: 32, opacity: 0.45, color: info.color, marginBottom: 4 }} />
-        <div style={{ fontSize: 11, color: '#64748b', fontWeight: 500 }}>
-          {info.title} (帧: {currentFrame})
+      <div style={{ flex: 1, background: info.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', userSelect: 'none' }}>
+        {/* Dynamic Scan/Grid Overlay when playing */}
+        {isPlaying && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundImage: 'linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)',
+            backgroundSize: '20px 20px',
+            pointerEvents: 'none'
+          }} />
+        )}
+
+        {/* Live Tracking Crosshair Box */}
+        {isPlaying && (
+          <div style={{
+            position: 'absolute',
+            left: `${motionX}%`,
+            top: `${motionY}%`,
+            width: 80,
+            height: 60,
+            border: `2px dashed ${info.color}`,
+            borderRadius: 6,
+            background: 'rgba(255,255,255,0.4)',
+            boxShadow: `0 0 10px ${info.color}40`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 10,
+            color: info.color,
+            fontWeight: 700,
+            pointerEvents: 'none'
+          }}>
+            🎯 机械爪跟踪
+          </div>
+        )}
+
+        {/* Center Playhead Status */}
+        <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {isPlaying ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.85)', padding: '4px 10px', borderRadius: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e', display: 'inline-block' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#0f172a' }}>播放中 {formatTime(currentFrame)}</span>
+            </div>
+          ) : (
+            <PlayCircleOutlined style={{ fontSize: 32, opacity: 0.45, color: info.color, marginBottom: 4 }} />
+          )}
+          <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, marginTop: 4 }}>
+            {info.title} · <strong style={{ color: '#0f172a' }}>{currentFrame} 帧</strong>
+          </div>
+        </div>
+
+        {/* Top Status Tag */}
+        <div style={{ position: 'absolute', top: 6, left: 8, zIndex: 3 }}>
+          {isPlaying ? (
+            <Tag color="red" style={{ margin: 0, fontSize: 10, fontWeight: 700, lineHeight: '18px' }}>● REC 30FPS</Tag>
+          ) : (
+            <Tag color="default" style={{ margin: 0, fontSize: 10, lineHeight: '18px' }}>已暂停</Tag>
+          )}
         </div>
       </div>
     );
@@ -935,7 +1013,7 @@ function WorkbenchSolutionsContent() {
               <Button 
                 type="primary" 
                 icon={isPlaying ? <PauseOutlined /> : <PlayCircleOutlined />} 
-                onClick={() => setIsPlaying(!isPlaying)}
+                onClick={handleTogglePlay}
                 style={{ 
                   borderRadius: '50%', 
                   width: 32, 
