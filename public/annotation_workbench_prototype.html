@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>具身智能标注工作台 (长短视频自适应/步骤拖拽换位/时间轴联动原型)</title>
+  
+  <!-- Tailwind CSS & Ant Design CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd@5.12.8/dist/reset.css">
+  
+  <!-- React 18, ReactDOM, Babel & Ant Design JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.6/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/antd@5.12.8/dist/antd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ant-design/icons@5.2.6/dist/index.umd.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      user-select: none;
+      overflow: hidden;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .timeline-block {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { 
+      Button, Tag, Space, Typography, App, Divider, Select, 
+      Input, Row, Col, Radio, Tooltip, InputNumber, Slider, message 
+    } = antd;
+    
+    // Icons from Ant Design Icons UMD
+    const icons = window.icons || {};
+    const LeftOutlined = icons.LeftOutlined || (() => <span>◀</span>);
+    const RightOutlined = icons.RightOutlined || (() => <span>▶</span>);
+    const PlayCircleOutlined = icons.PlayCircleOutlined || (() => <span>▶</span>);
+    const PauseOutlined = icons.PauseOutlined || (() => <span>⏸</span>);
+    const StepBackwardOutlined = icons.StepBackwardOutlined || (() => <span>⏮</span>);
+    const StepForwardOutlined = icons.StepForwardOutlined || (() => <span>⏭</span>);
+    const PlusOutlined = icons.PlusOutlined || (() => <span>+</span>);
+    const DeleteOutlined = icons.DeleteOutlined || (() => <span>🗑</span>);
+    const CopyOutlined = icons.CopyOutlined || (() => <span>📄</span>);
+    const CheckOutlined = icons.CheckOutlined || (() => <span>✔</span>);
+    const ArrowUpOutlined = icons.ArrowUpOutlined || (() => <span>▲</span>);
+    const ArrowDownOutlined = icons.ArrowDownOutlined || (() => <span>▼</span>);
+    const SortAscendingOutlined = icons.SortAscendingOutlined || (() => <span>⏱</span>);
+    const HolderOutlined = icons.HolderOutlined || (() => <span>⠿</span>);
+    const ThunderboltOutlined = icons.ThunderboltOutlined || (() => <span>⚡</span>);
+    const VideoCameraFilled = icons.VideoCameraFilled || (() => <span>📹</span>);
+    const PlaySquareOutlined = icons.PlaySquareOutlined || (() => <span>🎬</span>);
+
+    const { Option } = Select;
+
+    // Standard SOP Template
+    const SOP_CYCLE_TEMPLATE = [
+      { text: '双手抓取纸箱并开箱定位', arm: '双手', skill: '折叠定位', defaultDur: 200, color: '#13c2c2' },
+      { text: '右手取底部泡沫垫并放入纸箱', arm: '右手', skill: '抓取放置', defaultDur: 250, color: '#722ed1' },
+      { text: '右手抓取核心金属支架入箱', arm: '右手', skill: '精密装配', defaultDur: 250, color: '#1890ff' },
+      { text: '双手折叠合拢箱盖并封箱', arm: '双手', skill: '封盖封箱', defaultDur: 200, color: '#52c41a' },
+    ];
+
+    function WorkbenchApp() {
+      // Mode: 'short' (30s / 900f) vs 'long' (1h / 108,000f)
+      const [videoMode, setVideoMode] = useState('short');
+      const [longVideoSolution, setLongVideoSolution] = useState('solution_2');
+
+      const totalFrames = videoMode === 'short' ? 900 : 108000;
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [currentFrame, setCurrentFrame] = useState(120);
+      const [redLineFrame, setRedLineFrame] = useState(120);
+      const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+      const playTimerRef = useRef(null);
+      const timelineRef = useRef(null);
+
+      // Short video steps
+      const [shortSteps, setShortSteps] = useState([
+        { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
+        { id: 2, text: '右手取底部泡沫垫并放入纸箱', startFrame: 201, endFrame: 450, color: '#722ed1', arm: '右手' },
+        { id: 3, text: '右手抓取核心金属支架入箱', startFrame: 451, endFrame: 700, color: '#1890ff', arm: '右手' },
+        { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 701, endFrame: 900, color: '#52c41a', arm: '双手' },
+      ]);
+      const [shortSelectedId, setShortSelectedId] = useState(1);
+      const [draggedStepIdx, setDraggedStepIdx] = useState(null);
+      const [dragOverStepIdx, setDragOverStepIdx] = useState(null);
+
+      // Long video state
+      const [s1Steps, setS1Steps] = useState([
+        { id: 1, cycle: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 300, color: '#13c2c2' },
+        { id: 2, cycle: 1, text: '右手取底部泡沫垫并放入纸箱', startFrame: 301, endFrame: 600, color: '#722ed1' },
+        { id: 3, cycle: 1, text: '右手抓取核心金属支架入箱', startFrame: 601, endFrame: 950, color: '#1890ff' },
+        { id: 4, cycle: 1, text: '双手折叠合拢箱盖并封箱', startFrame: 951, endFrame: 1200, color: '#52c41a' },
+      ]);
+      const [s1SelectedId, setS1SelectedId] = useState(1);
+      const [s2Steps, setS2Steps] = useState([
+        { id: 1, cycle: 1, text: '双手抓取纸箱并开箱定位', startFrame: 13200, endFrame: 13500, color: '#13c2c2' },
+        { id: 2, cycle: 1, text: '右手取底部泡沫垫并放入纸箱', startFrame: 13501, endFrame: 13800, color: '#722ed1' },
+        { id: 3, cycle: 1, text: '右手抓取核心金属支架入箱', startFrame: 13801, endFrame: 14100, color: '#1890ff' },
+      ]);
+      const [s2CurrentStepIdx, setS2CurrentStepIdx] = useState(3);
+      const [s2CycleCount, setS2CycleCount] = useState(1);
+      const [s2StepStartFrame, setS2StepStartFrame] = useState(14101);
+
+      // Switch video mode
+      const handleSwitchVideoMode = (mode) => {
+        setVideoMode(mode);
+        setIsPlaying(false);
+        if (mode === 'short') {
+          setCurrentFrame(120);
+          setRedLineFrame(120);
+        } else {
+          setCurrentFrame(14400);
+          setRedLineFrame(14400);
+        }
+      };
+
+      // Playback simulation
+      useEffect(() => {
+        if (isPlaying) {
+          playTimerRef.current = setInterval(() => {
+            setCurrentFrame(prev => {
+              if (prev >= totalFrames) {
+                setIsPlaying(false);
+                return totalFrames;
+              }
+              const stepSize = videoMode === 'short' ? 4 : Math.floor(15 * playbackSpeed);
+              const next = Math.min(totalFrames, prev + stepSize);
+              setRedLineFrame(next);
+              return next;
+            });
+          }, 100);
+        } else {
+          if (playTimerRef.current) clearInterval(playTimerRef.current);
+        }
+        return () => {
+          if (playTimerRef.current) clearInterval(playTimerRef.current);
+        };
+      }, [isPlaying, playbackSpeed, totalFrames, videoMode]);
+
+      // Re-align frames sequentially to keep timeline synchronized
+      const realignStepTimeframes = (stepsList, baseStart = 0) => {
+        let current = baseStart;
+        return stepsList.map((step, idx) => {
+          const dur = Math.max(1, (step.endFrame - step.startFrame) || 200);
+          const start = current;
+          const end = start + dur;
+          current = end + 1;
+          return {
+            ...step,
+            id: idx + 1,
+            startFrame: start,
+            endFrame: end
+          };
+        });
+      };
+
+      // Copy single step
+      const handleCopySingleStep = (step) => {
+        const targetIdx = shortSteps.findIndex(s => s.id === step.id);
+        const newStep = {
+          id: Date.now(),
+          text: `${step.text} (调整/复用)`,
+          startFrame: step.endFrame + 1,
+          endFrame: Math.min(totalFrames, step.endFrame + 100),
+          color: step.color,
+          arm: step.arm
+        };
+        const updated = [...shortSteps];
+        updated.splice(targetIdx + 1, 0, newStep);
+        const reindexed = updated.map((s, idx) => ({ ...s, id: idx + 1 }));
+        const synced = realignStepTimeframes(reindexed, shortSteps[0]?.startFrame || 0);
+        setShortSteps(synced);
+        setShortSelectedId(targetIdx + 2);
+      };
+
+      // Move Step Up/Down
+      const handleMoveStep = (idx, direction) => {
+        const targetIdx = idx + direction;
+        if (targetIdx < 0 || targetIdx >= shortSteps.length) return;
+        const updated = [...shortSteps];
+        const currentStep = updated[idx];
+        updated[idx] = updated[targetIdx];
+        updated[targetIdx] = currentStep;
+        
+        const synced = realignStepTimeframes(updated, shortSteps[0]?.startFrame || 0);
+        setShortSteps(synced);
+        setShortSelectedId(targetIdx + 1);
+      };
+
+      // Drag and Drop
+      const handleDragStart = (e, idx) => {
+        setDraggedStepIdx(idx);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', String(idx));
+      };
+      const handleDragOver = (e, idx) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragOverStepIdx !== idx) setDragOverStepIdx(idx);
+      };
+      const handleDragLeave = () => setDragOverStepIdx(null);
+      const handleDrop = (e, targetIdx) => {
+        e.preventDefault();
+        setDragOverStepIdx(null);
+        if (draggedStepIdx === null || draggedStepIdx === targetIdx) return;
+        const updated = [...shortSteps];
+        const [draggedItem] = updated.splice(draggedStepIdx, 1);
+        updated.splice(targetIdx, 0, draggedItem);
+        const synced = realignStepTimeframes(updated, shortSteps[0]?.startFrame || 0);
+        setShortSteps(synced);
+        setShortSelectedId(targetIdx + 1);
+        setDraggedStepIdx(null);
+      };
+
+      // Auto sort steps
+      const handleAutoSortSteps = () => {
+        const sorted = [...shortSteps].sort((a, b) => a.startFrame - b.startFrame);
+        const reindexed = sorted.map((s, i) => ({ ...s, id: i + 1 }));
+        setShortSteps(reindexed);
+      };
+
+      // Long video S1 Duplicate Cycle
+      const handleS1DuplicateCycle = () => {
+        const currentMaxCycle = Math.max(...s1Steps.map(s => s.cycle || 1), 1);
+        const nextCycle = currentMaxCycle + 1;
+        const baseStart = redLineFrame || currentFrame;
+        let runningStart = baseStart;
+        const newCycleSteps = SOP_CYCLE_TEMPLATE.map((tpl, idx) => {
+          const stepStart = runningStart;
+          const stepEnd = stepStart + tpl.defaultDur;
+          runningStart = stepEnd + 1;
+          return {
+            id: s1Steps.length + idx + 1,
+            cycle: nextCycle,
+            text: tpl.text,
+            startFrame: stepStart,
+            endFrame: stepEnd,
+            color: tpl.color
+          };
+        });
+        setS1Steps([...s1Steps, ...newCycleSteps]);
+        setS1SelectedId(s1Steps.length + 1);
+      };
+
+      // Long video S2 Stamp Cut
+      const handleS2StampCut = () => {
+        const currentTpl = SOP_CYCLE_TEMPLATE[s2CurrentStepIdx];
+        const stampedEnd = currentFrame;
+        if (stampedEnd <= s2StepStartFrame) return;
+        const newStepItem = {
+          id: s2Steps.length + 1,
+          cycle: s2CycleCount,
+          text: currentTpl.text,
+          startFrame: s2StepStartFrame,
+          endFrame: stampedEnd,
+          color: currentTpl.color
+        };
+        setS2Steps([...s2Steps, newStepItem]);
+        const nextIdx = (s2CurrentStepIdx + 1) % SOP_CYCLE_TEMPLATE.length;
+        if (nextIdx === 0) setS2CycleCount(c => c + 1);
+        setS2CurrentStepIdx(nextIdx);
+        setS2StepStartFrame(stampedEnd + 1);
+      };
+
+      // Keyboard listener for Spacebar in Solution 2
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (videoMode === 'long' && longVideoSolution === 'solution_2') {
+            if (e.code === 'Space' && !e.target.tagName.match(/INPUT|TEXTAREA/)) {
+              e.preventDefault();
+              handleS2StampCut();
+            }
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [videoMode, longVideoSolution, currentFrame, s2StepStartFrame, s2CurrentStepIdx, s2CycleCount, s2Steps]);
+
+      const currentDisplayedSteps = videoMode === 'short' ? shortSteps : (longVideoSolution === 'solution_1' ? s1Steps : s2Steps);
+
+      const formatTime = (frame) => {
+        const sec = Math.floor(frame / 30);
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        const ms = Math.floor((frame % 30) * 33.33);
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+      };
+
+      return (
+        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc', overflow: 'hidden' }}>
+          
+          {/* HEADER */}
+          <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '8px 20px', display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>test_job_范围标注 (自适应长短视频工作台)</span>
+                <Divider type="vertical" style={{ height: 16 }} />
+                
+                {/* Mode Selector */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', padding: '3px 8px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#334155' }}>视频时长规格：</span>
+                  <Radio.Group value={videoMode} onChange={e => handleSwitchVideoMode(e.target.value)} size="small" buttonStyle="solid">
+                    <Radio.Button value="short">🎬 短视频模式 (30秒 / 900帧)</Radio.Button>
+                    <Radio.Button value="long">📹 长视频模式 (1小时 / 108,000帧)</Radio.Button>
+                  </Radio.Group>
+                </div>
+              </div>
+
+              {videoMode === 'long' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#eff6ff', padding: '3px 8px', borderRadius: 6, border: '1px solid #bfdbfe' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#1e40af' }}>长视频工具：</span>
+                  <Radio.Group value={longVideoSolution} onChange={e => setLongVideoSolution(e.target.value)} size="small">
+                    <Radio.Button value="solution_1">✨ 整组复制</Radio.Button>
+                    <Radio.Button value="solution_2">⚡ 空格打点(推荐)</Radio.Button>
+                    <Radio.Button value="solution_3">🌳 两级拆解</Radio.Button>
+                  </Radio.Group>
+                </div>
+              )}
+
+              <Button type="primary" size="small" icon={<CheckOutlined />}>保存标注</Button>
+            </div>
+
+            {/* Hint banner */}
+            <div style={{ 
+              background: videoMode === 'short' ? '#f0fdf4' : '#eff6ff',
+              border: `1px solid ${videoMode === 'short' ? '#bbf7d0' : '#bfdbfe'}`,
+              borderRadius: 6, padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11
+            }}>
+              {videoMode === 'short' ? (
+                <span style={{ color: '#166534' }}>
+                  💡 <strong>【短视频模式（单次任务极简标注）】</strong>：右侧步骤支持<strong>按住鼠标直接拖拽调换位置</strong>或点击 <strong>[ ⬆️ / ⬇️ ]</strong>，下方时间轴色块<strong>带着文字标签同步滑动换位</strong>！
+                </span>
+              ) : (
+                <span style={{ color: '#1e40af' }}>
+                  ⚡ <strong>【长视频模式（重复循环）】</strong>：支持 <strong>「✨ 整组复制」</strong> 或 <strong>「⚡ 按空格键 Space 极速切断打点」</strong>，大幅提升长视频标注效率！
+                </span>
+              )}
+              <Tag color={videoMode === 'short' ? 'green' : 'blue'}>{videoMode === 'short' ? '短视频模式' : '长视频模式'}</Tag>
+            </div>
+          </div>
+
+          {/* MAIN PANELS */}
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: '10px 14px', gap: 12 }}>
+            
+            {/* LEFT 4-CAMERAS (1.5) */}
+            <div style={{ flex: 1.5, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 8 }}>
+              {/* CAM 1 */}
+              <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 600, color: '#0284c7' }}>
+                  <span>● camera_head_left_color (主视角)</span>
+                  <Tag color="blue" style={{ margin: 0 }}>CAM 01</Tag>
+                </div>
+                <div style={{ flex: 1, background: '#f0f9ff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <PlayCircleOutlined style={{ fontSize: 30, color: '#0284c7', opacity: 0.5, marginBottom: 4 }} />
+                  <span style={{ fontSize: 11, color: '#64748b' }}>RGB 头部主视角 (当前帧: {currentFrame})</span>
+                </div>
+              </div>
+
+              {/* CAM 2 */}
+              <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 600, color: '#7c3aed' }}>
+                  <span>● camera_head_right_color (辅助视)</span>
+                  <Tag color="purple" style={{ margin: 0 }}>CAM 02</Tag>
+                </div>
+                <div style={{ flex: 1, background: '#f5f3ff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <PlayCircleOutlined style={{ fontSize: 30, color: '#7c3aed', opacity: 0.5, marginBottom: 4 }} />
+                  <span style={{ fontSize: 11, color: '#64748b' }}>RGB 头部右侧视角</span>
+                </div>
+              </div>
+
+              {/* CAM 3 */}
+              <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 600, color: '#059669' }}>
+                  <span>● camera_hand_left_color (左机械臂)</span>
+                  <Tag color="green" style={{ margin: 0 }}>CAM 03</Tag>
+                </div>
+                <div style={{ flex: 1, background: '#ecfdf5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <PlayCircleOutlined style={{ fontSize: 30, color: '#059669', opacity: 0.5, marginBottom: 4 }} />
+                  <span style={{ fontSize: 11, color: '#64748b' }}>左手腕部特写</span>
+                </div>
+              </div>
+
+              {/* CAM 4 */}
+              <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 600, color: '#d97706' }}>
+                  <span>● camera_hand_right_color (右机械臂)</span>
+                  <Tag color="gold" style={{ margin: 0 }}>CAM 04</Tag>
+                </div>
+                <div style={{ flex: 1, background: '#fffbeb', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <PlayCircleOutlined style={{ fontSize: 30, color: '#d97706', opacity: 0.5, marginBottom: 4 }} />
+                  <span style={{ fontSize: 11, color: '#64748b' }}>右手腕部特写</span>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT ACTION STEPS (1.0) */}
+            <div style={{ flex: 1, background: '#fff', borderRadius: 8, border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#1677ff', borderBottomColor: '#1677ff' }}>
+                动作步骤管理 ({currentDisplayedSteps.length})
+              </div>
+
+              <div className="custom-scrollbar" style={{ flex: 1, padding: 12, overflowY: 'auto' }}>
+                {videoMode === 'short' && (
+                  <div>
+                    {/* Header Toolbar */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 12, fontWeight: 'bold' }}>步骤列表</span>
+                        <Tooltip title="按起始帧从早到晚自动排序">
+                          <Button size="small" icon={<SortAscendingOutlined />} onClick={handleAutoSortSteps} style={{ fontSize: 10, height: 22, padding: '0 6px' }}>
+                            时间排序
+                          </Button>
+                        </Tooltip>
+                      </div>
+
+                      <Space size={6}>
+                        <Select size="small" defaultValue="act_1" style={{ width: 110, fontSize: 11 }}>
+                          <Option value="act_1">📦 工业打包模版</Option>
+                          <Option value="act_2">📚 桌面整理模版</Option>
+                        </Select>
+                        <Button size="small" type="primary" ghost icon={<PlusOutlined />} style={{ fontSize: 11 }}>
+                          加步骤
+                        </Button>
+                      </Space>
+                    </div>
+
+                    {/* Step Cards with Drag & Drop */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {shortSteps.map((step, idx) => {
+                        const isSelected = shortSelectedId === step.id;
+                        const isDragged = draggedStepIdx === idx;
+                        const isDragOver = dragOverStepIdx === idx;
+                        return (
+                          <div 
+                            key={step.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, idx)}
+                            onDragOver={(e) => handleDragOver(e, idx)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, idx)}
+                            onClick={() => setShortSelectedId(step.id)}
+                            style={{
+                              border: isDragOver ? '2px solid #2563eb' : isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                              borderLeft: `5px solid ${step.color}`,
+                              borderRadius: 8,
+                              background: isDragOver ? '#dbeafe' : isSelected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#fafafa',
+                              opacity: isDragged ? 0.45 : 1,
+                              padding: '8px 10px',
+                              cursor: 'grab',
+                              transform: isDragOver ? 'scale(1.02)' : 'none',
+                              boxShadow: isDragOver ? '0 4px 12px rgba(37, 99, 235, 0.25)' : isSelected ? '0 2px 8px rgba(37, 99, 235, 0.15)' : 'none',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                                <Tooltip title="按住拖拽可直接调换步骤位置">
+                                  <HolderOutlined style={{ color: '#94a3b8', cursor: 'grab', fontSize: 13 }} />
+                                </Tooltip>
+                                <span style={{ fontSize: 11, fontWeight: 'bold', color: isSelected ? '#1d4ed8' : '#64748b', background: isSelected ? '#bfdbfe' : '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>
+                                  {String(idx + 1).padStart(2, '0')}
+                                </span>
+                                <Input 
+                                  size="small"
+                                  value={step.text}
+                                  onChange={e => {
+                                    const updated = shortSteps.map(s => s.id === step.id ? { ...s, text: e.target.value } : s);
+                                    setShortSteps(updated);
+                                  }}
+                                  style={{ fontSize: 11, fontWeight: isSelected ? 600 : 400, background: '#fff' }}
+                                />
+                              </div>
+
+                              <Space size={3} style={{ marginLeft: 6 }}>
+                                <Tooltip title="上移">
+                                  <Button size="small" icon={<ArrowUpOutlined />} disabled={idx === 0} onClick={(e) => { e.stopPropagation(); handleMoveStep(idx, -1); }} style={{ height: 22, width: 22, padding: 0 }} />
+                                </Tooltip>
+                                <Tooltip title="下移">
+                                  <Button size="small" icon={<ArrowDownOutlined />} disabled={idx === shortSteps.length - 1} onClick={(e) => { e.stopPropagation(); handleMoveStep(idx, 1); }} style={{ height: 22, width: 22, padding: 0 }} />
+                                </Tooltip>
+                                <Tooltip title="复制单步">
+                                  <Button size="small" icon={<CopyOutlined style={{ color: '#2563eb' }} />} onClick={(e) => { e.stopPropagation(); handleCopySingleStep(step); }} style={{ height: 22, fontSize: 10, padding: '0 6px' }}>
+                                    复制
+                                  </Button>
+                                </Tooltip>
+                                <DeleteOutlined style={{ color: '#ef4444', fontSize: 12, cursor: 'pointer', marginLeft: 2 }} onClick={(e) => { e.stopPropagation(); const f = shortSteps.filter(s => s.id !== step.id); setShortSteps(f.map((s, i) => ({ ...s, id: i + 1 }))); }} />
+                              </Space>
+                            </div>
+
+                            <Row gutter={6}>
+                              <Col span={8}>
+                                <div style={{ fontSize: 9, color: '#64748b' }}>起始帧</div>
+                                <InputNumber size="small" value={step.startFrame} style={{ width: '100%', fontSize: 11 }} />
+                              </Col>
+                              <Col span={8}>
+                                <div style={{ fontSize: 9, color: '#64748b' }}>结束帧</div>
+                                <InputNumber size="small" value={step.endFrame} style={{ width: '100%', fontSize: 11 }} />
+                              </Col>
+                              <Col span={8}>
+                                <div style={{ fontSize: 9, color: '#64748b' }}>帧总数</div>
+                                <InputNumber size="small" disabled value={step.endFrame - step.startFrame} style={{ width: '100%', fontSize: 11 }} />
+                              </Col>
+                            </Row>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {videoMode === 'long' && longVideoSolution === 'solution_1' && (
+                  <div>
+                    <div style={{ marginBottom: 10, padding: '10px 12px', background: '#eff6ff', borderRadius: 8, border: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1e40af' }}>SOP循环批量复制</span>
+                      <Button type="primary" icon={<CopyOutlined />} onClick={handleS1DuplicateCycle} style={{ background: '#2563eb', fontWeight: 600, fontSize: 12 }}>
+                        ✨ 复制整组循环至当前游标
+                      </Button>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {s1Steps.map((step) => (
+                        <div key={step.id} style={{ border: s1SelectedId === step.id ? '2px solid #2563eb' : '1px solid #e2e8f0', borderLeft: `5px solid ${step.color}`, borderRadius: 6, padding: '6px 10px', background: '#fff', display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 11, fontWeight: 600 }}>{String(step.id).padStart(2, '0')}. {step.text}</span>
+                          <Tag style={{ margin: 0, fontSize: 10 }}>{step.startFrame} - {step.endFrame} 帧</Tag>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {videoMode === 'long' && longVideoSolution === 'solution_2' && (
+                  <div>
+                    <div style={{ background: '#f8fafc', borderRadius: 8, padding: 12, border: '1px solid #e2e8f0', marginBottom: 12 }}>
+                      <div style={{ background: '#eff6ff', border: '2px dashed #3b82f6', borderRadius: 6, padding: '10px 12px', marginBottom: 10 }}>
+                        <div style={{ fontSize: 10, color: '#2563eb', fontWeight: 700 }}>🔴 RECORDING (录制中)</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginTop: 2 }}>{SOP_CYCLE_TEMPLATE[s2CurrentStepIdx].text}</div>
+                        <div style={{ fontSize: 11, color: '#0284c7', marginTop: 4 }}>起始: {s2StepStartFrame}f &rarr; 当前: {currentFrame}f</div>
+                      </div>
+                      <Button type="primary" block size="large" onClick={handleS2StampCut} style={{ height: 42, fontSize: 13, fontWeight: 700, background: '#2563eb' }}>
+                        ⚡ [ 按空格 Space 打点切断接龙 ]
+                      </Button>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {s2Steps.map((step) => (
+                        <div key={step.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 10px', borderRadius: 6, border: '1px solid #e2e8f0', borderLeft: `4px solid ${step.color}` }}>
+                          <span style={{ fontSize: 11, fontWeight: 500 }}>{String(step.id).padStart(2, '0')}. {step.text}</span>
+                          <Tag color="green" style={{ margin: 0, fontSize: 10 }}>{step.startFrame} - {step.endFrame} 帧</Tag>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* BOTTOM TIMELINE & PLAYER */}
+          <div style={{ background: '#fff', borderTop: '1px solid #e2e8f0', padding: '8px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            
+            {/* Playback Slider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 'bold', minWidth: 55 }}>▶ 播放轴</span>
+              <div style={{ flex: 1 }}>
+                <Slider
+                  min={0}
+                  max={totalFrames}
+                  value={currentFrame}
+                  onChange={(val) => { setCurrentFrame(val); setRedLineFrame(val); }}
+                  tooltip={{ formatter: (val) => `${val}帧 (${formatTime(val)})` }}
+                  style={{ margin: 0 }}
+                />
+              </div>
+              <span style={{ fontSize: 11, color: '#64748b', fontWeight: 'bold', minWidth: 110, textAlign: 'right' }}>
+                {currentFrame.toLocaleString()} / {totalFrames.toLocaleString()} 帧
+              </span>
+            </div>
+
+            {/* Synchronized Multi-Color Temporal Track */}
+            <div 
+              ref={timelineRef}
+              style={{ position: 'relative', height: 24, background: '#e2e8f0', borderRadius: 4, cursor: 'pointer', overflow: 'visible' }}
+              onClick={(e) => {
+                if (timelineRef.current) {
+                  const rect = timelineRef.current.getBoundingClientRect();
+                  const pct = (e.clientX - rect.left) / rect.width;
+                  const target = Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames)));
+                  setRedLineFrame(target);
+                  setCurrentFrame(target);
+                }
+              }}
+            >
+              {currentDisplayedSteps.map((step) => {
+                const isSelected = videoMode === 'short' ? shortSelectedId === step.id : s1SelectedId === step.id;
+                const leftPct = (step.startFrame / totalFrames) * 100;
+                const widthPct = Math.max(0.3, ((step.endFrame - step.startFrame) / totalFrames) * 100);
+
+                return (
+                  <div
+                    key={step.id}
+                    className="timeline-block"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (videoMode === 'short') {
+                        setShortSelectedId(step.id);
+                        setRedLineFrame(step.startFrame);
+                        setCurrentFrame(step.startFrame);
+                      }
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: `${leftPct}%`,
+                      width: `${widthPct}%`,
+                      height: '100%',
+                      top: 0,
+                      background: step.color || '#2563eb',
+                      opacity: isSelected ? 1 : 0.85,
+                      borderRadius: 3,
+                      border: isSelected ? '2px solid #0f172a' : '1px solid rgba(255,255,255,0.4)',
+                      zIndex: isSelected ? 10 : 2,
+                      boxShadow: isSelected ? '0 0 10px rgba(0,0,0,0.35)' : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      padding: '0 4px',
+                      color: '#fff',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+                      whiteSpace: 'nowrap',
+                      textOverflow: 'ellipsis',
+                      cursor: 'pointer'
+                    }}
+                    title={`${String(step.id).padStart(2, '0')}. ${step.text} [${step.startFrame} - ${step.endFrame} 帧] (点击定位)`}
+                  >
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {String(step.id).padStart(2, '0')}. {step.text}
+                    </span>
+                  </div>
+                );
+              })}
+
+              {/* Red playhead */}
+              <div 
+                style={{ 
+                  position: 'absolute', 
+                  left: `${(redLineFrame / totalFrames) * 100}%`, 
+                  top: -8, height: '38px', zIndex: 40, 
+                  transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' 
+                }}
+              >
+                <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '7px solid #ef4444' }} />
+                <div style={{ width: 2, flex: 1, background: '#ef4444' }} />
+              </div>
+            </div>
+
+            {/* Bottom Controls */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+              <Space size={12} align="center">
+                <Button type="text" icon={<LeftOutlined />} onClick={() => { setCurrentFrame(0); setRedLineFrame(0); }} />
+                <div style={{ fontSize: 12, fontWeight: 'bold', fontFamily: 'monospace' }}>
+                  ⏱️ {formatTime(currentFrame)} / {videoMode === 'short' ? '00:00:30.000' : '01:00:00.000'}
+                </div>
+                <Button type="text" icon={<RightOutlined />} onClick={() => { setCurrentFrame(totalFrames); setRedLineFrame(totalFrames); }} />
+              </Space>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', borderRadius: 20, padding: '2px 12px', border: '1px solid #e2e8f0' }}>
+                <Button type="text" icon={<StepBackwardOutlined />} onClick={() => setCurrentFrame(Math.max(0, currentFrame - (videoMode === 'short' ? 10 : 30)))} />
+                <Button
+                  type="primary"
+                  icon={isPlaying ? <PauseOutlined /> : <PlayCircleOutlined />}
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  style={{ borderRadius: '50%', width: 32, height: 32, minWidth: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#2563eb' }}
+                />
+                <Button type="text" icon={<StepForwardOutlined />} onClick={() => setCurrentFrame(Math.min(totalFrames, currentFrame + (videoMode === 'short' ? 10 : 30)))} />
+                <Divider type="vertical" style={{ height: 14, margin: '0 4px' }} />
+                <Select value={playbackSpeed} size="small" variant="borderless" style={{ width: 65 }} onChange={setPlaybackSpeed}>
+                  <Option value={1}>1.0x</Option>
+                  <Option value={1.5}>1.5x</Option>
+                  <Option value={2}>2.0x</Option>
+                </Select>
+              </div>
+
+              <Tag color={videoMode === 'short' ? 'green' : 'blue'}>
+                {videoMode === 'short' ? '短视频单次任务 (30s)' : '长视频多轮循环 (1h)'}
+              </Tag>
+            </div>
+
+          </div>
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<WorkbenchApp />);
+  </script>
+</body>
+</html>
