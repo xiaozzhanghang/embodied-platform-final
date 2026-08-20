@@ -2287,6 +2287,17 @@ useEffect(() => {
               />
             </Space>
             <Divider orientation="vertical" style={{ height: 16, margin: 0 }} />
+            <Button 
+              size="small" 
+              type="primary" 
+              ghost 
+              icon={<ThunderboltOutlined style={{ color: '#ca8a04' }} />} 
+              onClick={() => router.push(`/annotation/workbench-solutions?instanceId=${instanceId || '19884'}&episodeId=${episodeId || '744108'}&type=${encodeURIComponent(annoType)}&mode=${workMode}`)}
+              style={{ fontSize: 11, borderColor: '#ca8a04', color: '#854d0e', background: '#fefce8' }}
+            >
+              长视频循环标注3套方案
+            </Button>
+            <Divider orientation="vertical" style={{ height: 16, margin: 0 }} />
             <Button type="primary" size="small" icon={<CheckOutlined />} onClick={() => message.success('工作进度已保存')}>保存暂存</Button>
             <Space size={12}>
               <Button type="text" size="small" icon={<SlidersOutlined />} style={{ color: '#64748b' }} />
