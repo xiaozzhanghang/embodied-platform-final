@@ -4,13 +4,16 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Tag, Space, Typography, App, Divider, Select, 
-  Input, Row, Col, Progress, Tooltip, InputNumber, Slider, Checkbox
+  Input, Row, Col, Progress, Tooltip, InputNumber, Slider, Checkbox,
+  Drawer, Tabs, Alert, Card, Badge
 } from 'antd';
 import { 
   LeftOutlined, RightOutlined, PlayCircleOutlined, PauseOutlined, 
   StepBackwardOutlined, StepForwardOutlined, DeleteOutlined, 
   PlusOutlined, CopyOutlined, CheckOutlined,
-  HolderOutlined, CheckSquareOutlined
+  HolderOutlined, CheckSquareOutlined, BookOutlined,
+  InfoCircleOutlined, FileTextOutlined, CodeOutlined,
+  VideoCameraOutlined, FieldTimeOutlined, ThunderboltOutlined
 } from '@ant-design/icons';
 
 function WorkbenchSolutionsContent() {
@@ -53,6 +56,10 @@ function WorkbenchSolutionsContent() {
   // Red Line Playhead State & Mouse Dragging Handlers
   const isDraggingRedLineRef = useRef(false);
   const [isDraggingRedLine, setIsDraggingRedLine] = useState(false);
+
+  // PRD Functional Specification Drawer State
+  const [isPrdOpen, setIsPrdOpen] = useState(false);
+  const [prdActiveTab, setPrdActiveTab] = useState('overview');
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -481,6 +488,19 @@ function WorkbenchSolutionsContent() {
           </Space>
 
           <Space size={8}>
+            <Button 
+              icon={<BookOutlined style={{ color: '#2563eb' }} />} 
+              onClick={() => { setPrdActiveTab('overview'); setIsPrdOpen(true); }}
+              style={{ 
+                fontWeight: 600, 
+                borderColor: '#3b82f6', 
+                color: '#1d4ed8', 
+                background: '#eff6ff',
+                boxShadow: '0 1px 2px rgba(37,99,235,0.1)'
+              }}
+            >
+              📋 功能需求说明书 (PRD)
+            </Button>
             <Button type="primary" size="small" icon={<CheckOutlined />} onClick={() => message.success('工作进度已保存')}>
               保存标注
             </Button>
@@ -1207,6 +1227,288 @@ function WorkbenchSolutionsContent() {
           </div>
 
         </div>
+
+        {/* ========================================================================= */}
+        {/* INTERACTIVE PRD SPECIFICATION DRAWER (点击按钮呼出全模块详细需求文档) */}
+        {/* ========================================================================= */}
+        <Drawer
+          title={(
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 18 }}>📋</span>
+                <span style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>具身智能动作范围标注工作台 - PRD 功能需求规格说明书</span>
+              </div>
+              <Tag color="blue" style={{ fontWeight: 700, margin: 0 }}>研发开发对接专用</Tag>
+            </div>
+          )}
+          placement="right"
+          width={800}
+          onClose={() => setIsPrdOpen(false)}
+          open={isPrdOpen}
+          styles={{ body: { padding: '16px 24px', background: '#f8fafc' } }}
+        >
+          <Alert
+            message="📌 核心业务场景与设计目标"
+            description="本页面为具身智能机器人多视角数据采集标注专用工作台，核心用于多动作时序范围精准切分、SOP动作步骤录制、快捷操作、双向时序轴联动、质量控制与数据交付。"
+            type="info"
+            showIcon
+            style={{ marginBottom: 16, borderRadius: 8, border: '1px solid #bfdbfe', background: '#eff6ff' }}
+          />
+
+          <Tabs
+            activeKey={prdActiveTab}
+            onChange={(key) => setPrdActiveTab(key)}
+            items={[
+              {
+                key: 'overview',
+                label: '📐 架构总览',
+                children: (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <Card size="small" title="1. 页面交互形态与栅格比例" style={{ borderRadius: 8 }}>
+                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
+                        <li><strong>100vh 纯净全屏沉浸式工作台</strong>：隐藏左侧全局菜单侧边栏，为多视角视频与时序轴提供最大化可视面积。</li>
+                        <li><strong>左侧（flex: 1.5，占比 60%）</strong>：四相机多视角视频矩阵同步播放区。</li>
+                        <li><strong>右侧（flex: 1.0，占比 40%）</strong>：动作步骤管理、操作手柄录制、多选批量操作区。</li>
+                        <li><strong>底部（固定高度）</strong>：动态录制 HUD 横幅 + 播放进度条 + 多彩动作时序轴 + 播放控制器。</li>
+                      </ul>
+                    </Card>
+
+                    <Card size="small" title="2. 模块清单列表" style={{ borderRadius: 8 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
+                          <strong style={{ color: '#0f172a' }}>模块一：顶部全局导航</strong>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>任务元信息、状态保存与返回</div>
+                        </div>
+                        <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
+                          <strong style={{ color: '#0f172a' }}>模块二：多相机 4 视角矩阵</strong>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>头部双目 + 左右机械爪特写</div>
+                        </div>
+                        <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
+                          <strong style={{ color: '#0f172a' }}>模块三：动作步骤与录制</strong>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>手柄控制、单步/批量复制、拖拽换位</div>
+                        </div>
+                        <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
+                          <strong style={{ color: '#0f172a' }}>模块四：动态 HUD 与时序轴</strong>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>蓝白动态斜纹、向右实时拉伸</div>
+                        </div>
+                        <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
+                          <strong style={{ color: '#0f172a' }}>模块五：3px 鲜艳激光红游标</strong>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>全屏发光投影、按住拖拽自由寻帧</div>
+                        </div>
+                        <div style={{ padding: '8px 12px', background: '#f1f5f9', borderRadius: 6 }}>
+                          <strong style={{ color: '#0f172a' }}>模块六：播放控制器与质检</strong>
+                          <div style={{ fontSize: 12, color: '#64748b' }}>时间码、倍速、抽检通过/驳回</div>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                )
+              },
+              {
+                key: 'camera',
+                label: '🎥 1. 多视角相机',
+                children: (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <Card size="small" title="四相机 2×2 矩阵同步渲染" style={{ borderRadius: 8 }}>
+                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
+                        <li><strong>CAM 01 (左上)</strong>：<code>camera_head_left_color</code>（RGB 头部主视角）</li>
+                        <li><strong>CAM 02 (右上)</strong>：<code>camera_head_right_color</code>（RGB 头部右侧辅助视）</li>
+                        <li><strong>CAM 03 (左下)</strong>：<code>camera_hand_left_color</code>（左机械臂腕部特写）</li>
+                        <li><strong>CAM 04 (右下)</strong>：<code>camera_hand_right_color</code>（右机械臂腕部特写）</li>
+                      </ul>
+                    </Card>
+
+                    <Card size="small" title="交互与渲染规范" style={{ borderRadius: 8 }}>
+                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
+                        <li><strong>绝对帧级同步</strong>：4 个视口渲染帧必须与 <code>currentFrame</code> 严格 1:1 锁步对齐。</li>
+                        <li><strong>播放中状态</strong>：左上角闪烁红底白字 <code>● REC LIVE 30FPS</code> 呼吸角标，中心叠加轻量扫描网格与机械爪跟踪框。</li>
+                        <li><strong>暂停中状态</strong>：角标切换为灰色 <code>已暂停</code>，中心展示半透明播放指示器。</li>
+                      </ul>
+                    </Card>
+                  </div>
+                )
+              },
+              {
+                key: 'steps',
+                label: '✋ 2. 步骤录制与管理',
+                children: (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <Card size="small" title="顶部「操作手柄录制」控制" style={{ borderRadius: 8 }}>
+                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
+                        <li><strong>开始 [Q] (按键盘 Q 键)</strong>：
+                          <ol style={{ paddingLeft: 18 }}>
+                            <li>将当前选中步骤的 <code>startFrame</code> 设为 <code>currentFrame</code>；</li>
+                            <li>自动开启 30FPS 流畅播放 (<code>isPlaying = true</code>)；</li>
+                            <li>开启实时录制模式 (<code>isRecordingStepId = selectedId</code>)，时间轴对应色块向右动态延展；</li>
+                            <li>弹出轻提示：<code>🔵 步骤 #X 已开始实时录制</code>。</li>
+                          </ol>
+                        </li>
+                        <li><strong>标记 [R] (按键盘 R 键)</strong>：
+                          <ol style={{ paddingLeft: 18 }}>
+                            <li>校验 <code>currentFrame &gt; startFrame</code>；</li>
+                            <li>将当前步骤的 <code>endFrame</code> 锁定为 <code>currentFrame</code>；</li>
+                            <li>自动暂停视频播放 (<code>isPlaying = false</code>)，退出录制态；</li>
+                            <li>弹出轻提示：<code>✅ 步骤 #X 录制完成，已锁定区间</code>。</li>
+                          </ol>
+                        </li>
+                      </ul>
+                    </Card>
+
+                    <Card size="small" title="步骤卡片功能与交互" style={{ borderRadius: 8 }}>
+                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
+                        <li><strong>左侧专属颜色条</strong>：与时间轴上该步骤色块颜色 1:1 严格一致。</li>
+                        <li><strong>拖拽手柄 ⠿</strong>：鼠标按住手柄可上下拖拽调换步骤先后顺序，调换后系统自动重新顺延时间轴时序。</li>
+                        <li><strong>[复制单步] 按钮</strong>：就地克隆相同动作，开始帧自动设为上一步结束帧+1，并自动平滑滚动至新卡片。</li>
+                        <li><strong>多选批量操作</strong>：勾选 Checkbox 浮现顶部批量栏，支持批量复制与批量删除。</li>
+                        <li><strong>帧数控制</strong>：起始帧、结束帧支持手动输入微调，帧总数只读自动计算 (<code>endFrame - startFrame</code>)。</li>
+                      </ul>
+                    </Card>
+                  </div>
+                )
+              },
+              {
+                key: 'timeline',
+                label: '📊 3. 动态HUD与时间轴',
+                children: (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <Card size="small" title="实时录制动态 HUD 横幅" style={{ borderRadius: 8 }}>
+                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
+                        <li><strong>显示时机</strong>：点击 <code>开始 [Q]</code> 进入录制模式时在时间轴上方动态浮现。</li>
+                        <li><strong>视觉规范</strong>：科技蓝渐变背景 (<code>#eff6ff</code> 至 <code>#dbeafe</code>) + 呼吸闪烁蓝点 + 动态帧差统计。</li>
+                        <li><strong>快捷操作</strong>：横幅右侧集成 <code>[按 [R] 结束标记]</code> 按钮。</li>
+                      </ul>
+                    </Card>
+
+                    <Card size="small" title="多步骤时序色块轨道" style={{ borderRadius: 8 }}>
+                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
+                        <li><strong>色块渲染位置计算</strong>：
+                          <div style={{ background: '#f1f5f9', padding: '6px 10px', borderRadius: 4, margin: '4px 0', fontFamily: 'monospace', fontSize: 12 }}>
+                            left = (startFrame / 900) * 100%<br/>
+                            width = ((endFrame - startFrame) / 900) * 100%
+                          </div>
+                        </li>
+                        <li><strong>录制中动态拉伸</strong>：色块呈现<strong>蓝白交替发光动态斜纹 (Barber-pole Stripes)</strong>，右侧边缘随激光红游标向右实时逐帧延展拉伸。</li>
+                        <li><strong>点击联动</strong>：点击时间轴色块立即选中对应步骤，并将游标对齐至点击帧。</li>
+                      </ul>
+                    </Card>
+                  </div>
+                )
+              },
+              {
+                key: 'playhead',
+                label: '🔴 4. 激光红游标',
+                children: (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <Card size="small" title="3px 鲜艳激光红游标视觉规范" style={{ borderRadius: 8 }}>
+                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
+                        <li><strong>顶部悬浮角标</strong>：纯红背景 <code>#ff1e1e</code>，加粗白字 <code>{currentFrame}f</code>（录制时显示 <code>🔴 REC 560f</code>）。</li>
+                        <li><strong>倒三角指针</strong>：纯红 <code>#ff1e1e</code>，精准指向时间轴。</li>
+                        <li><strong>3px 实心垂直激光线</strong>：纯红 <code>#ff1e1e</code>，全屏发光投影 <code>boxShadow: 0 0 10px 1.5px rgba(255, 30, 30, 0.95)</code>。</li>
+                      </ul>
+                    </Card>
+
+                    <Card size="small" title="鼠标按住自由拖拽寻帧 (Scrubbing)" style={{ borderRadius: 8 }}>
+                      <ul style={{ paddingLeft: 20, margin: 0, lineHeight: 1.8, fontSize: 13, color: '#334155' }}>
+                        <li><strong>任意位置拖拽</strong>：在时间轴轨道或游标手柄上按住鼠标左键即可左右平滑拖动，实现高精度毫秒级寻帧。</li>
+                        <li><strong>穿透选中步骤</strong>：拖动游标滑过步骤区间时，右侧卡片列表自动高亮对应的动作步骤。</li>
+                      </ul>
+                    </Card>
+                  </div>
+                )
+              },
+              {
+                key: 'hotkeys',
+                label: '⌨️ 6. 快捷键速查表',
+                children: (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <Card size="small" title="全局键盘快捷键配置" style={{ borderRadius: 8 }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: '#f1f5f9', textAlign: 'left', borderBottom: '1px solid #cbd5e1' }}>
+                            <th style={{ padding: '6px 10px' }}>快捷键</th>
+                            <th style={{ padding: '6px 10px' }}>功能</th>
+                            <th style={{ padding: '6px 10px' }}>触发动作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '6px 10px' }}><Tag color="blue">Q / q</Tag></td>
+                            <td style={{ padding: '6px 10px', fontWeight: 600 }}>开始录制</td>
+                            <td style={{ padding: '6px 10px', color: '#475569' }}>设当前帧为起始帧，开启播放与时序轴向右动态拉伸</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '6px 10px' }}><Tag color="orange">R / r</Tag></td>
+                            <td style={{ padding: '6px 10px', fontWeight: 600 }}>标记结束</td>
+                            <td style={{ padding: '6px 10px', color: '#475569' }}>锁定当前步骤结束帧，暂停播放，退出录制态</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '6px 10px' }}><Tag color="default">Space 空格</Tag></td>
+                            <td style={{ padding: '6px 10px', fontWeight: 600 }}>播放 / 暂停</td>
+                            <td style={{ padding: '6px 10px', color: '#475569' }}>切换视频播放与暂停状态</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '6px 10px' }}><Tag color="green">T / t</Tag></td>
+                            <td style={{ padding: '6px 10px', fontWeight: 600 }}>完成标注</td>
+                            <td style={{ padding: '6px 10px', color: '#475569' }}>校验步骤合法性并提交当前 Episode 标注数据</td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '6px 10px' }}><Tag color="default">← / →</Tag></td>
+                            <td style={{ padding: '6px 10px', fontWeight: 600 }}>逐帧微调</td>
+                            <td style={{ padding: '6px 10px', color: '#475569' }}>向前 / 向后精准移动 1 帧</td>
+                          </tr>
+                          <tr>
+                            <td style={{ padding: '6px 10px' }}><Tag color="default">Shift + ← / →</Tag></td>
+                            <td style={{ padding: '6px 10px', fontWeight: 600 }}>快退 / 快进</td>
+                            <td style={{ padding: '6px 10px', color: '#475569' }}>向前 / 向后快速跳跃 10 帧</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </Card>
+                  </div>
+                )
+              },
+              {
+                key: 'schema',
+                label: '📦 7. 数据接口契约',
+                children: (
+                  <Card size="small" title="标注数据前后端持久化 JSON 规范" style={{ borderRadius: 8 }}>
+                    <pre style={{ background: '#0f172a', color: '#f8fafc', padding: 12, borderRadius: 6, fontSize: 11, overflowX: 'auto', lineHeight: 1.5 }}>
+{`{
+  "taskId": "8751",
+  "instanceId": "19884",
+  "episodeId": "744108",
+  "totalFrames": 900,
+  "fps": 30,
+  "steps": [
+    {
+      "id": 1,
+      "text": "双手抓取纸箱并开箱定位",
+      "startFrame": 0,
+      "endFrame": 200,
+      "durationFrames": 200,
+      "color": "#13c2c2",
+      "arm": "双手"
+    },
+    {
+      "id": 2,
+      "text": "右手取底部泡沫垫并放入纸箱",
+      "startFrame": 201,
+      "endFrame": 400,
+      "durationFrames": 199,
+      "color": "#722ed1",
+      "arm": "右手"
+    }
+  ],
+  "status": "annotated",
+  "updatedAt": "2026-08-20T17:00:00.000Z"
+}`}
+                    </pre>
+                  </Card>
+                )
+              }
+            ]}
+          />
+        </Drawer>
 
       </div>
   );
