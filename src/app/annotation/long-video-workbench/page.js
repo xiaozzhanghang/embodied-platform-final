@@ -200,7 +200,7 @@ export default function LongVideoWorkbenchPage() {
 
   return (
     <MainLayout>
-      <div className="ui-page" style={{ paddingBottom: 40 }}>
+      <div className="ui-page" style={{ paddingBottom: 40, background: '#f8fafc' }}>
         {/* Page Header */}
         <PageHeader
           title="长视频循环标注交互方案对比原型"
@@ -216,33 +216,42 @@ export default function LongVideoWorkbenchPage() {
           }
         />
 
-        {/* Global Metadata Bar */}
-        <Card style={{ marginBottom: 16, background: '#1e293b', border: 'none', borderRadius: 12 }}>
+        {/* Global Metadata Bar (Light Mode) */}
+        <Card 
+          style={{ 
+            marginBottom: 16, 
+            background: '#ffffff', 
+            border: '1px solid #e2e8f0', 
+            borderRadius: 12,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+          }}
+          styles={{ body: { padding: '16px 20px' } }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
               <div>
-                <Text style={{ color: '#94a3b8', fontSize: 12 }}>当前演示视频</Text>
-                <div style={{ color: '#fff', fontSize: 15, fontWeight: 600 }}>📹 LongHorizon_Packing_1h_0819.mp4</div>
+                <Text style={{ color: '#64748b', fontSize: 12 }}>当前演示视频</Text>
+                <div style={{ color: '#0f172a', fontSize: 15, fontWeight: 600 }}>📹 LongHorizon_Packing_1h_0819.mp4</div>
               </div>
-              <Divider type="vertical" style={{ borderColor: '#334155', height: 32 }} />
+              <Divider type="vertical" style={{ borderColor: '#e2e8f0', height: 32 }} />
               <div>
-                <Text style={{ color: '#94a3b8', fontSize: 12 }}>总视频规格</Text>
-                <div style={{ color: '#38bdf8', fontSize: 14, fontWeight: 600 }}>
+                <Text style={{ color: '#64748b', fontSize: 12 }}>总视频规格</Text>
+                <div style={{ color: '#0284c7', fontSize: 14, fontWeight: 600 }}>
                   01:00:00 (108,000 帧 / 30 FPS / 4 路相机)
                 </div>
               </div>
-              <Divider type="vertical" style={{ borderColor: '#334155', height: 32 }} />
+              <Divider type="vertical" style={{ borderColor: '#e2e8f0', height: 32 }} />
               <div>
-                <Text style={{ color: '#94a3b8', fontSize: 12 }}>预设 SOP 模版</Text>
-                <div style={{ color: '#a78bfa', fontSize: 14, fontWeight: 600 }}>
+                <Text style={{ color: '#64748b', fontSize: 12 }}>预设 SOP 模版</Text>
+                <div style={{ color: '#7c3aed', fontSize: 14, fontWeight: 600 }}>
                   📦 工业纸箱打包封装与装箱模版 (4 动作/循环)
                 </div>
               </div>
             </div>
 
-            {/* Solution Switcher */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0f172a', padding: '6px 12px', borderRadius: 10, border: '1px solid #334155' }}>
-              <span style={{ color: '#f8fafc', fontSize: 13, fontWeight: 600 }}>切换演示方案：</span>
+            {/* Solution Switcher (Light Theme) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', padding: '6px 10px', borderRadius: 10, border: '1px solid #cbd5e1' }}>
+              <span style={{ color: '#334155', fontSize: 13, fontWeight: 600 }}>切换演示方案：</span>
               <Radio.Group 
                 value={activeSolution} 
                 onChange={e => setActiveSolution(e.target.value)}
@@ -253,7 +262,7 @@ export default function LongVideoWorkbenchPage() {
                   <Space size={4}><CopyOutlined /> 方案一：整组循环复制</Space>
                 </Radio.Button>
                 <Radio.Button value="solution_2">
-                  <Space size={4}><ThunderboltOutlined style={{ color: '#facc15' }} /> 方案二：流式快捷打点(最推荐)</Space>
+                  <Space size={4}><ThunderboltOutlined style={{ color: '#ca8a04' }} /> 方案二：流式快捷打点(最推荐)</Space>
                 </Radio.Button>
                 <Radio.Button value="solution_3">
                   <Space size={4}><BranchesOutlined /> 方案三：大循环层级拆解</Space>
@@ -263,7 +272,7 @@ export default function LongVideoWorkbenchPage() {
           </div>
         </Card>
 
-        {/* Top Solution Highlights Alert */}
+        {/* Top Solution Highlights Alert (Light Theme) */}
         {activeSolution === 'solution_1' && (
           <Alert
             type="info"
@@ -296,37 +305,37 @@ export default function LongVideoWorkbenchPage() {
         <Row gutter={16}>
           {/* LEFT 16 COLUMNS: Video Player + Active Solution Interaction Arena */}
           <Col span={16}>
-            {/* 1. Synchronized 4-Camera Video View */}
+            {/* 1. Synchronized 4-Camera Video View (Light Mode) */}
             <Card 
-              styles={{ body: { padding: 12, background: '#090d16', borderRadius: 12 } }} 
-              style={{ borderRadius: 12, border: '1px solid #1e293b', marginBottom: 16 }}
+              styles={{ body: { padding: 14, background: '#ffffff', borderRadius: 12 } }} 
+              style={{ borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '0 4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, padding: '0 2px' }}>
                 <Space>
-                  <VideoCameraOutlined style={{ color: '#38bdf8' }} />
-                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>4路同步相机视口矩阵</Text>
-                  <Tag color="cyan" style={{ fontSize: 11 }}>30 FPS 同步锁相</Tag>
+                  <VideoCameraOutlined style={{ color: '#0284c7' }} />
+                  <Text style={{ color: '#0f172a', fontSize: 14, fontWeight: 600 }}>4路同步相机视口矩阵</Text>
+                  <Tag color="blue" style={{ fontSize: 11 }}>30 FPS 同步锁相</Tag>
                 </Space>
-                <div style={{ color: '#94a3b8', fontSize: 12 }}>
-                  播放进度: <span style={{ color: '#38bdf8', fontWeight: 600 }}>{formatTime(currentFrame)}</span> / 01:00:00 
-                  <span style={{ marginLeft: 8, color: '#64748b' }}>[ 帧数: {currentFrame.toLocaleString()} / 108,000 ]</span>
+                <div style={{ color: '#64748b', fontSize: 12 }}>
+                  播放进度: <span style={{ color: '#0284c7', fontWeight: 600 }}>{formatTime(currentFrame)}</span> / 01:00:00 
+                  <span style={{ marginLeft: 8, color: '#94a3b8' }}>[ 帧数: {currentFrame.toLocaleString()} / 108,000 ]</span>
                 </div>
               </div>
 
-              {/* 4 Camera Matrix */}
-              <Row gutter={[8, 8]}>
+              {/* 4 Camera Matrix (Light Canvas) */}
+              <Row gutter={[10, 10]}>
                 {[
-                  { name: 'CAM 01: 主俯视视角 (Top Head)', color: '#38bdf8', badge: 'RGB-D' },
-                  { name: 'CAM 02: 左手腕部视角 (Wrist L)', color: '#a78bfa', badge: 'Wrist Left' },
-                  { name: 'CAM 03: 右手腕部视角 (Wrist R)', color: '#34d399', badge: 'Wrist Right' },
-                  { name: 'CAM 04: 正向斜侧全景 (Front View)', color: '#f59e0b', badge: 'Wide Angle' },
+                  { name: 'CAM 01: 主俯视视角 (Top Head)', color: '#0284c7', badge: 'RGB-D', bg: '#f0f9ff' },
+                  { name: 'CAM 02: 左手腕部视角 (Wrist L)', color: '#7c3aed', badge: 'Wrist Left', bg: '#f5f3ff' },
+                  { name: 'CAM 03: 右手腕部视角 (Wrist R)', color: '#059669', badge: 'Wrist Right', bg: '#ecfdf5' },
+                  { name: 'CAM 04: 正向斜侧全景 (Front View)', color: '#d97706', badge: 'Wide Angle', bg: '#fffbeb' },
                 ].map((cam, idx) => (
                   <Col span={12} key={idx}>
                     <div style={{
-                      height: 140,
-                      background: '#131c2e',
+                      height: 145,
+                      background: cam.bg,
                       borderRadius: 8,
-                      border: '1px solid #1e293b',
+                      border: '1px solid #e2e8f0',
                       position: 'relative',
                       display: 'flex',
                       flexDirection: 'column',
@@ -335,26 +344,27 @@ export default function LongVideoWorkbenchPage() {
                       overflow: 'hidden'
                     }}>
                       <div style={{
-                        position: 'absolute', top: 6, left: 8, zIndex: 2,
-                        fontSize: 11, color: '#e2e8f0', background: 'rgba(0,0,0,0.6)',
-                        padding: '2px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 6
+                        position: 'absolute', top: 8, left: 8, zIndex: 2,
+                        fontSize: 11, color: '#1e293b', background: 'rgba(255,255,255,0.92)',
+                        padding: '2px 8px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 6,
+                        border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                       }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: cam.color }}></span>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: cam.color }}></span>
                         {cam.name}
                       </div>
                       <div style={{
-                        position: 'absolute', bottom: 6, right: 8, zIndex: 2,
-                        fontSize: 10, color: '#94a3b8', background: 'rgba(0,0,0,0.5)',
-                        padding: '1px 6px', borderRadius: 4
+                        position: 'absolute', bottom: 8, right: 8, zIndex: 2,
+                        fontSize: 10, color: '#475569', background: 'rgba(255,255,255,0.92)',
+                        padding: '1px 6px', borderRadius: 4, border: '1px solid #cbd5e1'
                       }}>
                         {cam.badge}
                       </div>
 
                       {/* Simulated Video Canvas */}
                       <div style={{ textAlign: 'center', color: '#64748b' }}>
-                        <PlayCircleOutlined style={{ fontSize: 32, opacity: 0.4, color: cam.color, marginBottom: 4 }} />
-                        <div style={{ fontSize: 11, color: '#94a3b8' }}>
-                          机械臂装箱实况 (帧: {currentFrame})
+                        <PlayCircleOutlined style={{ fontSize: 32, opacity: 0.5, color: cam.color, marginBottom: 4 }} />
+                        <div style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>
+                          机械臂装箱实况 (当前帧: {currentFrame.toLocaleString()})
                         </div>
                       </div>
                     </div>
@@ -363,7 +373,7 @@ export default function LongVideoWorkbenchPage() {
               </Row>
 
               {/* Video Playback Scrubber & Control Bar */}
-              <div style={{ marginTop: 12, padding: '4px 8px' }}>
+              <div style={{ marginTop: 14, padding: '4px 6px' }}>
                 <Slider
                   min={0}
                   max={TOTAL_VIDEO_FRAMES}
@@ -372,44 +382,44 @@ export default function LongVideoWorkbenchPage() {
                   tooltip={{ formatter: val => `${formatTime(val)} (${val} 帧)` }}
                   styles={{
                     track: { background: '#2563eb' },
-                    rail: { background: '#334155' }
+                    rail: { background: '#e2e8f0' }
                   }}
                 />
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
                   <Space size={8}>
                     <Button 
                       type={isPlaying ? "default" : "primary"}
                       icon={isPlaying ? <PauseOutlined /> : <PlayCircleOutlined />}
                       onClick={() => setIsPlaying(!isPlaying)}
-                      style={{ background: isPlaying ? '#334155' : '#2563eb', borderColor: isPlaying ? '#475569' : '#2563eb', color: '#fff' }}
+                      style={{ background: isPlaying ? '#f1f5f9' : '#2563eb', borderColor: isPlaying ? '#cbd5e1' : '#2563eb', color: isPlaying ? '#334155' : '#fff' }}
                     >
                       {isPlaying ? '暂停 (Space)' : '播放 (Space)'}
                     </Button>
                     <Button 
                       icon={<StepBackwardOutlined />} 
                       onClick={() => setCurrentFrame(prev => Math.max(0, prev - 30))}
-                      style={{ background: '#1e293b', borderColor: '#334155', color: '#cbd5e1' }}
+                      style={{ background: '#fff', borderColor: '#cbd5e1', color: '#334155' }}
                     >
                       -1秒
                     </Button>
                     <Button 
                       icon={<StepForwardOutlined />} 
                       onClick={() => setCurrentFrame(prev => Math.min(TOTAL_VIDEO_FRAMES, prev + 30))}
-                      style={{ background: '#1e293b', borderColor: '#334155', color: '#cbd5e1' }}
+                      style={{ background: '#fff', borderColor: '#cbd5e1', color: '#334155' }}
                     >
                       +1秒
                     </Button>
                     <Button 
                       onClick={() => setCurrentFrame(prev => Math.min(TOTAL_VIDEO_FRAMES, prev + 300))}
-                      style={{ background: '#1e293b', borderColor: '#334155', color: '#cbd5e1' }}
+                      style={{ background: '#fff', borderColor: '#cbd5e1', color: '#334155' }}
                     >
                       +10秒快进
                     </Button>
                   </Space>
 
                   <Space size={8}>
-                    <span style={{ color: '#94a3b8', fontSize: 12 }}>播放倍速:</span>
+                    <span style={{ color: '#64748b', fontSize: 12 }}>播放倍速:</span>
                     {[1.0, 1.5, 2.0, 4.0].map(spd => (
                       <Button
                         key={spd}
@@ -418,9 +428,9 @@ export default function LongVideoWorkbenchPage() {
                         onClick={() => setPlaybackSpeed(spd)}
                         style={{
                           fontSize: 11,
-                          background: playbackSpeed === spd ? '#2563eb' : '#1e293b',
-                          borderColor: '#334155',
-                          color: '#fff'
+                          background: playbackSpeed === spd ? '#2563eb' : '#fff',
+                          borderColor: playbackSpeed === spd ? '#2563eb' : '#cbd5e1',
+                          color: playbackSpeed === spd ? '#fff' : '#334155'
                         }}
                       >
                         {spd}x
@@ -455,7 +465,7 @@ export default function LongVideoWorkbenchPage() {
                     </Button>
                   </div>
                 }
-                style={{ borderRadius: 12, border: '1px solid #cbd5e1' }}
+                style={{ borderRadius: 12, border: '1px solid #cbd5e1', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {s1Cycles.map((cycle, cIdx) => (
@@ -552,14 +562,14 @@ export default function LongVideoWorkbenchPage() {
             )}
 
             {/* ========================================================================= */}
-            {/* SOLUTION 2 ARENA: 实时流式快捷键打点接龙 (节拍器) */}
+            {/* SOLUTION 2 ARENA: 实时流式快捷键打点接龙 (节拍器) (Light Mode) */}
             {/* ========================================================================= */}
             {activeSolution === 'solution_2' && (
               <Card 
                 title={
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Space>
-                      <ThunderboltOutlined style={{ color: '#eab308' }} />
+                      <ThunderboltOutlined style={{ color: '#ca8a04' }} />
                       <Text strong style={{ fontSize: 15 }}>方案二工作台：实时流式快捷键打点接龙 (节拍器模式)</Text>
                     </Space>
                     <Tag color="gold" style={{ fontSize: 12, padding: '2px 8px' }}>
@@ -567,39 +577,39 @@ export default function LongVideoWorkbenchPage() {
                     </Tag>
                   </div>
                 }
-                style={{ borderRadius: 12, border: '1px solid #facc15' }}
+                style={{ borderRadius: 12, border: '1px solid #fde047', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
               >
-                {/* Metronome Live HUD */}
+                {/* Metronome Live HUD (Light Mode) */}
                 <div style={{
-                  background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                  background: '#f8fafc',
                   borderRadius: 10,
                   padding: 16,
-                  color: '#fff',
+                  color: '#0f172a',
                   marginBottom: 16,
-                  border: '1px solid #334155'
+                  border: '1px solid #e2e8f0'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <div>
-                      <span style={{ fontSize: 12, color: '#94a3b8' }}>当前循环进度</span>
-                      <div style={{ fontSize: 16, fontWeight: 600, color: '#facc15' }}>
+                      <span style={{ fontSize: 12, color: '#64748b' }}>当前循环进度</span>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: '#d97706' }}>
                         第 {s2CycleCount} 轮装箱循环 · 步骤 {s2CurrentStepIdx + 1} / {SOP_CYCLE_TEMPLATE.length}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: 12, color: '#94a3b8' }}>当前打点起止追踪</span>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#38bdf8' }}>
+                      <span style={{ fontSize: 12, color: '#64748b' }}>当前打点起止追踪</span>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#0284c7' }}>
                         [{s2StepStartFrame} 帧] &rarr; [当前指针: {currentFrame} 帧]
-                        <span style={{ marginLeft: 6, fontSize: 12, color: '#94a3b8' }}>
+                        <span style={{ marginLeft: 6, fontSize: 12, color: '#64748b', fontWeight: 'normal' }}>
                           (已持续 {Math.max(0, currentFrame - s2StepStartFrame)} 帧)
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Active Step Glowing Banner */}
+                  {/* Active Step Glowing Banner (Light Mode) */}
                   <div style={{
-                    background: 'rgba(56, 189, 248, 0.12)',
-                    border: '2px dashed #38bdf8',
+                    background: '#eff6ff',
+                    border: '2px dashed #3b82f6',
                     borderRadius: 8,
                     padding: '12px 16px',
                     display: 'flex',
@@ -607,10 +617,10 @@ export default function LongVideoWorkbenchPage() {
                     alignItems: 'center'
                   }}>
                     <div>
-                      <div style={{ fontSize: 11, color: '#38bdf8', fontWeight: 600, textTransform: 'uppercase' }}>
+                      <div style={{ fontSize: 11, color: '#2563eb', fontWeight: 700, textTransform: 'uppercase' }}>
                         🔴 RECORDING CURRENT ACTION (正在录制当前动作)
                       </div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginTop: 2 }}>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', marginTop: 2 }}>
                         {SOP_CYCLE_TEMPLATE[s2CurrentStepIdx].name}
                         <Tag color="cyan" style={{ marginLeft: 8 }}>{SOP_CYCLE_TEMPLATE[s2CurrentStepIdx].arm}</Tag>
                         <Tag color="blue">{SOP_CYCLE_TEMPLATE[s2CurrentStepIdx].skill}</Tag>
@@ -618,8 +628,8 @@ export default function LongVideoWorkbenchPage() {
                     </div>
 
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>即将接龙的下一个动作:</div>
-                      <div style={{ fontSize: 13, color: '#cbd5e1', fontWeight: 500 }}>
+                      <div style={{ fontSize: 11, color: '#64748b' }}>即将接龙的下一个动作:</div>
+                      <div style={{ fontSize: 13, color: '#334155', fontWeight: 600 }}>
                         {SOP_CYCLE_TEMPLATE[(s2CurrentStepIdx + 1) % SOP_CYCLE_TEMPLATE.length].name}
                       </div>
                     </div>
@@ -633,12 +643,12 @@ export default function LongVideoWorkbenchPage() {
                       onClick={handleS2StampCut}
                       style={{
                         flex: 2,
-                        height: 52,
-                        fontSize: 16,
+                        height: 50,
+                        fontSize: 15,
                         fontWeight: 700,
-                        background: 'linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%)',
-                        borderColor: '#3b82f6',
-                        boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+                        background: '#2563eb',
+                        borderColor: '#1d4ed8',
+                        boxShadow: '0 2px 8px rgba(37, 99, 235, 0.2)'
                       }}
                     >
                       ⚡ [ 按空格键 Space 打点切断并接龙下一步 ]
@@ -651,10 +661,10 @@ export default function LongVideoWorkbenchPage() {
                       }}
                       style={{
                         flex: 1,
-                        height: 52,
-                        background: '#334155',
-                        borderColor: '#475569',
-                        color: '#f8fafc',
+                        height: 50,
+                        background: '#fff',
+                        borderColor: '#cbd5e1',
+                        color: '#334155',
                         fontSize: 13
                       }}
                     >
@@ -720,7 +730,7 @@ export default function LongVideoWorkbenchPage() {
                     </Button>
                   </div>
                 }
-                style={{ borderRadius: 12, border: '1px solid #86efac' }}
+                style={{ borderRadius: 12, border: '1px solid #86efac', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
               >
                 {/* Level 1: Macro Timeline Track */}
                 <div style={{ marginBottom: 20 }}>
@@ -813,7 +823,7 @@ export default function LongVideoWorkbenchPage() {
                 </Space>
               }
               styles={{ body: { padding: 14 } }}
-              style={{ borderRadius: 12, border: '1px solid #cbd5e1' }}
+              style={{ borderRadius: 12, border: '1px solid #cbd5e1', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}
             >
               <Tabs
                 defaultActiveKey="json"
@@ -827,12 +837,13 @@ export default function LongVideoWorkbenchPage() {
                           不论使用哪种交互方案，最终都将自动编译为具身智能标准的结构化时序标注产物：
                         </div>
                         <pre style={{
-                          background: '#0f172a',
-                          color: '#38bdf8',
+                          background: '#f8fafc',
+                          color: '#0f172a',
+                          border: '1px solid #e2e8f0',
                           padding: 12,
                           borderRadius: 8,
                           fontSize: 11,
-                          lineHeight: 1.4,
+                          lineHeight: 1.45,
                           maxHeight: 380,
                           overflowY: 'auto',
                           fontFamily: 'monospace'
