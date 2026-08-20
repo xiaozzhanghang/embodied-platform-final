@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Button, Space, Card, Typography, Breadcrumb, Tag, 
-  App, Row, Col, Avatar, Tooltip, Input, Divider, Form, Select, Tabs, Radio, Modal, InputNumber, Switch
+  App, Row, Col, Avatar, Tooltip, Input, Divider, Form, Select, Tabs, Radio, Modal, InputNumber, Switch, Descriptions
 } from 'antd';
 import { 
   PlusOutlined, SearchOutlined, LayoutOutlined,
@@ -12,7 +12,7 @@ import {
   SkinOutlined, ExperimentOutlined, DeleteOutlined,
   EditOutlined, PlayCircleOutlined, ReloadOutlined, DownOutlined, UpOutlined,
   NodeIndexOutlined, FileTextOutlined, FolderOpenOutlined, UserOutlined, TagOutlined,
-  MinusCircleOutlined, UnorderedListOutlined
+  MinusCircleOutlined, UnorderedListOutlined, FullscreenOutlined
 } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
@@ -67,10 +67,12 @@ export default function TaskTemplatesPage() {
   const [actionTemplates, setActionTemplates] = useState([]);
   const [annoTemplates, setAnnoTemplates] = useState([]);
 
-  // Modal states for creating action templates
+  // Modal states for creating and viewing action templates
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [modalDevice, setModalDevice] = useState('galbot');
   const [enableFrameRange, setEnableFrameRange] = useState(false);
+  const [selectedActionDetail, setSelectedActionDetail] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [actionForm] = Form.useForm();
   const [actionInputMode, setActionInputMode] = useState('structured');
   const [actionSteps, setActionSteps] = useState([
@@ -467,13 +469,27 @@ export default function TaskTemplatesPage() {
           />
           <Row gutter={[16, 16]}>
           {actionTemplates.map((tpl) => (
-            <Col span={12} key={tpl.key}>
+            <Col span={8} key={tpl.key}>
               <Card 
                 title={
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <Text strong style={{ fontSize: 14 }}>{tpl.name}</Text>
-                    <Space>
-                      <Tag color="purple">{tpl.type}</Tag>
+                    <Text strong style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '58%' }} title={tpl.name}>
+                      {tpl.name}
+                    </Text>
+                    <Space size={4}>
+                      <Tag color={tpl.type === '工业数据' ? 'gold' : 'purple'} style={{ margin: 0 }}>{tpl.type}</Tag>
+                      <Tooltip title="放大查看详情">
+                        <Button 
+                          type="text" 
+                          size="small" 
+                          icon={<FullscreenOutlined style={{ color: '#1677ff', fontSize: 13 }} />} 
+                          onClick={() => {
+                            setSelectedActionDetail(tpl);
+                            setIsDetailModalOpen(true);
+                          }} 
+                          style={{ padding: '0 4px', height: 'auto', display: 'inline-flex', alignItems: 'center' }}
+                        />
+                      </Tooltip>
                       {tpl.key.startsWith('act_user_') && (
                         <Button 
                           type="text" 
@@ -488,31 +504,46 @@ export default function TaskTemplatesPage() {
                   </div>
                 }
                 style={{ borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.01)' }}
-                styles={{ body: { height: 220, display: 'flex', flexDirection: 'column' } }}
+                styles={{ body: { height: 230, display: 'flex', flexDirection: 'column' } }}
               >
-                <div style={{ marginBottom: 12, fontSize: 13, color: '#64748b', minHeight: 20 }}>{tpl.desc}</div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-                  <Tag color="cyan">步骤数: {tpl.stepCount}</Tag>
-                  <Tag>适配设备: {tpl.device}</Tag>
+                <div style={{ marginBottom: 10, fontSize: 12, color: '#64748b', minHeight: 36, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {tpl.desc}
                 </div>
-                <Divider style={{ margin: '8px 0' }} />
+                <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                  <Tag color="cyan" style={{ margin: 0 }}>步骤数: {tpl.stepCount || tpl.steps?.length}</Tag>
+                  <Tag style={{ margin: 0 }}>设备: {tpl.device}</Tag>
+                </div>
+                <Divider style={{ margin: '6px 0' }} />
                 <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                  <Text strong style={{ fontSize: 12, color: '#334155', display: 'block', marginBottom: 8, flexShrink: 0 }}>预设SOP动作序列流程：</Text>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #f1f5f9', flex: 1, overflowY: 'auto' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <Text strong style={{ fontSize: 11, color: '#334155' }}>预设SOP动作序列：</Text>
+                    <span 
+                      style={{ fontSize: 11, color: '#1677ff', cursor: 'pointer' }}
+                      onClick={() => {
+                        setSelectedActionDetail(tpl);
+                        setIsDetailModalOpen(true);
+                      }}
+                    >
+                      查看全部 &gt;
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #f1f5f9', flex: 1, overflowY: 'auto' }}>
                     {tpl.steps.map((st, idx) => {
                       const startFrame = idx === 0 ? 0 : (idx * 301);
                       const endFrame = (idx + 1) * 300;
                       return (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 12, padding: '2px 0' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-                            <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold', flexShrink: 0 }}>
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, fontSize: 11, padding: '1px 0' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                            <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold', flexShrink: 0 }}>
                               {idx + 1}
                             </span>
                             <span style={{ color: '#1e293b', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{st}</span>
                           </div>
-                          <Tag color="blue" style={{ margin: 0, fontSize: 11, flexShrink: 0, borderRadius: 4, background: '#eff6ff', borderColor: '#bfdbfe', color: '#1d4ed8', fontWeight: 'bold' }}>
-                            {startFrame} - {endFrame} 帧
-                          </Tag>
+                          {tpl.device !== 'galbot' && (
+                            <Tag color="blue" style={{ margin: 0, fontSize: 10, flexShrink: 0, padding: '0 4px', lineHeight: '16px' }}>
+                              {startFrame}-{endFrame}帧
+                            </Tag>
+                          )}
                         </div>
                       );
                     })}
@@ -898,6 +929,94 @@ export default function TaskTemplatesPage() {
             )}
           </div>
         </Form>
+      </Modal>
+
+      {/* Action Template Zoom-in Detail Modal */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <FullscreenOutlined style={{ color: '#1677ff', fontSize: 16 }} />
+            <span style={{ fontWeight: 600, fontSize: 16 }}>动作模版详情 — {selectedActionDetail?.name}</span>
+          </div>
+        }
+        open={isDetailModalOpen}
+        onCancel={() => setIsDetailModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setIsDetailModalOpen(false)}>
+            关 闭
+          </Button>,
+          <Button 
+            key="use" 
+            type="primary" 
+            onClick={() => {
+              setIsDetailModalOpen(false);
+              router.push('/collection/tasks/create');
+              message.success(`已在新建任务中套用模版「${selectedActionDetail?.name}」`);
+            }}
+          >
+            在任务中心使用此模版
+          </Button>
+        ]}
+        width={780}
+        destroyOnClose
+      >
+        {selectedActionDetail && (
+          <div style={{ padding: '8px 0' }}>
+            <Descriptions bordered size="small" column={2} style={{ marginBottom: 20 }}>
+              <Descriptions.Item label="模版名称" span={2}>
+                <Text strong style={{ fontSize: 14, color: '#1e293b' }}>{selectedActionDetail.name}</Text>
+              </Descriptions.Item>
+              <Descriptions.Item label="数据类型">
+                <Tag color={selectedActionDetail.type === '工业数据' ? 'gold' : 'purple'}>{selectedActionDetail.type}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="适配设备">
+                <Tag color="blue">{selectedActionDetail.device}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="动作步骤总数">
+                <span style={{ fontWeight: 600, color: '#1677ff' }}>{selectedActionDetail.stepCount || selectedActionDetail.steps?.length} 步</span>
+              </Descriptions.Item>
+              <Descriptions.Item label="模版描述" span={2}>
+                <span style={{ color: '#475569' }}>{selectedActionDetail.desc || '暂无描述'}</span>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <div style={{ background: '#f8fafc', padding: '14px 16px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <div style={{ fontWeight: 600, fontSize: 13, color: '#334155', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>📋 完整预设 SOP 动作序列流程</span>
+                <span style={{ fontSize: 12, color: '#94a3b8' }}>支持直接供采集与标注流水线套用</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 340, overflowY: 'auto' }}>
+                {selectedActionDetail.steps?.map((stepText, idx) => (
+                  <div 
+                    key={idx} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between', 
+                      padding: '10px 14px', 
+                      background: '#ffffff', 
+                      borderRadius: 6, 
+                      border: '1px solid #e2e8f0' 
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{
+                        width: 22, height: 22, borderRadius: '50%',
+                        background: '#1677ff', color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 11, fontWeight: 'bold', flexShrink: 0
+                      }}>
+                        {idx + 1}
+                      </span>
+                      <span style={{ fontSize: 13, color: '#1e293b', fontWeight: 500 }}>{stepText}</span>
+                    </div>
+                    <Tag color="geekblue" style={{ margin: 0, fontSize: 11, flexShrink: 0 }}>步骤 {idx + 1}</Tag>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <style jsx>{`
