@@ -212,6 +212,12 @@ function WorkbenchSolutionsContent() {
     setShortSteps(synced);
     setShortSelectedId(targetIdx + 2);
     message.success(`📄 已就地复制单步「${step.text}」，开始帧为 [${newStart}]，帧总数为 [${dur}]！`);
+
+    // 自动平滑滚动定位到新增加的步骤
+    setTimeout(() => {
+      const el = document.getElementById(`step-card-${targetIdx + 2}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
   };
 
   // Helper: 按步骤时长顺序顺延对齐帧数区间，确保时间轴色块同步换位，每步开始帧为上一步结束帧+1，帧总数严格保持
@@ -673,7 +679,7 @@ function WorkbenchSolutionsContent() {
                 )}
 
                 {/* Steps List with [📄 复制单步] & [📋 多选批量复制] & [⠿ 拖拽换位] feature */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {shortSteps.map((step, idx) => {
                     const isSelected = shortSelectedId === step.id;
                     const isBatchChecked = selectedBatchIds.includes(step.id);
@@ -682,6 +688,7 @@ function WorkbenchSolutionsContent() {
                     return (
                       <div 
                         key={step.id}
+                        id={`step-card-${step.id}`}
                         draggable
                         onDragStart={(e) => handleDragStart(e, idx)}
                         onDragOver={(e) => handleDragOver(e, idx)}
