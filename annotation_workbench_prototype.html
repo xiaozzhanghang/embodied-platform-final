@@ -82,9 +82,9 @@
       // Steps state
       const [steps, setSteps] = useState([
         { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
-        { id: 2, text: '右手取底部泡沫垫并放入纸箱', startFrame: 201, endFrame: 450, color: '#722ed1', arm: '右手' },
-        { id: 3, text: '右手抓取核心金属支架入箱', startFrame: 451, endFrame: 700, color: '#1890ff', arm: '右手' },
-        { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 701, endFrame: 900, color: '#52c41a', arm: '双手' },
+        { id: 2, text: '右手取底部泡沫垫并放入纸箱', startFrame: 201, endFrame: 400, color: '#722ed1', arm: '右手' },
+        { id: 3, text: '右手抓取核心金属支架入箱', startFrame: 401, endFrame: 600, color: '#1890ff', arm: '右手' },
+        { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 601, endFrame: 750, color: '#52c41a', arm: '双手' },
       ]);
       const [selectedId, setSelectedId] = useState(1);
       const [draggedStepIdx, setDraggedStepIdx] = useState(null);
@@ -114,11 +114,11 @@
         };
       }, [isPlaying, playbackSpeed, totalFrames]);
 
-      // Re-align frames sequentially to keep timeline synchronized
+      // Re-align frames sequentially: 每步开始帧为上一步结束帧+1，帧总数严格保持
       const realignStepTimeframes = (stepsList, baseStart = 0) => {
         let current = baseStart;
         return stepsList.map((step, idx) => {
-          const dur = Math.max(1, (step.endFrame - step.startFrame) || 200);
+          const dur = Math.max(1, step.endFrame - step.startFrame);
           const start = current;
           const end = start + dur;
           current = end + 1;
@@ -149,7 +149,7 @@
       const handleBatchCopySelected = () => {
         if (selectedBatchIds.length === 0) return;
         const stepsToCopy = steps.filter(s => selectedBatchIds.includes(s.id));
-        const totalBatchDur = stepsToCopy.reduce((sum, s) => sum + Math.max(1, (s.endFrame - s.startFrame) || 200), 0);
+        const totalBatchDur = stepsToCopy.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
         const currentTotalSpan = steps.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
 
         // 检查剩余帧数是否足够
@@ -162,7 +162,7 @@
         let runningStart = lastEndFrame + 1;
 
         const clonedSteps = stepsToCopy.map((step, idx) => {
-          const dur = Math.max(1, (step.endFrame - step.startFrame) || 200);
+          const dur = Math.max(1, step.endFrame - step.startFrame);
           const start = runningStart;
           const end = start + dur;
           runningStart = end + 1;
@@ -192,9 +192,9 @@
         setSelectedBatchIds([]);
       };
 
-      // Copy single step
+      // Copy single step: 帧总数为复制步骤的帧总数，开始帧为上一步结束帧+1
       const handleCopySingleStep = (step) => {
-        const dur = Math.max(1, (step.endFrame - step.startFrame) || 100);
+        const dur = Math.max(1, step.endFrame - step.startFrame);
         const currentTotalSpan = steps.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
 
         // 检查剩余帧数是否足够
@@ -204,11 +204,13 @@
         }
 
         const targetIdx = steps.findIndex(s => s.id === step.id);
+        const newStart = step.endFrame + 1;
+        const newEnd = newStart + dur;
         const newStep = {
           id: Date.now(),
-          text: `${step.text} (调整/复用)`,
-          startFrame: step.endFrame + 1,
-          endFrame: Math.min(totalFrames, step.endFrame + dur),
+          text: `${step.text} (复制)`,
+          startFrame: newStart,
+          endFrame: newEnd,
           color: step.color,
           arm: step.arm
         };

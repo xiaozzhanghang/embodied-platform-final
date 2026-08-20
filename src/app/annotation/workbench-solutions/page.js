@@ -62,9 +62,9 @@ function WorkbenchSolutionsContent() {
   // =========================================================================
   const [shortSteps, setShortSteps] = useState([
     { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
-    { id: 2, text: '右手取底部泡沫垫并放入纸箱', startFrame: 201, endFrame: 450, color: '#722ed1', arm: '右手' },
-    { id: 3, text: '右手抓取核心金属支架入箱', startFrame: 451, endFrame: 700, color: '#1890ff', arm: '右手' },
-    { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 701, endFrame: 900, color: '#52c41a', arm: '双手' },
+    { id: 2, text: '右手取底部泡沫垫并放入纸箱', startFrame: 201, endFrame: 400, color: '#722ed1', arm: '右手' },
+    { id: 3, text: '右手抓取核心金属支架入箱', startFrame: 401, endFrame: 600, color: '#1890ff', arm: '右手' },
+    { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 601, endFrame: 750, color: '#52c41a', arm: '双手' },
   ]);
   const [shortSelectedId, setShortSelectedId] = useState(1);
   const [draggedStepIdx, setDraggedStepIdx] = useState(null);
@@ -92,12 +92,12 @@ function WorkbenchSolutionsContent() {
       return;
     }
     const stepsToCopy = shortSteps.filter(s => selectedBatchIds.includes(s.id));
-    const totalBatchDur = stepsToCopy.reduce((sum, s) => sum + Math.max(1, (s.endFrame - s.startFrame) || 200), 0);
+    const totalBatchDur = stepsToCopy.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
     const currentTotalSpan = shortSteps.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
 
     // 检查剩余帧数是否足够
     if (currentTotalSpan + totalBatchDur > totalFrames) {
-      message.warning(`⚠️ 视频剩余帧数不足（当前已占用 ${currentTotalSpan} 帧 / 总上限 ${totalFrames} 帧，批量复制需 ${totalBatchDur} 帧），不可复制！`);
+      message.warning(`⚠️ 视频剩余帧数不足（当前已占用 ${currentTotalSpan} 帧 / 总上限 ${totalFrames} 帧，批量复制需要 ${totalBatchDur} 帧），帧数不够不可以复制！`);
       return;
     }
 
@@ -105,7 +105,7 @@ function WorkbenchSolutionsContent() {
     let runningStart = lastEndFrame + 1;
 
     const clonedSteps = stepsToCopy.map((step, idx) => {
-      const dur = Math.max(1, (step.endFrame - step.startFrame) || 200);
+      const dur = Math.max(1, step.endFrame - step.startFrame);
       const start = runningStart;
       const end = start + dur;
       runningStart = end + 1;
@@ -124,7 +124,7 @@ function WorkbenchSolutionsContent() {
     setShortSteps(reindexed);
     setSelectedBatchIds([]);
     setShortSelectedId(shortSteps.length + 1);
-    message.success(`✨ 批量复制成功：已克隆并追加 ${stepsToCopy.length} 个步骤，时间轴已同步生成！`);
+    message.success(`✨ 批量复制成功：已追加 ${stepsToCopy.length} 个步骤（开始帧为上一步结束帧+1，帧总数一致）！`);
   };
 
   const handleBatchDeleteSelected = () => {
@@ -137,23 +137,25 @@ function WorkbenchSolutionsContent() {
     message.success(`🗑️ 批量删除成功：已移除已选步骤！`);
   };
 
-  // Copy Single Step (单步复制)
+  // Copy Single Step (单步复制: 帧总数为复制步骤的帧总数，开始帧为上一步结束帧+1)
   const handleCopySingleStep = (step) => {
-    const dur = Math.max(1, (step.endFrame - step.startFrame) || 100);
+    const dur = Math.max(1, step.endFrame - step.startFrame);
     const currentTotalSpan = shortSteps.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
 
     // 检查剩余帧数是否足够
     if (currentTotalSpan + dur > totalFrames) {
-      message.warning(`⚠️ 视频剩余帧数不足（当前已占用 ${currentTotalSpan} 帧 / 总上限 ${totalFrames} 帧，复制需要 ${dur} 帧），不可复制！`);
+      message.warning(`⚠️ 视频剩余帧数不足（当前已占用 ${currentTotalSpan} 帧 / 总上限 ${totalFrames} 帧，复制需要 ${dur} 帧），帧数不够不可以复制！`);
       return;
     }
 
     const targetIdx = shortSteps.findIndex(s => s.id === step.id);
+    const newStart = step.endFrame + 1;
+    const newEnd = newStart + dur;
     const newStep = {
       id: Date.now(),
-      text: `${step.text} (调整/复用)`,
-      startFrame: step.endFrame + 1,
-      endFrame: Math.min(totalFrames, step.endFrame + dur),
+      text: `${step.text} (复制)`,
+      startFrame: newStart,
+      endFrame: newEnd,
       color: step.color,
       arm: step.arm
     };
@@ -163,14 +165,14 @@ function WorkbenchSolutionsContent() {
     const synced = realignStepTimeframes(reindexed, shortSteps[0]?.startFrame || 0);
     setShortSteps(synced);
     setShortSelectedId(targetIdx + 2);
-    message.success(`📄 已就地复制单步「${step.text}」，已插入为第 ${targetIdx + 2} 步！`);
+    message.success(`📄 已就地复制单步「${step.text}」，开始帧为 [${newStart}]，帧总数为 [${dur}]！`);
   };
 
-  // Helper: 按步骤时长顺序顺延对齐帧数区间，确保时间轴色块同步换位
+  // Helper: 按步骤时长顺序顺延对齐帧数区间，确保时间轴色块同步换位，每步开始帧为上一步结束帧+1，帧总数严格保持
   const realignStepTimeframes = (stepsList, baseStart = 0) => {
     let current = baseStart;
     return stepsList.map((step, idx) => {
-      const dur = Math.max(1, (step.endFrame - step.startFrame) || 200);
+      const dur = Math.max(1, step.endFrame - step.startFrame);
       const start = current;
       const end = start + dur;
       current = end + 1;
