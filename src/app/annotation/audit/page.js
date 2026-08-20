@@ -22,7 +22,8 @@ import {
   DownloadOutlined,
   UserOutlined,
   PlusOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  ThunderboltOutlined
 } from '@ant-design/icons';
 import { ProFormSelect, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
@@ -474,6 +475,16 @@ export default function AnnotationAuditPage() {
           title="标注工作台"
           description="统一查看标注任务状态、作业进度与人员分配。"
           breadcrumbs={[{ title: '首页' }, { title: '任务管理' }, { title: '标注工作台' }]}
+          extra={
+            <Button 
+              type="primary" 
+              icon={<ThunderboltOutlined style={{ color: '#facc15' }} />}
+              onClick={() => router.push('/annotation/long-video-workbench')}
+              style={{ background: '#1e293b', borderColor: '#334155' }}
+            >
+              长视频循环标注交互方案演示 (3种)
+            </Button>
+          }
         />
 
         {/* 筛选栏 */}
