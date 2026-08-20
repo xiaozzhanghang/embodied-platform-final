@@ -14,7 +14,7 @@ import {
   ClockCircleOutlined, NodeIndexOutlined, PlusOutlined, EditOutlined, ArrowRightOutlined, 
   SlidersOutlined, DoubleLeftOutlined, DoubleRightOutlined, CopyOutlined, ThunderboltOutlined,
   BranchesOutlined, RocketOutlined, CodeOutlined, FireOutlined, VideoCameraFilled, PlaySquareOutlined,
-  ArrowUpOutlined, ArrowDownOutlined, SortAscendingOutlined, SwapOutlined
+  ArrowUpOutlined, ArrowDownOutlined, SortAscendingOutlined, SwapOutlined, HolderOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { StatusTag } from '@/components/ui';
@@ -103,7 +103,7 @@ function WorkbenchSolutionsContent() {
   const [activeTabKey, setActiveTabKey] = useState('1');
 
   // =========================================================================
-  // STATE FOR SHORT VIDEO: 单次任务 4 步骤 (支持单步微调 & 单步复制 & 调换位置)
+  // STATE FOR SHORT VIDEO: 单次任务 4 步骤 (支持单步微调 & 单步复制 & 调换位置 & 拖拽换位)
   // =========================================================================
   const [shortSteps, setShortSteps] = useState([
     { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
@@ -112,6 +112,8 @@ function WorkbenchSolutionsContent() {
     { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 701, endFrame: 900, color: '#52c41a', arm: '双手' },
   ]);
   const [shortSelectedId, setShortSelectedId] = useState(1);
+  const [draggedStepIdx, setDraggedStepIdx] = useState(null);
+  const [dragOverStepIdx, setDragOverStepIdx] = useState(null);
 
   // Short Video: Copy Single Step (单步复制)
   const handleCopySingleStep = (step) => {
@@ -132,7 +134,7 @@ function WorkbenchSolutionsContent() {
     message.success(`📄 已就地复制单步「${step.text}」，已插入为第 ${targetIdx + 2} 步！`);
   };
 
-  // Short Video: Move Step Up / Down (调换步骤顺序)
+  // Short Video: Move Step Up / Down (按钮调换步骤顺序)
   const handleMoveStep = (idx, direction) => {
     const targetIdx = idx + direction;
     if (targetIdx < 0 || targetIdx >= shortSteps.length) return;
@@ -148,6 +150,41 @@ function WorkbenchSolutionsContent() {
     setShortSteps(reindexed);
     setShortSelectedId(targetIdx + 1);
     message.success(`↕️ 已将「${currentStep.text}」与第 ${targetIdx + 1} 步调换顺序！`);
+  };
+
+  // Drag & Drop Step Handlers (鼠标按住直接拖拽换位)
+  const handleDragStart = (e, idx) => {
+    setDraggedStepIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  };
+
+  const handleDragOver = (e, idx) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverStepIdx !== idx) {
+      setDragOverStepIdx(idx);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverStepIdx(null);
+  };
+
+  const handleDrop = (e, targetIdx) => {
+    e.preventDefault();
+    setDragOverStepIdx(null);
+    if (draggedStepIdx === null || draggedStepIdx === targetIdx) return;
+
+    const updated = [...shortSteps];
+    const [draggedItem] = updated.splice(draggedStepIdx, 1);
+    updated.splice(targetIdx, 0, draggedItem);
+
+    const reindexed = updated.map((s, i) => ({ ...s, id: i + 1 }));
+    setShortSteps(reindexed);
+    setShortSelectedId(targetIdx + 1);
+    setDraggedStepIdx(null);
+    message.success(`🎯 拖拽调整成功：已将「${draggedItem.text}」移动至第 ${targetIdx + 1} 步！`);
   };
 
   // Short Video: Auto sort steps by frame start time
@@ -562,27 +599,43 @@ function WorkbenchSolutionsContent() {
                     </Space>
                   </div>
 
-                  {/* Short Video Steps List with [📄 复制单步] & [⬆️/⬇️ 调换顺序] feature */}
+                  {/* Short Video Steps List with [📄 复制单步] & [↕️ 拖拽换位 / ⬆️/⬇️ 调换顺序] feature */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
                     {shortSteps.map((step, idx) => {
                       const isSelected = shortSelectedId === step.id;
+                      const isDragged = draggedStepIdx === idx;
+                      const isDragOver = dragOverStepIdx === idx;
                       return (
                         <div 
                           key={step.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, idx)}
+                          onDragOver={(e) => handleDragOver(e, idx)}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, idx)}
                           onClick={() => setShortSelectedId(step.id)}
                           style={{
-                            border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                            border: isDragOver ? '2px solid #2563eb' : isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
                             borderLeft: `5px solid ${step.color}`,
+                            borderTop: isDragOver ? '3px solid #2563eb' : undefined,
                             borderRadius: 8,
-                            background: isSelected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#fafafa',
+                            background: isDragOver ? '#dbeafe' : isSelected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#fafafa',
+                            opacity: isDragged ? 0.45 : 1,
                             padding: '8px 10px',
-                            cursor: 'pointer',
+                            cursor: 'grab',
+                            transform: isDragOver ? 'scale(1.02)' : 'none',
+                            boxShadow: isDragOver ? '0 4px 12px rgba(37, 99, 235, 0.25)' : isSelected ? '0 2px 8px rgba(37, 99, 235, 0.15)' : 'none',
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          {/* Title + Action Toolbar: Move Up/Down, Copy Single Step & Delete */}
+                          {/* Title + Action Toolbar: Drag Grip, Move Up/Down, Copy Single Step & Delete */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                              {/* ⠿ DRAG HANDLE */}
+                              <Tooltip title="按住拖动可直接调换步骤位置">
+                                <HolderOutlined style={{ color: '#94a3b8', cursor: 'grab', fontSize: 13 }} />
+                              </Tooltip>
+
                               <span style={{ fontSize: 11, fontWeight: 'bold', color: isSelected ? '#1d4ed8' : '#64748b', background: isSelected ? '#bfdbfe' : '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>
                                 {String(idx + 1).padStart(2, '0')}
                               </span>
