@@ -79,6 +79,18 @@
       const playTimerRef = useRef(null);
       const timelineRef = useRef(null);
 
+      // Steps state
+      const [steps, setSteps] = useState([
+        { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
+        { id: 2, text: '右手取底部泡沫垫并放入纸箱', startFrame: 201, endFrame: 400, color: '#722ed1', arm: '右手' },
+        { id: 3, text: '右手抓取核心金属支架入箱', startFrame: 401, endFrame: 600, color: '#1890ff', arm: '右手' },
+        { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 601, endFrame: 750, color: '#52c41a', arm: '双手' },
+      ]);
+      const [selectedId, setSelectedId] = useState(1);
+      const [draggedStepIdx, setDraggedStepIdx] = useState(null);
+      const [dragOverStepIdx, setDragOverStepIdx] = useState(null);
+      const [selectedBatchIds, setSelectedBatchIds] = useState([]); // 多选勾选的步骤
+
       // Red Line Playhead Dragging Handlers
       const isDraggingRedLineRef = useRef(false);
       const [isDraggingRedLine, setIsDraggingRedLine] = useState(false);
@@ -112,18 +124,6 @@
           window.removeEventListener('mouseup', handleMouseUp);
         };
       }, [totalFrames, steps]);
-
-      // Steps state
-      const [steps, setSteps] = useState([
-        { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
-        { id: 2, text: '右手取底部泡沫垫并放入纸箱', startFrame: 201, endFrame: 400, color: '#722ed1', arm: '右手' },
-        { id: 3, text: '右手抓取核心金属支架入箱', startFrame: 401, endFrame: 600, color: '#1890ff', arm: '右手' },
-        { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 601, endFrame: 750, color: '#52c41a', arm: '双手' },
-      ]);
-      const [selectedId, setSelectedId] = useState(1);
-      const [draggedStepIdx, setDraggedStepIdx] = useState(null);
-      const [dragOverStepIdx, setDragOverStepIdx] = useState(null);
-      const [selectedBatchIds, setSelectedBatchIds] = useState([]); // 多选勾选的步骤
 
       // Playback simulation
       useEffect(() => {

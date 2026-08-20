@@ -31,6 +31,21 @@ function WorkbenchSolutionsContent() {
   const playTimerRef = useRef(null);
   const timelineRef = useRef(null);
 
+  // =========================================================================
+  // STATE: 动作步骤 (支持单步复制 & 多选批量复制 & 鼠标拖拽换位 & 时间轴联动)
+  // =========================================================================
+  const [shortSteps, setShortSteps] = useState([
+    { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
+    { id: 2, text: '右手取底部泡沫垫并放入纸箱', startFrame: 201, endFrame: 400, color: '#722ed1', arm: '右手' },
+    { id: 3, text: '右手抓取核心金属支架入箱', startFrame: 401, endFrame: 600, color: '#1890ff', arm: '右手' },
+    { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 601, endFrame: 750, color: '#52c41a', arm: '双手' },
+  ]);
+  const [shortSelectedId, setShortSelectedId] = useState(1);
+  const [draggedStepIdx, setDraggedStepIdx] = useState(null);
+  const [dragOverStepIdx, setDragOverStepIdx] = useState(null);
+  const [selectedBatchIds, setSelectedBatchIds] = useState([]); // 多选勾选的步骤 IDs
+  const [activeTabKey, setActiveTabKey] = useState('1');
+
   // Red Line Playhead State & Mouse Dragging Handlers
   const isDraggingRedLineRef = useRef(false);
   const [isDraggingRedLine, setIsDraggingRedLine] = useState(false);
@@ -87,22 +102,6 @@ function WorkbenchSolutionsContent() {
       if (playTimerRef.current) clearInterval(playTimerRef.current);
     };
   }, [isPlaying, playbackSpeed, totalFrames]);
-
-  const [activeTabKey, setActiveTabKey] = useState('1');
-
-  // =========================================================================
-  // STATE: 动作步骤 (支持单步复制 & 多选批量复制 & 鼠标拖拽换位 & 时间轴联动)
-  // =========================================================================
-  const [shortSteps, setShortSteps] = useState([
-    { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
-    { id: 2, text: '右手取底部泡沫垫并放入纸箱', startFrame: 201, endFrame: 400, color: '#722ed1', arm: '右手' },
-    { id: 3, text: '右手抓取核心金属支架入箱', startFrame: 401, endFrame: 600, color: '#1890ff', arm: '右手' },
-    { id: 4, text: '双手折叠合拢箱盖并封箱', startFrame: 601, endFrame: 750, color: '#52c41a', arm: '双手' },
-  ]);
-  const [shortSelectedId, setShortSelectedId] = useState(1);
-  const [draggedStepIdx, setDraggedStepIdx] = useState(null);
-  const [dragOverStepIdx, setDragOverStepIdx] = useState(null);
-  const [selectedBatchIds, setSelectedBatchIds] = useState([]); // 多选勾选的步骤 IDs
 
   // Multi-select Batch Handlers (多选步骤批量复制 / 批量删除)
   const handleToggleBatchSelect = (stepId) => {
