@@ -92,6 +92,15 @@ function WorkbenchSolutionsContent() {
       return;
     }
     const stepsToCopy = shortSteps.filter(s => selectedBatchIds.includes(s.id));
+    const totalBatchDur = stepsToCopy.reduce((sum, s) => sum + Math.max(1, (s.endFrame - s.startFrame) || 200), 0);
+    const currentTotalSpan = shortSteps.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
+
+    // 检查剩余帧数是否足够
+    if (currentTotalSpan + totalBatchDur > totalFrames) {
+      message.warning(`⚠️ 视频剩余帧数不足（当前已占用 ${currentTotalSpan} 帧 / 总上限 ${totalFrames} 帧，批量复制需 ${totalBatchDur} 帧），不可复制！`);
+      return;
+    }
+
     const lastEndFrame = shortSteps.length > 0 ? shortSteps[shortSteps.length - 1].endFrame : currentFrame;
     let runningStart = lastEndFrame + 1;
 
@@ -130,12 +139,21 @@ function WorkbenchSolutionsContent() {
 
   // Copy Single Step (单步复制)
   const handleCopySingleStep = (step) => {
+    const dur = Math.max(1, (step.endFrame - step.startFrame) || 100);
+    const currentTotalSpan = shortSteps.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
+
+    // 检查剩余帧数是否足够
+    if (currentTotalSpan + dur > totalFrames) {
+      message.warning(`⚠️ 视频剩余帧数不足（当前已占用 ${currentTotalSpan} 帧 / 总上限 ${totalFrames} 帧，复制需要 ${dur} 帧），不可复制！`);
+      return;
+    }
+
     const targetIdx = shortSteps.findIndex(s => s.id === step.id);
     const newStep = {
       id: Date.now(),
       text: `${step.text} (调整/复用)`,
       startFrame: step.endFrame + 1,
-      endFrame: Math.min(totalFrames, step.endFrame + 100),
+      endFrame: Math.min(totalFrames, step.endFrame + dur),
       color: step.color,
       arm: step.arm
     };
@@ -400,6 +418,11 @@ function WorkbenchSolutionsContent() {
                     ghost 
                     icon={<PlusOutlined />} 
                     onClick={() => {
+                      const currentTotalSpan = shortSteps.reduce((sum, s) => sum + Math.max(1, s.endFrame - s.startFrame), 0);
+                      if (currentTotalSpan + 100 > totalFrames) {
+                        message.warning(`⚠️ 视频总帧数 (${totalFrames} 帧) 已被完全占用，剩余帧数不足，无法增加步骤！`);
+                        return;
+                      }
                       const newStep = {
                         id: shortSteps.length + 1,
                         text: '新自定义动作步骤',
