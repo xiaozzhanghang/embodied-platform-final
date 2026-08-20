@@ -471,82 +471,96 @@ export default function TaskTemplatesPage() {
           {actionTemplates.map((tpl) => (
             <Col span={8} key={tpl.key}>
               <Card 
-                title={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <Text strong style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '58%' }} title={tpl.name}>
+                hoverable
+                style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}
+                styles={{ body: { padding: 0, flex: 1, display: 'flex', flexDirection: 'column' } }}
+              >
+                <div style={{ padding: '20px 20px 14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  {/* Top Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                    <Title level={5} style={{ margin: 0, fontSize: 15, color: '#1e293b', flex: 1, paddingRight: 8 }} ellipsis={{ tooltip: tpl.name }}>
                       {tpl.name}
+                    </Title>
+                    <Tag color={tpl.type === '工业数据' ? 'gold' : 'purple'} style={{ margin: 0 }}>{tpl.type}</Tag>
+                  </div>
+
+                  {/* Description */}
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block', minHeight: 36, marginBottom: 10, lineHeight: 1.5 }}>
+                    {tpl.desc}
+                  </Text>
+
+                  {/* Metadata Tags */}
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                    <Tag color="cyan" style={{ margin: 0, fontSize: 11 }}>步骤数: {tpl.stepCount || tpl.steps?.length}</Tag>
+                    <Tag style={{ margin: 0, fontSize: 11 }}>设备: {tpl.device}</Tag>
+                  </div>
+
+                  <Divider style={{ margin: '6px 0 10px 0' }} />
+
+                  {/* SOP Sequence preview */}
+                  <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <Text strong style={{ fontSize: 11, color: '#475569', marginBottom: 6, display: 'block' }}>
+                      预设SOP动作序列流程：
                     </Text>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #f1f5f9', height: 96, overflowY: 'auto' }}>
+                      {tpl.steps.map((st, idx) => {
+                        const startFrame = idx === 0 ? 0 : (idx * 301);
+                        const endFrame = (idx + 1) * 300;
+                        return (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, fontSize: 11, padding: '1px 0' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                              <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold', flexShrink: 0 }}>
+                                {idx + 1}
+                              </span>
+                              <span style={{ color: '#1e293b', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{st}</span>
+                            </div>
+                            {tpl.device !== 'galbot' && (
+                              <Tag color="blue" style={{ margin: 0, fontSize: 10, flexShrink: 0, padding: '0 4px', lineHeight: '16px' }}>
+                                {startFrame}-{endFrame}帧
+                              </Tag>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Action Footer matching Task Template style */}
+                <div style={{ 
+                  display: 'flex', 
+                  borderTop: '1px solid #f0f0f0', 
+                  background: '#fafafa'
+                }}>
+                  <div 
+                    style={{ flex: 1.2, textAlign: 'center', padding: '10px 0', cursor: 'pointer', borderRight: '1px solid #f0f0f0' }}
+                    className="hover-action"
+                    onClick={() => {
+                      router.push('/collection/tasks/create');
+                      message.success(`已在任务中心套用模版「${tpl.name}」`);
+                    }}
+                  >
+                    <Text type="secondary" style={{ fontSize: 12 }}>在任务中心使用</Text>
+                  </div>
+                  <div 
+                    style={{ flex: 1, textAlign: 'center', padding: '10px 0', cursor: 'pointer', borderRight: '1px solid #f0f0f0' }}
+                    className="hover-action"
+                    onClick={() => {
+                      setSelectedActionDetail(tpl);
+                      setIsDetailModalOpen(true);
+                    }}
+                  >
                     <Space size={4}>
-                      <Tag color={tpl.type === '工业数据' ? 'gold' : 'purple'} style={{ margin: 0 }}>{tpl.type}</Tag>
-                      <Tooltip title="放大查看详情">
-                        <Button 
-                          type="text" 
-                          size="small" 
-                          icon={<FullscreenOutlined style={{ color: '#1677ff', fontSize: 13 }} />} 
-                          onClick={() => {
-                            setSelectedActionDetail(tpl);
-                            setIsDetailModalOpen(true);
-                          }} 
-                          style={{ padding: '0 4px', height: 'auto', display: 'inline-flex', alignItems: 'center' }}
-                        />
-                      </Tooltip>
-                      {tpl.key.startsWith('act_user_') && (
-                        <Button 
-                          type="text" 
-                          danger 
-                          size="small" 
-                          icon={<DeleteOutlined />} 
-                          onClick={() => handleDeleteActionTemplate(tpl.key, tpl.name)} 
-                          style={{ padding: '0 4px', height: 'auto' }}
-                        />
-                      )}
+                      <FullscreenOutlined style={{ fontSize: 12, color: '#1677ff' }} />
+                      <Text type="secondary" style={{ fontSize: 12 }}>查看详情</Text>
                     </Space>
                   </div>
-                }
-                style={{ borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 2px 6px rgba(0,0,0,0.01)' }}
-                styles={{ body: { height: 230, display: 'flex', flexDirection: 'column' } }}
-              >
-                <div style={{ marginBottom: 10, fontSize: 12, color: '#64748b', minHeight: 36, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {tpl.desc}
-                </div>
-                <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-                  <Tag color="cyan" style={{ margin: 0 }}>步骤数: {tpl.stepCount || tpl.steps?.length}</Tag>
-                  <Tag style={{ margin: 0 }}>设备: {tpl.device}</Tag>
-                </div>
-                <Divider style={{ margin: '6px 0' }} />
-                <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <Text strong style={{ fontSize: 11, color: '#334155' }}>预设SOP动作序列：</Text>
-                    <span 
-                      style={{ fontSize: 11, color: '#1677ff', cursor: 'pointer' }}
-                      onClick={() => {
-                        setSelectedActionDetail(tpl);
-                        setIsDetailModalOpen(true);
-                      }}
-                    >
-                      查看全部 &gt;
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, background: '#f8fafc', padding: 8, borderRadius: 6, border: '1px solid #f1f5f9', flex: 1, overflowY: 'auto' }}>
-                    {tpl.steps.map((st, idx) => {
-                      const startFrame = idx === 0 ? 0 : (idx * 301);
-                      const endFrame = (idx + 1) * 300;
-                      return (
-                        <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, fontSize: 11, padding: '1px 0' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-                            <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 'bold', flexShrink: 0 }}>
-                              {idx + 1}
-                            </span>
-                            <span style={{ color: '#1e293b', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{st}</span>
-                          </div>
-                          {tpl.device !== 'galbot' && (
-                            <Tag color="blue" style={{ margin: 0, fontSize: 10, flexShrink: 0, padding: '0 4px', lineHeight: '16px' }}>
-                              {startFrame}-{endFrame}帧
-                            </Tag>
-                          )}
-                        </div>
-                      );
-                    })}
+                  <div 
+                    style={{ flex: 0.8, textAlign: 'center', padding: '10px 0', cursor: 'pointer' }}
+                    className="hover-action"
+                    onClick={() => handleDeleteActionTemplate(tpl.key, tpl.name)}
+                  >
+                    <Text style={{ fontSize: 12, color: '#ff4d4f' }}>删除</Text>
                   </div>
                 </div>
               </Card>
