@@ -185,6 +185,68 @@ function WorkbenchSolutionsContent() {
     });
   };
 
+  // Start [Q] & End/Mark [R] Frame Handlers
+  const handleSetStartFrame = () => {
+    if (!shortSelectedId) {
+      message.warning('请先在右侧点击选中一个动作步骤');
+      return;
+    }
+    const currentStep = shortSteps.find(s => s.id === shortSelectedId);
+    if (!currentStep) return;
+
+    let newEnd = currentStep.endFrame;
+    if (currentFrame >= newEnd) {
+      newEnd = Math.min(totalFrames, currentFrame + 100);
+    }
+    const updated = shortSteps.map(s => 
+      s.id === shortSelectedId ? { ...s, startFrame: currentFrame, endFrame: newEnd } : s
+    );
+    setShortSteps(updated);
+    message.success(`🚩 步骤 #${shortSelectedId}「${currentStep.text}」起始帧已设为 [${currentFrame} 帧]！`);
+  };
+
+  const handleSetEndFrame = () => {
+    if (!shortSelectedId) {
+      message.warning('请先在右侧点击选中一个动作步骤');
+      return;
+    }
+    const currentStep = shortSteps.find(s => s.id === shortSelectedId);
+    if (!currentStep) return;
+
+    if (currentFrame <= currentStep.startFrame) {
+      message.warning(`⚠️ 结束帧 (${currentFrame}f) 必须大于起始帧 (${currentStep.startFrame}f)，请先播放或快进游标！`);
+      return;
+    }
+    const updated = shortSteps.map(s => 
+      s.id === shortSelectedId ? { ...s, endFrame: currentFrame } : s
+    );
+    setShortSteps(updated);
+    message.success(`🏁 步骤 #${shortSelectedId}「${currentStep.text}」结束帧已标记为 [${currentFrame} 帧]（总计: ${currentFrame - currentStep.startFrame} 帧）！`);
+  };
+
+  // Keyboard shortcut listener (Q: 开始, R: 结束/标记, T: 完成标注, Space: 播放/暂停)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName.match(/INPUT|TEXTAREA/)) return;
+
+      if (e.key === 'q' || e.key === 'Q') {
+        e.preventDefault();
+        handleSetStartFrame();
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        handleSetEndFrame();
+      } else if (e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        message.success('🎉 恭喜！数据序号 744108 标注完成并已提交！');
+      } else if (e.code === 'Space') {
+        e.preventDefault();
+        setIsPlaying(p => !p);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentFrame, shortSelectedId, shortSteps]);
+
   // Drag & Drop Step Handlers (鼠标按住直接拖拽换位，时间轴同步联动换位)
   const handleDragStart = (e, idx) => {
     setDraggedStepIdx(idx);
@@ -374,22 +436,14 @@ function WorkbenchSolutionsContent() {
                     <Button
                       type="primary"
                       style={{ flex: 1, height: 32, fontSize: 12, background: '#2563eb', fontWeight: 600 }}
-                      onClick={() => {
-                        const updated = shortSteps.map(s => s.id === shortSelectedId ? { ...s, startFrame: currentFrame } : s);
-                        setShortSteps(updated);
-                        message.success(`步骤 #${shortSelectedId} 起始帧已设为 ${currentFrame} 帧`);
-                      }}
+                      onClick={handleSetStartFrame}
                     >
                       开始 [Q] ({currentFrame}f)
                     </Button>
                     <Button
                       type="primary"
                       style={{ flex: 1, height: 32, fontSize: 12, background: '#f97316', borderColor: '#f97316', fontWeight: 600 }}
-                      onClick={() => {
-                        const updated = shortSteps.map(s => s.id === shortSelectedId ? { ...s, endFrame: currentFrame } : s);
-                        setShortSteps(updated);
-                        message.success(`步骤 #${shortSelectedId} 结束帧已标记为 ${currentFrame} 帧`);
-                      }}
+                      onClick={handleSetEndFrame}
                     >
                       标记 [R] ({currentFrame}f)
                     </Button>

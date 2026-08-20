@@ -247,6 +247,66 @@
         setDraggedStepIdx(null);
       };
 
+      // Start [Q] & End/Mark [R] Frame Handlers
+      const handleSetStartFrame = () => {
+        if (!selectedId) {
+          alert('请先在右侧点击选中一个动作步骤');
+          return;
+        }
+        const currentStep = steps.find(s => s.id === selectedId);
+        if (!currentStep) return;
+
+        let newEnd = currentStep.endFrame;
+        if (currentFrame >= newEnd) {
+          newEnd = Math.min(totalFrames, currentFrame + 100);
+        }
+        const updated = steps.map(s => 
+          s.id === selectedId ? { ...s, startFrame: currentFrame, endFrame: newEnd } : s
+        );
+        setSteps(updated);
+      };
+
+      const handleSetEndFrame = () => {
+        if (!selectedId) {
+          alert('请先在右侧点击选中一个动作步骤');
+          return;
+        }
+        const currentStep = steps.find(s => s.id === selectedId);
+        if (!currentStep) return;
+
+        if (currentFrame <= currentStep.startFrame) {
+          alert(`⚠️ 结束帧 (${currentFrame}f) 必须大于起始帧 (${currentStep.startFrame}f)，请先播放或快进游标！`);
+          return;
+        }
+        const updated = steps.map(s => 
+          s.id === selectedId ? { ...s, endFrame: currentFrame } : s
+        );
+        setSteps(updated);
+      };
+
+      // Keyboard shortcut listener (Q: 开始, R: 结束/标记, T: 完成标注, Space: 播放/暂停)
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (e.target.tagName.match(/INPUT|TEXTAREA/)) return;
+
+          if (e.key === 'q' || e.key === 'Q') {
+            e.preventDefault();
+            handleSetStartFrame();
+          } else if (e.key === 'r' || e.key === 'R') {
+            e.preventDefault();
+            handleSetEndFrame();
+          } else if (e.key === 't' || e.key === 'T') {
+            e.preventDefault();
+            alert('🎉 恭喜！数据序号 744108 标注完成并已提交！');
+          } else if (e.code === 'Space') {
+            e.preventDefault();
+            setIsPlaying(p => !p);
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [currentFrame, selectedId, steps]);
+
       const formatTime = (frame) => {
         const sec = Math.floor(frame / 30);
         const m = Math.floor(sec / 60);
@@ -334,6 +394,30 @@
               </div>
 
               <div className="custom-scrollbar" style={{ flex: 1, padding: 12, overflowY: 'auto' }}>
+                {/* Standard Q/R handle recording */}
+                <div style={{ marginBottom: 12, padding: '10px 12px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 'bold', color: '#334155' }}>操作手柄录制：</span>
+                    <Tag color="blue" style={{ margin: 0, fontSize: 10 }}>已选步骤 #{selectedId}</Tag>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Button
+                      type="primary"
+                      style={{ flex: 1, height: 32, fontSize: 12, background: '#2563eb', fontWeight: 600 }}
+                      onClick={handleSetStartFrame}
+                    >
+                      开始 [Q] ({currentFrame}f)
+                    </Button>
+                    <Button
+                      type="primary"
+                      style={{ flex: 1, height: 32, fontSize: 12, background: '#f97316', borderColor: '#f97316', fontWeight: 600 }}
+                      onClick={handleSetEndFrame}
+                    >
+                      标记 [R] ({currentFrame}f)
+                    </Button>
+                  </div>
+                </div>
+
                 {/* Header Toolbar */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
