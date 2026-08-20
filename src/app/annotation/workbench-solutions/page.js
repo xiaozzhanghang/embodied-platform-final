@@ -255,7 +255,7 @@ function WorkbenchSolutionsContent() {
       setRedLineFrame(0);
     }
     setIsPlaying(true);
-    message.success(`🔴 步骤 #${shortSelectedId}「${currentStep.text}」已在 [${currentFrame} 帧] 开始实时录制！时间轴色块正在随播放动态延展...`);
+    message.success(`🔵 步骤 #${shortSelectedId}「${currentStep.text}」已在 [${currentFrame} 帧] 开始实时录制！时间轴色块正在随播放动态延展...`);
   };
 
   const handleSetEndFrame = () => {
@@ -848,45 +848,42 @@ function WorkbenchSolutionsContent() {
             </span>
           </div>
 
-          {/* Live Recording HUD Banner (点击开始[Q]后实时展现醒目反应) */}
+          {/* Live Recording HUD Banner (点击开始[Q]后实时展现醒目科技蓝反应) */}
           {isRecordingStepId !== null && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: 'linear-gradient(90deg, #fef2f2 0%, #fee2e2 50%, #fef2f2 100%)',
-              border: '1.5px solid #ef4444',
+              background: 'linear-gradient(90deg, #eff6ff 0%, #dbeafe 50%, #eff6ff 100%)',
+              border: '1.5px solid #3b82f6',
               borderRadius: 6,
               padding: '4px 12px',
               marginBottom: 6,
-              boxShadow: '0 2px 10px rgba(239, 68, 68, 0.25)',
-              animation: 'pulse-glow 1.5s infinite ease-in-out'
+              boxShadow: '0 2px 10px rgba(37, 99, 235, 0.25)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ 
                   width: 10, 
                   height: 10, 
                   borderRadius: '50%', 
-                  background: '#ef4444', 
+                  background: '#2563eb', 
                   display: 'inline-block', 
-                  boxShadow: '0 0 10px #ef4444',
-                  animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite'
+                  boxShadow: '0 0 10px #2563eb'
                 }} />
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#991b1b' }}>
-                  🔴 步骤 #{isRecordingStepId}「{shortSteps.find(s => s.id === isRecordingStepId)?.text}」正在实时录制
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#1e40af' }}>
+                  🔵 步骤 #{isRecordingStepId}「{shortSteps.find(s => s.id === isRecordingStepId)?.text}」正在实时录制
                 </span>
-                <Tag color="error" style={{ margin: 0, fontWeight: 700, fontSize: 11 }}>
+                <Tag color="processing" style={{ margin: 0, fontWeight: 700, fontSize: 11, background: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }}>
                   起始: {shortSteps.find(s => s.id === isRecordingStepId)?.startFrame}f ➔ 实时: {currentFrame}f (+{Math.max(0, currentFrame - (shortSteps.find(s => s.id === isRecordingStepId)?.startFrame || 0))} 帧)
                 </Tag>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 11, color: '#b91c1c' }}>播放随帧实时延展中</span>
+                <span style={{ fontSize: 11, color: '#1d4ed8', fontWeight: 600 }}>播放随帧实时延展中</span>
                 <Button 
                   size="small" 
                   type="primary" 
-                  danger 
-                  style={{ height: 22, fontSize: 11, fontWeight: 700, padding: '0 10px', borderRadius: 4 }}
+                  style={{ height: 22, fontSize: 11, fontWeight: 700, padding: '0 10px', borderRadius: 4, background: '#2563eb' }}
                   onClick={handleSetEndFrame}
                 >
                   按 [R] 结束标记
@@ -969,14 +966,14 @@ function WorkbenchSolutionsContent() {
                     height: '100%',
                     top: 0,
                     background: isRecording
-                      ? `repeating-linear-gradient(-45deg, ${step.color}, ${step.color} 8px, #ef4444 8px, #ef4444 16px)`
+                      ? `repeating-linear-gradient(-45deg, ${step.color}, ${step.color} 8px, #2563eb 8px, #2563eb 16px)`
                       : step.color || '#2563eb',
                     opacity: isSelected || isRecording ? 1 : 0.85,
                     borderRadius: 3,
-                    border: isRecording ? '2.5px solid #ef4444' : isSelected ? '2.5px solid #0f172a' : '1px solid rgba(255,255,255,0.4)',
+                    border: isRecording ? '2.5px solid #2563eb' : isSelected ? '2.5px solid #0f172a' : '1px solid rgba(255,255,255,0.4)',
                     zIndex: isRecording ? 20 : isSelected ? 15 : 2,
                     boxShadow: isRecording 
-                      ? '0 0 16px rgba(239, 68, 68, 0.9), inset 0 0 8px rgba(255,255,255,0.6)' 
+                      ? '0 0 16px rgba(37, 99, 235, 0.95), inset 0 0 8px rgba(255,255,255,0.6)' 
                       : isSelected 
                       ? '0 0 12px rgba(0,0,0,0.45), inset 0 0 4px rgba(255,255,255,0.4)' 
                       : 'none',
@@ -1001,7 +998,7 @@ function WorkbenchSolutionsContent() {
                     {isRecording ? (
                       <>
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />
-                        <span>🔴 REC #{step.id} ({step.endFrame - step.startFrame}f)</span>
+                        <span>🔵 REC #{step.id} ({step.endFrame - step.startFrame}f)</span>
                       </>
                     ) : (
                       <span>{String(step.id).padStart(2, '0')}. {step.text}</span>
@@ -1011,7 +1008,7 @@ function WorkbenchSolutionsContent() {
               );
             })}
 
-            {/* Ultra-Prominent Glowing Red Playhead line & top frame pin (支持鼠标按住随意左右拖动) */}
+            {/* Ultra-Prominent Glowing Blue / Red Playhead line & top frame pin (支持鼠标按住随意左右拖动) */}
             <div 
               onMouseDown={(e) => {
                 e.stopPropagation();
@@ -1039,26 +1036,26 @@ function WorkbenchSolutionsContent() {
                 userSelect: 'none',
                 pointerEvents: 'auto'
               }}
-              title={`🔴 标注游标: ${redLineFrame} 帧 (在时间轴上点击或按住鼠标可左右自由拖动)`}
+              title={`游标: ${redLineFrame} 帧 (在时间轴上点击或按住鼠标可左右自由拖动)`}
             >
               {/* Top Frame Tag */}
               <div style={{
-                background: isRecordingStepId !== null ? '#dc2626' : '#ff1e1e',
+                background: isRecordingStepId !== null ? '#2563eb' : '#2563eb',
                 color: '#fff',
                 fontSize: '9px',
                 fontWeight: 900,
                 padding: '0 5px',
                 borderRadius: '3px',
                 boxShadow: isRecordingStepId !== null 
-                  ? '0 0 12px rgba(239, 68, 68, 1), 0 0 0 1.5px #fff' 
-                  : '0 2px 6px rgba(255, 30, 30, 0.8), 0 0 0 1px #fff',
+                  ? '0 0 12px rgba(37, 99, 235, 1), 0 0 0 1.5px #fff' 
+                  : '0 2px 6px rgba(37, 99, 235, 0.8), 0 0 0 1px #fff',
                 marginBottom: '-1px',
                 whiteSpace: 'nowrap',
                 lineHeight: '13px',
                 pointerEvents: 'none',
                 letterSpacing: '0.5px'
               }}>
-                {isRecordingStepId !== null ? `🔴 REC ${redLineFrame}f` : `${redLineFrame}f`}
+                {isRecordingStepId !== null ? `🔵 REC ${redLineFrame}f` : `${redLineFrame}f`}
               </div>
 
               {/* Triangle Pin */}
@@ -1067,19 +1064,19 @@ function WorkbenchSolutionsContent() {
                 height: 0, 
                 borderLeft: '6px solid transparent', 
                 borderRight: '6px solid transparent', 
-                borderTop: `8px solid ${isRecordingStepId !== null ? '#dc2626' : '#ff1e1e'}`, 
-                filter: 'drop-shadow(0 2px 4px rgba(255,30,30,0.9))', 
+                borderTop: '8px solid #2563eb', 
+                filter: 'drop-shadow(0 2px 4px rgba(37,99,235,0.9))', 
                 cursor: isDraggingRedLine ? 'grabbing' : 'grab' 
               }} />
 
-              {/* Super-Visible 3px Solid Red Glowing Laser Line */}
+              {/* Super-Visible 3px Solid Blue Glowing Laser Line */}
               <div style={{ 
                 width: 3, 
                 flex: 1, 
-                background: '#ff1e1e', 
+                background: '#2563eb', 
                 boxShadow: isRecordingStepId !== null 
-                  ? '0 0 12px 2px rgba(255, 30, 30, 1), 0 0 4px rgba(255, 255, 255, 1)' 
-                  : '0 0 8px 1px rgba(255, 30, 30, 0.95), 0 0 2px rgba(255, 255, 255, 0.9)',
+                  ? '0 0 14px 2px rgba(37, 99, 235, 1), 0 0 4px rgba(255, 255, 255, 1)' 
+                  : '0 0 8px 1px rgba(37, 99, 235, 0.95), 0 0 2px rgba(255, 255, 255, 0.9)',
                 borderRadius: 1
               }} />
             </div>
