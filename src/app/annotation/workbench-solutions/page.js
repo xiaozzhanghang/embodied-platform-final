@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Tag, Space, Typography, App, Badge, Divider, Select, 
-  Input, Row, Col, Progress, Switch, Tooltip, Radio, Card, List, Form, Modal, InputNumber, Slider, Alert
+  Input, Row, Col, Progress, Switch, Tooltip, Radio, Card, List, Form, Modal, InputNumber, Slider, Alert, Checkbox
 } from 'antd';
 import { 
   CloseOutlined, CloseCircleOutlined, SearchOutlined, ReloadOutlined, AuditOutlined, EyeOutlined,
@@ -14,7 +14,7 @@ import {
   ClockCircleOutlined, NodeIndexOutlined, PlusOutlined, EditOutlined, ArrowRightOutlined, 
   SlidersOutlined, DoubleLeftOutlined, DoubleRightOutlined, CopyOutlined, ThunderboltOutlined,
   BranchesOutlined, RocketOutlined, CodeOutlined, FireOutlined, VideoCameraFilled, PlaySquareOutlined,
-  ArrowUpOutlined, ArrowDownOutlined, SortAscendingOutlined, SwapOutlined, HolderOutlined
+  ArrowUpOutlined, ArrowDownOutlined, SortAscendingOutlined, SwapOutlined, HolderOutlined, CheckSquareOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { StatusTag } from '@/components/ui';
@@ -103,7 +103,7 @@ function WorkbenchSolutionsContent() {
   const [activeTabKey, setActiveTabKey] = useState('1');
 
   // =========================================================================
-  // STATE FOR SHORT VIDEO: 单次任务 4 步骤 (支持单步微调 & 单步复制 & 调换位置 & 拖拽换位)
+  // STATE FOR SHORT VIDEO: 单次任务 4 步骤 (支持单步微调 & 单步复制 & 多选批量复制 & 调换位置)
   // =========================================================================
   const [shortSteps, setShortSteps] = useState([
     { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
@@ -114,6 +114,64 @@ function WorkbenchSolutionsContent() {
   const [shortSelectedId, setShortSelectedId] = useState(1);
   const [draggedStepIdx, setDraggedStepIdx] = useState(null);
   const [dragOverStepIdx, setDragOverStepIdx] = useState(null);
+  const [selectedBatchIds, setSelectedBatchIds] = useState([]); // 多选勾选的步骤 IDs
+
+  // Multi-select Batch Handlers (多选步骤批量复制 / 批量删除)
+  const handleToggleBatchSelect = (stepId) => {
+    setSelectedBatchIds(prev => 
+      prev.includes(stepId) ? prev.filter(id => id !== stepId) : [...prev, stepId]
+    );
+  };
+
+  const handleSelectAllBatch = () => {
+    if (selectedBatchIds.length === shortSteps.length) {
+      setSelectedBatchIds([]);
+    } else {
+      setSelectedBatchIds(shortSteps.map(s => s.id));
+    }
+  };
+
+  const handleBatchCopySelected = () => {
+    if (selectedBatchIds.length === 0) {
+      message.warning('请先勾选需要批量复制的步骤');
+      return;
+    }
+    const stepsToCopy = shortSteps.filter(s => selectedBatchIds.includes(s.id));
+    const lastEndFrame = shortSteps.length > 0 ? shortSteps[shortSteps.length - 1].endFrame : currentFrame;
+    let runningStart = lastEndFrame + 1;
+
+    const clonedSteps = stepsToCopy.map((step, idx) => {
+      const dur = Math.max(1, (step.endFrame - step.startFrame) || 200);
+      const start = runningStart;
+      const end = start + dur;
+      runningStart = end + 1;
+      return {
+        id: shortSteps.length + idx + 1,
+        text: `${step.text} (批量复制)`,
+        startFrame: start,
+        endFrame: end,
+        color: step.color,
+        arm: step.arm
+      };
+    });
+
+    const updated = [...shortSteps, ...clonedSteps];
+    const reindexed = updated.map((s, idx) => ({ ...s, id: idx + 1 }));
+    setShortSteps(reindexed);
+    setSelectedBatchIds([]);
+    setShortSelectedId(shortSteps.length + 1);
+    message.success(`✨ 批量复制成功：已克隆并追加 ${stepsToCopy.length} 个步骤，时间轴已同步生成！`);
+  };
+
+  const handleBatchDeleteSelected = () => {
+    if (selectedBatchIds.length === 0) return;
+    const remaining = shortSteps.filter(s => !selectedBatchIds.includes(s.id));
+    const reindexed = remaining.map((s, idx) => ({ ...s, id: idx + 1 }));
+    const synced = realignStepTimeframes(reindexed, reindexed[0]?.startFrame || 0);
+    setShortSteps(synced);
+    setSelectedBatchIds([]);
+    message.success(`🗑️ 批量删除成功：已移除已选步骤！`);
+  };
 
   // Short Video: Copy Single Step (单步复制)
   const handleCopySingleStep = (step) => {
@@ -563,12 +621,22 @@ function WorkbenchSolutionsContent() {
                     </div>
                   </div>
 
-                  {/* Header: Template & Add Step & Auto Sort */}
+                  {/* Header: Template & Add Step & Auto Sort & Batch Select */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 'bold', color: '#1e293b' }}>
                         动作模版步骤 ({shortSteps.length})
                       </span>
+                      <Tooltip title="一键全选或取消全选">
+                        <Button 
+                          size="small" 
+                          icon={<CheckSquareOutlined />} 
+                          onClick={handleSelectAllBatch}
+                          style={{ fontSize: 10, padding: '0 6px', height: 22, color: selectedBatchIds.length === shortSteps.length ? '#2563eb' : '#475569' }}
+                        >
+                          {selectedBatchIds.length === shortSteps.length ? '取消全选' : '全选'}
+                        </Button>
+                      </Tooltip>
                       <Tooltip title="按每个步骤的起始帧从早到晚自动重新排序并编号">
                         <Button 
                           size="small" 
@@ -618,10 +686,59 @@ function WorkbenchSolutionsContent() {
                     </Space>
                   </div>
 
-                  {/* Short Video Steps List with [📄 复制单步] & [↕️ 拖拽换位 / ⬆️/⬇️ 调换顺序] feature */}
+                  {/* STICKY BATCH ACTIONS BAR (当勾选步骤时浮现) */}
+                  {selectedBatchIds.length > 0 && (
+                    <div style={{
+                      marginBottom: 10,
+                      padding: '8px 12px',
+                      background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)',
+                      borderRadius: 8,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
+                      color: '#fff'
+                    }}>
+                      <div style={{ fontSize: 12, fontWeight: 700 }}>
+                        已勾选 <span style={{ color: '#fde047', fontSize: 14 }}>{selectedBatchIds.length}</span> 项步骤
+                      </div>
+                      <Space size={6}>
+                        <Button
+                          size="small"
+                          type="primary"
+                          icon={<CopyOutlined />}
+                          onClick={handleBatchCopySelected}
+                          style={{ background: '#fff', color: '#1e40af', fontWeight: 700, borderColor: '#fff' }}
+                        >
+                          📋 批量复制所选 ({selectedBatchIds.length}) 步
+                        </Button>
+                        <Button
+                          size="small"
+                          danger
+                          type="primary"
+                          icon={<DeleteOutlined />}
+                          onClick={handleBatchDeleteSelected}
+                          style={{ fontWeight: 600 }}
+                        >
+                          删除
+                        </Button>
+                        <Button
+                          size="small"
+                          type="text"
+                          onClick={() => setSelectedBatchIds([])}
+                          style={{ color: '#bfdbfe', fontSize: 11 }}
+                        >
+                          取消
+                        </Button>
+                      </Space>
+                    </div>
+                  )}
+
+                  {/* Short Video Steps List with [📄 复制单步] & [📋 多选批量复制] & [↕️ 拖拽换位 / ⬆️/⬇️ 调换顺序] feature */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
                     {shortSteps.map((step, idx) => {
                       const isSelected = shortSelectedId === step.id;
+                      const isBatchChecked = selectedBatchIds.includes(step.id);
                       const isDragged = draggedStepIdx === idx;
                       const isDragOver = dragOverStepIdx === idx;
                       return (
@@ -634,11 +751,11 @@ function WorkbenchSolutionsContent() {
                           onDrop={(e) => handleDrop(e, idx)}
                           onClick={() => setShortSelectedId(step.id)}
                           style={{
-                            border: isDragOver ? '2px solid #2563eb' : isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                            border: isDragOver ? '2px solid #2563eb' : isBatchChecked ? '2px solid #3b82f6' : isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
                             borderLeft: `5px solid ${step.color}`,
                             borderTop: isDragOver ? '3px solid #2563eb' : undefined,
                             borderRadius: 8,
-                            background: isDragOver ? '#dbeafe' : isSelected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#fafafa',
+                            background: isDragOver ? '#dbeafe' : isBatchChecked ? '#f0f9ff' : isSelected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#fafafa',
                             opacity: isDragged ? 0.45 : 1,
                             padding: '8px 10px',
                             cursor: 'grab',
@@ -647,9 +764,19 @@ function WorkbenchSolutionsContent() {
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          {/* Title + Action Toolbar: Drag Grip, Move Up/Down, Copy Single Step & Delete */}
+                          {/* Title + Action Toolbar: Checkbox, Drag Grip, Move Up/Down, Copy Single Step & Delete */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                              {/* ☑️ MULTI-SELECT CHECKBOX */}
+                              <Checkbox 
+                                checked={isBatchChecked}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleBatchSelect(step.id);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+
                               {/* ⠿ DRAG HANDLE */}
                               <Tooltip title="按住拖动可直接调换步骤位置">
                                 <HolderOutlined style={{ color: '#94a3b8', cursor: 'grab', fontSize: 13 }} />
