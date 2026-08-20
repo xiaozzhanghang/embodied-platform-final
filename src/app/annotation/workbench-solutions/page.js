@@ -31,6 +31,34 @@ function WorkbenchSolutionsContent() {
   const playTimerRef = useRef(null);
   const timelineRef = useRef(null);
 
+  // Red Line Playhead State & Mouse Dragging Handlers
+  const isDraggingRedLineRef = useRef(false);
+  const [isDraggingRedLine, setIsDraggingRedLine] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isDraggingRedLineRef.current && timelineRef.current) {
+        const rect = timelineRef.current.getBoundingClientRect();
+        const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const frame = Math.round(pct * totalFrames);
+        setRedLineFrame(frame);
+        setCurrentFrame(frame);
+      }
+    };
+    const handleMouseUp = () => {
+      if (isDraggingRedLineRef.current) {
+        isDraggingRedLineRef.current = false;
+        setIsDraggingRedLine(false);
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [totalFrames]);
+
   // Playback timer simulation
   useEffect(() => {
     if (isPlaying) {
@@ -714,15 +742,36 @@ function WorkbenchSolutionsContent() {
           {/* Action Steps Multi-Color Temporal Track */}
           <div 
             ref={timelineRef}
-            style={{ position: 'relative', height: 24, background: '#e2e8f0', borderRadius: 4, cursor: 'pointer', overflow: 'visible' }}
-            onClick={(e) => {
+            onMouseDown={(e) => {
               if (timelineRef.current) {
+                isDraggingRedLineRef.current = true;
+                setIsDraggingRedLine(true);
                 const rect = timelineRef.current.getBoundingClientRect();
-                const pct = (e.clientX - rect.left) / rect.width;
-                const target = Math.max(0, Math.min(totalFrames, Math.round(pct * totalFrames)));
+                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                const target = Math.round(pct * totalFrames);
                 setRedLineFrame(target);
                 setCurrentFrame(target);
               }
+            }}
+            onTouchStart={(e) => {
+              if (timelineRef.current && e.touches.length > 0) {
+                isDraggingRedLineRef.current = true;
+                setIsDraggingRedLine(true);
+                const rect = timelineRef.current.getBoundingClientRect();
+                const pct = Math.max(0, Math.min(1, (e.touches[0].clientX - rect.left) / rect.width));
+                const target = Math.round(pct * totalFrames);
+                setRedLineFrame(target);
+                setCurrentFrame(target);
+              }
+            }}
+            style={{ 
+              position: 'relative', 
+              height: 26, 
+              background: '#e2e8f0', 
+              borderRadius: 4, 
+              cursor: isDraggingRedLine ? 'grabbing' : 'pointer', 
+              overflow: 'visible',
+              userSelect: 'none'
             }}
           >
             {shortSteps.map((step) => {
@@ -774,25 +823,51 @@ function WorkbenchSolutionsContent() {
               );
             })}
 
-            {/* Red Playhead line & cursor */}
+            {/* Red Playhead line & glowing cursor (支持鼠标按住随意左右拖动) */}
             <div 
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                isDraggingRedLineRef.current = true;
+                setIsDraggingRedLine(true);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                isDraggingRedLineRef.current = true;
+                setIsDraggingRedLine(true);
+              }}
               style={{ 
                 position: 'absolute', 
                 left: `${(redLineFrame / totalFrames) * 100}%`, 
                 top: -8, 
-                height: '38px', 
-                zIndex: 40, 
-                cursor: 'grab', 
+                height: '42px', 
+                zIndex: 50, 
+                cursor: isDraggingRedLine ? 'grabbing' : 'grab', 
                 transform: 'translateX(-50%)', 
                 display: 'flex', 
                 flexDirection: 'column', 
                 alignItems: 'center',
                 userSelect: 'none',
-                pointerEvents: 'none'
+                pointerEvents: 'auto'
               }}
+              title={`标注游标: ${redLineFrame} 帧 (在时间轴上点击或按住鼠标可左右自由拖动)`}
             >
-              <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '7px solid #ef4444' }} />
-              <div style={{ width: 2, flex: 1, background: '#ef4444' }} />
+              <div style={{ 
+                width: 0, 
+                height: 0, 
+                borderLeft: '7px solid transparent', 
+                borderRight: '7px solid transparent', 
+                borderTop: '9px solid #ef4444', 
+                filter: 'drop-shadow(0 2px 4px rgba(239,68,68,0.7))', 
+                cursor: isDraggingRedLine ? 'grabbing' : 'grab' 
+              }} />
+              <div style={{ 
+                width: 2, 
+                flex: 1, 
+                background: '#ef4444', 
+                boxShadow: '0 0 6px rgba(239, 68, 68, 0.8)' 
+              }} />
             </div>
           </div>
 
