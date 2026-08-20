@@ -46,6 +46,10 @@ function WorkbenchSolutionsContent() {
   const [selectedBatchIds, setSelectedBatchIds] = useState([]); // 多选勾选的步骤 IDs
   const [activeTabKey, setActiveTabKey] = useState('1');
 
+  // Live Step Recording State (点击开始[Q]后开启实时延展录制，点击标记[R]结束)
+  const [isRecordingStepId, setIsRecordingStepId] = useState(null);
+  const isRecordingStepIdRef = useRef(null);
+
   // Red Line Playhead State & Mouse Dragging Handlers
   const isDraggingRedLineRef = useRef(false);
   const [isDraggingRedLine, setIsDraggingRedLine] = useState(false);
@@ -80,21 +84,31 @@ function WorkbenchSolutionsContent() {
     };
   }, [totalFrames, shortSteps]);
 
-  // Playback timer simulation
+  // Playback timer simulation (30 FPS, 33ms interval)
   useEffect(() => {
     if (isPlaying) {
       playTimerRef.current = setInterval(() => {
         setCurrentFrame(prev => {
           if (prev >= totalFrames) {
             setIsPlaying(false);
+            setIsRecordingStepId(null);
+            isRecordingStepIdRef.current = null;
             return totalFrames;
           }
-          const stepSize = Math.max(1, Math.floor(3 * playbackSpeed));
+          const stepSize = Math.max(1, Math.round(1 * playbackSpeed));
           const next = Math.min(totalFrames, prev + stepSize);
           setRedLineFrame(next);
+
+          // 核心反应：如果正在录制当前步骤，时间轴上的步骤色块伴随红线动态向右实时伸展！
+          if (isRecordingStepIdRef.current !== null) {
+            setShortSteps(currSteps => currSteps.map(s => 
+              s.id === isRecordingStepIdRef.current ? { ...s, endFrame: next } : s
+            ));
+          }
+
           return next;
         });
-      }, 100);
+      }, 33);
     } else {
       if (playTimerRef.current) clearInterval(playTimerRef.current);
     }
@@ -226,12 +240,12 @@ function WorkbenchSolutionsContent() {
     const currentStep = shortSteps.find(s => s.id === shortSelectedId);
     if (!currentStep) return;
 
-    let newEnd = currentStep.endFrame;
-    if (currentFrame >= newEnd) {
-      newEnd = Math.min(totalFrames, currentFrame + 100);
-    }
+    // 开启实时录制模式
+    isRecordingStepIdRef.current = shortSelectedId;
+    setIsRecordingStepId(shortSelectedId);
+
     const updated = shortSteps.map(s => 
-      s.id === shortSelectedId ? { ...s, startFrame: currentFrame, endFrame: newEnd } : s
+      s.id === shortSelectedId ? { ...s, startFrame: currentFrame, endFrame: Math.max(currentFrame + 1, currentFrame + 5) } : s
     );
     setShortSteps(updated);
     
@@ -241,7 +255,7 @@ function WorkbenchSolutionsContent() {
       setRedLineFrame(0);
     }
     setIsPlaying(true);
-    message.success(`🚩 步骤 #${shortSelectedId}「${currentStep.text}」起始帧已设为 [${currentFrame} 帧]，视频开始播放！`);
+    message.success(`🔴 步骤 #${shortSelectedId}「${currentStep.text}」已在 [${currentFrame} 帧] 开始实时录制！时间轴色块正在随播放动态延展...`);
   };
 
   const handleSetEndFrame = () => {
@@ -256,13 +270,17 @@ function WorkbenchSolutionsContent() {
       message.warning(`⚠️ 结束帧 (${currentFrame}f) 必须大于起始帧 (${currentStep.startFrame}f)，请先播放或快进游标！`);
       return;
     }
+
+    // 结束实时录制模式并暂停视频
+    isRecordingStepIdRef.current = null;
+    setIsRecordingStepId(null);
+    setIsPlaying(false);
+
     const updated = shortSteps.map(s => 
       s.id === shortSelectedId ? { ...s, endFrame: currentFrame } : s
     );
     setShortSteps(updated);
-    // 标记结束帧时自动暂停视频
-    setIsPlaying(false);
-    message.success(`🏁 步骤 #${shortSelectedId}「${currentStep.text}」结束帧已标记为 [${currentFrame} 帧]（总计: ${currentFrame - currentStep.startFrame} 帧），视频已暂停！`);
+    message.success(`✅ 步骤 #${shortSelectedId}「${currentStep.text}」录制完成！区间已锁定为 [${currentStep.startFrame} - ${currentFrame} 帧]（总计: ${currentFrame - currentStep.startFrame} 帧）`);
   };
 
   const handleTogglePlay = () => {
@@ -830,6 +848,53 @@ function WorkbenchSolutionsContent() {
             </span>
           </div>
 
+          {/* Live Recording HUD Banner (点击开始[Q]后实时展现醒目反应) */}
+          {isRecordingStepId !== null && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'linear-gradient(90deg, #fef2f2 0%, #fee2e2 50%, #fef2f2 100%)',
+              border: '1.5px solid #ef4444',
+              borderRadius: 6,
+              padding: '4px 12px',
+              marginBottom: 6,
+              boxShadow: '0 2px 10px rgba(239, 68, 68, 0.25)',
+              animation: 'pulse-glow 1.5s infinite ease-in-out'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ 
+                  width: 10, 
+                  height: 10, 
+                  borderRadius: '50%', 
+                  background: '#ef4444', 
+                  display: 'inline-block', 
+                  boxShadow: '0 0 10px #ef4444',
+                  animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite'
+                }} />
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#991b1b' }}>
+                  🔴 步骤 #{isRecordingStepId}「{shortSteps.find(s => s.id === isRecordingStepId)?.text}」正在实时录制
+                </span>
+                <Tag color="error" style={{ margin: 0, fontWeight: 700, fontSize: 11 }}>
+                  起始: {shortSteps.find(s => s.id === isRecordingStepId)?.startFrame}f ➔ 实时: {currentFrame}f (+{Math.max(0, currentFrame - (shortSteps.find(s => s.id === isRecordingStepId)?.startFrame || 0))} 帧)
+                </Tag>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 11, color: '#b91c1c' }}>播放随帧实时延展中</span>
+                <Button 
+                  size="small" 
+                  type="primary" 
+                  danger 
+                  style={{ height: 22, fontSize: 11, fontWeight: 700, padding: '0 10px', borderRadius: 4 }}
+                  onClick={handleSetEndFrame}
+                >
+                  按 [R] 结束标记
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Action Steps Multi-Color Temporal Track */}
           <div 
             ref={timelineRef}
@@ -865,16 +930,18 @@ function WorkbenchSolutionsContent() {
             }}
             style={{ 
               position: 'relative', 
-              height: 28, 
+              height: 30, 
               background: '#e2e8f0', 
               borderRadius: 4, 
               cursor: isDraggingRedLine ? 'grabbing' : 'pointer', 
               overflow: 'visible',
-              userSelect: 'none'
+              userSelect: 'none',
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
             }}
           >
             {shortSteps.map((step) => {
               const isSelected = shortSelectedId === step.id;
+              const isRecording = isRecordingStepId === step.id;
               const leftPct = (step.startFrame / totalFrames) * 100;
               const widthPct = Math.max(0.3, ((step.endFrame - step.startFrame) / totalFrames) * 100);
 
@@ -901,12 +968,18 @@ function WorkbenchSolutionsContent() {
                     width: `${widthPct}%`,
                     height: '100%',
                     top: 0,
-                    background: step.color || '#2563eb',
-                    opacity: isSelected ? 1 : 0.85,
+                    background: isRecording
+                      ? `repeating-linear-gradient(-45deg, ${step.color}, ${step.color} 8px, #ef4444 8px, #ef4444 16px)`
+                      : step.color || '#2563eb',
+                    opacity: isSelected || isRecording ? 1 : 0.85,
                     borderRadius: 3,
-                    border: isSelected ? '2.5px solid #0f172a' : '1px solid rgba(255,255,255,0.4)',
-                    zIndex: isSelected ? 15 : 2,
-                    boxShadow: isSelected ? '0 0 12px rgba(0,0,0,0.45), inset 0 0 4px rgba(255,255,255,0.4)' : 'none',
+                    border: isRecording ? '2.5px solid #ef4444' : isSelected ? '2.5px solid #0f172a' : '1px solid rgba(255,255,255,0.4)',
+                    zIndex: isRecording ? 20 : isSelected ? 15 : 2,
+                    boxShadow: isRecording 
+                      ? '0 0 16px rgba(239, 68, 68, 0.9), inset 0 0 8px rgba(255,255,255,0.6)' 
+                      : isSelected 
+                      ? '0 0 12px rgba(0,0,0,0.45), inset 0 0 4px rgba(255,255,255,0.4)' 
+                      : 'none',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -915,17 +988,24 @@ function WorkbenchSolutionsContent() {
                     color: '#fff',
                     fontSize: '10px',
                     fontWeight: 700,
-                    textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.8)',
                     whiteSpace: 'nowrap',
                     textOverflow: 'ellipsis',
                     cursor: 'pointer',
-                    transform: isSelected ? 'scaleY(1.08)' : 'scaleY(1)',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                    transform: isRecording || isSelected ? 'scaleY(1.1)' : 'scaleY(1)',
+                    transition: isRecording ? 'none' : 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                   }}
                   title={`${String(step.id).padStart(2, '0')}. ${step.text} [${step.startFrame} - ${step.endFrame} 帧] (点击选中并定位)`}
                 >
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {String(step.id).padStart(2, '0')}. {step.text}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {isRecording ? (
+                      <>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />
+                        <span>🔴 REC #{step.id} ({step.endFrame - step.startFrame}f)</span>
+                      </>
+                    ) : (
+                      <span>{String(step.id).padStart(2, '0')}. {step.text}</span>
+                    )}
                   </span>
                 </div>
               );
@@ -949,7 +1029,7 @@ function WorkbenchSolutionsContent() {
                 position: 'absolute', 
                 left: `${(redLineFrame / totalFrames) * 100}%`, 
                 top: -12, 
-                height: '46px', 
+                height: '48px', 
                 zIndex: 60, 
                 cursor: isDraggingRedLine ? 'grabbing' : 'grab', 
                 transform: 'translateX(-50%)', 
@@ -963,19 +1043,22 @@ function WorkbenchSolutionsContent() {
             >
               {/* Top Frame Tag */}
               <div style={{
-                background: '#ff1e1e',
+                background: isRecordingStepId !== null ? '#dc2626' : '#ff1e1e',
                 color: '#fff',
                 fontSize: '9px',
                 fontWeight: 900,
-                padding: '0 4px',
+                padding: '0 5px',
                 borderRadius: '3px',
-                boxShadow: '0 2px 6px rgba(255, 30, 30, 0.8), 0 0 0 1px #fff',
+                boxShadow: isRecordingStepId !== null 
+                  ? '0 0 12px rgba(239, 68, 68, 1), 0 0 0 1.5px #fff' 
+                  : '0 2px 6px rgba(255, 30, 30, 0.8), 0 0 0 1px #fff',
                 marginBottom: '-1px',
                 whiteSpace: 'nowrap',
-                lineHeight: '12px',
-                pointerEvents: 'none'
+                lineHeight: '13px',
+                pointerEvents: 'none',
+                letterSpacing: '0.5px'
               }}>
-                {redLineFrame}f
+                {isRecordingStepId !== null ? `🔴 REC ${redLineFrame}f` : `${redLineFrame}f`}
               </div>
 
               {/* Triangle Pin */}
@@ -984,7 +1067,7 @@ function WorkbenchSolutionsContent() {
                 height: 0, 
                 borderLeft: '6px solid transparent', 
                 borderRight: '6px solid transparent', 
-                borderTop: '8px solid #ff1e1e', 
+                borderTop: `8px solid ${isRecordingStepId !== null ? '#dc2626' : '#ff1e1e'}`, 
                 filter: 'drop-shadow(0 2px 4px rgba(255,30,30,0.9))', 
                 cursor: isDraggingRedLine ? 'grabbing' : 'grab' 
               }} />
@@ -994,7 +1077,9 @@ function WorkbenchSolutionsContent() {
                 width: 3, 
                 flex: 1, 
                 background: '#ff1e1e', 
-                boxShadow: '0 0 8px 1px rgba(255, 30, 30, 0.95), 0 0 2px rgba(255, 255, 255, 0.9)',
+                boxShadow: isRecordingStepId !== null 
+                  ? '0 0 12px 2px rgba(255, 30, 30, 1), 0 0 4px rgba(255, 255, 255, 1)' 
+                  : '0 0 8px 1px rgba(255, 30, 30, 0.95), 0 0 2px rgba(255, 255, 255, 0.9)',
                 borderRadius: 1
               }} />
             </div>
