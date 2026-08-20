@@ -12,7 +12,6 @@ import {
   PlusOutlined, CopyOutlined, CheckOutlined,
   HolderOutlined, CheckSquareOutlined
 } from '@ant-design/icons';
-import MainLayout from '@/components/MainLayout';
 
 function WorkbenchSolutionsContent() {
   const router = useRouter();
@@ -312,8 +311,7 @@ function WorkbenchSolutionsContent() {
   };
 
   return (
-    <MainLayout>
-      <div style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', background: '#f8fafc', overflow: 'hidden' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc', overflow: 'hidden' }}>
         
         {/* ========================================================================= */}
         {/* TOP HEADER: CLEAN WORKBENCH TITLE & TASK METADATA */}
@@ -918,7 +916,6 @@ function WorkbenchSolutionsContent() {
         </div>
 
       </div>
-    </MainLayout>
   );
 }
 
