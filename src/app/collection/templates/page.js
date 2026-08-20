@@ -526,22 +526,12 @@ export default function TaskTemplatesPage() {
                   </div>
                 </div>
 
-                {/* Bottom Action Footer matching Task Template style */}
+                {/* Bottom Action Footer: 2 columns (查看详情, 删除) */}
                 <div style={{ 
                   display: 'flex', 
                   borderTop: '1px solid #f0f0f0', 
                   background: '#fafafa'
                 }}>
-                  <div 
-                    style={{ flex: 1.2, textAlign: 'center', padding: '10px 0', cursor: 'pointer', borderRight: '1px solid #f0f0f0' }}
-                    className="hover-action"
-                    onClick={() => {
-                      router.push('/collection/tasks/create');
-                      message.success(`已在任务中心套用模版「${tpl.name}」`);
-                    }}
-                  >
-                    <Text type="secondary" style={{ fontSize: 12 }}>在任务中心使用</Text>
-                  </div>
                   <div 
                     style={{ flex: 1, textAlign: 'center', padding: '10px 0', cursor: 'pointer', borderRight: '1px solid #f0f0f0' }}
                     className="hover-action"
@@ -556,7 +546,7 @@ export default function TaskTemplatesPage() {
                     </Space>
                   </div>
                   <div 
-                    style={{ flex: 0.8, textAlign: 'center', padding: '10px 0', cursor: 'pointer' }}
+                    style={{ flex: 1, textAlign: 'center', padding: '10px 0', cursor: 'pointer' }}
                     className="hover-action"
                     onClick={() => handleDeleteActionTemplate(tpl.key, tpl.name)}
                   >
@@ -956,19 +946,8 @@ export default function TaskTemplatesPage() {
         open={isDetailModalOpen}
         onCancel={() => setIsDetailModalOpen(false)}
         footer={[
-          <Button key="close" onClick={() => setIsDetailModalOpen(false)}>
+          <Button key="close" type="primary" onClick={() => setIsDetailModalOpen(false)}>
             关 闭
-          </Button>,
-          <Button 
-            key="use" 
-            type="primary" 
-            onClick={() => {
-              setIsDetailModalOpen(false);
-              router.push('/collection/tasks/create');
-              message.success(`已在新建任务中套用模版「${selectedActionDetail?.name}」`);
-            }}
-          >
-            在任务中心使用此模版
           </Button>
         ]}
         width={780}
