@@ -134,7 +134,24 @@ function WorkbenchSolutionsContent() {
     message.success(`📄 已就地复制单步「${step.text}」，已插入为第 ${targetIdx + 2} 步！`);
   };
 
-  // Short Video: Move Step Up / Down (按钮调换步骤顺序)
+  // Helper: 按步骤时长顺序顺延对齐帧数区间，确保时间轴色块同步换位
+  const realignStepTimeframes = (stepsList, baseStart = 0) => {
+    let current = baseStart;
+    return stepsList.map((step, idx) => {
+      const dur = Math.max(1, (step.endFrame - step.startFrame) || 200);
+      const start = current;
+      const end = start + dur;
+      current = end + 1;
+      return {
+        ...step,
+        id: idx + 1,
+        startFrame: start,
+        endFrame: end
+      };
+    });
+  };
+
+  // Short Video: Move Step Up / Down (按钮调换步骤顺序，时间轴同步联动换位)
   const handleMoveStep = (idx, direction) => {
     const targetIdx = idx + direction;
     if (targetIdx < 0 || targetIdx >= shortSteps.length) return;
@@ -146,13 +163,14 @@ function WorkbenchSolutionsContent() {
     updated[idx] = targetStep;
     updated[targetIdx] = currentStep;
     
-    const reindexed = updated.map((s, i) => ({ ...s, id: i + 1 }));
-    setShortSteps(reindexed);
+    // 同步重算起始帧，让底部时间轴色块瞬间完成换位
+    const synced = realignStepTimeframes(updated, shortSteps[0]?.startFrame || 0);
+    setShortSteps(synced);
     setShortSelectedId(targetIdx + 1);
-    message.success(`↕️ 已将「${currentStep.text}」与第 ${targetIdx + 1} 步调换顺序！`);
+    message.success(`↕️ 调换成功：时间轴上「${currentStep.text}」已同步移至第 ${targetIdx + 1} 区段！`);
   };
 
-  // Drag & Drop Step Handlers (鼠标按住直接拖拽换位)
+  // Drag & Drop Step Handlers (鼠标按住直接拖拽换位，时间轴同步联动换位)
   const handleDragStart = (e, idx) => {
     setDraggedStepIdx(idx);
     e.dataTransfer.effectAllowed = 'move';
@@ -180,11 +198,12 @@ function WorkbenchSolutionsContent() {
     const [draggedItem] = updated.splice(draggedStepIdx, 1);
     updated.splice(targetIdx, 0, draggedItem);
 
-    const reindexed = updated.map((s, i) => ({ ...s, id: i + 1 }));
-    setShortSteps(reindexed);
+    // 同步重算起始帧，让底部时间轴色块瞬间完成换位
+    const synced = realignStepTimeframes(updated, shortSteps[0]?.startFrame || 0);
+    setShortSteps(synced);
     setShortSelectedId(targetIdx + 1);
     setDraggedStepIdx(null);
-    message.success(`🎯 拖拽调整成功：已将「${draggedItem.text}」移动至第 ${targetIdx + 1} 步！`);
+    message.success(`🎯 拖拽调换成功：时间轴上「${draggedItem.text}」已同步移至第 ${targetIdx + 1} 区段！`);
   };
 
   // Short Video: Auto sort steps by frame start time
@@ -931,6 +950,14 @@ function WorkbenchSolutionsContent() {
               return (
                 <div
                   key={step.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (videoMode === 'short') {
+                      setShortSelectedId(step.id);
+                      setRedLineFrame(step.startFrame);
+                      setCurrentFrame(step.startFrame);
+                    }
+                  }}
                   style={{
                     position: 'absolute',
                     left: `${leftPct}%`,
@@ -939,13 +966,30 @@ function WorkbenchSolutionsContent() {
                     top: 0,
                     background: step.color || '#2563eb',
                     opacity: isSelected ? 1 : 0.85,
-                    borderRadius: 2,
-                    border: isSelected ? '2px solid #0f172a' : 'none',
+                    borderRadius: 3,
+                    border: isSelected ? '2px solid #0f172a' : '1px solid rgba(255,255,255,0.4)',
                     zIndex: isSelected ? 10 : 2,
-                    boxShadow: isSelected ? '0 0 8px rgba(0,0,0,0.3)' : 'none'
+                    boxShadow: isSelected ? '0 0 10px rgba(0,0,0,0.35)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    padding: '0 4px',
+                    color: '#fff',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                   }}
-                  title={`${step.text} [${step.startFrame} - ${step.endFrame} 帧]`}
-                />
+                  title={`${String(step.id).padStart(2, '0')}. ${step.text} [${step.startFrame} - ${step.endFrame} 帧] (点击定位)`}
+                >
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {String(step.id).padStart(2, '0')}. {step.text}
+                  </span>
+                </div>
               );
             })}
 
