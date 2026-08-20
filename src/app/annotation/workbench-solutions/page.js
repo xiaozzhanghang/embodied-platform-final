@@ -13,7 +13,8 @@ import {
   StepBackwardOutlined, StepForwardOutlined, UndoOutlined, DeleteOutlined, SettingOutlined, 
   ClockCircleOutlined, NodeIndexOutlined, PlusOutlined, EditOutlined, ArrowRightOutlined, 
   SlidersOutlined, DoubleLeftOutlined, DoubleRightOutlined, CopyOutlined, ThunderboltOutlined,
-  BranchesOutlined, RocketOutlined, CodeOutlined, FireOutlined, VideoCameraFilled, PlaySquareOutlined
+  BranchesOutlined, RocketOutlined, CodeOutlined, FireOutlined, VideoCameraFilled, PlaySquareOutlined,
+  ArrowUpOutlined, ArrowDownOutlined, SortAscendingOutlined, SwapOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { StatusTag } from '@/components/ui';
@@ -102,7 +103,7 @@ function WorkbenchSolutionsContent() {
   const [activeTabKey, setActiveTabKey] = useState('1');
 
   // =========================================================================
-  // STATE FOR SHORT VIDEO: 单次任务 4 步骤 (支持单步微调 & 单步复制)
+  // STATE FOR SHORT VIDEO: 单次任务 4 步骤 (支持单步微调 & 单步复制 & 调换位置)
   // =========================================================================
   const [shortSteps, setShortSteps] = useState([
     { id: 1, text: '双手抓取纸箱并开箱定位', startFrame: 0, endFrame: 200, color: '#13c2c2', arm: '双手' },
@@ -117,7 +118,7 @@ function WorkbenchSolutionsContent() {
     const targetIdx = shortSteps.findIndex(s => s.id === step.id);
     const newStep = {
       id: Date.now(),
-      text: `${step.text} (重试/微调)`,
+      text: `${step.text} (调整/复用)`,
       startFrame: step.endFrame + 1,
       endFrame: Math.min(totalFrames, step.endFrame + 100),
       color: step.color,
@@ -125,11 +126,36 @@ function WorkbenchSolutionsContent() {
     };
     const updated = [...shortSteps];
     updated.splice(targetIdx + 1, 0, newStep);
-    // Re-index
     const reindexed = updated.map((s, idx) => ({ ...s, id: idx + 1 }));
     setShortSteps(reindexed);
     setShortSelectedId(targetIdx + 2);
-    message.success(`📄 已成功就地复制单步「${step.text}」，已插入为第 ${targetIdx + 2} 步！`);
+    message.success(`📄 已就地复制单步「${step.text}」，已插入为第 ${targetIdx + 2} 步！`);
+  };
+
+  // Short Video: Move Step Up / Down (调换步骤顺序)
+  const handleMoveStep = (idx, direction) => {
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= shortSteps.length) return;
+    const updated = [...shortSteps];
+    const currentStep = updated[idx];
+    const targetStep = updated[targetIdx];
+    
+    // Swap positions
+    updated[idx] = targetStep;
+    updated[targetIdx] = currentStep;
+    
+    const reindexed = updated.map((s, i) => ({ ...s, id: i + 1 }));
+    setShortSteps(reindexed);
+    setShortSelectedId(targetIdx + 1);
+    message.success(`↕️ 已将「${currentStep.text}」与第 ${targetIdx + 1} 步调换顺序！`);
+  };
+
+  // Short Video: Auto sort steps by frame start time
+  const handleAutoSortSteps = () => {
+    const sorted = [...shortSteps].sort((a, b) => a.startFrame - b.startFrame);
+    const reindexed = sorted.map((s, i) => ({ ...s, id: i + 1 }));
+    setShortSteps(reindexed);
+    message.success('⏱️ 步骤已按起始帧时间轴顺序自动重新排列！');
   };
 
   // =========================================================================
@@ -481,21 +507,34 @@ function WorkbenchSolutionsContent() {
                     </div>
                   </div>
 
-                  {/* Header: Template & Add Step */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <span style={{ fontSize: 12, fontWeight: 'bold', color: '#1e293b' }}>
-                      动作模版步骤 ({shortSteps.length})
-                    </span>
+                  {/* Header: Template & Add Step & Auto Sort */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 12, fontWeight: 'bold', color: '#1e293b' }}>
+                        动作模版步骤 ({shortSteps.length})
+                      </span>
+                      <Tooltip title="按每个步骤的起始帧从早到晚自动重新排序并编号">
+                        <Button 
+                          size="small" 
+                          icon={<SortAscendingOutlined />} 
+                          onClick={handleAutoSortSteps}
+                          style={{ fontSize: 10, padding: '0 6px', height: 22, color: '#475569' }}
+                        >
+                          按时间排序
+                        </Button>
+                      </Tooltip>
+                    </div>
+
                     <Space size={6}>
                       <Select
                         placeholder="套用动作模版"
                         size="small"
-                        style={{ width: 120, fontSize: 11 }}
+                        style={{ width: 110, fontSize: 11 }}
                         defaultValue="act_1"
                         options={[
-                          { value: 'act_1', label: '📦 工业打包模版(4步)' },
-                          { value: 'act_2', label: '📚 桌面整理模版(3步)' },
-                          { value: 'act_3', label: '🍽️ 餐盘收拾模版(5步)' }
+                          { value: 'act_1', label: '📦 工业打包模版' },
+                          { value: 'act_2', label: '📚 桌面整理模版' },
+                          { value: 'act_3', label: '🍽️ 餐盘收拾模版' }
                         ]}
                       />
                       <Button 
@@ -523,7 +562,7 @@ function WorkbenchSolutionsContent() {
                     </Space>
                   </div>
 
-                  {/* Short Video Steps List with [📄 复制单步] feature */}
+                  {/* Short Video Steps List with [📄 复制单步] & [⬆️/⬇️ 调换顺序] feature */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 420, overflowY: 'auto' }}>
                     {shortSteps.map((step, idx) => {
                       const isSelected = shortSelectedId === step.id;
@@ -541,7 +580,7 @@ function WorkbenchSolutionsContent() {
                             transition: 'all 0.15s ease'
                           }}
                         >
-                          {/* Title + Action Toolbar: Copy Single Step & Delete */}
+                          {/* Title + Action Toolbar: Move Up/Down, Copy Single Step & Delete */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
                               <span style={{ fontSize: 11, fontWeight: 'bold', color: isSelected ? '#1d4ed8' : '#64748b', background: isSelected ? '#bfdbfe' : '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>
@@ -557,7 +596,35 @@ function WorkbenchSolutionsContent() {
                                 style={{ fontSize: 11, fontWeight: isSelected ? 600 : 400, background: '#fff' }}
                               />
                             </div>
-                            <Space size={4} style={{ flexShrink: 0, marginLeft: 6 }}>
+                            <Space size={3} style={{ flexShrink: 0, marginLeft: 6 }}>
+                              {/* ⬆️ MOVE UP BUTTON */}
+                              <Tooltip title="上移此步骤位置">
+                                <Button 
+                                  size="small" 
+                                  icon={<ArrowUpOutlined />} 
+                                  disabled={idx === 0}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveStep(idx, -1);
+                                  }}
+                                  style={{ fontSize: 10, padding: '0 4px', height: 22, width: 22 }}
+                                />
+                              </Tooltip>
+
+                              {/* ⬇️ MOVE DOWN BUTTON */}
+                              <Tooltip title="下移此步骤位置">
+                                <Button 
+                                  size="small" 
+                                  icon={<ArrowDownOutlined />} 
+                                  disabled={idx === shortSteps.length - 1}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveStep(idx, 1);
+                                  }}
+                                  style={{ fontSize: 10, padding: '0 4px', height: 22, width: 22 }}
+                                />
+                              </Tooltip>
+
                               {/* 📄 COPY SINGLE STEP BUTTON */}
                               <Tooltip title="复制此单步：在下方立即克隆一个相同动作，方便重试或多次调整">
                                 <Button 
