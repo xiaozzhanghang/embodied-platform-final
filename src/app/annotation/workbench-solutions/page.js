@@ -43,6 +43,12 @@ function WorkbenchSolutionsContent() {
         const frame = Math.round(pct * totalFrames);
         setRedLineFrame(frame);
         setCurrentFrame(frame);
+
+        // 鼠标拖动红线时，自动选中光标所在区间的步骤
+        const matched = shortSteps.find(s => frame >= s.startFrame && frame <= s.endFrame);
+        if (matched) {
+          setShortSelectedId(matched.id);
+        }
       }
     };
     const handleMouseUp = () => {
@@ -57,7 +63,7 @@ function WorkbenchSolutionsContent() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [totalFrames]);
+  }, [totalFrames, shortSteps]);
 
   // Playback timer simulation
   useEffect(() => {
@@ -751,6 +757,10 @@ function WorkbenchSolutionsContent() {
                 const target = Math.round(pct * totalFrames);
                 setRedLineFrame(target);
                 setCurrentFrame(target);
+                const matched = shortSteps.find(s => target >= s.startFrame && target <= s.endFrame);
+                if (matched) {
+                  setShortSelectedId(matched.id);
+                }
               }
             }}
             onTouchStart={(e) => {
@@ -762,11 +772,15 @@ function WorkbenchSolutionsContent() {
                 const target = Math.round(pct * totalFrames);
                 setRedLineFrame(target);
                 setCurrentFrame(target);
+                const matched = shortSteps.find(s => target >= s.startFrame && target <= s.endFrame);
+                if (matched) {
+                  setShortSelectedId(matched.id);
+                }
               }
             }}
             style={{ 
               position: 'relative', 
-              height: 26, 
+              height: 28, 
               background: '#e2e8f0', 
               borderRadius: 4, 
               cursor: isDraggingRedLine ? 'grabbing' : 'pointer', 
@@ -785,8 +799,16 @@ function WorkbenchSolutionsContent() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setShortSelectedId(step.id);
-                    setRedLineFrame(step.startFrame);
-                    setCurrentFrame(step.startFrame);
+                    if (timelineRef.current) {
+                      const rect = timelineRef.current.getBoundingClientRect();
+                      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                      const clickedFrame = Math.round(pct * totalFrames);
+                      setRedLineFrame(clickedFrame);
+                      setCurrentFrame(clickedFrame);
+                    } else {
+                      setRedLineFrame(step.startFrame);
+                      setCurrentFrame(step.startFrame);
+                    }
                   }}
                   style={{
                     position: 'absolute',
@@ -797,9 +819,9 @@ function WorkbenchSolutionsContent() {
                     background: step.color || '#2563eb',
                     opacity: isSelected ? 1 : 0.85,
                     borderRadius: 3,
-                    border: isSelected ? '2px solid #0f172a' : '1px solid rgba(255,255,255,0.4)',
-                    zIndex: isSelected ? 10 : 2,
-                    boxShadow: isSelected ? '0 0 10px rgba(0,0,0,0.35)' : 'none',
+                    border: isSelected ? '2.5px solid #0f172a' : '1px solid rgba(255,255,255,0.4)',
+                    zIndex: isSelected ? 15 : 2,
+                    boxShadow: isSelected ? '0 0 12px rgba(0,0,0,0.45), inset 0 0 4px rgba(255,255,255,0.4)' : 'none',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -812,9 +834,10 @@ function WorkbenchSolutionsContent() {
                     whiteSpace: 'nowrap',
                     textOverflow: 'ellipsis',
                     cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    transform: isSelected ? 'scaleY(1.08)' : 'scaleY(1)',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                   }}
-                  title={`${String(step.id).padStart(2, '0')}. ${step.text} [${step.startFrame} - ${step.endFrame} 帧] (点击定位)`}
+                  title={`${String(step.id).padStart(2, '0')}. ${step.text} [${step.startFrame} - ${step.endFrame} 帧] (点击选中并定位)`}
                 >
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {String(step.id).padStart(2, '0')}. {step.text}
@@ -823,7 +846,7 @@ function WorkbenchSolutionsContent() {
               );
             })}
 
-            {/* Red Playhead line & glowing cursor (支持鼠标按住随意左右拖动) */}
+            {/* Ultra-Prominent Glowing Red Playhead line & top frame pin (支持鼠标按住随意左右拖动) */}
             <div 
               onMouseDown={(e) => {
                 e.stopPropagation();
@@ -840,9 +863,9 @@ function WorkbenchSolutionsContent() {
               style={{ 
                 position: 'absolute', 
                 left: `${(redLineFrame / totalFrames) * 100}%`, 
-                top: -8, 
-                height: '42px', 
-                zIndex: 50, 
+                top: -12, 
+                height: '46px', 
+                zIndex: 60, 
                 cursor: isDraggingRedLine ? 'grabbing' : 'grab', 
                 transform: 'translateX(-50%)', 
                 display: 'flex', 
@@ -851,22 +874,43 @@ function WorkbenchSolutionsContent() {
                 userSelect: 'none',
                 pointerEvents: 'auto'
               }}
-              title={`标注游标: ${redLineFrame} 帧 (在时间轴上点击或按住鼠标可左右自由拖动)`}
+              title={`🔴 标注游标: ${redLineFrame} 帧 (在时间轴上点击或按住鼠标可左右自由拖动)`}
             >
+              {/* Top Frame Tag */}
+              <div style={{
+                background: '#ff1e1e',
+                color: '#fff',
+                fontSize: '9px',
+                fontWeight: 900,
+                padding: '0 4px',
+                borderRadius: '3px',
+                boxShadow: '0 2px 6px rgba(255, 30, 30, 0.8), 0 0 0 1px #fff',
+                marginBottom: '-1px',
+                whiteSpace: 'nowrap',
+                lineHeight: '12px',
+                pointerEvents: 'none'
+              }}>
+                {redLineFrame}f
+              </div>
+
+              {/* Triangle Pin */}
               <div style={{ 
                 width: 0, 
                 height: 0, 
-                borderLeft: '7px solid transparent', 
-                borderRight: '7px solid transparent', 
-                borderTop: '9px solid #ef4444', 
-                filter: 'drop-shadow(0 2px 4px rgba(239,68,68,0.7))', 
+                borderLeft: '6px solid transparent', 
+                borderRight: '6px solid transparent', 
+                borderTop: '8px solid #ff1e1e', 
+                filter: 'drop-shadow(0 2px 4px rgba(255,30,30,0.9))', 
                 cursor: isDraggingRedLine ? 'grabbing' : 'grab' 
               }} />
+
+              {/* Super-Visible 3px Solid Red Glowing Laser Line */}
               <div style={{ 
-                width: 2, 
+                width: 3, 
                 flex: 1, 
-                background: '#ef4444', 
-                boxShadow: '0 0 6px rgba(239, 68, 68, 0.8)' 
+                background: '#ff1e1e', 
+                boxShadow: '0 0 8px 1px rgba(255, 30, 30, 0.95), 0 0 2px rgba(255, 255, 255, 0.9)',
+                borderRadius: 1
               }} />
             </div>
           </div>
