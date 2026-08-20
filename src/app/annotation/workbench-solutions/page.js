@@ -669,18 +669,22 @@ function WorkbenchSolutionsContent() {
                         onDragOver={(e) => handleDragOver(e, idx)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, idx)}
+                        onDragEnd={() => {
+                          setDraggedStepIdx(null);
+                          setDragOverStepIdx(null);
+                        }}
                         onClick={() => setShortSelectedId(step.id)}
                         style={{
-                          border: isDragOver ? '2px solid #2563eb' : isBatchChecked ? '2px solid #3b82f6' : isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                          border: isDragOver ? '2px dashed #2563eb' : isBatchChecked ? '2px solid #3b82f6' : isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
                           borderLeft: `5px solid ${step.color}`,
                           borderTop: isDragOver ? '3px solid #2563eb' : undefined,
                           borderRadius: 8,
-                          background: isDragOver ? '#dbeafe' : isBatchChecked ? '#f0f9ff' : isSelected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#fafafa',
-                          opacity: isDragged ? 0.45 : 1,
+                          background: isDragOver ? '#eff6ff' : isBatchChecked ? '#f0f9ff' : isSelected ? '#f8faff' : '#ffffff',
+                          opacity: 1,
                           padding: '8px 10px',
                           cursor: 'grab',
-                          transform: isDragOver ? 'scale(1.02)' : 'none',
-                          boxShadow: isDragOver ? '0 4px 12px rgba(37, 99, 235, 0.25)' : isSelected ? '0 2px 8px rgba(37, 99, 235, 0.15)' : 'none',
+                          transform: isDragOver ? 'scale(1.01)' : 'none',
+                          boxShadow: isDragOver ? '0 4px 12px rgba(37, 99, 235, 0.2)' : isSelected ? '0 2px 8px rgba(37, 99, 235, 0.12)' : '0 1px 2px rgba(0,0,0,0.03)',
                           transition: 'all 0.15s ease'
                         }}
                       >
@@ -699,20 +703,22 @@ function WorkbenchSolutionsContent() {
 
                             {/* ⠿ DRAG HANDLE */}
                             <Tooltip title="按住拖动可直接调换步骤位置">
-                              <HolderOutlined style={{ color: '#94a3b8', cursor: 'grab', fontSize: 13 }} />
+                              <HolderOutlined style={{ color: isSelected ? '#2563eb' : '#94a3b8', cursor: 'grab', fontSize: 13 }} />
                             </Tooltip>
 
-                            <span style={{ fontSize: 11, fontWeight: 'bold', color: isSelected ? '#1d4ed8' : '#64748b', background: isSelected ? '#bfdbfe' : '#e2e8f0', padding: '1px 5px', borderRadius: 4 }}>
+                            <span style={{ fontSize: 11, fontWeight: 'bold', color: isSelected ? '#1d4ed8' : '#64748b', background: isSelected ? '#dbeafe' : '#f1f5f9', padding: '1px 5px', borderRadius: 4 }}>
                               {String(idx + 1).padStart(2, '0')}
                             </span>
                             <Input 
                               size="small"
                               value={step.text}
+                              draggable={false}
+                              onMouseDown={(e) => e.stopPropagation()}
                               onChange={e => {
                                 const updated = shortSteps.map(s => s.id === step.id ? { ...s, text: e.target.value } : s);
                                 setShortSteps(updated);
                               }}
-                              style={{ fontSize: 11, fontWeight: isSelected ? 600 : 400, background: '#fff' }}
+                              style={{ fontSize: 11, fontWeight: isSelected ? 600 : 400, background: '#fff', color: '#0f172a' }}
                             />
                           </div>
                           <Space size={3} style={{ flexShrink: 0, marginLeft: 6 }}>
@@ -755,6 +761,8 @@ function WorkbenchSolutionsContent() {
                             <InputNumber 
                               size="small" 
                               value={step.startFrame} 
+                              draggable={false}
+                              onMouseDown={(e) => e.stopPropagation()}
                               style={{ width: '100%', fontSize: 11 }}
                               onChange={val => {
                                 const updated = shortSteps.map(s => s.id === step.id ? { ...s, startFrame: val } : s);
