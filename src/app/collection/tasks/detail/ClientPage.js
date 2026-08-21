@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Table, Button, Tag, Space, Card, Typography,
   Badge, App, Modal, Form, Select, Input, Switch, Tabs, 
@@ -57,16 +57,16 @@ const StatCard = ({ icon, value, label, iconBg, color, extra }) => (
 );
 
 export default function TaskInstancePage() {
-  const { id } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const id = searchParams.get('id');
   const { message } = App.useApp();
   const [addPackForm] = Form.useForm();
   const [editPackForm] = Form.useForm();
   const [annoForm] = Form.useForm();
   
-  const typeParam = searchParams ? searchParams.get('type') : null;
-  const needCollectParam = searchParams ? searchParams.get('needCollect') : null;
+  const typeParam = searchParams.get('type');
+  const needCollectParam = searchParams.get('needCollect');
 
   const isAnno = typeParam === 'asset' || id === '12854' || (typeof id === 'string' && (id.startsWith('ANNO') || id.startsWith('asset')));
   const isNoCollectTask = needCollectParam === 'false' || id === 'COLL-20260415-002' || (typeof id === 'string' && (id.includes('NOCOLLECT') || id.includes('ASSET_COLLECT') || id.includes('asset')));

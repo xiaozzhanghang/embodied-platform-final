@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Typography, Space, Tag, Breadcrumb, Card, Row, Col, 
   Tabs, Table, Badge, Descriptions, Divider, Avatar, Progress,
@@ -18,13 +18,14 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { PageHeader, StatusTag } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 
 export default function DeviceInstanceDetailPage() {
   const router = useRouter();
-  const params = useParams();
   const searchParams = useSearchParams();
+  const id = searchParams.get('id') || 'DEV-2026-001';
   const [activeTab, setActiveTab] = useState('overview');
 
   const isEditing = searchParams.get('edit') === 'true';
@@ -260,7 +261,7 @@ export default function DeviceInstanceDetailPage() {
 
   // Mock data for a specific device instance
   const device = {
-    id: params.id || 'DEV-2026-001',
+    id,
     name: 'Galbot-G2-Node-105',
     enName: 'galbot_g2_node_105',
     deviceNum: 'DEV-2026-001',
@@ -593,8 +594,8 @@ export default function DeviceInstanceDetailPage() {
                 </Form.Item>
                 <Form.Item style={{ marginBottom: 0 }}>
                   <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-                    <Button size="small" onClick={() => router.push(`/collection/devices/detail/${params.id}`)}>取消</Button>
-                    <Button type="primary" size="small" onClick={() => { message.success('设备配置已成功保存！'); router.push(`/collection/devices/detail/${params.id}`); }}>保存</Button>
+                    <Button size="small" onClick={() => router.push(buildStaticHref(STATIC_ROUTES.deviceDetail, { id }))}>取消</Button>
+                    <Button type="primary" size="small" onClick={() => { message.success('设备配置已成功保存！'); router.push(buildStaticHref(STATIC_ROUTES.deviceDetail, { id })); }}>保存</Button>
                   </Space>
                 </Form.Item>
               </Form>

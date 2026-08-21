@@ -16,6 +16,7 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { PageHeader, StatusTag, TableToolbar, TableToolbarActions } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -279,7 +280,7 @@ function DualViewContent() {
       fixed: 'left',
       render: (id, r) => (
         <div>
-          <Text strong style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => router.push(`/collection/qa/${id}`)}>
+          <Text strong style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { instanceId: id }))}>
             {id}
           </Text>
           <div style={{ fontSize: 11, color: '#8c8c8c' }}>{r.sourcePlanName}</div>
@@ -360,7 +361,7 @@ function DualViewContent() {
       fixed: 'right',
       render: (_, r) => (
         <Space size="middle">
-          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/qa/${r.instanceId}`)}>
+          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { instanceId: r.instanceId }))}>
             进入
           </Button>
           <Button 
@@ -431,7 +432,7 @@ function DualViewContent() {
         <Tag 
           color="blue" 
           style={{ cursor: 'pointer', fontFamily: 'monospace' }}
-          onClick={() => router.push(`/collection/qa/${pkgId}`)}
+          onClick={() => router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { instanceId: pkgId }))}
         >
           {pkgId}
         </Tag>

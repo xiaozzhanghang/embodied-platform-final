@@ -98,7 +98,7 @@ export default function CollectTaskDetailPage() {
 
   const columns = [
     { title: '包 ID (Episode)', dataIndex: 'episodeId', key: 'episodeId', render: text => <span style={{ fontFamily: 'monospace' }}>{text}</span> },
-    { title: '所属质检批次', dataIndex: 'qaBatch', key: 'qaBatch', render: (text) => text !== '-' ? <a onClick={() => router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { id: text }))} style={{ color: '#1677ff', fontWeight: 500 }}>{text}</a> : <span style={{ color: '#aaa' }}>-</span> },
+    { title: '所属质检批次', dataIndex: 'qaBatch', key: 'qaBatch', render: (text) => text !== '-' ? <a onClick={() => router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { instanceId: text }))} style={{ color: '#1677ff', fontWeight: 500 }}>{text}</a> : <span style={{ color: '#aaa' }}>-</span> },
     { title: '采集时间', dataIndex: 'time', key: 'time' },
     { title: '视频时长', dataIndex: 'duration', key: 'duration' },
     { title: '包含动作数', dataIndex: 'steps', key: 'steps' },
@@ -136,7 +136,7 @@ export default function CollectTaskDetailPage() {
               if (record.episodeId === 'session_028') {
                 window.open(buildStaticHref(STATIC_ROUTES.collectData, { taskId }), '_blank');
               } else {
-                router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { id: record.qaBatch }));
+                router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { instanceId: record.qaBatch }));
               }
             }}
           >

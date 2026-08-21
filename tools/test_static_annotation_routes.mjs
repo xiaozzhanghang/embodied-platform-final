@@ -285,7 +285,7 @@ function findJsxAttributeExpressions(source, attributeName) {
   return expressions;
 }
 
-const qaDetailSource = readFileSync('src/app/collection/qa/[instanceId]/page.js', 'utf8');
+const qaDetailSource = readFileSync('src/app/collection/qa/detail/ClientPage.js', 'utf8');
 const canonicalQaAuditHandler = normalizeSource(`
   () => router.push(buildStaticHref(STATIC_ROUTES.auditWorkbench, {
     id: instanceId,

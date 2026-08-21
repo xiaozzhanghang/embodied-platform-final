@@ -17,6 +17,7 @@ import {
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import { AppModal, FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
+import { buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 
@@ -431,7 +432,7 @@ export default function TaskTemplatesPage() {
                     <div 
                       style={{ flex: 1, textAlign: 'center', padding: '12px 0', cursor: 'pointer', borderRight: '1px solid #f0f0f0' }}
                       className="hover-action"
-                      onClick={() => router.push(`/collection/templates/create?id=${tpl.key}`)}
+                      onClick={() => router.push(buildStaticHref('/collection/templates/create', { id: tpl.key }))}
                     >
                       <Text type="secondary" style={{ fontSize: 12 }}>编辑</Text>
                     </div>

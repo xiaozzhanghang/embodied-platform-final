@@ -1,18 +1,20 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, Space, Descriptions, Table, App } from 'antd';
 import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { PageHeader } from '@/components/ui';
 
-export default function LabelDetailPage({ params }) {
+export default function LabelDetailPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
   const { message } = App.useApp();
   
-  // In a real app, fetch data based on params.id
-  const activeTag = { id: params.id, name: '示例主标签', usage: 12 };
+  // In a real app, fetch data based on id
+  const activeTag = { id, name: '示例主标签', usage: 12 };
 
   const columns = [
     { title: '子标签名', dataIndex: 'name' },

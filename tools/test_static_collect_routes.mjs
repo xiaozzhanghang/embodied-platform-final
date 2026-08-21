@@ -301,8 +301,8 @@ const routeExpectations = new Map([
     'collectVideo|window.open|episodeId=epId&taskId=taskId',
     'collectData|window.open|taskId=taskId',
     'collectConnection|window.open|taskId=taskId',
-    'qaDetail|router.push|id=text',
-    'qaDetail|router.push|id=record.qaBatch',
+    'qaDetail|router.push|instanceId=text',
+    'qaDetail|router.push|instanceId=record.qaBatch',
   ]],
   ['src/app/collection/collect/connection/ClientPage.js', ['collectWorkspace|router.push|taskId=taskId']],
   ['src/app/collection/collect/status/ClientPage.js', [

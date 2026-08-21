@@ -14,6 +14,7 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { PageHeader, StatusTag, TableToolbar, TableToolbarActions } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -161,7 +162,7 @@ export default function TaskbooksPage() {
       fixed: 'left',
       render: (id, r) => (
         <div>
-          <Text strong style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => router.push(`/collection/taskbooks/detail/${encodeURIComponent(id)}`)}>
+          <Text strong style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => router.push(buildStaticHref(STATIC_ROUTES.taskbookDetail, { id }))}>
             {id}
           </Text>
           <div style={{ fontSize: 12, color: '#8c8c8c', fontFamily: 'monospace' }}>
@@ -274,7 +275,7 @@ export default function TaskbooksPage() {
             size="small" 
             icon={<EyeOutlined />} 
             style={{ padding: 0 }} 
-            onClick={() => router.push(`/collection/taskbooks/detail/${encodeURIComponent(record.id)}`)}
+            onClick={() => router.push(buildStaticHref(STATIC_ROUTES.taskbookDetail, { id: record.id }))}
           >
             详情
           </Button>
@@ -283,7 +284,7 @@ export default function TaskbooksPage() {
             size="small" 
             icon={<EditOutlined />} 
             style={{ padding: 0 }} 
-            onClick={() => router.push(`/collection/taskbooks/create?mode=edit&id=${encodeURIComponent(record.id)}`)}
+            onClick={() => router.push(buildStaticHref('/collection/taskbooks/create', { mode: 'edit', id: record.id }))}
           >
             编辑
           </Button>
@@ -292,7 +293,7 @@ export default function TaskbooksPage() {
             size="small" 
             icon={<PlayCircleOutlined />} 
             style={{ padding: 0, color: '#52c41a' }}
-            onClick={() => router.push(`/collection/collection-tasks/create?taskbook=${encodeURIComponent(record.id)}`)}
+            onClick={() => router.push(buildStaticHref('/collection/collection-tasks/create', { taskbook: record.id }))}
           >
             发起采集
           </Button>

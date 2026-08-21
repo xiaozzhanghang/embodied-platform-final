@@ -18,6 +18,7 @@ import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-compone
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
 import { AppModal, FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -130,8 +131,8 @@ export default function DeviceListPage() {
       title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_, record) => (
         <Space size="middle">
-          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/devices/detail/${record.key}`)}>详情</Button>
-          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/devices/detail/${record.key}?edit=true`)}>编辑</Button>
+          <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(buildStaticHref(STATIC_ROUTES.deviceDetail, { id: record.key }))}>详情</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(buildStaticHref(STATIC_ROUTES.deviceDetail, { id: record.key, edit: 'true' }))}>编辑</Button>
           <Popconfirm title="确定禁用此设备吗？">
             <Button type="link" danger size="small" icon={<StopOutlined />} style={{ padding: 0 }}>禁用</Button>
           </Popconfirm>
@@ -178,7 +179,7 @@ export default function DeviceListPage() {
         cancelText: '稍后再说',
         width: 480,
         onOk: () => {
-          router.push(`/collection/devices/detail/${newKey}`);
+          router.push(buildStaticHref(STATIC_ROUTES.deviceDetail, { id: newKey }));
         },
       });
     } else {

@@ -20,6 +20,7 @@ import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
 import { AppModal, FilterPanel, PageHeader, QueryFilterBar, StatusTag, TableToolbar, TableToolbarActions } from '@/components/ui';
 import { syncCompletedAnnotationTasks } from '@/lib/annotationQaFlow.mjs';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Text } = Typography;
 
@@ -145,7 +146,7 @@ export default function AnnotationTasksPage() {
               size="small"
               icon={<FileSearchOutlined />}
               style={{ padding: 0, fontFamily: 'monospace' }}
-              onClick={() => router.push(`/collection/qa/${encodeURIComponent(qaPackage.qaPackageId)}`)}
+              onClick={() => router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { instanceId: qaPackage.qaPackageId }))}
             >
               {qaPackage.qaPackageId}
             </Button>
@@ -173,13 +174,13 @@ export default function AnnotationTasksPage() {
             type="link" 
             size="small" 
             icon={<EyeOutlined />} 
-            onClick={() => router.push(`/collection/tasks/${record.taskId}?type=asset`)} 
+            onClick={() => router.push(buildStaticHref(STATIC_ROUTES.taskDetail, { id: record.taskId, type: 'asset' }))}
             style={{ padding: '0 4px', fontWeight: 600 }}
           >
             进入
           </Button>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
-          <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(buildStaticHref('/collection/tasks/create', { mode: 'edit', taskId: record.taskId }))} style={{ padding: '0 4px' }}>编辑</Button>
+          <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(buildStaticHref('/collection/tasks/create', { mode: 'copy', taskId: record.taskId }))} style={{ padding: '0 4px' }}>复制</Button>
           <Button type="link" size="small" icon={<DeleteOutlined />} danger style={{ padding: '0 4px' }} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>删除</Button>
         </Space>
       )

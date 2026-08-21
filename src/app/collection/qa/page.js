@@ -17,6 +17,7 @@ import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-compone
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
 import { AppModal, FilterPanel, PageHeader, StateView, StatusTag, TableToolbar, TableToolbarActions } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -619,7 +620,7 @@ export default function QaPage() {
             size="small" 
             icon={<LoginOutlined />} 
             style={{ padding: '0 4px', fontWeight: 600 }} 
-            onClick={() => router.push(`/collection/qa/${r.instanceId}`)}
+            onClick={() => router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { instanceId: r.instanceId }))}
           >
             进入
           </Button>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Progress } from 'antd';
 import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, AuditOutlined, CloseCircleOutlined, DeleteOutlined, FileSearchOutlined, AimOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
@@ -185,9 +185,8 @@ const packageMetaMap = {
 
 export default function QaDetailPage() {
   const router = useRouter();
-  const params = useParams();
-  const instanceId = params.instanceId;
   const searchParams = useSearchParams();
+  const instanceId = searchParams.get('instanceId');
   const [activeQcTab, setActiveQcTab] = useState('all');
   const { message } = App.useApp();
 

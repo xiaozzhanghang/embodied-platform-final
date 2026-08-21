@@ -30,6 +30,7 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
 import { AppModal, FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text, Link } = Typography;
 const { Panel } = Collapse;
@@ -385,13 +386,12 @@ function DeviceTable({ data, type, onEdit, partData, ruleData = [] }) {
       width: 260,
       fixed: 'right',
       render: (_, record) => {
-        const detailPath = isRobot ? 'detail' : 'part-detail';
         return (
           <Space size="middle">
-            <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/device-types/${detailPath}/${record.key}`)}>
+            <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => router.push(buildStaticHref(isRobot ? STATIC_ROUTES.deviceTypeDetail : STATIC_ROUTES.devicePartDetail, { id: record.key }))}>
               查看详情
             </Button>
-            <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(`/collection/device-types/${detailPath}/${record.key}?edit=true`)}>
+            <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => router.push(buildStaticHref(isRobot ? STATIC_ROUTES.deviceTypeDetail : STATIC_ROUTES.devicePartDetail, { id: record.key, edit: 'true' }))}>
               编辑
             </Button>
             <Button type="link" danger size="small" icon={<DeleteOutlined />} style={{ padding: 0 }} onClick={() => Modal.confirm({ title: '确定删除吗？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>

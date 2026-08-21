@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Typography, Space, Card, Descriptions, 
   Tag, Divider, Row, Col, List, Empty, Table, Badge, Alert 
@@ -14,12 +14,14 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { FormSection, PageHeader } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text, Paragraph } = Typography;
 
-export default function TaskbookDetailPage({ params }) {
+export default function TaskbookDetailPage() {
   const router = useRouter();
-  const rawId = React.use(params).id;
+  const searchParams = useSearchParams();
+  const rawId = searchParams.get('id') || '';
   const id = decodeURIComponent(rawId);
 
   // Mock metadata lookup
@@ -98,7 +100,7 @@ export default function TaskbookDetailPage({ params }) {
               type="default"
               icon={<PlayCircleOutlined />} 
               style={{ color: '#52c41a', borderColor: '#b7eb8f' }}
-              onClick={() => router.push(`/collection/collection-tasks/create?taskbook=${encodeURIComponent(taskbook.id)}`)}
+              onClick={() => router.push(buildStaticHref('/collection/collection-tasks/create', { taskbook: taskbook.id }))}
             >
               发起采集计划
             </Button>,
@@ -106,7 +108,7 @@ export default function TaskbookDetailPage({ params }) {
               key="edit" 
               type="primary" 
               icon={<EditOutlined />}
-              onClick={() => router.push(`/collection/taskbooks/create?mode=edit&id=${encodeURIComponent(taskbook.id)}`)}
+              onClick={() => router.push(buildStaticHref('/collection/taskbooks/create', { mode: 'edit', id: taskbook.id }))}
             >
               编辑任务书
             </Button>,
@@ -229,7 +231,7 @@ export default function TaskbookDetailPage({ params }) {
                 {taskbook.linkedPlans.map((plan) => (
                   <Card key={plan.id} size="small" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text strong style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => router.push(`/collection/tasks/${plan.id}`)}>
+                      <Text strong style={{ color: '#1677ff', cursor: 'pointer' }} onClick={() => router.push(buildStaticHref(STATIC_ROUTES.taskDetail, { id: plan.id }))}>
                         {plan.id}
                       </Text>
                       <Tag color={plan.status === '已完成' ? 'success' : 'processing'}>{plan.status}</Tag>

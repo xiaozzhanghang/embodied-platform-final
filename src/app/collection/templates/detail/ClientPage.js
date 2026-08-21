@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Typography, Space, Card, Table, Breadcrumb, 
   Descriptions, Tag, Divider, Row, Col, Statistic, Tooltip, App
@@ -14,16 +14,19 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { FormSection, PageHeader, StatusTag } from '@/components/ui';
+import { buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 
-export default function TemplateDetailPage({ params }) {
+export default function TemplateDetailPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
   const { message } = App.useApp();
   
   // Mock data for detail
   const template = {
-    id: params.id,
+    id,
     name: '通用物体抓取模板',
     code: 'TPL_GEN_GRASP',
     device: 'Galbot V2.2 (RGB)',
@@ -153,7 +156,7 @@ export default function TemplateDetailPage({ params }) {
               key="edit" 
               type="primary" 
               icon={<EditOutlined />} 
-              onClick={() => router.push(`/collection/templates/create?id=${template.id}`)}
+              onClick={() => router.push(buildStaticHref('/collection/templates/create', { id: template.id }))}
             >
               编辑模板
             </Button>,

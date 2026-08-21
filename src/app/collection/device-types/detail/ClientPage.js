@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Typography, Space, Input, Form, Row, Col, 
   Card, Table, Tag, Breadcrumb, Divider, App, Radio, 
@@ -157,8 +157,8 @@ const RobotSchematic = ({ selectedAlignment }) => (
 
 export default function DeviceTypeDetailPage() {
   const router = useRouter();
-  const params = useParams();
   const searchParams = useSearchParams();
+  const id = searchParams.get('id');
   const { message } = App.useApp();
   const [form] = Form.useForm();
   

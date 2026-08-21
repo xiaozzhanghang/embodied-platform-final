@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, 
   Typography, 
@@ -37,10 +37,11 @@ import {
 
 const { Text } = Typography;
 
-export default function QaReviewPage({ params }) {
+export default function QaReviewPage() {
   const router = useRouter();
-  // Using React.use() to unwrap params per Next.js 15+ patterns, though here we can assume it works
-  const { instanceId, seqId } = React.use(params);
+  const searchParams = useSearchParams();
+  const instanceId = searchParams.get('instanceId');
+  const seqId = searchParams.get('seqId');
   const { message } = App.useApp();
   
   // State management

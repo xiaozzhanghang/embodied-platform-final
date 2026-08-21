@@ -18,6 +18,7 @@ import { ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
 import { FilterPanel, PageHeader, QueryFilterBar, TableToolbar, TableToolbarActions } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Text } = Typography;
 
@@ -148,15 +149,15 @@ export default function CollectionTasksPage() {
             icon={<EyeOutlined />} 
             onClick={() => {
               const isNoNeed = record.needCollect === false || record.taskId === 'COLL-20260414-003' || record.taskId === 'COLL-20260415-002';
-              const param = isNoNeed ? '?needCollect=false' : '?needCollect=true';
-              router.push(`/collection/tasks/${record.taskId}${param}`);
+              const needCollect = !isNoNeed;
+              router.push(buildStaticHref(STATIC_ROUTES.taskDetail, { id: record.taskId, needCollect }));
             }} 
             style={{ padding: '0 4px', fontWeight: 600 }}
           >
             进入
           </Button>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>编辑</Button>
-          <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(`/collection/tasks/create?mode=copy&taskId=${record.taskId}`)} style={{ padding: '0 4px' }}>复制</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => router.push(buildStaticHref('/collection/tasks/create', { mode: 'edit', taskId: record.taskId }))} style={{ padding: '0 4px' }}>编辑</Button>
+          <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => router.push(buildStaticHref('/collection/tasks/create', { mode: 'copy', taskId: record.taskId }))} style={{ padding: '0 4px' }}>复制</Button>
           <Button type="link" size="small" icon={<DeleteOutlined />} danger style={{ padding: '0 4px' }} onClick={() => Modal.confirm({ title: '确定删除？', content: '此操作不可恢复，是否继续？', okText: '确定', okType: 'danger', cancelText: '取消', onOk: () => message.success('已删除') })}>删除</Button>
         </Space>
       )
