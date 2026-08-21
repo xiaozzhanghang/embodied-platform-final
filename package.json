@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build",
-    "start": "next start"
+    "start": "npx --yes serve@14.2.4 out"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
