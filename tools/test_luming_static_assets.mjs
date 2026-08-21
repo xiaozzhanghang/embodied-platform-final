@@ -171,6 +171,105 @@ function walkWithAncestors(node, visitor, ancestors = []) {
   }
 }
 
+function getDefaultExportedComponent(ast, expectedName) {
+  const defaultExports = ast.program.body.filter((node) => node.type === 'ExportDefaultDeclaration');
+  if (defaultExports.length !== 1) return null;
+
+  const declaration = defaultExports[0].declaration;
+  let component = null;
+  if (declaration?.type === 'FunctionDeclaration') {
+    component = declaration;
+  } else if (declaration?.type === 'Identifier') {
+    for (const statement of ast.program.body) {
+      if (statement.type === 'FunctionDeclaration' && statement.id?.name === declaration.name) component = statement;
+      if (statement.type !== 'VariableDeclaration') continue;
+      const declarator = statement.declarations.find((candidate) => candidate.id?.type === 'Identifier' && candidate.id.name === declaration.name);
+      if (declarator && ['ArrowFunctionExpression', 'FunctionExpression'].includes(declarator.init?.type)) component = declarator.init;
+    }
+  }
+
+  const componentName = component?.id?.name || declaration?.name;
+  if (!component || componentName !== expectedName || component.body?.type !== 'BlockStatement') return null;
+  const directReturns = component.body.body.filter((statement) => statement.type === 'ReturnStatement');
+  const returnJsx = directReturns.length === 1 && ['JSXElement', 'JSXFragment'].includes(directReturns[0].argument?.type)
+    ? directReturns[0].argument
+    : null;
+  return {
+    component,
+    body: component.body,
+    statements: component.body.body,
+    returnJsx,
+  };
+}
+
+function getDirectVariableDeclarator(componentContext, bindingName) {
+  if (!componentContext) return null;
+  for (const statement of componentContext.statements) {
+    if (statement.type !== 'VariableDeclaration') continue;
+    const declarator = statement.declarations.find((candidate) => (
+      (candidate.id?.type === 'Identifier' && candidate.id.name === bindingName)
+      || (candidate.id?.type === 'ArrayPattern' && candidate.id.elements.some((element) => element?.type === 'Identifier' && element.name === bindingName))
+    ));
+    if (declarator) return declarator;
+  }
+  return null;
+}
+
+function getDirectHookCalls(componentContext, hookName) {
+  if (!componentContext) return [];
+  return componentContext.statements.flatMap((statement) => {
+    if (
+      statement.type === 'ExpressionStatement'
+      && statement.expression?.type === 'CallExpression'
+      && statement.expression.callee?.type === 'Identifier'
+      && statement.expression.callee.name === hookName
+    ) return [statement.expression];
+    return [];
+  });
+}
+
+function hasExactDependencies(call, dependencyNames) {
+  const dependencies = call?.arguments[1];
+  return dependencies?.type === 'ArrayExpression'
+    && dependencies.elements.length === dependencyNames.length
+    && dependencies.elements.every((element, index) => element?.type === 'Identifier' && element.name === dependencyNames[index]);
+}
+
+function jsxAttribute(openingElement, attributeName) {
+  return openingElement?.attributes?.find((attribute) => attribute.type === 'JSXAttribute' && attribute.name.name === attributeName) || null;
+}
+
+function containsRenderedText(node, text) {
+  let found = false;
+  walk(node, (candidate) => {
+    if (candidate.type === 'JSXText' && candidate.value.includes(text)) found = true;
+    if (candidate.type === 'StringLiteral' && candidate.value.includes(text)) found = true;
+  });
+  return found;
+}
+
+function containsExactString(node, value) {
+  let found = false;
+  walk(node, (candidate) => {
+    if (candidate.type === 'StringLiteral' && candidate.value === value) found = true;
+  });
+  return found;
+}
+
+function collectPromiseCalls(node, methodName) {
+  const calls = [];
+  walk(node, (candidate) => {
+    if (
+      candidate.type === 'CallExpression'
+      && candidate.callee?.type === 'MemberExpression'
+      && candidate.callee.object?.type === 'Identifier'
+      && candidate.callee.object.name === 'Promise'
+      && memberName(candidate.callee) === methodName
+    ) calls.push(candidate);
+  });
+  return calls;
+}
+
 function memberName(node) {
   if (node?.type !== 'MemberExpression' && node?.type !== 'OptionalMemberExpression') return null;
   if (node.computed && node.property?.type === 'StringLiteral') return node.property.value;
@@ -436,26 +535,22 @@ for (const assetPath of ['public/assets/robot_view.png', 'public/assets/images/r
 
 function analyzeDataLoadingContract(source) {
   const ast = parse(source);
-  const promiseAllSettledCalls = [];
-  const promiseAllCalls = [];
-  let loadingEffect = null;
-  let importsAlert = false;
+  const componentContext = getDefaultExportedComponent(ast, 'CollectTaskDataPage');
+  const directEffects = getDirectHookCalls(componentContext, 'useEffect');
+  const promiseAllSettledCalls = directEffects.flatMap((effect) => collectPromiseCalls(effect.arguments[0]?.body, 'allSettled'));
+  const promiseAllCalls = directEffects.flatMap((effect) => collectPromiseCalls(effect.arguments[0]?.body, 'all'));
+  const loadingEffects = directEffects.filter((effect) => collectPromiseCalls(effect.arguments[0]?.body, 'allSettled').length > 0);
+  const loadingEffect = loadingEffects.length === 1 ? loadingEffects[0].arguments[0] : null;
+  const allSettled = promiseAllSettledCalls.length === 1 ? promiseAllSettledCalls[0] : null;
+  const importsAlert = ast.program.body.some((node) => (
+    node.type === 'ImportDeclaration'
+    && node.source.value === 'antd'
+    && node.specifiers.some((specifier) => specifier.imported?.name === 'Alert')
+  ));
   let rendersPartialAlert = false;
   let hasFullPageErrorGate = false;
 
-  walk(ast, (node) => {
-    if (node.type === 'ImportDeclaration' && node.source.value === 'antd') {
-      importsAlert = node.specifiers.some((specifier) => specifier.imported?.name === 'Alert');
-    }
-    if (
-      node.type === 'CallExpression'
-      && node.callee?.type === 'MemberExpression'
-      && node.callee.object?.type === 'Identifier'
-      && node.callee.object.name === 'Promise'
-    ) {
-      if (memberName(node.callee) === 'allSettled') promiseAllSettledCalls.push(node);
-      if (memberName(node.callee) === 'all') promiseAllCalls.push(node);
-    }
+  walk(componentContext?.returnJsx, (node) => {
     if (
       node.type === 'JSXElement'
       && node.openingElement.name?.name === 'Alert'
@@ -475,25 +570,10 @@ function analyzeDataLoadingContract(source) {
     }
   });
 
-  if (promiseAllSettledCalls.length === 1) {
-    walkWithAncestors(ast, (node, ancestors) => {
-      if (node !== promiseAllSettledCalls[0]) return;
-      loadingEffect = [...ancestors].reverse().find((ancestor) => (
-        (ancestor.type === 'ArrowFunctionExpression' || ancestor.type === 'FunctionExpression')
-        && ancestors.some((candidate) => (
-          candidate.type === 'CallExpression'
-          && candidate.callee?.type === 'Identifier'
-          && candidate.callee.name === 'useEffect'
-          && candidate.arguments[0] === ancestor
-        ))
-      ));
-    });
-  }
-
   const clearBeforeRequest = new Set();
-  if (loadingEffect && promiseAllSettledCalls[0]) {
+  if (loadingEffect && allSettled) {
     for (const statement of loadingEffect.body.body || []) {
-      if (statement.start >= promiseAllSettledCalls[0].start || statement.type !== 'ExpressionStatement') continue;
+      if (statement.start >= allSettled.start || statement.type !== 'ExpressionStatement') continue;
       const node = statement.expression;
       if (node.type !== 'CallExpression' || node.callee?.type !== 'Identifier') continue;
       if (node.callee.name === 'setRealReport' && isLiteral(node.arguments[0], null)) clearBeforeRequest.add('report');
@@ -502,14 +582,59 @@ function analyzeDataLoadingContract(source) {
     }
   }
 
-  const allSettled = promiseAllSettledCalls[0];
   const canonicalAllSettled = (
-    promiseAllSettledCalls.length === 1
+    Boolean(componentContext)
+    && loadingEffects.length === 1
+    && promiseAllSettledCalls.length === 1
     && allSettled?.arguments[0]?.type === 'ArrayExpression'
     && allSettled.arguments[0].elements.length === 3
   );
+  const loadedKeys = [];
+  if (canonicalAllSettled) {
+    for (const request of allSettled.arguments[0].elements) {
+      if (
+        request?.type !== 'CallExpression'
+        || memberName(request.callee) !== 'then'
+        || request.callee.object?.type !== 'CallExpression'
+        || request.callee.object.callee?.type !== 'Identifier'
+        || request.callee.object.callee.name !== 'fetch'
+      ) continue;
+      const asset = request.callee.object.arguments[0];
+      if (asset?.type === 'MemberExpression' && asset.object?.name === 'LUMING_STATIC_ASSETS') loadedKeys.push(memberName(asset));
+    }
+  }
+
+  const independentlyApplied = new Set();
+  if (loadingEffect) {
+    for (const [resultName, setterName] of [
+      ['reportResult', 'setRealReport'],
+      ['leftResult', 'setLeftTrajectory'],
+      ['rightResult', 'setRightTrajectory'],
+    ]) {
+      walk(loadingEffect.body, (node) => {
+        if (
+          node.type === 'IfStatement'
+          && containsMember(node.test, resultName, 'status')
+          && containsCall(node.consequent, setterName)
+          && containsMember(node.consequent, resultName, 'value')
+        ) independentlyApplied.add(setterName);
+      });
+    }
+  }
+
+  let combinesRejectedReasons = false;
+  if (loadingEffect) {
+    walk(loadingEffect.body, (node) => {
+      if (
+        node.type === 'IfStatement'
+        && containsIdentifier(node.test, 'rejectedResults')
+        && containsCall(node.consequent, 'setRealDataError')
+      ) combinesRejectedReasons = true;
+    });
+  }
 
   return {
+    hasTargetComponent: Boolean(componentContext),
     canonicalAllSettled,
     promiseAllSettledCount: promiseAllSettledCalls.length,
     promiseAllCount: promiseAllCalls.length,
@@ -517,12 +642,18 @@ function analyzeDataLoadingContract(source) {
     importsAlert,
     rendersPartialAlert,
     hasFullPageErrorGate,
+    loadedKeys,
+    independentlyAppliedCount: independentlyApplied.size,
+    combinesRejectedReasons,
     valid: canonicalAllSettled
       && promiseAllCalls.length === 0
       && clearBeforeRequest.size === 3
       && importsAlert
       && rendersPartialAlert
-      && !hasFullPageErrorGate,
+      && !hasFullPageErrorGate
+      && JSON.stringify(loadedKeys) === JSON.stringify(['report', 'trajectoryLeft', 'trajectoryRight'])
+      && independentlyApplied.size === 3
+      && combinesRejectedReasons,
   };
 }
 
@@ -542,44 +673,103 @@ function failedKeyIncludes(node, key) {
   return found;
 }
 
+function returnsEmptyStringForMissingTrajectory(functionNode) {
+  return Boolean(functionNode?.body?.body?.some((statement) => (
+    statement.type === 'IfStatement'
+    && containsIdentifier(statement.test, 'traj')
+    && statement.consequent?.type === 'ReturnStatement'
+    && isLiteral(statement.consequent.argument, '')
+  )));
+}
+
+function pathUsesDataCall(openingElement, functionName, trajectoryName) {
+  if (openingElement?.name?.name !== 'path') return false;
+  const dataAttribute = jsxAttribute(openingElement, 'd');
+  const expression = dataAttribute?.value?.type === 'JSXExpressionContainer' ? dataAttribute.value.expression : null;
+  return expression?.type === 'CallExpression'
+    && expression.callee?.type === 'Identifier'
+    && expression.callee.name === functionName
+    && expression.arguments[0]?.type === 'Identifier'
+    && expression.arguments[0].name === trajectoryName;
+}
+
+function findSmallestDataPanel(root, functionName) {
+  const candidates = [];
+  walk(root, (node) => {
+    if (node.type !== 'JSXElement' || node.openingElement.name?.name !== 'div') return;
+    let left = false;
+    let right = false;
+    walk(node, (candidate) => {
+      if (candidate.type !== 'JSXOpeningElement') return;
+      if (pathUsesDataCall(candidate, functionName, 'leftTrajectory')) left = true;
+      if (pathUsesDataCall(candidate, functionName, 'rightTrajectory')) right = true;
+    });
+    if (left && right) candidates.push(node);
+  });
+  candidates.sort((left, right) => (left.end - left.start) - (right.end - right.start));
+  return candidates[0] || null;
+}
+
+function panelHasUnavailableGuard(panel, key, label) {
+  let found = false;
+  walk(panel, (node) => {
+    if (
+      node.type === 'ConditionalExpression'
+      && failedKeyIncludes(node.test, key)
+      && (containsExactString(node.consequent, label) || containsExactString(node.alternate, label))
+    ) found = true;
+  });
+  return found;
+}
+
 function analyzeDataUnavailableContract(source) {
   const ast = parse(source);
-  let hasFailedKeyState = false;
-  let loadingEffect = null;
-  let getSvgPathFunction = null;
-  let getKinematicsDataFunction = null;
+  const componentContext = getDefaultExportedComponent(ast, 'CollectTaskDataPage');
+  const failedStateBinding = getDirectVariableDeclarator(componentContext, 'failedRealDataKeys');
+  const getSvgPathFunction = getDirectVariableDeclarator(componentContext, 'getSvgPath')?.init;
+  const getSpeedPathFunction = getDirectVariableDeclarator(componentContext, 'getSpeedPath')?.init;
+  const getKinematicsDataFunction = getDirectVariableDeclarator(componentContext, 'getKinematicsData')?.init;
+  const directEffects = getDirectHookCalls(componentContext, 'useEffect');
+  const loadingEffects = directEffects.filter((effect) => collectPromiseCalls(effect.arguments[0]?.body, 'allSettled').length > 0);
+  const loadingEffect = loadingEffects.length === 1 ? loadingEffects[0].arguments[0] : null;
+  const allSettledCalls = loadingEffect ? collectPromiseCalls(loadingEffect.body, 'allSettled') : [];
+  const allSettledCall = allSettledCalls.length === 1 ? allSettledCalls[0] : null;
+  const hasFailedKeyState = Boolean(
+    failedStateBinding?.id?.type === 'ArrayPattern'
+    && failedStateBinding.id.elements[0]?.name === 'failedRealDataKeys'
+    && failedStateBinding.id.elements[1]?.name === 'setFailedRealDataKeys'
+    && failedStateBinding.init?.type === 'CallExpression'
+    && failedStateBinding.init.callee?.name === 'useState'
+    && failedStateBinding.init.arguments[0]?.type === 'ArrayExpression'
+    && failedStateBinding.init.arguments[0].elements.length === 0
+  );
   let reportUnavailableBranch = false;
   let passBadgeGuardedByReportAvailability = false;
-  let allSettledCall = null;
 
-  walk(ast, (node) => {
+  const reportCards = [];
+  walk(componentContext?.returnJsx, (node) => {
     if (
-      node.type === 'VariableDeclarator'
-      && node.id?.type === 'ArrayPattern'
-      && node.id.elements[0]?.name === 'failedRealDataKeys'
-      && node.id.elements[1]?.name === 'setFailedRealDataKeys'
-      && node.init?.type === 'CallExpression'
-      && node.init.callee?.name === 'useState'
-      && node.init.arguments[0]?.type === 'ArrayExpression'
-      && node.init.arguments[0].elements.length === 0
-    ) hasFailedKeyState = true;
-    if (node.type === 'VariableDeclarator' && node.id?.name === 'getSvgPath' && node.init?.type === 'ArrowFunctionExpression') getSvgPathFunction = node.init;
-    if (node.type === 'VariableDeclarator' && node.id?.name === 'getKinematicsData' && node.init?.type === 'ArrowFunctionExpression') getKinematicsDataFunction = node.init;
-    if (
-      node.type === 'CallExpression'
-      && node.callee?.type === 'MemberExpression'
-      && node.callee.object?.name === 'Promise'
-      && memberName(node.callee) === 'allSettled'
-    ) allSettledCall = node;
+      node.type === 'JSXElement'
+      && node.openingElement.name?.name === 'Card'
+      && containsRenderedText(jsxAttribute(node.openingElement, 'title')?.value, '自动质检诊断分析报告')
+    ) reportCards.push(node);
+  });
+  const reportCard = reportCards.length === 1 ? reportCards[0] : null;
+  walk(reportCard, (node) => {
     if (node.type === 'ConditionalExpression' && failedKeyIncludes(node.test, 'report')) {
       let unavailableAlert = false;
       let successfulReportTable = false;
       walk(node.consequent, (candidate) => {
-        if (candidate.type === 'JSXElement' && candidate.openingElement.name?.name === 'Alert' && source.slice(candidate.start, candidate.end).includes('质检报告不可用')) unavailableAlert = true;
+        if (
+          candidate.type === 'JSXOpeningElement'
+          && candidate.name?.name === 'Alert'
+          && jsxAttribute(candidate, 'message')?.value?.type === 'StringLiteral'
+          && jsxAttribute(candidate, 'message').value.value === '质检报告不可用'
+        ) unavailableAlert = true;
       });
       walk(node.alternate, (candidate) => {
         if (candidate.type === 'JSXOpeningElement' && candidate.name?.name === 'Table') {
-          const dataSource = candidate.attributes.find((attribute) => attribute.type === 'JSXAttribute' && attribute.name.name === 'dataSource');
+          const dataSource = jsxAttribute(candidate, 'dataSource');
           if (dataSource?.value?.type === 'JSXExpressionContainer' && containsCall(dataSource.value.expression, 'getKinematicsData')) successfulReportTable = true;
         }
       });
@@ -587,22 +777,12 @@ function analyzeDataUnavailableContract(source) {
     }
   });
 
-  walkWithAncestors(ast, (node, ancestors) => {
+  walkWithAncestors(reportCard, (node, ancestors) => {
     if (node.type !== 'JSXText' || !node.value.includes('所有检查通过')) return;
     if (ancestors.some((ancestor) => ancestor.type === 'LogicalExpression' && failedKeyIncludes(ancestor.left, 'report'))) {
       passBadgeGuardedByReportAvailability = true;
     }
   });
-
-  if (allSettledCall) {
-    walkWithAncestors(ast, (node, ancestors) => {
-      if (node !== allSettledCall) return;
-      loadingEffect = [...ancestors].reverse().find((ancestor) => (
-        ancestor.type === 'ArrowFunctionExpression'
-        && ancestors.some((candidate) => candidate.type === 'CallExpression' && candidate.callee?.name === 'useEffect' && candidate.arguments[0] === ancestor)
-      ));
-    });
-  }
 
   let clearsFailedKeysBeforeRequest = false;
   let clearsFailedKeysWhenLeaving = false;
@@ -619,7 +799,16 @@ function analyzeDataUnavailableContract(source) {
         && hasCallWithArgument(statement.consequent, 'setFailedRealDataKeys', (argument) => argument?.type === 'ArrayExpression' && argument.elements.length === 0)
       ) clearsFailedKeysWhenLeaving = true;
     }
+    let rejectedResultsBinding = null;
     walk(loadingEffect.body, (node) => {
+      if (
+        node.type === 'VariableDeclarator'
+        && node.id?.type === 'Identifier'
+        && node.id.name === 'rejectedResults'
+        && node.init?.type === 'CallExpression'
+        && memberName(node.init.callee) === 'filter'
+        && node.init.callee.object?.type === 'ArrayExpression'
+      ) rejectedResultsBinding = node;
       if (
         node.type === 'CallExpression'
         && node.start > allSettledCall.start
@@ -627,17 +816,17 @@ function analyzeDataUnavailableContract(source) {
         && node.callee.name === 'setFailedRealDataKeys'
         && node.arguments[0]?.type === 'CallExpression'
         && memberName(node.arguments[0].callee) === 'map'
-        && ['report', 'trajectoryLeft', 'trajectoryRight'].every((key) => source.slice(allSettledCall.start, node.end).includes(`'${key}'`))
+        && node.arguments[0].callee.object?.type === 'Identifier'
+        && node.arguments[0].callee.object.name === 'rejectedResults'
       ) recordsRejectedKeys = true;
     });
+    const rejectedKeys = rejectedResultsBinding?.init?.callee?.object?.elements?.map((entry) => entry?.elements?.[0]?.value) || [];
+    recordsRejectedKeys = recordsRejectedKeys
+      && JSON.stringify(rejectedKeys) === JSON.stringify(['report', 'trajectoryLeft', 'trajectoryRight']);
   }
 
-  const emptySvgFallback = Boolean(getSvgPathFunction?.body?.body?.some((statement) => (
-    statement.type === 'IfStatement'
-    && containsIdentifier(statement.test, 'traj')
-    && statement.consequent?.type === 'ReturnStatement'
-    && isLiteral(statement.consequent.argument, '')
-  )));
+  const emptySvgFallback = returnsEmptyStringForMissingTrajectory(getSvgPathFunction);
+  const emptySpeedFallback = returnsEmptyStringForMissingTrajectory(getSpeedPathFunction);
   const emptyKinematicsFallback = Boolean(getKinematicsDataFunction?.body?.body?.some((statement) => (
     statement.type === 'IfStatement'
     && containsIdentifier(statement.test, 'realReport')
@@ -645,35 +834,70 @@ function analyzeDataUnavailableContract(source) {
     && statement.consequent.argument?.type === 'ArrayExpression'
     && statement.consequent.argument.elements.length === 0
   )));
-  const leftUnavailableCount = (source.match(/左臂轨迹不可用/g) || []).length;
-  const rightUnavailableCount = (source.match(/右臂轨迹不可用/g) || []).length;
-  const keepsBothTrajectoryPaths = source.includes("getSvgPath(leftTrajectory")
-    && source.includes("getSvgPath(rightTrajectory")
-    && source.includes("getSpeedPath(leftTrajectory")
-    && source.includes("getSpeedPath(rightTrajectory");
+  const telemetryCards = [];
+  walk(componentContext?.returnJsx, (node) => {
+    if (
+      node.type === 'JSXElement'
+      && node.openingElement.name?.name === 'Card'
+      && jsxAttribute(node.openingElement, 'title')?.value?.type === 'StringLiteral'
+      && jsxAttribute(node.openingElement, 'title').value.value === '运动轨迹与力矩监视 (Telemetry)'
+    ) telemetryCards.push(node);
+  });
+  const telemetryCard = telemetryCards.length === 1 ? telemetryCards[0] : null;
+  const trajectoryPanel = findSmallestDataPanel(telemetryCard, 'getSvgPath');
+  const speedPanel = findSmallestDataPanel(telemetryCard, 'getSpeedPath');
+  const renderedPaths = {
+    trajectoryLeft: false,
+    trajectoryRight: false,
+    speedLeft: false,
+    speedRight: false,
+  };
+  walk(telemetryCard, (node) => {
+    if (node.type !== 'JSXOpeningElement') return;
+    if (pathUsesDataCall(node, 'getSvgPath', 'leftTrajectory')) renderedPaths.trajectoryLeft = true;
+    if (pathUsesDataCall(node, 'getSvgPath', 'rightTrajectory')) renderedPaths.trajectoryRight = true;
+    if (pathUsesDataCall(node, 'getSpeedPath', 'leftTrajectory')) renderedPaths.speedLeft = true;
+    if (pathUsesDataCall(node, 'getSpeedPath', 'rightTrajectory')) renderedPaths.speedRight = true;
+  });
+  const trajectoryLabelsGuarded = Boolean(
+    trajectoryPanel
+    && panelHasUnavailableGuard(trajectoryPanel, 'trajectoryLeft', '左臂轨迹不可用')
+    && panelHasUnavailableGuard(trajectoryPanel, 'trajectoryRight', '右臂轨迹不可用')
+  );
+  const speedLabelsGuarded = Boolean(
+    speedPanel
+    && panelHasUnavailableGuard(speedPanel, 'trajectoryLeft', '左臂轨迹不可用')
+    && panelHasUnavailableGuard(speedPanel, 'trajectoryRight', '右臂轨迹不可用')
+  );
+  const keepsBothTrajectoryPaths = Object.values(renderedPaths).every(Boolean);
 
   return {
-    valid: hasFailedKeyState
+    valid: Boolean(componentContext?.returnJsx)
+      && hasFailedKeyState
       && clearsFailedKeysBeforeRequest
       && clearsFailedKeysWhenLeaving
       && recordsRejectedKeys
       && emptySvgFallback
+      && emptySpeedFallback
       && emptyKinematicsFallback
       && reportUnavailableBranch
       && passBadgeGuardedByReportAvailability
-      && leftUnavailableCount >= 2
-      && rightUnavailableCount >= 2
+      && trajectoryLabelsGuarded
+      && speedLabelsGuarded
       && keepsBothTrajectoryPaths,
+    hasTargetComponent: Boolean(componentContext),
     hasFailedKeyState,
     clearsFailedKeysBeforeRequest,
     clearsFailedKeysWhenLeaving,
     recordsRejectedKeys,
     emptySvgFallback,
+    emptySpeedFallback,
     emptyKinematicsFallback,
     reportUnavailableBranch,
     passBadgeGuardedByReportAvailability,
-    leftUnavailableCount,
-    rightUnavailableCount,
+    trajectoryLabelsGuarded,
+    speedLabelsGuarded,
+    renderedPaths,
     keepsBothTrajectoryPaths,
   };
 }
@@ -681,71 +905,76 @@ function analyzeDataUnavailableContract(source) {
 const dataClientPath = 'src/app/collection/collect/data/ClientPage.js';
 if (existsSync(dataClientPath)) {
   const dataSource = readFileSync(dataClientPath, 'utf8');
-  const ast = parse(dataSource);
   const loadingContract = analyzeDataLoadingContract(dataSource);
   const unavailableContract = analyzeDataUnavailableContract(dataSource);
+  check(loadingContract.hasTargetComponent && unavailableContract.hasTargetComponent, 'data contracts must bind to default-export CollectTaskDataPage');
   check(loadingContract.promiseAllSettledCount === 1 && loadingContract.canonicalAllSettled, 'data Client must contain exactly one canonical Promise.allSettled call');
   check(loadingContract.promiseAllCount === 0, 'data Client must not contain Promise.all');
   check(loadingContract.clearsAllSlicesBeforeRequest, 'data Client must clear report, left trajectory, and right trajectory before starting each request');
   check(loadingContract.importsAlert && loadingContract.rendersPartialAlert, 'data Client must render selectedEpisodeError as an in-content retryable Alert');
   check(!loadingContract.hasFullPageErrorGate, 'data Client must not gate selectedEpisode content behind an error StateView');
+  check(JSON.stringify(loadingContract.loadedKeys) === JSON.stringify(['report', 'trajectoryLeft', 'trajectoryRight']), 'Promise.allSettled must independently fetch report, trajectoryLeft, and trajectoryRight');
+  check(loadingContract.independentlyAppliedCount === 3, 'fulfilled report and trajectory results must be applied independently inside the real loading effect');
+  check(loadingContract.combinesRejectedReasons, 'data Client must combine rejected result reasons into realDataError');
   check(unavailableContract.valid, `data Client must expose failed report/trajectory slices without synthetic fallback: ${JSON.stringify(unavailableContract)}`);
-  const badPromiseAllMutation = `${dataSource}\nPromise.all([]);\n`;
+  const badPromiseAllMutation = dataSource.replace('    Promise.allSettled([', '    Promise.all([]);\n\n    Promise.allSettled([');
+  check(badPromiseAllMutation !== dataSource, 'Promise.all mutation must alter the real data loading effect');
   check(!analyzeDataLoadingContract(badPromiseAllMutation).valid, 'data loading contract must reject a Promise.all mutation');
   const hardcodedSvgMutation = dataSource.replace('if (!traj || traj.length === 0) return "";', 'if (!traj || traj.length === 0) return "M 50 55 Q 85 10 120 40 T 160 30";');
   check(hardcodedSvgMutation !== dataSource && !analyzeDataUnavailableContract(hardcodedSvgMutation).valid, 'data unavailable contract must reject restoring a synthetic trajectory path');
   const hardcodedKinematicsMutation = dataSource.replace('if (!realReport) return [];', "if (!realReport) return [{ key: 'synthetic' }];");
   check(hardcodedKinematicsMutation !== dataSource && !analyzeDataUnavailableContract(hardcodedKinematicsMutation).valid, 'data unavailable contract must reject restoring synthetic kinematics rows');
-  let allSettledCall = null;
-  walk(ast, (node) => {
-    if (
-      node.type === 'CallExpression'
-      && node.callee?.type === 'MemberExpression'
-      && node.callee.object?.type === 'Identifier'
-      && node.callee.object.name === 'Promise'
-      && memberName(node.callee) === 'allSettled'
-    ) allSettledCall = node;
-  });
-  check(Boolean(allSettledCall), 'data Client must load report and trajectories with Promise.allSettled');
-  if (allSettledCall?.arguments[0]?.type === 'ArrayExpression') {
-    const loadedKeys = [];
-    walk(allSettledCall.arguments[0], (node, parent) => {
-      if (
-        (node.type === 'MemberExpression' || node.type === 'OptionalMemberExpression')
-        && node.object?.type === 'Identifier'
-        && node.object.name === 'LUMING_STATIC_ASSETS'
-        && parent?.type === 'CallExpression'
-        && parent.callee?.type === 'Identifier'
-        && parent.callee.name === 'fetch'
-      ) loadedKeys.push(memberName(node));
-    });
-    check(JSON.stringify(loadedKeys) === JSON.stringify(['report', 'trajectoryLeft', 'trajectoryRight']), 'Promise.allSettled must independently fetch report, trajectoryLeft, and trajectoryRight');
-  } else if (allSettledCall) {
-    violations.push('Promise.allSettled must receive an explicit three-request array');
-  }
-
-  for (const [resultName, setterName] of [
-    ['reportResult', 'setRealReport'],
-    ['leftResult', 'setLeftTrajectory'],
-    ['rightResult', 'setRightTrajectory'],
-  ]) {
-    let independentApply = false;
-    walk(ast, (node) => {
-      if (node.type !== 'IfStatement') return;
-      if (!containsMember(node.test, resultName, 'status')) return;
-      if (!containsCall(node.consequent, setterName)) return;
-      if (!containsMember(node.consequent, resultName, 'value')) return;
-      independentApply = true;
-    });
-    check(independentApply, `${setterName} must apply its fulfilled allSettled result independently`);
-  }
-  let combinesRejectedReasons = false;
-  walk(ast, (node) => {
-    if (node.type === 'IfStatement' && /rejected/.test(readFileSync(dataClientPath, 'utf8').slice(node.start, node.end)) && containsCall(node.consequent, 'setRealDataError')) {
-      combinesRejectedReasons = true;
-    }
-  });
-  check(combinesRejectedReasons, 'data Client must combine rejected result reasons into realDataError');
+  const hardcodedSpeedMutation = dataSource.replace(
+    `  const getSpeedPath = (traj, maxLimit) => {
+    if (!traj || traj.length === 0) return "";`,
+    `  const getSpeedPath = (traj, maxLimit) => {
+    if (!traj || traj.length === 0) return "M 10 30 L 190 30";`,
+  );
+  check(hardcodedSpeedMutation !== dataSource, 'synthetic speed-path mutation must alter the data Client');
+  check(!analyzeDataUnavailableContract(hardcodedSpeedMutation).valid, 'data unavailable contract must reject restoring a synthetic speed path');
+  const brokenReportWithDeadDecoy = dataSource
+    .replace('message="质检报告不可用"', 'message="质检报告加载失败"')
+    .concat(`
+const deadReportUnavailableDecoy = failedRealDataKeys.includes('report') ? (
+  <Alert message="质检报告不可用" />
+) : (
+  <Table dataSource={getKinematicsData()} />
+);
+`);
+  check(
+    brokenReportWithDeadDecoy !== dataSource
+      && brokenReportWithDeadDecoy.includes('message="质检报告加载失败"')
+      && brokenReportWithDeadDecoy.includes('deadReportUnavailableDecoy'),
+    'dead report JSX mutation must alter the rendered branch and append its decoy',
+  );
+  check(!analyzeDataUnavailableContract(brokenReportWithDeadDecoy).valid, 'data unavailable contract must reject a broken rendered report branch plus dead JSX decoy');
+  const missingLeftRenderedPathsMutation = dataSource
+    .replace(
+      `<path d={getSvgPath(leftTrajectory, '#1677ff', true)} fill="none" stroke="#1677ff" strokeWidth="2" />`,
+      `{/* getSvgPath(leftTrajectory is intentionally present only in this comment */}`,
+    )
+    .replace(
+      `<path d={getSpeedPath(leftTrajectory, 1.2)} fill="none" stroke="#1677ff" strokeWidth="1.2" />`,
+      `{/* getSpeedPath(leftTrajectory is intentionally present only in this comment */}`,
+  );
+  check(
+    missingLeftRenderedPathsMutation !== dataSource
+      && !missingLeftRenderedPathsMutation.includes(`<path d={getSvgPath(leftTrajectory, '#1677ff', true)}`)
+      && !missingLeftRenderedPathsMutation.includes(`<path d={getSpeedPath(leftTrajectory, 1.2)}`)
+      && (missingLeftRenderedPathsMutation.match(/intentionally present only in this comment/g) || []).length === 2,
+    'rendered path mutation must remove both real left paths and retain only comment decoys',
+  );
+  check(!analyzeDataUnavailableContract(missingLeftRenderedPathsMutation).valid, 'data unavailable contract must reject missing rendered trajectory/speed paths even when comments retain matching strings');
+  const missingTrajectoryLabelWithCommentDecoy = dataSource
+    .replace("? '左臂轨迹不可用' : '● 左臂轨迹 (起:蓝 终:绿)'", "? '左臂轨迹加载失败' : '● 左臂轨迹 (起:蓝 终:绿)'")
+    .concat('\n// 左臂轨迹不可用\n');
+  check(
+    missingTrajectoryLabelWithCommentDecoy !== dataSource
+      && missingTrajectoryLabelWithCommentDecoy.includes("'左臂轨迹加载失败'")
+      && missingTrajectoryLabelWithCommentDecoy.endsWith('// 左臂轨迹不可用\n'),
+    'trajectory-label mutation must alter the rendered label and append its comment decoy',
+  );
+  check(!analyzeDataUnavailableContract(missingTrajectoryLabelWithCommentDecoy).valid, 'data unavailable contract must bind unavailable labels to the real trajectory panel instead of comments');
 }
 
 function hasRequestTokenGuard(functionNode) {
@@ -779,22 +1008,21 @@ function incrementsFileRequestToken(node) {
 
 function analyzeVideoRequestContract(source) {
   const ast = parse(source);
-  let hasTokenRef = false;
+  const componentContext = getDefaultExportedComponent(ast, 'EpisodeVideoPage');
+  const tokenBinding = getDirectVariableDeclarator(componentContext, 'fileRequestTokenRef');
+  const hasTokenRef = Boolean(
+    tokenBinding?.init?.type === 'CallExpression'
+    && tokenBinding.init.callee?.type === 'Identifier'
+    && tokenBinding.init.callee.name === 'useRef'
+    && tokenBinding.init.arguments[0]?.type === 'NumericLiteral'
+    && tokenBinding.init.arguments[0].value === 0
+  );
   let onSelectHandler = null;
-  let episodeEffect = null;
   let treeSelectedKeysIsNullable = false;
-  walk(ast, (node) => {
-    if (
-      node.type === 'VariableDeclarator'
-      && node.id?.type === 'Identifier'
-      && node.id.name === 'fileRequestTokenRef'
-      && node.init?.type === 'CallExpression'
-      && node.init.callee?.type === 'Identifier'
-      && node.init.callee.name === 'useRef'
-      && node.init.arguments[0]?.type === 'NumericLiteral'
-      && node.init.arguments[0].value === 0
-    ) hasTokenRef = true;
+  const trees = [];
+  walk(componentContext?.returnJsx, (node) => {
     if (node.type === 'JSXOpeningElement' && node.name?.name === 'Tree') {
+      trees.push(node);
       const attribute = node.attributes.find((candidate) => candidate.type === 'JSXAttribute' && candidate.name.name === 'onSelect');
       if (attribute?.value?.type === 'JSXExpressionContainer' && attribute.value.expression?.type === 'ArrowFunctionExpression') {
         onSelectHandler = attribute.value.expression;
@@ -810,19 +1038,27 @@ function analyzeVideoRequestContract(source) {
         && selectedExpression.alternate.elements.length === 0
       ) treeSelectedKeysIsNullable = true;
     }
-    if (
-      node.type === 'CallExpression'
-      && node.callee?.type === 'Identifier'
-      && node.callee.name === 'useEffect'
-      && node.arguments[0]?.type === 'ArrowFunctionExpression'
-      && node.arguments[1]?.type === 'ArrayExpression'
-      && node.arguments[1].elements.some((element) => element?.type === 'Identifier' && element.name === 'episodeId')
-    ) {
-      episodeEffect = node.arguments[0];
-    }
   });
 
-  if (!onSelectHandler) return { valid: false, hasTokenRef, hasOnSelect: false };
+  const directEffects = getDirectHookCalls(componentContext, 'useEffect');
+  const episodeDependencyEffects = directEffects.filter((effect) => (
+    effect.arguments[1]?.type === 'ArrayExpression'
+    && effect.arguments[1].elements.some((element) => element?.type === 'Identifier' && element.name === 'episodeId')
+  ));
+  const exactEpisodeEffects = directEffects.filter((effect) => hasExactDependencies(effect, ['episodeId']));
+  const hasUniqueExactEpisodeEffect = episodeDependencyEffects.length === 1 && exactEpisodeEffects.length === 1;
+  const episodeEffect = hasUniqueExactEpisodeEffect ? exactEpisodeEffects[0].arguments[0] : null;
+
+  if (!onSelectHandler) {
+    return {
+      valid: false,
+      hasTargetComponent: Boolean(componentContext),
+      hasTokenRef,
+      hasOnSelect: false,
+      hasUniqueExactEpisodeEffect,
+      renderedTreeCount: trees.length,
+    };
+  }
 
   let fetchCall = null;
   let fetchChain = null;
@@ -891,7 +1127,10 @@ function analyzeVideoRequestContract(source) {
   const guardedLoadingCallbacks = loadingCallbacks.filter(hasRequestTokenGuard);
 
   return {
-    valid: hasTokenRef
+    valid: Boolean(componentContext?.returnJsx)
+      && hasTokenRef
+      && trees.length === 1
+      && hasUniqueExactEpisodeEffect
       && Boolean(fetchCall && fetchChain && tokenInvalidation)
       && tokenInvalidation.start < fetchCall.start
       && contentCallbacks.length === 2
@@ -904,8 +1143,11 @@ function analyzeVideoRequestContract(source) {
       && episodeEffectResetsSelection
       && emptySelectionClearsKey
       && treeSelectedKeysIsNullable,
+    hasTargetComponent: Boolean(componentContext),
     hasTokenRef,
     hasOnSelect: true,
+    hasUniqueExactEpisodeEffect,
+    renderedTreeCount: trees.length,
     invalidatesBeforeFetch: Boolean(fetchCall && tokenInvalidation && tokenInvalidation.start < fetchCall.start),
     contentCallbackCount: contentCallbacks.length,
     guardedContentCallbackCount: guardedContentCallbacks.length,
@@ -930,6 +1172,47 @@ if (existsSync(videoClientPath)) {
   check(unguardedMutation !== source && !analyzeVideoRequestContract(unguardedMutation).valid, 'file preview contract must reject removing real fetch callback token guards');
   const missingEpisodeInvalidationMutation = source.replace('fileRequestTokenRef.current += 1;', '');
   check(missingEpisodeInvalidationMutation !== source && !analyzeVideoRequestContract(missingEpisodeInvalidationMutation).valid, 'file preview contract must reject removing episode-change token invalidation');
+  const correctEpisodeEffectDecoy = `
+useEffect(() => {
+  fileRequestTokenRef.current += 1;
+  const node = null;
+  setSelectedFileKey('left_video');
+  setSelectedFileNode(node);
+  setFileContent('');
+  setLoadingFileContent(false);
+  setIsPlaying(true);
+  setFrame(0);
+  return () => {
+    fileRequestTokenRef.current += 1;
+  };
+}, [episodeId]);
+`;
+  const missingStartWithExternalDecoy = missingEpisodeInvalidationMutation.concat(correctEpisodeEffectDecoy);
+  check(missingStartWithExternalDecoy !== source && missingStartWithExternalDecoy.includes(correctEpisodeEffectDecoy), 'external effect decoy mutation must alter the video Client');
+  check(!analyzeVideoRequestContract(missingStartWithExternalDecoy).valid, 'file preview contract must reject a broken real start invalidation plus component-external effect decoy');
+  const missingCleanup = source.replace(
+    `    return () => {
+      fileRequestTokenRef.current += 1;
+    };
+  }, [episodeId]);`,
+    `    return () => {};
+  }, [episodeId]);`,
+  );
+  const missingCleanupWithNestedDecoy = missingCleanup.replace(
+    '\n  return (\n',
+    `
+  function deadEpisodeEffectDecoy() {
+    ${correctEpisodeEffectDecoy.trim()}
+  }
+
+  return (
+`,
+  );
+  check(missingCleanup !== source && missingCleanupWithNestedDecoy !== missingCleanup && missingCleanupWithNestedDecoy.includes('deadEpisodeEffectDecoy'), 'nested cleanup decoy mutation must alter the video Client');
+  check(!analyzeVideoRequestContract(missingCleanupWithNestedDecoy).valid, 'file preview contract must reject a broken real cleanup plus nested dead effect decoy');
+  const extraEpisodeDependencyMutation = source.replace('}, [episodeId]);', '}, [episodeId, taskId]);');
+  check(extraEpisodeDependencyMutation !== source, 'episode dependency mutation must alter the video Client');
+  check(!analyzeVideoRequestContract(extraEpisodeDependencyMutation).valid, 'file preview contract must require the exact [episodeId] dependency array');
   const fileAssetMap = {};
   let readFileResponseFunction = null;
   walk(ast, (node) => {
