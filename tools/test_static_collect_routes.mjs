@@ -67,55 +67,63 @@ function walk(node, visitor, parent = null) {
   }
 }
 
+function walkWithAncestors(node, visitor, ancestors = []) {
+  if (!node || typeof node !== 'object') return;
+  if (Array.isArray(node)) {
+    for (const item of node) walkWithAncestors(item, visitor, ancestors);
+    return;
+  }
+  if (typeof node.type === 'string') visitor(node, ancestors);
+  const nextAncestors = [...ancestors, node];
+  for (const [key, value] of Object.entries(node)) {
+    if (!['loc', 'start', 'end', 'extra'].includes(key)) walkWithAncestors(value, visitor, nextAncestors);
+  }
+}
+
 function isStringLiteral(node, value) {
   return node?.type === 'StringLiteral' && node.value === value;
 }
 
-function hasSearchParamDefault(pageFunction, name, key, fallback) {
-  return pageFunction.body.body
-    .filter((node) => node.type === 'VariableDeclaration' && node.kind === 'const')
-    .flatMap((node) => node.declarations)
+function hasSearchParamDefault(directDeclarators, name, key, fallback) {
+  return directDeclarators
+    .filter(({ kind }) => kind === 'const')
+    .map(({ node }) => node)
     .some((node) => {
       if (node.id?.type !== 'Identifier' || node.id.name !== name) return false;
-    const init = node.init;
-    if (
-      init?.type === 'LogicalExpression'
-      && init.operator === '||'
-      && init.left?.type === 'CallExpression'
-      && init.left.callee?.type === 'MemberExpression'
-      && init.left.callee.object?.type === 'Identifier'
-      && init.left.callee.object.name === 'searchParams'
-      && init.left.callee.property?.type === 'Identifier'
-      && init.left.callee.property.name === 'get'
-      && isStringLiteral(init.left.arguments[0], key)
-      && isStringLiteral(init.right, fallback)
-    ) return true;
+      const init = node.init;
+      if (
+        init?.type === 'LogicalExpression'
+        && init.operator === '||'
+        && init.left?.type === 'CallExpression'
+        && init.left.callee?.type === 'MemberExpression'
+        && init.left.callee.object?.type === 'Identifier'
+        && init.left.callee.object.name === 'searchParams'
+        && init.left.callee.property?.type === 'Identifier'
+        && init.left.callee.property.name === 'get'
+        && isStringLiteral(init.left.arguments[0], key)
+        && isStringLiteral(init.right, fallback)
+      ) return true;
       return false;
     });
 }
 
-function checkClientContract(pagePath, defaults) {
-  const source = readFileSync(pagePath, 'utf8');
+function analyzeClientContract(source, defaults) {
   const ast = babelParser.parse(source, { sourceType: 'module', plugins: ['jsx'] });
   const pageFunction = ast.program.body.find((node) => node.type === 'ExportDefaultDeclaration')?.declaration;
-  assert.equal(pageFunction?.type, 'FunctionDeclaration', `${pagePath} 必须默认导出页面 FunctionDeclaration`);
+  const hasDefaultPageFunction = pageFunction?.type === 'FunctionDeclaration';
+  const directDeclarators = hasDefaultPageFunction
+    ? pageFunction.body.body
+      .filter((node) => node.type === 'VariableDeclaration')
+      .flatMap((declaration) => declaration.declarations.map((node) => ({ node, kind: declaration.kind })))
+    : [];
   let useParamsFound = false;
-  let searchParamsBindings = 0;
-  let hasTopLevelSearchParams = false;
+  const allSearchParamsBindings = [];
   let episodeIdQueryReads = 0;
   let episodeIdQueryBindings = 0;
-  walk(ast, (node, parent) => {
+  walk(ast, (node) => {
     if (node.type === 'Identifier' && node.name === 'useParams') useParamsFound = true;
     if (node.type === 'VariableDeclarator' && node.id?.type === 'Identifier' && node.id.name === 'searchParams') {
-      searchParamsBindings += 1;
-      hasTopLevelSearchParams ||= (
-        parent?.type === 'VariableDeclaration'
-        && parent.kind === 'const'
-        && node.init?.type === 'CallExpression'
-        && node.init.callee?.type === 'Identifier'
-        && node.init.callee.name === 'useSearchParams'
-        && node.init.arguments.length === 0
-      );
+      allSearchParamsBindings.push(node);
     }
     if (
       node.type === 'CallExpression'
@@ -141,21 +149,44 @@ function checkClientContract(pagePath, defaults) {
       && isStringLiteral(node.init.left.arguments[0], 'episodeId')
     ) episodeIdQueryBindings += 1;
   });
-  assert.equal(useParamsFound, false, `${pagePath} 不得保留 useParams`);
-  assert.equal(searchParamsBindings, 1, `${pagePath} 必须只有一个 searchParams 绑定`);
-  assert.ok(hasTopLevelSearchParams, `${pagePath} 必须以 const searchParams = useSearchParams() 读取参数`);
-  for (const requirement of defaults) {
-    assert.ok(
-      hasSearchParamDefault(pageFunction, requirement.name, requirement.key, requirement.fallback),
-      `${pagePath} 必须读取 ${requirement.name} 的默认值 ${requirement.fallback}`,
-    );
-  }
+  const directSearchParamsBindings = directDeclarators.filter(({ node }) => (
+    node.id?.type === 'Identifier' && node.id.name === 'searchParams'
+  ));
+  const [searchParamsBinding] = allSearchParamsBindings;
+  const hasCanonicalSearchParamsBinding = (
+    allSearchParamsBindings.length === 1
+    && directSearchParamsBindings.length === 1
+    && searchParamsBinding === directSearchParamsBindings[0].node
+    && directSearchParamsBindings[0].kind === 'const'
+    && searchParamsBinding.init?.type === 'CallExpression'
+    && searchParamsBinding.init.callee?.type === 'Identifier'
+    && searchParamsBinding.init.callee.name === 'useSearchParams'
+    && searchParamsBinding.init.arguments.length === 0
+  );
+  return {
+    hasDefaultPageFunction,
+    hasNoUseParams: !useParamsFound,
+    hasCanonicalSearchParamsBinding,
+    hasRequiredDefaults: defaults.every(({ name, key, fallback }) => (
+      hasSearchParamDefault(directDeclarators, name, key, fallback)
+    )),
+    episodeIdQueryReads,
+    episodeIdQueryBindings,
+  };
+}
+
+function checkClientContract(pagePath, defaults) {
+  const contract = analyzeClientContract(readFileSync(pagePath, 'utf8'), defaults);
+  assert.ok(contract.hasDefaultPageFunction, `${pagePath} 必须默认导出页面 FunctionDeclaration`);
+  assert.ok(contract.hasNoUseParams, `${pagePath} 不得保留 useParams`);
+  assert.ok(contract.hasCanonicalSearchParamsBinding, `${pagePath} 唯一的 searchParams 必须是页面直接作用域 const searchParams = useSearchParams()`);
+  assert.ok(contract.hasRequiredDefaults, `${pagePath} 必须以完整 const 声明读取要求的默认 URL 参数`);
   if (pagePath.endsWith('/video/ClientPage.js')) {
-    assert.equal(episodeIdQueryReads, 1, `${pagePath} 必须且只能读取一个 episodeId 查询参数`);
-    assert.equal(episodeIdQueryBindings, 1, `${pagePath} 必须且只能声明一个 episodeId 查询参数绑定`);
+    assert.equal(contract.episodeIdQueryReads, 1, `${pagePath} 必须且只能读取一个 episodeId 查询参数`);
+    assert.equal(contract.episodeIdQueryBindings, 1, `${pagePath} 必须且只能声明一个 episodeId 查询参数绑定`);
   } else {
-    assert.equal(episodeIdQueryReads, 0, `${pagePath} 不得读取 episodeId 查询参数`);
-    assert.equal(episodeIdQueryBindings, 0, `${pagePath} 不得声明 episodeId 查询参数绑定`);
+    assert.equal(contract.episodeIdQueryReads, 0, `${pagePath} 不得读取 episodeId 查询参数`);
+    assert.equal(contract.episodeIdQueryBindings, 0, `${pagePath} 不得声明 episodeId 查询参数绑定`);
   }
 }
 
@@ -166,6 +197,17 @@ checkClientContract('src/app/collection/collect/video/ClientPage.js', [
   { name: 'taskId', key: 'taskId', fallback: 'CT-20250301001' },
   { name: 'episodeId', key: 'episodeId', fallback: 'session_028' },
 ]);
+
+const detailClientSource = readFileSync('src/app/collection/collect/detail/ClientPage.js', 'utf8');
+const nestedSearchParamsMutation = detailClientSource.replace(
+  'const searchParams = useSearchParams();',
+  'function bait() { const searchParams = useSearchParams(); }',
+);
+assert.equal(
+  analyzeClientContract(nestedSearchParamsMutation, [{ name: 'taskId', key: 'taskId', fallback: 'CT-20250301001' }]).hasCanonicalSearchParamsBinding,
+  false,
+  '将 searchParams 移入嵌套函数不得通过页面直接作用域契约',
+);
 
 function collectJsSources(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -178,30 +220,32 @@ function collectJsSources(directory) {
 const captureSource = collectJsSources('src/app/collection/collect').join('\n');
 assert.doesNotMatch(captureSource, /\/collection\/collect\/(detail|connection|data|status|video|workspace)\/\$\{/, '采集导航不得保留动态路径模板');
 
-function isExpectedValue(node, expected) {
-  if (expected.type === 'identifier') return node?.type === 'Identifier' && node.name === expected.name;
-  return (
+function valueSignature(node) {
+  if (node?.type === 'Identifier') return node.name;
+  if (
     node?.type === 'MemberExpression'
     && !node.computed
     && node.object?.type === 'Identifier'
-    && node.object.name === expected.object
     && node.property?.type === 'Identifier'
-    && node.property.name === expected.property
-  );
+  ) return `${node.object.name}.${node.property.name}`;
+  if (node?.type === 'StringLiteral') return JSON.stringify(node.value);
+  return `<${node?.type || 'missing'}>`;
 }
 
-function hasExactParams(node, expectedParams) {
-  if (node?.type !== 'ObjectExpression' || node.properties.length !== expectedParams.length) return false;
-  return expectedParams.every(({ key, value }) => node.properties.some((property) => (
-    property.type === 'ObjectProperty'
-    && property.key?.type === 'Identifier'
-    && property.key.name === key
-    && isExpectedValue(property.value, value)
-  )));
+function paramsSignature(node) {
+  if (node?.type !== 'ObjectExpression') return `<${node?.type || 'missing'}>`;
+  return node.properties
+    .map((property) => (
+      property.type === 'ObjectProperty' && property.key?.type === 'Identifier'
+        ? `${property.key.name}=${valueSignature(property.value)}`
+        : `<${property.type}>`
+    ))
+    .sort()
+    .join('&');
 }
 
-function isStaticRouteCall(node, routeName, expectedParams) {
-  return (
+function staticRouteName(node) {
+  if (
     node?.type === 'CallExpression'
     && node.callee?.type === 'Identifier'
     && node.callee.name === 'buildStaticHref'
@@ -209,82 +253,93 @@ function isStaticRouteCall(node, routeName, expectedParams) {
     && node.arguments[0].object?.type === 'Identifier'
     && node.arguments[0].object.name === 'STATIC_ROUTES'
     && node.arguments[0].property?.type === 'Identifier'
-    && node.arguments[0].property.name === routeName
-    && hasExactParams(node.arguments[1], expectedParams)
-  );
+  ) return node.arguments[0].property.name;
+  return null;
 }
 
-function isNavigationSink(node, parent) {
+function navigationSinkType(node, parent, ancestors) {
   if (parent?.type === 'CallExpression' && parent.arguments[0] === node) {
     const callee = parent.callee;
-    return (
-      callee?.type === 'MemberExpression'
-      && !callee.computed
-      && ((callee.object?.type === 'Identifier' && callee.object.name === 'router' && callee.property?.name === 'push')
-        || (callee.object?.type === 'Identifier' && callee.object.name === 'window' && callee.property?.name === 'open'))
-    );
+    if (callee?.type === 'MemberExpression' && !callee.computed) {
+      if (callee.object?.type === 'Identifier' && callee.object.name === 'router' && callee.property?.name === 'push') return 'router.push';
+      if (callee.object?.type === 'Identifier' && callee.object.name === 'window' && callee.property?.name === 'open') return 'window.open';
+    }
   }
-  return (
+  const isBreadcrumbHref = (
     parent?.type === 'ObjectProperty'
     && parent.value === node
     && parent.key?.type === 'Identifier'
     && parent.key.name === 'href'
+    && ancestors.some((ancestor) => ancestor.type === 'JSXOpeningElement' && ancestor.name?.name === 'Breadcrumb')
+    && ancestors.some((ancestor) => ancestor.type === 'JSXAttribute' && ancestor.name?.name === 'items')
   );
+  return isBreadcrumbHref ? 'breadcrumb.href' : null;
 }
 
-function hasStaticRouteNavigation(source, routeName, expectedParams) {
+function collectStaticRouteNavigations(source) {
   const ast = babelParser.parse(source, { sourceType: 'module', plugins: ['jsx'] });
-  let found = false;
-  walk(ast, (node, parent) => {
-    if (isStaticRouteCall(node, routeName, expectedParams) && isNavigationSink(node, parent)) found = true;
+  const records = [];
+  walkWithAncestors(ast, (node, ancestors) => {
+    const routeName = staticRouteName(node);
+    const parent = ancestors.at(-1);
+    const sink = navigationSinkType(node, parent, ancestors);
+    if (routeName && sink) records.push({ routeName, sink, params: paramsSignature(node.arguments[1]) });
   });
-  return found;
+  return records;
 }
 
-const routeExpectations = [
-  ['src/app/collection/collect/page.js', 'collectDetail', [{ key: 'taskId', value: { type: 'member', object: 'record', property: 'taskId' } }]],
-  ['src/app/collection/collect/page.js', 'collectWorkspace', [{ key: 'taskId', value: { type: 'member', object: 'record', property: 'taskId' } }]],
-  ['src/app/collection/collect/detail/ClientPage.js', 'collectVideo', [
-    { key: 'taskId', value: { type: 'identifier', name: 'taskId' } },
-    { key: 'episodeId', value: { type: 'identifier', name: 'epId' } },
-  ]],
-  ['src/app/collection/collect/detail/ClientPage.js', 'collectData', [{ key: 'taskId', value: { type: 'identifier', name: 'taskId' } }]],
-  ['src/app/collection/collect/detail/ClientPage.js', 'collectConnection', [{ key: 'taskId', value: { type: 'identifier', name: 'taskId' } }]],
-  ['src/app/collection/collect/detail/ClientPage.js', 'qaDetail', [{ key: 'id', value: { type: 'identifier', name: 'text' } }]],
-  ['src/app/collection/collect/detail/ClientPage.js', 'qaDetail', [{ key: 'id', value: { type: 'member', object: 'record', property: 'qaBatch' } }]],
-  ['src/app/collection/collect/connection/ClientPage.js', 'collectWorkspace', [{ key: 'taskId', value: { type: 'identifier', name: 'taskId' } }]],
-  ['src/app/collection/collect/status/ClientPage.js', 'collectConnection', [{ key: 'taskId', value: { type: 'identifier', name: 'taskId' } }]],
-  ['src/app/collection/collect/status/ClientPage.js', 'collectWorkspace', [{ key: 'taskId', value: { type: 'identifier', name: 'taskId' } }]],
-  ['src/app/collection/collect/video/ClientPage.js', 'collectDetail', [{ key: 'taskId', value: { type: 'identifier', name: 'taskId' } }]],
-  ['src/app/collection/collect/video/ClientPage.js', 'collectData', [{ key: 'taskId', value: { type: 'identifier', name: 'taskId' } }]],
-];
+function navigationMultiset(records) {
+  return records.map(({ routeName, sink, params }) => `${routeName}|${sink}|${params}`).sort();
+}
 
-for (const [pagePath, routeName, expectedParams] of routeExpectations) {
-  const source = readFileSync(pagePath, 'utf8');
-  assert.ok(
-    hasStaticRouteNavigation(source, routeName, expectedParams),
-    `${pagePath} 必须以要求的查询参数调用 buildStaticHref(STATIC_ROUTES.${routeName}, ...)`,
+const routeExpectations = new Map([
+  ['src/app/collection/collect/page.js', [
+    'collectDetail|router.push|taskId=record.taskId',
+    'collectWorkspace|window.open|taskId=record.taskId',
+  ]],
+  ['src/app/collection/collect/detail/ClientPage.js', [
+    'collectVideo|window.open|episodeId=epId&taskId=taskId',
+    'collectData|window.open|taskId=taskId',
+    'collectConnection|window.open|taskId=taskId',
+    'qaDetail|router.push|id=text',
+    'qaDetail|router.push|id=record.qaBatch',
+  ]],
+  ['src/app/collection/collect/connection/ClientPage.js', ['collectWorkspace|router.push|taskId=taskId']],
+  ['src/app/collection/collect/status/ClientPage.js', [
+    'collectConnection|router.push|taskId=taskId',
+    'collectWorkspace|window.open|taskId=taskId',
+  ]],
+  ['src/app/collection/collect/video/ClientPage.js', [
+    'collectDetail|breadcrumb.href|taskId=taskId',
+    'collectData|window.open|taskId=taskId',
+  ]],
+  ['src/app/collection/collect/data/ClientPage.js', []],
+  ['src/app/collection/collect/workspace/ClientPage.js', []],
+]);
+
+for (const [pagePath, expected] of routeExpectations) {
+  assert.deepEqual(
+    navigationMultiset(collectStaticRouteNavigations(readFileSync(pagePath, 'utf8'))),
+    [...expected].sort(),
+    `${pagePath} 的受管静态导航必须与完整契约完全一致`,
   );
 }
 
 const listSource = readFileSync('src/app/collection/collect/page.js', 'utf8');
-const extraEpisodeIdMutation = listSource.replace(
-  'buildStaticHref(STATIC_ROUTES.collectDetail, { taskId: record.taskId })',
-  'buildStaticHref(STATIC_ROUTES.collectDetail, { taskId: record.taskId, episodeId: \'bait\' })',
+const extraNavigationMutation = `${listSource}
+router.push(buildStaticHref(STATIC_ROUTES.collectData, { taskId, episodeId: 'bait' }));`;
+assert.notDeepEqual(
+  navigationMultiset(collectStaticRouteNavigations(extraNavigationMutation)),
+  [...routeExpectations.get('src/app/collection/collect/page.js')].sort(),
+  '额外的真实静态导航不得通过整页多重集契约',
 );
-assert.equal(
-  hasStaticRouteNavigation(extraEpisodeIdMutation, 'collectDetail', [{ key: 'taskId', value: { type: 'member', object: 'record', property: 'taskId' } }]),
-  false,
-  '额外 episodeId 参数不得通过精确参数导航契约',
-);
-assert.equal(
-  hasStaticRouteNavigation(
-    'const unused = buildStaticHref(STATIC_ROUTES.collectDetail, { taskId: record.taskId });',
-    'collectDetail',
-    [{ key: 'taskId', value: { type: 'member', object: 'record', property: 'taskId' } }],
-  ),
-  false,
-  '孤立未使用的 buildStaticHref 调用不得视为导航',
+assert.deepEqual(
+  navigationMultiset(collectStaticRouteNavigations(`
+    const unused = buildStaticHref(STATIC_ROUTES.collectDetail, { taskId: record.taskId });
+    const unusedHref = { href: buildStaticHref(STATIC_ROUTES.collectData, { taskId: record.taskId }) };
+  `)),
+  [],
+  '孤立 helper 与未使用对象 href 不得视为导航',
 );
 
 const workspaceSource = readFileSync('src/app/collection/collect/workspace/ClientPage.js', 'utf8');
