@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import babelParser from 'next/dist/compiled/babel/parser.js';
 import path from 'node:path';
 
 const fixedPages = [
@@ -49,44 +50,124 @@ for (const pagePath of clientPages) {
   assert.match(readFileSync(pagePath, 'utf8'), /^['\"]use client['\"];/, `${pagePath} 必须是 Client Component`);
 }
 
-const detailClientSource = readFileSync('src/app/annotation/audit/detail/ClientPage.js', 'utf8');
-assert.match(
-  detailClientSource,
-  /const instanceId = searchParams\.get\('id'\) \|\| '19884';/,
-  '审核详情必须为 id 提供 19884 默认值',
-);
+function walk(node, visitor, parent = null) {
+  if (!node || typeof node !== 'object') return;
+  if (Array.isArray(node)) {
+    for (const item of node) walk(item, visitor, parent);
+    return;
+  }
+  if (typeof node.type === 'string') visitor(node, parent);
+  for (const [key, value] of Object.entries(node)) {
+    if (key !== 'loc' && key !== 'start' && key !== 'end' && key !== 'extra') {
+      walk(value, visitor, node);
+    }
+  }
+}
 
-const workbenchClientSource = readFileSync('src/app/annotation/audit/workbench/ClientPage.js', 'utf8');
-assert.match(
-  workbenchClientSource,
-  /const instanceId = searchParams\.get\('id'\) \|\| '19884';/,
-  '审核工作台必须为 id 提供 19884 默认值',
-);
-assert.match(
-  workbenchClientSource,
-  /const episodeId = searchParams\.get\('episodeId'\) \|\| '744108';/,
-  '审核工作台必须为 episodeId 提供 744108 默认值',
-);
+function isStringLiteral(node, value) {
+  return node?.type === 'StringLiteral' && node.value === value;
+}
 
-const editorClientSource = readFileSync('src/app/annotation/editor/ClientPage.js', 'utf8');
-assert.match(
-  editorClientSource,
-  /const type = searchParams\.get\('type'\) \|\| 'range';/,
-  '标注编辑器必须为 type 提供 range 默认值',
-);
-
-for (const [pagePath, source] of [
-  ['src/app/annotation/audit/detail/ClientPage.js', detailClientSource],
-  ['src/app/annotation/audit/workbench/ClientPage.js', workbenchClientSource],
-  ['src/app/annotation/editor/ClientPage.js', editorClientSource],
-]) {
-  assert.doesNotMatch(source, /\buseParams\b/, `${pagePath} 不得保留 useParams import 或调用`);
-  assert.equal(
-    (source.match(/const searchParams = useSearchParams\(\);/g) || []).length,
-    1,
-    `${pagePath} 必须且只能声明一个 searchParams`,
+function isSearchParamDefault(initializer, key, fallback) {
+  if (initializer?.type !== 'LogicalExpression' || initializer.operator !== '||') return false;
+  const getCall = initializer.left;
+  return (
+    getCall?.type === 'CallExpression'
+    && getCall.callee?.type === 'MemberExpression'
+    && !getCall.callee.computed
+    && getCall.callee.object?.type === 'Identifier'
+    && getCall.callee.object.name === 'searchParams'
+    && getCall.callee.property?.type === 'Identifier'
+    && getCall.callee.property.name === 'get'
+    && getCall.arguments.length === 1
+    && isStringLiteral(getCall.arguments[0], key)
+    && isStringLiteral(initializer.right, fallback)
   );
 }
+
+function checkClientRouteContract(source, defaults) {
+  const ast = babelParser.parse(source, { sourceType: 'module', plugins: ['jsx'] });
+  const declarations = [];
+  let searchParamsBindingCount = 0;
+  let hasUseParamsIdentifier = false;
+
+  walk(ast, (node, parent) => {
+    if (node.type === 'VariableDeclarator') {
+      declarations.push({ node, kind: parent?.type === 'VariableDeclaration' ? parent.kind : null });
+      if (
+        parent?.type === 'VariableDeclaration'
+        && parent.kind === 'const'
+        && node.id?.type === 'Identifier'
+        && node.id.name === 'searchParams'
+        && node.init?.type === 'CallExpression'
+        && node.init.callee?.type === 'Identifier'
+        && node.init.callee.name === 'useSearchParams'
+        && node.init.arguments.length === 0
+      ) {
+        searchParamsBindingCount += 1;
+      }
+    }
+    if (node.type === 'Identifier' && node.name === 'useParams') hasUseParamsIdentifier = true;
+  });
+
+  return {
+    hasRequiredDefaults: defaults.every(({ name, key, fallback }) => declarations.some(({ node, kind }) => (
+      kind === 'const'
+      && node.id?.type === 'Identifier'
+      && node.id.name === name
+      && isSearchParamDefault(node.init, key, fallback)
+    ))),
+    hasOneSearchParamsBinding: searchParamsBindingCount === 1,
+    hasNoUseParams: !hasUseParamsIdentifier,
+  };
+}
+
+function assertClientRouteContract(pagePath, source, defaults) {
+  const contract = checkClientRouteContract(source, defaults);
+  assert.ok(contract.hasRequiredDefaults, `${pagePath} 必须以完整 const 声明读取要求的默认 URL 参数`);
+  assert.ok(contract.hasOneSearchParamsBinding, `${pagePath} 必须且只能声明一个 const searchParams = useSearchParams()`);
+  assert.ok(contract.hasNoUseParams, `${pagePath} 不得保留真实 useParams import、调用或标识符`);
+}
+
+const detailClientSource = readFileSync('src/app/annotation/audit/detail/ClientPage.js', 'utf8');
+const workbenchClientSource = readFileSync('src/app/annotation/audit/workbench/ClientPage.js', 'utf8');
+const editorClientSource = readFileSync('src/app/annotation/editor/ClientPage.js', 'utf8');
+const detailDefaults = [{ name: 'instanceId', key: 'id', fallback: '19884' }];
+const workbenchDefaults = [
+  { name: 'instanceId', key: 'id', fallback: '19884' },
+  { name: 'episodeId', key: 'episodeId', fallback: '744108' },
+];
+const editorDefaults = [{ name: 'type', key: 'type', fallback: 'range' }];
+
+assertClientRouteContract('src/app/annotation/audit/detail/ClientPage.js', detailClientSource, detailDefaults);
+assertClientRouteContract('src/app/annotation/audit/workbench/ClientPage.js', workbenchClientSource, workbenchDefaults);
+assertClientRouteContract('src/app/annotation/editor/ClientPage.js', editorClientSource, editorDefaults);
+
+const incorrectDefaultWithComment = `${detailClientSource.replace(
+  "const instanceId = searchParams.get('id') || '19884';",
+  "const instanceId = searchParams.get('id') || 'wrong-default';",
+)}\n// const instanceId = searchParams.get('id') || '19884';`;
+assert.equal(
+  checkClientRouteContract(incorrectDefaultWithComment, detailDefaults).hasRequiredDefaults,
+  false,
+  '真实默认值改错后，注释中的 canonical 声明不得通过',
+);
+
+const renamedBindingWithComment = `${workbenchClientSource.replace(
+  "const episodeId = searchParams.get('episodeId') || '744108';",
+  "const currentEpisodeId = searchParams.get('episodeId') || '744108';",
+)}\n// const episodeId = searchParams.get('episodeId') || '744108';`;
+assert.equal(
+  checkClientRouteContract(renamedBindingWithComment, workbenchDefaults).hasRequiredDefaults,
+  false,
+  '真实绑定改名后，注释中的 canonical 声明不得通过',
+);
+
+assert.deepEqual(
+  checkClientRouteContract(`${editorClientSource}\n// migrated away from useParams`, editorDefaults),
+  checkClientRouteContract(editorClientSource, editorDefaults),
+  '仅添加 useParams 文本注释不得改变 AST 路由契约',
+);
 
 function normalizeSource(source) {
   return source.replace(/\s+/g, ' ').trim();
