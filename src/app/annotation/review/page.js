@@ -34,6 +34,7 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { AppModal, StatusTag, TableToolbarActions } from '@/components/ui';
+import { buildStaticHref } from '@/lib/staticRoutes';
 
 const { Text } = Typography;
 
@@ -321,7 +322,10 @@ export default function ReviewPage() {
             size="small"
             icon={<LoginOutlined />}
             style={{ padding: 0, fontWeight: 600 }}
-            onClick={() => router.push(`/annotation/review-list?instanceId=${r.instanceId}&taskName=${encodeURIComponent(r.taskName)}`)}
+            onClick={() => router.push(buildStaticHref('/annotation/review-list', {
+              instanceId: r.instanceId,
+              taskName: r.taskName,
+            }))}
           >
             进入
           </Button>

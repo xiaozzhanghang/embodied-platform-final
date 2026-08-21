@@ -28,6 +28,7 @@ import {
 import { ProFormSelect, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import { AppModal, FilterPanel, PageHeader, QueryFilterBar, StatusTag, TableToolbar, TableToolbarActions } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -454,7 +455,7 @@ export default function AnnotationAuditPage() {
             size="small"
             icon={<LoginOutlined />}
             style={{ padding: 0, fontWeight: 600 }}
-            onClick={() => router.push(`/annotation/audit/${r.instanceId}`)}
+            onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditDetail, { id: r.instanceId }))}
           >
             进入
           </Button>

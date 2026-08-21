@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Tag, Space, Typography, App, Badge, Divider, Select, 
   Input, Row, Col, Progress, Switch, Tooltip, Radio, Card, List, Form, Modal, Checkbox, InputNumber, Slider
@@ -21,18 +21,18 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { AppModal, StatusTag } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Text, Paragraph } = Typography;
 const { Option } = Select;
 
 export default function AnnotationAuditWorkspacePage() {
   const router = useRouter();
-  const params = useParams();
   const searchParams = useSearchParams();
   const { message } = App.useApp();
 
-  const instanceId = params.id;
-  const episodeId = params.episodeId;
+  const instanceId = searchParams.get('id') || '19884';
+  const episodeId = searchParams.get('episodeId') || '744108';
 
   // Retrieve current annotation type and mode from URL
   const [annoType, setAnnoType] = useState('范围标注');
@@ -81,12 +81,17 @@ useEffect(() => {
     if (nextEp) {
       message.success(`标注完成！自动跳转到下一条数据 #${nextEp.id}...`);
       setTimeout(() => {
-        router.push(`/annotation/audit/${instanceId}/${nextEp.id}?type=${encodeURIComponent(nextEp.annoType)}&mode=annotate`);
+        router.push(buildStaticHref(STATIC_ROUTES.auditWorkbench, {
+          id: instanceId,
+          episodeId: nextEp.id,
+          type: nextEp.annoType,
+          mode: 'annotate',
+        }));
       }, 600);
     } else {
       message.success('所有数据标注完成！返回列表页');
       setTimeout(() => {
-        router.push(`/annotation/audit/${instanceId}?tab=annotated`);
+        router.push(buildStaticHref(STATIC_ROUTES.auditDetail, { id: instanceId, tab: 'annotated' }));
       }, 600);
     }
   };
@@ -98,12 +103,17 @@ useEffect(() => {
     if (nextEp) {
       message.success(`✅ 质检通过！自动跳转到下一条数据 #${nextEp.id}...`);
       setTimeout(() => {
-        router.push(`/annotation/audit/${instanceId}/${nextEp.id}?type=${encodeURIComponent(nextEp.annoType)}&mode=audit`);
+        router.push(buildStaticHref(STATIC_ROUTES.auditWorkbench, {
+          id: instanceId,
+          episodeId: nextEp.id,
+          type: nextEp.annoType,
+          mode: 'audit',
+        }));
       }, 600);
     } else {
       message.success('✅ 该数据包全部数据质检完成！返回质检列表');
       setTimeout(() => {
-        router.push(`/collection/qa/${instanceId}`);
+        router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { instanceId }));
       }, 600);
     }
   };
@@ -127,12 +137,17 @@ useEffect(() => {
     if (nextEp) {
       message.warning(`❌ 审核不通过（理由：${finalReason}），已打回标注员重新标注！跳转到下一条 #${nextEp.id}...`);
       setTimeout(() => {
-        router.push(`/annotation/audit/${instanceId}/${nextEp.id}?type=${encodeURIComponent(nextEp.annoType)}&mode=audit`);
+        router.push(buildStaticHref(STATIC_ROUTES.auditWorkbench, {
+          id: instanceId,
+          episodeId: nextEp.id,
+          type: nextEp.annoType,
+          mode: 'audit',
+        }));
       }, 600);
     } else {
       message.warning(`❌ 审核不通过（理由：${finalReason}），已打回标注员重新标注！返回审核列表`);
       setTimeout(() => {
-        router.push(`/annotation/review-list?instanceId=${instanceId}`);
+        router.push(buildStaticHref('/annotation/review-list', { instanceId }));
       }, 600);
     }
   };
@@ -1164,7 +1179,7 @@ useEffect(() => {
             <Tooltip title="快捷键帮助">
               <BulbOutlined style={{ color: '#eab308', cursor: 'pointer' }} />
             </Tooltip>
-            <CloseOutlined style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => router.push(`/annotation/audit/${instanceId}`)} />
+            <CloseOutlined style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditDetail, { id: instanceId }))} />
           </Space>
         </div>
 
@@ -2292,7 +2307,12 @@ useEffect(() => {
               type="primary" 
               ghost 
               icon={<ThunderboltOutlined style={{ color: '#ca8a04' }} />} 
-              onClick={() => router.push(`/annotation/workbench-solutions?instanceId=${instanceId || '19884'}&episodeId=${episodeId || '744108'}&type=${encodeURIComponent(annoType)}&mode=${workMode}`)}
+              onClick={() => router.push(buildStaticHref('/annotation/workbench-solutions', {
+                instanceId,
+                episodeId,
+                type: annoType,
+                mode: workMode,
+              }))}
               style={{ fontSize: 11, borderColor: '#ca8a04', color: '#854d0e', background: '#fefce8' }}
             >
               长视频循环标注3套方案
@@ -2302,7 +2322,7 @@ useEffect(() => {
             <Space size={12}>
               <Button type="text" size="small" icon={<SlidersOutlined />} style={{ color: '#64748b' }} />
               <Button type="text" size="small" icon={<SettingOutlined />} style={{ color: '#64748b' }} />
-              <Button type="text" size="small" icon={<CloseOutlined />} onClick={() => router.push(`/annotation/audit/${instanceId}`)} style={{ color: '#64748b' }} />
+              <Button type="text" size="small" icon={<CloseOutlined />} onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditDetail, { id: instanceId }))} style={{ color: '#64748b' }} />
             </Space>
           </Space>
         </div>

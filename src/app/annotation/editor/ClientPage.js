@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Tag, Space, Card, Typography, Row, Col, List, Badge, Input, Table, Divider, App, Tooltip, Radio } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined, PlayCircleOutlined, PauseCircleOutlined, 
          BorderOutlined, AimOutlined, HistoryOutlined, SettingOutlined, SwapOutlined } from '@ant-design/icons';
@@ -17,15 +17,16 @@ const mockSopSteps = [
 ];
 
 export default function AnnotationEditorPage() {
-  const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { message } = App.useApp();
   const [activeStep, setActiveStep] = useState(1);
   const [isCrossStep, setIsCrossStep] = useState(false);
 
-  const isBoxType = params.type === 'box' || params.type === 'range-box';
-  const isPointType = params.type === 'point';
-  const isRangeType = params.type === 'range' || params.type === 'range-box';
+  const type = searchParams.get('type') || 'range';
+  const isBoxType = type === 'box' || type === 'range-box';
+  const isPointType = type === 'point';
+  const isRangeType = type === 'range' || type === 'range-box';
 
   return (
     <div className="ui-workspace" style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#000' }}>
@@ -33,7 +34,7 @@ export default function AnnotationEditorPage() {
       <div style={{ height: 50, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#141414', borderBottom: '1px solid #333' }}>
         <Space>
           <Button type="text" icon={<ArrowLeftOutlined style={{color: '#fff'}} />} onClick={() => router.back()} />
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: 600 }}>标注编辑器 - {params.type?.toUpperCase()}</Text>
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: 600 }}>标注编辑器 - {type.toUpperCase()}</Text>
           <StatusTag status="进行中">标注中</StatusTag>
         </Space>
         <Space>

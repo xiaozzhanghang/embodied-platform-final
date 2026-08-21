@@ -6,6 +6,7 @@ import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select,
 import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, AuditOutlined, CloseCircleOutlined, DeleteOutlined, FileSearchOutlined, AimOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { PageHeader, StatusTag, TableToolbarActions } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 
@@ -415,7 +416,6 @@ export default function QaDetailPage() {
     {
       title: '操作', key: 'action', width: 140, fixed: 'right',
       render: (_, r) => {
-        const typeParam = encodeURIComponent(r.annoType);
         return (
           <Space size="middle">
             <Button 
@@ -423,7 +423,12 @@ export default function QaDetailPage() {
               size="small" 
               icon={<FileSearchOutlined />}
               style={{ padding: 0 }}
-              onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=audit`)}
+              onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditWorkbench, {
+                id: instanceId,
+                episodeId: r.id,
+                type: r.annoType,
+                mode: 'audit',
+              }))}
             >
               质检
             </Button>

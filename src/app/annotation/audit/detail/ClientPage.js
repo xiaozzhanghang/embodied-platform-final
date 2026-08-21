@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Radio, Progress, List, Upload, InputNumber } from 'antd';
 import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import { PageHeader, StatusTag, TableToolbarActions } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -33,9 +34,8 @@ const auditStatusConfig = {
 
 export default function AnnotationAuditEpisodeListPage() {
   const router = useRouter();
-  const params = useParams();
-  const instanceId = params.id;
   const searchParams = useSearchParams();
+  const instanceId = searchParams.get('id') || '19884';
   const [activeAnnoTab, setActiveAnnoTab] = useState('unannotated');
   const [tableDensity, setTableDensity] = useState('middle');
   const [hiddenColumns, setHiddenColumns] = useState([]);
@@ -496,7 +496,6 @@ export default function AnnotationAuditEpisodeListPage() {
     {
       title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_, r) => {
-        const typeParam = encodeURIComponent(r.annoType);
         return (
           <Space size={4}>
             <Button 
@@ -505,7 +504,12 @@ export default function AnnotationAuditEpisodeListPage() {
               icon={<EditOutlined />}
               style={{ padding: '0 4px', fontWeight: 600 }}
               disabled={r.annoStatus === '已标注' || r.annoStatus === '待校验' || activeAnnoTab === 'to_verify'}
-              onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=annotate`)}
+              onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditWorkbench, {
+                id: instanceId,
+                episodeId: r.id,
+                type: r.annoType,
+                mode: 'annotate',
+              }))}
             >
               标注
             </Button>
@@ -514,7 +518,12 @@ export default function AnnotationAuditEpisodeListPage() {
               size="small" 
               icon={<EyeOutlined />}
               style={{ padding: '0 4px' }}
-              onClick={() => router.push(`/annotation/audit/${instanceId}/${r.id}?type=${typeParam}&mode=view`)}
+              onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditWorkbench, {
+                id: instanceId,
+                episodeId: r.id,
+                type: r.annoType,
+                mode: 'view',
+              }))}
             >
               查看
             </Button>
