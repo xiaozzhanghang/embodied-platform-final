@@ -87,45 +87,57 @@ function isSearchParamDefault(initializer, key, fallback) {
 
 function checkClientRouteContract(source, defaults) {
   const ast = babelParser.parse(source, { sourceType: 'module', plugins: ['jsx'] });
-  const declarations = [];
-  let searchParamsBindingCount = 0;
+  const defaultExports = ast.program.body.filter((node) => node.type === 'ExportDefaultDeclaration');
+  const pageFunction = defaultExports.length === 1 ? defaultExports[0].declaration : null;
+  const hasDefaultPageFunction = pageFunction?.type === 'FunctionDeclaration';
+  const pageDeclarations = hasDefaultPageFunction
+    ? pageFunction.body.body
+      .filter((node) => node.type === 'VariableDeclaration')
+      .flatMap((declaration) => declaration.declarations.map((node) => ({ node, kind: declaration.kind })))
+    : [];
+  const allSearchParamsBindings = [];
   let hasUseParamsIdentifier = false;
 
-  walk(ast, (node, parent) => {
+  walk(ast, (node) => {
     if (node.type === 'VariableDeclarator') {
-      declarations.push({ node, kind: parent?.type === 'VariableDeclaration' ? parent.kind : null });
-      if (
-        parent?.type === 'VariableDeclaration'
-        && parent.kind === 'const'
-        && node.id?.type === 'Identifier'
-        && node.id.name === 'searchParams'
-        && node.init?.type === 'CallExpression'
-        && node.init.callee?.type === 'Identifier'
-        && node.init.callee.name === 'useSearchParams'
-        && node.init.arguments.length === 0
-      ) {
-        searchParamsBindingCount += 1;
-      }
+      if (node.id?.type === 'Identifier' && node.id.name === 'searchParams') allSearchParamsBindings.push(node);
     }
     if (node.type === 'Identifier' && node.name === 'useParams') hasUseParamsIdentifier = true;
   });
 
+  const [searchParamsBinding] = allSearchParamsBindings;
+  const hasTopLevelSearchParamsBinding = (
+    allSearchParamsBindings.length === 1
+    && pageDeclarations.some(({ node, kind }) => (
+      node === searchParamsBinding
+      && kind === 'const'
+      && node.init?.type === 'CallExpression'
+      && node.init.callee?.type === 'Identifier'
+      && node.init.callee.name === 'useSearchParams'
+      && node.init.arguments.length === 0
+    ))
+  );
+
   return {
-    hasRequiredDefaults: defaults.every(({ name, key, fallback }) => declarations.some(({ node, kind }) => (
+    hasDefaultPageFunction,
+    hasRequiredDefaults: defaults.every(({ name, key, fallback }) => pageDeclarations.some(({ node, kind }) => (
       kind === 'const'
       && node.id?.type === 'Identifier'
       && node.id.name === name
       && isSearchParamDefault(node.init, key, fallback)
     ))),
-    hasOneSearchParamsBinding: searchParamsBindingCount === 1,
+    hasOneSearchParamsBinding: allSearchParamsBindings.length === 1,
+    hasTopLevelSearchParamsBinding,
     hasNoUseParams: !hasUseParamsIdentifier,
   };
 }
 
 function assertClientRouteContract(pagePath, source, defaults) {
   const contract = checkClientRouteContract(source, defaults);
+  assert.ok(contract.hasDefaultPageFunction, `${pagePath} 必须只默认导出一个页面 FunctionDeclaration`);
   assert.ok(contract.hasRequiredDefaults, `${pagePath} 必须以完整 const 声明读取要求的默认 URL 参数`);
-  assert.ok(contract.hasOneSearchParamsBinding, `${pagePath} 必须且只能声明一个 const searchParams = useSearchParams()`);
+  assert.ok(contract.hasOneSearchParamsBinding, `${pagePath} 的全 AST 只能有一个 searchParams 绑定`);
+  assert.ok(contract.hasTopLevelSearchParamsBinding, `${pagePath} 的唯一 searchParams 必须是页面顶层 const searchParams = useSearchParams()`);
   assert.ok(contract.hasNoUseParams, `${pagePath} 不得保留真实 useParams import、调用或标识符`);
 }
 
@@ -167,6 +179,23 @@ assert.deepEqual(
   checkClientRouteContract(`${editorClientSource}\n// migrated away from useParams`, editorDefaults),
   checkClientRouteContract(editorClientSource, editorDefaults),
   '仅添加 useParams 文本注释不得改变 AST 路由契约',
+);
+
+assert.equal(
+  checkClientRouteContract(`${detailClientSource}\nfunction bait() { const searchParams = getOtherParams(); }`, detailDefaults)
+    .hasOneSearchParamsBinding,
+  false,
+  '未使用函数中的 searchParams 绑定不得绕过全 AST 唯一性契约',
+);
+
+const nestedCanonicalDefaultBait = `${detailClientSource.replace(
+  "const instanceId = searchParams.get('id') || '19884';",
+  "const instanceId = searchParams.get('id') || 'wrong-default';",
+)}\nfunction bait() { const instanceId = searchParams.get('id') || '19884'; }`;
+assert.equal(
+  checkClientRouteContract(nestedCanonicalDefaultBait, detailDefaults).hasRequiredDefaults,
+  false,
+  '页面真实默认值改错后，嵌套函数中的 canonical 默认声明不得通过',
 );
 
 function normalizeSource(source) {
