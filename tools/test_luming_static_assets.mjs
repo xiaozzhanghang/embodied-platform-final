@@ -288,31 +288,44 @@ function isPrivateIpv4(candidate) {
 
 function fixtureSafetyReasons(content) {
   const reasons = [];
-  if (/(?:^|[\s"'=])(?:\/Users\/|\/home\/|\/private\/|[A-Za-z]:\\)/m.test(content)) reasons.push('absolute user/private path');
+  if (/(?:^|[\s"'=])(?:\/Users\/|\/home\/|\/private\/|\/var\/|\/tmp\/|\/Volumes\/|[A-Za-z]:\\)/m.test(content)) reasons.push('absolute user/private path');
+  if (/(?:^|[\s"'=])\\\\[^\\\s]+\\[^\\\s]+/m.test(content)) reasons.push('UNC path');
   const ipv4Candidates = content.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || [];
   if (ipv4Candidates.some(isPrivateIpv4)) reasons.push('private IPv4 address');
   if (/(?:^|[^0-9a-f])(?:fc[0-9a-f]{2}|fd[0-9a-f]{2}|fe(?:8|9|a|b)[0-9a-f]):[0-9a-f:]+/i.test(content)) reasons.push('private/link-local IPv6 address');
   if (/\bAuthorization\s*:\s*Basic\s+[A-Za-z0-9+/=]+/i.test(content) || /\bBasic\s+[A-Za-z0-9+/]{8,}={0,2}\b/.test(content)) reasons.push('Basic authorization');
-  if (/\b(?:username|user_name|login_user)\s*[=:]\s*[^\s,;]+/i.test(content)) reasons.push('username');
-  if (/\b(?:password|passwd|credential|api[_-]?key|secret|bearer|token)\b\s*[=:]?\s*[^\s,;]*/i.test(content)) reasons.push('credential-like value');
+  if (/\bAuthorization\s*:\s*Bearer\s+\S+/i.test(content) || /\bBearer\s+[A-Za-z0-9._~+/-]{8,}/i.test(content)) reasons.push('Bearer authorization');
+  if (/\b(?:username|user_name|login_user|user)\s*[=:]\s*[^\s,;]+/i.test(content)) reasons.push('username');
+  if (/\b(?:password|passwd|credential|api[_-]?key|client[_-]?secret|access[_-]?token|refresh[_-]?token|secret|token)\b\s*[=:]\s*[^\s,;]+/i.test(content)) reasons.push('credential-like value');
   if (/\b(?:serial(?:_number)?|device[_-]?sn|sn)\s*[=:]\s*[A-Za-z0-9_-]{6,}\b/i.test(content)) reasons.push('device serial number');
   if (/\b\d{6}[A-Z]{2}\d{8,}\b/.test(content)) reasons.push('unlabelled device serial number');
+  if (/\b(?=[A-Z0-9]{16,}\b)(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*\d)[A-Z0-9]+\b/.test(content)) reasons.push('high-entropy device serial number');
   return reasons;
 }
 
 for (const unsafeProbe of [
   '/private/var/demo/session',
+  '/var/log/demo.log',
+  '/tmp/demo-session',
+  '/Volumes/Collection/session',
+  '\\\\server\\share',
   'username=alice',
+  'user=alice',
   'peer=fd00::1',
   'peer=fc00::1',
   'peer=fe80::1',
   'Authorization: Basic dXNlcjpwYXNz',
+  'Authorization: Bearer abcdefghijklmnop',
+  'client_secret=demo-secret-value',
+  'access_token=demo-access-token',
+  'refresh_token=demo-refresh-token',
   'serial_number=ABC123456',
   'device_sn=SN987654',
+  'R002FBBCBABA0066',
 ]) {
   check(fixtureSafetyReasons(unsafeProbe).length > 0, `fixture safety probe must be rejected: ${unsafeProbe}`);
 }
-for (const safeProbe of ['10.999.999.999', 'secretary']) {
+for (const safeProbe of ['10.999.999.999', 'secretary', 'top secret recipe', 'ordinary robot demo prose']) {
   check(fixtureSafetyReasons(safeProbe).length === 0, `fixture safety probe must not be a false positive: ${safeProbe}`);
 }
 
@@ -513,18 +526,176 @@ function analyzeDataLoadingContract(source) {
   };
 }
 
+function failedKeyIncludes(node, key) {
+  let found = false;
+  walk(node, (candidate) => {
+    if (
+      candidate.type === 'CallExpression'
+      && candidate.callee?.type === 'MemberExpression'
+      && candidate.callee.object?.type === 'Identifier'
+      && candidate.callee.object.name === 'failedRealDataKeys'
+      && memberName(candidate.callee) === 'includes'
+      && candidate.arguments[0]?.type === 'StringLiteral'
+      && candidate.arguments[0].value === key
+    ) found = true;
+  });
+  return found;
+}
+
+function analyzeDataUnavailableContract(source) {
+  const ast = parse(source);
+  let hasFailedKeyState = false;
+  let loadingEffect = null;
+  let getSvgPathFunction = null;
+  let getKinematicsDataFunction = null;
+  let reportUnavailableBranch = false;
+  let passBadgeGuardedByReportAvailability = false;
+  let allSettledCall = null;
+
+  walk(ast, (node) => {
+    if (
+      node.type === 'VariableDeclarator'
+      && node.id?.type === 'ArrayPattern'
+      && node.id.elements[0]?.name === 'failedRealDataKeys'
+      && node.id.elements[1]?.name === 'setFailedRealDataKeys'
+      && node.init?.type === 'CallExpression'
+      && node.init.callee?.name === 'useState'
+      && node.init.arguments[0]?.type === 'ArrayExpression'
+      && node.init.arguments[0].elements.length === 0
+    ) hasFailedKeyState = true;
+    if (node.type === 'VariableDeclarator' && node.id?.name === 'getSvgPath' && node.init?.type === 'ArrowFunctionExpression') getSvgPathFunction = node.init;
+    if (node.type === 'VariableDeclarator' && node.id?.name === 'getKinematicsData' && node.init?.type === 'ArrowFunctionExpression') getKinematicsDataFunction = node.init;
+    if (
+      node.type === 'CallExpression'
+      && node.callee?.type === 'MemberExpression'
+      && node.callee.object?.name === 'Promise'
+      && memberName(node.callee) === 'allSettled'
+    ) allSettledCall = node;
+    if (node.type === 'ConditionalExpression' && failedKeyIncludes(node.test, 'report')) {
+      let unavailableAlert = false;
+      let successfulReportTable = false;
+      walk(node.consequent, (candidate) => {
+        if (candidate.type === 'JSXElement' && candidate.openingElement.name?.name === 'Alert' && source.slice(candidate.start, candidate.end).includes('质检报告不可用')) unavailableAlert = true;
+      });
+      walk(node.alternate, (candidate) => {
+        if (candidate.type === 'JSXOpeningElement' && candidate.name?.name === 'Table') {
+          const dataSource = candidate.attributes.find((attribute) => attribute.type === 'JSXAttribute' && attribute.name.name === 'dataSource');
+          if (dataSource?.value?.type === 'JSXExpressionContainer' && containsCall(dataSource.value.expression, 'getKinematicsData')) successfulReportTable = true;
+        }
+      });
+      if (unavailableAlert && successfulReportTable) reportUnavailableBranch = true;
+    }
+  });
+
+  walkWithAncestors(ast, (node, ancestors) => {
+    if (node.type !== 'JSXText' || !node.value.includes('所有检查通过')) return;
+    if (ancestors.some((ancestor) => ancestor.type === 'LogicalExpression' && failedKeyIncludes(ancestor.left, 'report'))) {
+      passBadgeGuardedByReportAvailability = true;
+    }
+  });
+
+  if (allSettledCall) {
+    walkWithAncestors(ast, (node, ancestors) => {
+      if (node !== allSettledCall) return;
+      loadingEffect = [...ancestors].reverse().find((ancestor) => (
+        ancestor.type === 'ArrowFunctionExpression'
+        && ancestors.some((candidate) => candidate.type === 'CallExpression' && candidate.callee?.name === 'useEffect' && candidate.arguments[0] === ancestor)
+      ));
+    });
+  }
+
+  let clearsFailedKeysBeforeRequest = false;
+  let clearsFailedKeysWhenLeaving = false;
+  let recordsRejectedKeys = false;
+  if (loadingEffect && allSettledCall) {
+    for (const statement of loadingEffect.body.body || []) {
+      if (
+        statement.type === 'ExpressionStatement'
+        && statement.start < allSettledCall.start
+        && hasCallWithArgument(statement, 'setFailedRealDataKeys', (argument) => argument?.type === 'ArrayExpression' && argument.elements.length === 0)
+      ) clearsFailedKeysBeforeRequest = true;
+      if (
+        statement.type === 'IfStatement'
+        && hasCallWithArgument(statement.consequent, 'setFailedRealDataKeys', (argument) => argument?.type === 'ArrayExpression' && argument.elements.length === 0)
+      ) clearsFailedKeysWhenLeaving = true;
+    }
+    walk(loadingEffect.body, (node) => {
+      if (
+        node.type === 'CallExpression'
+        && node.start > allSettledCall.start
+        && node.callee?.type === 'Identifier'
+        && node.callee.name === 'setFailedRealDataKeys'
+        && node.arguments[0]?.type === 'CallExpression'
+        && memberName(node.arguments[0].callee) === 'map'
+        && ['report', 'trajectoryLeft', 'trajectoryRight'].every((key) => source.slice(allSettledCall.start, node.end).includes(`'${key}'`))
+      ) recordsRejectedKeys = true;
+    });
+  }
+
+  const emptySvgFallback = Boolean(getSvgPathFunction?.body?.body?.some((statement) => (
+    statement.type === 'IfStatement'
+    && containsIdentifier(statement.test, 'traj')
+    && statement.consequent?.type === 'ReturnStatement'
+    && isLiteral(statement.consequent.argument, '')
+  )));
+  const emptyKinematicsFallback = Boolean(getKinematicsDataFunction?.body?.body?.some((statement) => (
+    statement.type === 'IfStatement'
+    && containsIdentifier(statement.test, 'realReport')
+    && statement.consequent?.type === 'ReturnStatement'
+    && statement.consequent.argument?.type === 'ArrayExpression'
+    && statement.consequent.argument.elements.length === 0
+  )));
+  const leftUnavailableCount = (source.match(/左臂轨迹不可用/g) || []).length;
+  const rightUnavailableCount = (source.match(/右臂轨迹不可用/g) || []).length;
+  const keepsBothTrajectoryPaths = source.includes("getSvgPath(leftTrajectory")
+    && source.includes("getSvgPath(rightTrajectory")
+    && source.includes("getSpeedPath(leftTrajectory")
+    && source.includes("getSpeedPath(rightTrajectory");
+
+  return {
+    valid: hasFailedKeyState
+      && clearsFailedKeysBeforeRequest
+      && clearsFailedKeysWhenLeaving
+      && recordsRejectedKeys
+      && emptySvgFallback
+      && emptyKinematicsFallback
+      && reportUnavailableBranch
+      && passBadgeGuardedByReportAvailability
+      && leftUnavailableCount >= 2
+      && rightUnavailableCount >= 2
+      && keepsBothTrajectoryPaths,
+    hasFailedKeyState,
+    clearsFailedKeysBeforeRequest,
+    clearsFailedKeysWhenLeaving,
+    recordsRejectedKeys,
+    emptySvgFallback,
+    emptyKinematicsFallback,
+    reportUnavailableBranch,
+    passBadgeGuardedByReportAvailability,
+    leftUnavailableCount,
+    rightUnavailableCount,
+    keepsBothTrajectoryPaths,
+  };
+}
+
 const dataClientPath = 'src/app/collection/collect/data/ClientPage.js';
 if (existsSync(dataClientPath)) {
   const dataSource = readFileSync(dataClientPath, 'utf8');
   const ast = parse(dataSource);
   const loadingContract = analyzeDataLoadingContract(dataSource);
+  const unavailableContract = analyzeDataUnavailableContract(dataSource);
   check(loadingContract.promiseAllSettledCount === 1 && loadingContract.canonicalAllSettled, 'data Client must contain exactly one canonical Promise.allSettled call');
   check(loadingContract.promiseAllCount === 0, 'data Client must not contain Promise.all');
   check(loadingContract.clearsAllSlicesBeforeRequest, 'data Client must clear report, left trajectory, and right trajectory before starting each request');
   check(loadingContract.importsAlert && loadingContract.rendersPartialAlert, 'data Client must render selectedEpisodeError as an in-content retryable Alert');
   check(!loadingContract.hasFullPageErrorGate, 'data Client must not gate selectedEpisode content behind an error StateView');
+  check(unavailableContract.valid, `data Client must expose failed report/trajectory slices without synthetic fallback: ${JSON.stringify(unavailableContract)}`);
   const badPromiseAllMutation = `${dataSource}\nPromise.all([]);\n`;
   check(!analyzeDataLoadingContract(badPromiseAllMutation).valid, 'data loading contract must reject a Promise.all mutation');
+  const hardcodedSvgMutation = dataSource.replace('if (!traj || traj.length === 0) return "";', 'if (!traj || traj.length === 0) return "M 50 55 Q 85 10 120 40 T 160 30";');
+  check(hardcodedSvgMutation !== dataSource && !analyzeDataUnavailableContract(hardcodedSvgMutation).valid, 'data unavailable contract must reject restoring a synthetic trajectory path');
+  const hardcodedKinematicsMutation = dataSource.replace('if (!realReport) return [];', "if (!realReport) return [{ key: 'synthetic' }];");
+  check(hardcodedKinematicsMutation !== dataSource && !analyzeDataUnavailableContract(hardcodedKinematicsMutation).valid, 'data unavailable contract must reject restoring synthetic kinematics rows');
   let allSettledCall = null;
   walk(ast, (node) => {
     if (
@@ -596,10 +767,22 @@ function hasRequestTokenGuard(functionNode) {
   return guarded;
 }
 
+function incrementsFileRequestToken(node) {
+  return node?.type === 'AssignmentExpression'
+    && ['+=', '='].includes(node.operator)
+    && containsMember(node.left, 'fileRequestTokenRef', 'current')
+    && (
+      node.operator === '+='
+      || (node.right?.type === 'BinaryExpression' && node.right.operator === '+' && containsMember(node.right, 'fileRequestTokenRef', 'current'))
+    );
+}
+
 function analyzeVideoRequestContract(source) {
   const ast = parse(source);
   let hasTokenRef = false;
   let onSelectHandler = null;
+  let episodeEffect = null;
+  let treeSelectedKeysIsNullable = false;
   walk(ast, (node) => {
     if (
       node.type === 'VariableDeclarator'
@@ -616,6 +799,26 @@ function analyzeVideoRequestContract(source) {
       if (attribute?.value?.type === 'JSXExpressionContainer' && attribute.value.expression?.type === 'ArrowFunctionExpression') {
         onSelectHandler = attribute.value.expression;
       }
+      const selectedKeysAttribute = node.attributes.find((candidate) => candidate.type === 'JSXAttribute' && candidate.name.name === 'selectedKeys');
+      const selectedExpression = selectedKeysAttribute?.value?.type === 'JSXExpressionContainer' ? selectedKeysAttribute.value.expression : null;
+      if (
+        selectedExpression?.type === 'ConditionalExpression'
+        && containsIdentifier(selectedExpression.test, 'selectedFileKey')
+        && selectedExpression.consequent?.type === 'ArrayExpression'
+        && selectedExpression.consequent.elements.some((element) => element?.type === 'Identifier' && element.name === 'selectedFileKey')
+        && selectedExpression.alternate?.type === 'ArrayExpression'
+        && selectedExpression.alternate.elements.length === 0
+      ) treeSelectedKeysIsNullable = true;
+    }
+    if (
+      node.type === 'CallExpression'
+      && node.callee?.type === 'Identifier'
+      && node.callee.name === 'useEffect'
+      && node.arguments[0]?.type === 'ArrowFunctionExpression'
+      && node.arguments[1]?.type === 'ArrayExpression'
+      && node.arguments[1].elements.some((element) => element?.type === 'Identifier' && element.name === 'episodeId')
+    ) {
+      episodeEffect = node.arguments[0];
     }
   });
 
@@ -625,6 +828,7 @@ function analyzeVideoRequestContract(source) {
   let fetchChain = null;
   let tokenInvalidation = null;
   let clearsNonTextImmediately = false;
+  let emptySelectionClearsKey = false;
   walk(onSelectHandler.body, (node) => {
     if (node.type === 'CallExpression' && node.callee?.type === 'Identifier' && node.callee.name === 'fetch') fetchCall = node;
     if (node.type === 'CallExpression' && memberName(node.callee) === 'finally' && containsCall(node, 'fetch')) fetchChain = node;
@@ -638,7 +842,39 @@ function analyzeVideoRequestContract(source) {
       const clearsLoading = hasCallWithArgument(node.alternate, 'setLoadingFileContent', (argument) => isLiteral(argument, false));
       if (clearsContent && clearsLoading) clearsNonTextImmediately = true;
     }
+    if (
+      node.type === 'IfStatement'
+      && containsMember(node.test, 'keys', 'length')
+      && node.alternate
+      && hasCallWithArgument(node.alternate, 'setSelectedFileKey', (argument) => isLiteral(argument, null))
+    ) emptySelectionClearsKey = true;
   });
+
+  let episodeEffectInvalidatesAtStart = false;
+  let episodeEffectCleanupInvalidates = false;
+  let episodeEffectResetsSelection = false;
+  if (episodeEffect?.body?.type === 'BlockStatement') {
+    const [firstStatement] = episodeEffect.body.body;
+    episodeEffectInvalidatesAtStart = firstStatement?.type === 'ExpressionStatement' && incrementsFileRequestToken(firstStatement.expression);
+    const cleanup = episodeEffect.body.body.find((statement) => statement.type === 'ReturnStatement')?.argument;
+    if (cleanup?.type === 'ArrowFunctionExpression' || cleanup?.type === 'FunctionExpression') {
+      episodeEffectCleanupInvalidates = containsCall(cleanup.body, 'setFileContent') ? false : (() => {
+        let invalidates = false;
+        walk(cleanup.body, (node) => {
+          if (incrementsFileRequestToken(node)) invalidates = true;
+        });
+        return invalidates;
+      })();
+    }
+    episodeEffectResetsSelection = (
+      hasCallWithArgument(episodeEffect.body, 'setSelectedFileKey', (argument) => isLiteral(argument, 'left_video'))
+      && hasCallWithArgument(episodeEffect.body, 'setSelectedFileNode', (argument) => argument?.type === 'Identifier' && argument.name === 'node')
+      && hasCallWithArgument(episodeEffect.body, 'setFileContent', (argument) => isLiteral(argument, ''))
+      && hasCallWithArgument(episodeEffect.body, 'setLoadingFileContent', (argument) => isLiteral(argument, false))
+      && hasCallWithArgument(episodeEffect.body, 'setIsPlaying', (argument) => isLiteral(argument, true))
+      && hasCallWithArgument(episodeEffect.body, 'setFrame', (argument) => argument?.type === 'NumericLiteral' && argument.value === 0)
+    );
+  }
 
   const chainCallbacks = [];
   if (fetchChain) {
@@ -662,7 +898,12 @@ function analyzeVideoRequestContract(source) {
       && guardedContentCallbacks.length === 2
       && loadingCallbacks.length === 1
       && guardedLoadingCallbacks.length === 1
-      && clearsNonTextImmediately,
+      && clearsNonTextImmediately
+      && episodeEffectInvalidatesAtStart
+      && episodeEffectCleanupInvalidates
+      && episodeEffectResetsSelection
+      && emptySelectionClearsKey
+      && treeSelectedKeysIsNullable,
     hasTokenRef,
     hasOnSelect: true,
     invalidatesBeforeFetch: Boolean(fetchCall && tokenInvalidation && tokenInvalidation.start < fetchCall.start),
@@ -671,6 +912,11 @@ function analyzeVideoRequestContract(source) {
     loadingCallbackCount: loadingCallbacks.length,
     guardedLoadingCallbackCount: guardedLoadingCallbacks.length,
     clearsNonTextImmediately,
+    episodeEffectInvalidatesAtStart,
+    episodeEffectCleanupInvalidates,
+    episodeEffectResetsSelection,
+    emptySelectionClearsKey,
+    treeSelectedKeysIsNullable,
   };
 }
 
@@ -682,6 +928,8 @@ if (existsSync(videoClientPath)) {
   check(requestContract.valid, `file preview request token contract failed: ${JSON.stringify(requestContract)}`);
   const unguardedMutation = source.replaceAll('if (fileRequestTokenRef.current !== requestToken) return;', '');
   check(unguardedMutation !== source && !analyzeVideoRequestContract(unguardedMutation).valid, 'file preview contract must reject removing real fetch callback token guards');
+  const missingEpisodeInvalidationMutation = source.replace('fileRequestTokenRef.current += 1;', '');
+  check(missingEpisodeInvalidationMutation !== source && !analyzeVideoRequestContract(missingEpisodeInvalidationMutation).valid, 'file preview contract must reject removing episode-change token invalidation');
   const fileAssetMap = {};
   let readFileResponseFunction = null;
   walk(ast, (node) => {

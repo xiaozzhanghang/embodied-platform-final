@@ -65,6 +65,7 @@ export default function CollectTaskDataPage() {
   const [realReport, setRealReport] = useState(null);
   const [leftTrajectory, setLeftTrajectory] = useState([]);
   const [rightTrajectory, setRightTrajectory] = useState([]);
+  const [failedRealDataKeys, setFailedRealDataKeys] = useState([]);
   const [loadingEpisodeId, setLoadingEpisodeId] = useState(null);
   const [realDataError, setRealDataError] = useState(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -75,6 +76,7 @@ export default function CollectTaskDataPage() {
       setRealReport(null);
       setLeftTrajectory([]);
       setRightTrajectory([]);
+      setFailedRealDataKeys([]);
       setRealDataError(null);
       setLoadingEpisodeId(current => current === 'session_028' ? null : current);
       return undefined;
@@ -87,6 +89,7 @@ export default function CollectTaskDataPage() {
     setRealReport(null);
     setLeftTrajectory([]);
     setRightTrajectory([]);
+    setFailedRealDataKeys([]);
 
     Promise.allSettled([
       fetch(LUMING_STATIC_ASSETS.report).then(readJsonResponse),
@@ -105,14 +108,15 @@ export default function CollectTaskDataPage() {
       }
 
       const rejectedResults = [
-        ['质检报告', reportResult],
-        ['左臂轨迹', leftResult],
-        ['右臂轨迹', rightResult],
-      ].filter(([, result]) => result.status === 'rejected');
+        ['report', '质检报告', reportResult],
+        ['trajectoryLeft', '左臂轨迹', leftResult],
+        ['trajectoryRight', '右臂轨迹', rightResult],
+      ].filter(([, , result]) => result.status === 'rejected');
+      setFailedRealDataKeys(rejectedResults.map(([key]) => key));
       if (rejectedResults.length > 0) {
         setRealDataError({
           episodeId,
-          message: rejectedResults.map(([label, result]) => {
+          message: rejectedResults.map(([, label, result]) => {
             const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
             return `${label}：${reason}`;
           }).join('；'),
@@ -168,9 +172,7 @@ export default function CollectTaskDataPage() {
   }, [taskId, isLumos]);
 
   const getSvgPath = (traj, color, isLeft) => {
-    if (!traj || traj.length === 0) {
-      return isLeft ? "M 50 55 Q 85 10 120 40 T 160 30" : "M 100 48 L 101 48";
-    }
+    if (!traj || traj.length === 0) return "";
 
     const xCoords = traj.map(p => p.x);
     const zCoords = traj.map(p => p.z);
@@ -200,87 +202,7 @@ export default function CollectTaskDataPage() {
   };
 
   const getKinematicsData = () => {
-    if (!realReport) {
-      return [
-        {
-          key: '1',
-          metric: '最大速度 (speed_max)',
-          threshold: '≤ 0.450 m/s',
-          leftValue: '1.0998 m/s',
-          leftStatus: 'pass',
-          leftDetail: '超限点: 110/14879 (0.74%)',
-          rightValue: '0.0074 m/s',
-          rightStatus: 'pass',
-          rightDetail: '无超限'
-        },
-        {
-          key: '2',
-          metric: '最大加速度 (accel_max)',
-          threshold: '≤ 5.000 m/s²',
-          leftValue: '54.5634 m/s²',
-          leftStatus: 'pass',
-          leftDetail: '超限点: 188/14879 (1.26%)',
-          rightValue: '0.3651 m/s²',
-          rightStatus: 'pass',
-          rightDetail: '无超限'
-        },
-        {
-          key: '3',
-          metric: '最大加加速度 (jerk_max)',
-          threshold: '≤ 2200.73 m/s³',
-          leftValue: '17185.06 m/s³',
-          leftStatus: 'pass',
-          leftDetail: '超限点: 112/14879 (0.75%)',
-          rightValue: '113.36 m/s³',
-          rightStatus: 'pass',
-          rightDetail: '无超限'
-        },
-        {
-          key: '4',
-          metric: '最大角速度 (angular_speed_max)',
-          threshold: '≤ 2.500 rad/s',
-          leftValue: '2.3233 rad/s',
-          leftStatus: 'pass',
-          leftDetail: '无超限 (-7.1%)',
-          rightValue: '0.8461 rad/s',
-          rightStatus: 'pass',
-          rightDetail: '无超限'
-        },
-        {
-          key: '5',
-          metric: '最大角加速度 (angular_accel_max)',
-          threshold: '≤ 23.00 rad/s²',
-          leftValue: '37.76 rad/s²',
-          leftStatus: 'pass',
-          leftDetail: '超限点: 14/14879 (0.09%)',
-          rightValue: '14.24 rad/s²',
-          rightStatus: 'pass',
-          rightDetail: '无超限'
-        },
-        {
-          key: '6',
-          metric: '最大角加加速度 (angular_jerk_max)',
-          threshold: '≤ 4000.41 rad/s³',
-          leftValue: '14330.67 rad/s³',
-          leftStatus: 'pass',
-          leftDetail: '超限点: 27/14879 (0.18%)',
-          rightValue: '5841.86 rad/s³',
-          rightStatus: 'pass',
-          rightDetail: '超标占比 0.0%'
-        },
-        {
-          key: '7',
-          metric: '空间起始位移距离 (max_pos_dist)',
-          threshold: '> 0.050 m',
-          leftValue: '0.2839 m',
-          leftStatus: 'pass',
-          leftDetail: '符合规范',
-          rightValue: '0.0024 m',
-          rightStatus: 'warning',
-          rightDetail: '判定失败，但因右臂静止率100%免除豁免'
-        }
-      ];
-    }
+    if (!realReport) return [];
 
     const left = realReport.trajectory_analysis.find(a => a.arm_name === 'left');
     const right = realReport.trajectory_analysis.find(a => a.arm_name === 'right');
@@ -656,8 +578,12 @@ export default function CollectTaskDataPage() {
                             )}
                           </svg>
                           <div style={{ position: 'absolute', bottom: 4, right: 8, display: 'flex', gap: 8, fontSize: 9 }}>
-                            <span style={{ color: '#1677ff' }}>● 左臂轨迹 (起:蓝 终:绿)</span>
-                            <span style={{ color: '#722ed1' }}>● 右臂轨迹 (静止)</span>
+                            <span style={{ color: '#1677ff' }}>
+                              {failedRealDataKeys.includes('trajectoryLeft') ? '左臂轨迹不可用' : '● 左臂轨迹 (起:蓝 终:绿)'}
+                            </span>
+                            <span style={{ color: '#722ed1' }}>
+                              {failedRealDataKeys.includes('trajectoryRight') ? '右臂轨迹不可用' : '● 右臂轨迹 (静止)'}
+                            </span>
                           </div>
                         </>
                       ) : (
@@ -684,8 +610,12 @@ export default function CollectTaskDataPage() {
                             <line x1="10" y1="30" x2="190" y2="30" stroke="#bfbfbf" strokeWidth="0.5" strokeDasharray="4,4" />
                           </svg>
                           <div style={{ position: 'absolute', bottom: 4, right: 8, display: 'flex', gap: 8, fontSize: 9 }}>
-                            <span style={{ color: '#1677ff' }}>● 左臂运动速度</span>
-                            <span style={{ color: '#722ed1' }}>● 右臂运动速度</span>
+                            <span style={{ color: '#1677ff' }}>
+                              {failedRealDataKeys.includes('trajectoryLeft') ? '左臂轨迹不可用' : '● 左臂运动速度'}
+                            </span>
+                            <span style={{ color: '#722ed1' }}>
+                              {failedRealDataKeys.includes('trajectoryRight') ? '右臂轨迹不可用' : '● 右臂运动速度'}
+                            </span>
                           </div>
                         </>
                       ) : (
@@ -708,13 +638,24 @@ export default function CollectTaskDataPage() {
                     <Space>
                       <SafetyCertificateOutlined style={{ color: '#52c41a' }} />
                       <span style={{ fontWeight: 600 }}>自动质检诊断分析报告 (Auto QA & Diagnostic Report)</span>
-                      <StatusTag status="已通过" style={{ marginLeft: 8 }}>所有检查通过 (PASS)</StatusTag>
+                      {!failedRealDataKeys.includes('report') && (
+                        <StatusTag status="已通过" style={{ marginLeft: 8 }}>所有检查通过 (PASS)</StatusTag>
+                      )}
                     </Space>
                   } 
                   variant="borderless"
                   style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
                 >
-                  <Descriptions size="small" column={3} bordered style={{ marginBottom: 16 }}>
+                  {failedRealDataKeys.includes('report') ? (
+                    <Alert
+                      type="warning"
+                      showIcon
+                      message="质检报告不可用"
+                      description="静态演示质检报告加载失败，已成功加载的轨迹数据仍可查看。"
+                    />
+                  ) : (
+                    <>
+                      <Descriptions size="small" column={3} bordered style={{ marginBottom: 16 }}>
                     <Descriptions.Item label="质检决策" span={2}>
                       <Space>
                         <CheckCircleOutlined style={{ color: '#52c41a' }} />
@@ -736,9 +677,9 @@ export default function CollectTaskDataPage() {
                         <StatusTag status="已通过">通过</StatusTag>
                       </Space>
                     </Descriptions.Item>
-                  </Descriptions>
+                      </Descriptions>
 
-                  <Collapse 
+                      <Collapse
                     defaultActiveKey={['1']} 
                     ghost
                     items={[
@@ -880,7 +821,9 @@ Time: 2026-05-20T10:13:21.314410
                         )
                       }
                     ]}
-                  />
+                      />
+                    </>
+                  )}
                 </Card>
               )}
 

@@ -157,6 +157,7 @@ export default function EpisodeVideoPage() {
 
   // Initialize selected node to left hand video on load
   useEffect(() => {
+    fileRequestTokenRef.current += 1;
     const findNode = (nodes) => {
       for (let n of nodes) {
         if (n.key === 'left_video') return n;
@@ -168,8 +169,16 @@ export default function EpisodeVideoPage() {
       return null;
     };
     const node = findNode(currentTreeData);
+    setSelectedFileKey('left_video');
     setSelectedFileNode(node);
     setFileContent('');
+    setLoadingFileContent(false);
+    setIsPlaying(true);
+    setFrame(0);
+
+    return () => {
+      fileRequestTokenRef.current += 1;
+    };
   }, [episodeId]);
 
   // Canvas Render Loop for Video Preview Simulation (Scaled to 640x360)
@@ -392,7 +401,7 @@ export default function EpisodeVideoPage() {
               showIcon
               defaultExpandAll
               treeData={currentTreeData}
-              selectedKeys={[selectedFileKey]}
+              selectedKeys={selectedFileKey ? [selectedFileKey] : []}
               onSelect={(keys, info) => {
                 const requestToken = fileRequestTokenRef.current + 1;
                 fileRequestTokenRef.current = requestToken;
@@ -451,6 +460,7 @@ export default function EpisodeVideoPage() {
                     setLoadingFileContent(false);
                   }
                 } else {
+                  setSelectedFileKey(null);
                   setSelectedFileNode(null);
                   setIsPlaying(false);
                   setFileContent('');
