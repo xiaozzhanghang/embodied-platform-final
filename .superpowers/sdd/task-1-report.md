@@ -27,7 +27,7 @@
 
 ## 提交
 
-- SHA：`80b333744f117260d1413071f0f3b442ac0f899e`
+- SHA：`bd17a37896727a9ed830780d02ae6362461bd8eb`
 - 提交信息：`test: define static route URL contract`
 
 ## 自查结论/风险
