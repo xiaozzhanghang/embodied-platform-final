@@ -772,14 +772,43 @@ function isStaticallyUnreachable(target, ancestors) {
   return false;
 }
 
+function renderedTextValue(node, ancestors) {
+  if (node?.type === 'JSXText') return node.value;
+  let value = null;
+  if (node?.type === 'StringLiteral') value = node.value;
+  if (node?.type === 'TemplateLiteral' && node.expressions.length === 0 && node.quasis.length === 1) {
+    value = node.quasis[0].value.cooked ?? node.quasis[0].value.raw;
+  }
+  if (value === null) return null;
+
+  let child = node;
+  for (let index = ancestors.length - 1; index >= 0; index -= 1) {
+    const parent = ancestors[index];
+    if (parent.type === 'JSXExpressionContainer') {
+      return parent.expression === child ? value : null;
+    }
+    if (parent.type === 'ConditionalExpression') {
+      if (parent.consequent !== child && parent.alternate !== child) return null;
+      child = parent;
+      continue;
+    }
+    if (parent.type === 'LogicalExpression') {
+      if (parent.right !== child) return null;
+      child = parent;
+      continue;
+    }
+    return null;
+  }
+  return null;
+}
+
 function collectDataJsxCandidates(returnJsx) {
   const candidates = {
     cards: [],
     divs: [],
     svgs: [],
     paths: [],
-    passTexts: [],
-    unavailableLabels: [],
+    renderedTexts: [],
     alerts: [],
     tables: [],
   };
@@ -794,9 +823,8 @@ function collectDataJsxCandidates(returnJsx) {
       if (name === 'Alert') candidates.alerts.push(record);
       if (name === 'Table') candidates.tables.push(record);
     }
-    if (node.type === 'JSXText' && node.value.includes('所有检查通过')) candidates.passTexts.push(record);
-    const renderedValue = node.type === 'StringLiteral' ? node.value : node.type === 'JSXText' ? node.value.trim() : null;
-    if (['左臂轨迹不可用', '右臂轨迹不可用'].includes(renderedValue)) candidates.unavailableLabels.push(record);
+    const value = renderedTextValue(node, ancestors);
+    if (value !== null) candidates.renderedTexts.push({ ...record, value });
   });
   return candidates;
 }
@@ -917,7 +945,8 @@ function analyzeDataUnavailableContract(source) {
     reportUnavailableBranch = unavailableAlert && successfulReportTable;
   }
 
-  const visiblePassTexts = jsxCandidates.passTexts.filter((record) => isVisibleRecord(record));
+  const visibleRenderedTexts = jsxCandidates.renderedTexts.filter((record) => isVisibleRecord(record));
+  const visiblePassTexts = visibleRenderedTexts.filter((record) => record.value.includes('所有检查通过'));
   passBadgeGuardedByReportAvailability = visiblePassTexts.length === 1
     && visiblePassTexts.every((record) => {
       if (!recordIsWithin(record, reportCard)) return false;
@@ -1018,24 +1047,25 @@ function analyzeDataUnavailableContract(source) {
       available: ['● 右臂运动速度', '● 右臂轨迹 (静止)'],
     },
   };
-  const labelsGuardedByKey = Object.fromEntries(Object.entries(labelSpecifications).map(([key, specification]) => {
-    const records = jsxCandidates.unavailableLabels.filter((record) => (
-      isVisibleRecord(record) && record.node.value.trim() === specification.unavailable
-    ));
-    const conditions = records.map((record) => record.ancestors.findLast((ancestor) => ancestor.type === 'ConditionalExpression'));
-    const availableLabels = conditions.map((condition) => condition?.alternate?.value).sort();
-    return [key, records.length === 2
-      && JSON.stringify(availableLabels) === JSON.stringify([...specification.available].sort())
-      && records.every((record, index) => {
-        const condition = conditions[index];
-        return recordIsWithin(record, telemetryCard)
-          && isExactFailedKeyTest(condition?.test, key)
-          && condition.consequent === record.node
-          && condition.alternate?.type === 'StringLiteral'
-          && specification.available.includes(condition.alternate.value);
-      })];
-  }));
-  const trajectoryLabelsGuarded = labelsGuardedByKey.trajectoryLeft && labelsGuardedByKey.trajectoryRight;
+  const expectedLabels = Object.entries(labelSpecifications).flatMap(([key, specification]) => [
+    { key, value: specification.unavailable, branch: 'consequent' },
+    { key, value: specification.unavailable, branch: 'consequent' },
+    ...specification.available.map((value) => ({ key, value, branch: 'alternate' })),
+  ]);
+  const expectedLabelValues = expectedLabels.map(({ value }) => value).sort();
+  const visibleLabels = visibleRenderedTexts.filter((record) => expectedLabelValues.includes(record.value.trim()));
+  const visibleLabelValues = visibleLabels.map((record) => record.value.trim()).sort();
+  const labelInventoryExact = JSON.stringify(visibleLabelValues) === JSON.stringify(expectedLabelValues);
+  const labelsUseCorrectGuardBranches = visibleLabels.every((record) => {
+    const value = record.value.trim();
+    const specification = expectedLabels.find((candidate) => candidate.value === value);
+    const condition = record.ancestors.findLast((ancestor) => ancestor.type === 'ConditionalExpression');
+    return Boolean(specification)
+      && recordIsWithin(record, telemetryCard)
+      && isExactFailedKeyTest(condition?.test, specification.key)
+      && condition[specification.branch] === record.node;
+  });
+  const trajectoryLabelsGuarded = labelInventoryExact && labelsUseCorrectGuardBranches;
   const speedLabelsGuarded = trajectoryLabelsGuarded;
 
   return {
@@ -1304,6 +1334,42 @@ const deadReportUnavailableDecoy = failedRealDataKeys.includes('report') ? (
     'left-label decoy mutation must reverse the visible label and add a hidden correct label',
   );
   check(!analyzeDataUnavailableContract(reversedLeftLabelWithHiddenCorrectMutation).valid, 'data unavailable contract must reject a reversed visible left label masked by a hidden correct decoy');
+  const positiveConditionalStringPassMutation = dataSource.replace(
+    `{!failedRealDataKeys.includes('report') && (
+                        <StatusTag status="已通过" style={{ marginLeft: 8 }}>所有检查通过 (PASS)</StatusTag>
+                      )}`,
+    `{!failedRealDataKeys.includes('report') && (
+                        <StatusTag status="已通过" style={{ marginLeft: 8 }}>所有检查通过 (PASS)</StatusTag>
+                      )}
+                      {failedRealDataKeys.includes('report') ? '所有检查通过 (STRING PASS)' : null}`,
+  );
+  check(
+    positiveConditionalStringPassMutation !== dataSource
+      && positiveConditionalStringPassMutation.includes(`{failedRealDataKeys.includes('report') ? '所有检查通过 (STRING PASS)' : null}`),
+    'conditional StringLiteral PASS mutation must add a visible positive-report PASS child',
+  );
+  check(!analyzeDataUnavailableContract(positiveConditionalStringPassMutation).valid, 'data unavailable contract must reject a visible StringLiteral PASS under the positive report-failure condition');
+  const extraUnguardedNormalLeftLabelMutation = dataSource.replace(
+    `{failedRealDataKeys.includes('trajectoryLeft') ? '左臂轨迹不可用' : '● 左臂轨迹 (起:蓝 终:绿)'}`,
+    `{failedRealDataKeys.includes('trajectoryLeft') ? '左臂轨迹不可用' : '● 左臂轨迹 (起:蓝 终:绿)'}
+                  {'● 左臂轨迹 (起:蓝 终:绿)'}`,
+  );
+  check(
+    extraUnguardedNormalLeftLabelMutation !== dataSource
+      && extraUnguardedNormalLeftLabelMutation.includes(`{'● 左臂轨迹 (起:蓝 终:绿)'}`),
+    'unguarded normal-label mutation must add a visible JSX expression StringLiteral child',
+  );
+  check(!analyzeDataUnavailableContract(extraUnguardedNormalLeftLabelMutation).valid, 'data unavailable contract must reject an extra unguarded normal left label');
+  const extraTemplateNormalRightLabelMutation = dataSource.replace(
+    "{failedRealDataKeys.includes('trajectoryRight') ? '右臂轨迹不可用' : '● 右臂运动速度'}",
+    "{failedRealDataKeys.includes('trajectoryRight') ? '右臂轨迹不可用' : '● 右臂运动速度'}\n                  {`● 右臂运动速度`}",
+  );
+  check(
+    extraTemplateNormalRightLabelMutation !== dataSource
+      && extraTemplateNormalRightLabelMutation.includes('{`● 右臂运动速度`}'),
+    'template-label mutation must add a visible no-expression TemplateLiteral child',
+  );
+  check(!analyzeDataUnavailableContract(extraTemplateNormalRightLabelMutation).valid, 'data unavailable contract must reject an extra visible TemplateLiteral normal right label');
 }
 
 function hasRequestTokenGuard(functionNode) {
