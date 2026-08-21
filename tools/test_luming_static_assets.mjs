@@ -708,49 +708,6 @@ function executableStatements(blockStatement) {
     : [];
 }
 
-function pathUsesDataCall(openingElement, functionName, trajectoryName) {
-  if (openingElement?.name?.name !== 'path') return false;
-  const dataAttribute = jsxAttribute(openingElement, 'd');
-  const expression = dataAttribute?.value?.type === 'JSXExpressionContainer' ? dataAttribute.value.expression : null;
-  return expression?.type === 'CallExpression'
-    && expression.callee?.type === 'Identifier'
-    && expression.callee.name === functionName
-    && expression.arguments[0]?.type === 'Identifier'
-    && expression.arguments[0].name === trajectoryName;
-}
-
-function findSmallestDataPanel(root, functionName) {
-  const candidates = [];
-  walk(root, (node) => {
-    if (node.type !== 'JSXElement' || node.openingElement.name?.name !== 'div') return;
-    let left = false;
-    let right = false;
-    walk(node, (candidate) => {
-      if (candidate.type !== 'JSXOpeningElement') return;
-      if (pathUsesDataCall(candidate, functionName, 'leftTrajectory')) left = true;
-      if (pathUsesDataCall(candidate, functionName, 'rightTrajectory')) right = true;
-    });
-    if (left && right) candidates.push(node);
-  });
-  candidates.sort((left, right) => (left.end - left.start) - (right.end - right.start));
-  return candidates[0] || null;
-}
-
-function panelHasUnavailableGuard(panel, key, unavailableLabel, availableLabel) {
-  let found = false;
-  walk(panel, (node) => {
-    if (
-      node.type === 'ConditionalExpression'
-      && isExactFailedKeyTest(node.test, key)
-      && node.consequent?.type === 'StringLiteral'
-      && node.consequent.value === unavailableLabel
-      && node.alternate?.type === 'StringLiteral'
-      && node.alternate.value === availableLabel
-    ) found = true;
-  });
-  return found;
-}
-
 const STATIC_UNKNOWN = Symbol('static-unknown');
 
 function staticValue(node) {
@@ -796,50 +753,113 @@ function staticTruthValue(node) {
   return value === STATIC_UNKNOWN ? null : Boolean(value);
 }
 
-function subtreeContainsNode(root, target) {
-  let found = false;
-  walk(root, (node) => {
-    if (node === target) found = true;
-  });
-  return found;
-}
-
 function isStaticallyUnreachable(target, ancestors) {
+  const targetIsWithin = (root) => target === root || ancestors.includes(root);
   for (const ancestor of ancestors) {
     if (ancestor.type === 'LogicalExpression') {
       const leftStaticValue = staticValue(ancestor.left);
       const leftValue = staticTruthValue(ancestor.left);
-      const targetInRight = subtreeContainsNode(ancestor.right, target);
+      const targetInRight = targetIsWithin(ancestor.right);
       if (targetInRight && ((ancestor.operator === '&&' && leftValue === false) || (ancestor.operator === '||' && leftValue === true))) return true;
       if (targetInRight && ancestor.operator === '??' && leftStaticValue !== STATIC_UNKNOWN && leftStaticValue !== null && leftStaticValue !== undefined) return true;
     }
     if (ancestor.type === 'ConditionalExpression') {
       const testValue = staticTruthValue(ancestor.test);
-      if (testValue === false && subtreeContainsNode(ancestor.consequent, target)) return true;
-      if (testValue === true && subtreeContainsNode(ancestor.alternate, target)) return true;
+      if (testValue === false && targetIsWithin(ancestor.consequent)) return true;
+      if (testValue === true && targetIsWithin(ancestor.alternate)) return true;
     }
   }
   return false;
 }
 
-function hasReachableDirectSvgPath(panel, functionName, trajectoryName) {
-  let found = false;
-  walkWithAncestors(panel, (node, ancestors) => {
-    if (node.type !== 'JSXElement' || !pathUsesDataCall(node.openingElement, functionName, trajectoryName)) return;
-    const svgAncestorIndex = ancestors.findLastIndex((ancestor) => ancestor.type === 'JSXElement' && ancestor.openingElement.name?.name === 'svg');
-    if (svgAncestorIndex < 0) return;
-    const wrappers = ancestors.slice(svgAncestorIndex + 1);
-    const expectedFailureKey = trajectoryName === 'leftTrajectory' ? 'trajectoryLeft' : 'trajectoryRight';
-    const directChild = wrappers.length === 0;
-    const conditionalChild = wrappers.length === 2
-      && wrappers[0].type === 'JSXExpressionContainer'
-      && wrappers[1].type === 'ConditionalExpression'
-      && isExactFailedKeyTest(wrappers[1].test, expectedFailureKey)
-      && subtreeContainsNode(wrappers[1].alternate, node);
-    if (!directChild && !conditionalChild) return;
-    if (!isStaticallyUnreachable(node, ancestors)) found = true;
+function collectDataJsxCandidates(returnJsx) {
+  const candidates = {
+    cards: [],
+    divs: [],
+    svgs: [],
+    paths: [],
+    passTexts: [],
+    unavailableLabels: [],
+    alerts: [],
+    tables: [],
+  };
+  walkWithAncestors(returnJsx, (node, ancestors) => {
+    const record = { node, ancestors };
+    if (node.type === 'JSXElement') {
+      const name = node.openingElement.name?.name;
+      if (name === 'Card') candidates.cards.push(record);
+      if (name === 'div') candidates.divs.push(record);
+      if (name === 'svg') candidates.svgs.push(record);
+      if (name === 'path') candidates.paths.push(record);
+      if (name === 'Alert') candidates.alerts.push(record);
+      if (name === 'Table') candidates.tables.push(record);
+    }
+    if (node.type === 'JSXText' && node.value.includes('所有检查通过')) candidates.passTexts.push(record);
+    const renderedValue = node.type === 'StringLiteral' ? node.value : node.type === 'JSXText' ? node.value.trim() : null;
+    if (['左臂轨迹不可用', '右臂轨迹不可用'].includes(renderedValue)) candidates.unavailableLabels.push(record);
   });
-  return found;
+  return candidates;
+}
+
+function isVisibleRecord(record) {
+  return !isStaticallyUnreachable(record.node, record.ancestors);
+}
+
+function recordIsWithin(record, ancestor) {
+  return Boolean(ancestor) && (record.node === ancestor || record.ancestors.includes(ancestor));
+}
+
+function dataPathDescriptor(pathElement) {
+  if (pathElement?.openingElement?.name?.name !== 'path') return null;
+  const dataAttribute = jsxAttribute(pathElement.openingElement, 'd');
+  const expression = dataAttribute?.value?.type === 'JSXExpressionContainer' ? dataAttribute.value.expression : null;
+  if (
+    expression?.type !== 'CallExpression'
+    || expression.callee?.type !== 'Identifier'
+    || !['getSvgPath', 'getSpeedPath'].includes(expression.callee.name)
+  ) return null;
+  const trajectory = expression.arguments[0]?.type === 'Identifier'
+    ? expression.arguments[0].name
+    : `<${expression.arguments[0]?.type || 'missing'}>`;
+  return `${expression.callee.name}:${trajectory}`;
+}
+
+function pathRecordHasValidSvgOwnership(record, candidates) {
+  const descriptor = dataPathDescriptor(record.node);
+  if (!descriptor) return false;
+  const [, trajectoryName] = descriptor.split(':');
+  const svgAncestorIndex = record.ancestors.findLastIndex((ancestor) => (
+    ancestor.type === 'JSXElement' && ancestor.openingElement.name?.name === 'svg'
+  ));
+  if (svgAncestorIndex < 0) return false;
+  const svgNode = record.ancestors[svgAncestorIndex];
+  if (!candidates.svgs.some((candidate) => candidate.node === svgNode && isVisibleRecord(candidate))) return false;
+  const wrappers = record.ancestors.slice(svgAncestorIndex + 1);
+  if (wrappers.length === 0) return true;
+  const expectedFailureKey = trajectoryName === 'leftTrajectory' ? 'trajectoryLeft' : 'trajectoryRight';
+  return wrappers.length === 2
+    && wrappers[0].type === 'JSXExpressionContainer'
+    && wrappers[1].type === 'ConditionalExpression'
+    && isExactFailedKeyTest(wrappers[1].test, expectedFailureKey)
+    && recordIsWithin(record, wrappers[1].alternate);
+}
+
+function findSmallestVisibleDataPanel(candidates, functionName) {
+  const matchingPaths = candidates.paths.filter((record) => (
+    isVisibleRecord(record)
+    && dataPathDescriptor(record.node)?.startsWith(`${functionName}:`)
+  ));
+  const panels = candidates.divs.filter((record) => (
+    isVisibleRecord(record)
+    && ['leftTrajectory', 'rightTrajectory'].every((trajectoryName) => (
+      matchingPaths.some((pathRecord) => (
+        dataPathDescriptor(pathRecord.node) === `${functionName}:${trajectoryName}`
+        && recordIsWithin(pathRecord, record.node)
+      ))
+    ))
+  ));
+  panels.sort((left, right) => (left.node.end - left.node.start) - (right.node.end - right.node.start));
+  return panels[0] || null;
 }
 
 function analyzeDataUnavailableContract(source) {
@@ -865,17 +885,12 @@ function analyzeDataUnavailableContract(source) {
   );
   let reportUnavailableBranch = false;
   let passBadgeGuardedByReportAvailability = false;
-
-  const reportCards = [];
-  walkWithAncestors(componentContext?.returnJsx, (node, ancestors) => {
-    if (
-      node.type === 'JSXElement'
-      && node.openingElement.name?.name === 'Card'
-      && containsRenderedText(jsxAttribute(node.openingElement, 'title')?.value, '自动质检诊断分析报告')
-      && !isStaticallyUnreachable(node, ancestors)
-    ) reportCards.push(node);
-  });
-  const reportCard = reportCards.length === 1 ? reportCards[0] : null;
+  const jsxCandidates = collectDataJsxCandidates(componentContext?.returnJsx);
+  const reportCards = jsxCandidates.cards.filter((record) => (
+    isVisibleRecord(record)
+    && containsRenderedText(jsxAttribute(record.node.openingElement, 'title')?.value, '自动质检诊断分析报告')
+  ));
+  const reportCard = reportCards.length === 1 ? reportCards[0].node : null;
   const directReportConditions = (reportCard?.children || []).flatMap((child) => (
     child.type === 'JSXExpressionContainer'
       && child.expression?.type === 'ConditionalExpression'
@@ -885,35 +900,35 @@ function analyzeDataUnavailableContract(source) {
   ));
   if (directReportConditions.length === 1) {
     const reportCondition = directReportConditions[0];
-    let unavailableAlert = false;
-    let successfulReportTable = false;
-    walk(reportCondition.consequent, (candidate) => {
-      if (
-        candidate.type === 'JSXOpeningElement'
-        && candidate.name?.name === 'Alert'
-        && jsxAttribute(candidate, 'message')?.value?.type === 'StringLiteral'
-        && jsxAttribute(candidate, 'message').value.value === '质检报告不可用'
-      ) unavailableAlert = true;
+    const unavailableAlert = jsxCandidates.alerts.some((record) => {
+      const message = jsxAttribute(record.node.openingElement, 'message');
+      return isVisibleRecord(record)
+        && recordIsWithin(record, reportCondition.consequent)
+        && message?.value?.type === 'StringLiteral'
+        && message.value.value === '质检报告不可用';
     });
-    walk(reportCondition.alternate, (candidate) => {
-      if (candidate.type === 'JSXOpeningElement' && candidate.name?.name === 'Table') {
-        const dataSource = jsxAttribute(candidate, 'dataSource');
-        if (dataSource?.value?.type === 'JSXExpressionContainer' && containsCall(dataSource.value.expression, 'getKinematicsData')) successfulReportTable = true;
-      }
+    const successfulReportTable = jsxCandidates.tables.some((record) => {
+      const dataSource = jsxAttribute(record.node.openingElement, 'dataSource');
+      return isVisibleRecord(record)
+        && recordIsWithin(record, reportCondition.alternate)
+        && dataSource?.value?.type === 'JSXExpressionContainer'
+        && containsCall(dataSource.value.expression, 'getKinematicsData');
     });
     reportUnavailableBranch = unavailableAlert && successfulReportTable;
   }
 
-  walkWithAncestors(reportCard, (node, ancestors) => {
-    if (node.type !== 'JSXText' || !node.value.includes('所有检查通过')) return;
-    if (ancestors.some((ancestor) => (
-      ancestor.type === 'LogicalExpression'
-      && ancestor.operator === '&&'
-      && isNegatedFailedKeyTest(ancestor.left, 'report')
-    ))) {
-      passBadgeGuardedByReportAvailability = true;
-    }
-  });
+  const visiblePassTexts = jsxCandidates.passTexts.filter((record) => isVisibleRecord(record));
+  passBadgeGuardedByReportAvailability = visiblePassTexts.length === 1
+    && visiblePassTexts.every((record) => {
+      if (!recordIsWithin(record, reportCard)) return false;
+      const reportGuards = record.ancestors.filter((ancestor) => (
+        ancestor.type === 'LogicalExpression'
+        && ancestor.operator === '&&'
+        && recordIsWithin(record, ancestor.right)
+        && (isExactFailedKeyTest(ancestor.left, 'report') || isNegatedFailedKeyTest(ancestor.left, 'report'))
+      ));
+      return reportGuards.length === 1 && isNegatedFailedKeyTest(reportGuards[0].left, 'report');
+    });
 
   let clearsFailedKeysBeforeRequest = false;
   let clearsFailedKeysWhenLeaving = false;
@@ -966,40 +981,62 @@ function analyzeDataUnavailableContract(source) {
     && firstKinematicsStatement.consequent.argument?.type === 'ArrayExpression'
     && firstKinematicsStatement.consequent.argument.elements.length === 0
   );
-  const telemetryCards = [];
-  walkWithAncestors(componentContext?.returnJsx, (node, ancestors) => {
-    if (
-      node.type === 'JSXElement'
-      && node.openingElement.name?.name === 'Card'
-      && jsxAttribute(node.openingElement, 'title')?.value?.type === 'StringLiteral'
-      && jsxAttribute(node.openingElement, 'title').value.value === '运动轨迹与力矩监视 (Telemetry)'
-      && !isStaticallyUnreachable(node, ancestors)
-    ) telemetryCards.push(node);
-  });
-  const telemetryCard = telemetryCards.length === 1 ? telemetryCards[0] : null;
-  const trajectoryPanel = findSmallestDataPanel(telemetryCard, 'getSvgPath');
-  const speedPanel = findSmallestDataPanel(telemetryCard, 'getSpeedPath');
-  const renderedPaths = {
-    trajectoryLeft: false,
-    trajectoryRight: false,
-    speedLeft: false,
-    speedRight: false,
+  const telemetryCards = jsxCandidates.cards.filter((record) => (
+    isVisibleRecord(record)
+    && jsxAttribute(record.node.openingElement, 'title')?.value?.type === 'StringLiteral'
+    && jsxAttribute(record.node.openingElement, 'title').value.value === '运动轨迹与力矩监视 (Telemetry)'
+  ));
+  const telemetryCard = telemetryCards.length === 1 ? telemetryCards[0].node : null;
+  const trajectoryPanel = findSmallestVisibleDataPanel(jsxCandidates, 'getSvgPath');
+  const speedPanel = findSmallestVisibleDataPanel(jsxCandidates, 'getSpeedPath');
+  const expectedPathDescriptors = [
+    'getSpeedPath:leftTrajectory',
+    'getSpeedPath:rightTrajectory',
+    'getSvgPath:leftTrajectory',
+    'getSvgPath:rightTrajectory',
+  ];
+  const visibleDataPaths = jsxCandidates.paths.filter((record) => (
+    isVisibleRecord(record) && dataPathDescriptor(record.node)
+  ));
+  const visiblePathDescriptors = visibleDataPaths.map((record) => dataPathDescriptor(record.node)).sort();
+  const keepsBothTrajectoryPaths = JSON.stringify(visiblePathDescriptors) === JSON.stringify(expectedPathDescriptors)
+    && Boolean(trajectoryPanel && speedPanel)
+    && visibleDataPaths.every((record) => (
+      recordIsWithin(record, telemetryCard) && pathRecordHasValidSvgOwnership(record, jsxCandidates)
+    ));
+  const renderedPaths = Object.fromEntries(expectedPathDescriptors.map((descriptor) => [
+    descriptor,
+    visiblePathDescriptors.filter((candidate) => candidate === descriptor).length === 1,
+  ]));
+  const labelSpecifications = {
+    trajectoryLeft: {
+      unavailable: '左臂轨迹不可用',
+      available: ['● 左臂运动速度', '● 左臂轨迹 (起:蓝 终:绿)'],
+    },
+    trajectoryRight: {
+      unavailable: '右臂轨迹不可用',
+      available: ['● 右臂运动速度', '● 右臂轨迹 (静止)'],
+    },
   };
-  renderedPaths.trajectoryLeft = hasReachableDirectSvgPath(trajectoryPanel, 'getSvgPath', 'leftTrajectory');
-  renderedPaths.trajectoryRight = hasReachableDirectSvgPath(trajectoryPanel, 'getSvgPath', 'rightTrajectory');
-  renderedPaths.speedLeft = hasReachableDirectSvgPath(speedPanel, 'getSpeedPath', 'leftTrajectory');
-  renderedPaths.speedRight = hasReachableDirectSvgPath(speedPanel, 'getSpeedPath', 'rightTrajectory');
-  const trajectoryLabelsGuarded = Boolean(
-    trajectoryPanel
-    && panelHasUnavailableGuard(trajectoryPanel, 'trajectoryLeft', '左臂轨迹不可用', '● 左臂轨迹 (起:蓝 终:绿)')
-    && panelHasUnavailableGuard(trajectoryPanel, 'trajectoryRight', '右臂轨迹不可用', '● 右臂轨迹 (静止)')
-  );
-  const speedLabelsGuarded = Boolean(
-    speedPanel
-    && panelHasUnavailableGuard(speedPanel, 'trajectoryLeft', '左臂轨迹不可用', '● 左臂运动速度')
-    && panelHasUnavailableGuard(speedPanel, 'trajectoryRight', '右臂轨迹不可用', '● 右臂运动速度')
-  );
-  const keepsBothTrajectoryPaths = Object.values(renderedPaths).every(Boolean);
+  const labelsGuardedByKey = Object.fromEntries(Object.entries(labelSpecifications).map(([key, specification]) => {
+    const records = jsxCandidates.unavailableLabels.filter((record) => (
+      isVisibleRecord(record) && record.node.value.trim() === specification.unavailable
+    ));
+    const conditions = records.map((record) => record.ancestors.findLast((ancestor) => ancestor.type === 'ConditionalExpression'));
+    const availableLabels = conditions.map((condition) => condition?.alternate?.value).sort();
+    return [key, records.length === 2
+      && JSON.stringify(availableLabels) === JSON.stringify([...specification.available].sort())
+      && records.every((record, index) => {
+        const condition = conditions[index];
+        return recordIsWithin(record, telemetryCard)
+          && isExactFailedKeyTest(condition?.test, key)
+          && condition.consequent === record.node
+          && condition.alternate?.type === 'StringLiteral'
+          && specification.available.includes(condition.alternate.value);
+      })];
+  }));
+  const trajectoryLabelsGuarded = labelsGuardedByKey.trajectoryLeft && labelsGuardedByKey.trajectoryRight;
+  const speedLabelsGuarded = trajectoryLabelsGuarded;
 
   return {
     valid: Boolean(componentContext?.returnJsx)
@@ -1199,19 +1236,17 @@ const deadReportUnavailableDecoy = failedRealDataKeys.includes('report') ? (
   check(!analyzeDataUnavailableContract(missingTrajectoryLabelWithCommentDecoy).valid, 'data unavailable contract must bind unavailable labels to the real trajectory panel instead of comments');
   const mutationAst = parse(dataSource);
   const mutationComponent = getDefaultExportedComponent(mutationAst, 'CollectTaskDataPage');
-  let mutationReportCard = null;
-  let mutationTelemetryCard = null;
-  walk(mutationComponent?.returnJsx, (node) => {
-    if (node.type !== 'JSXElement' || node.openingElement.name?.name !== 'Card') return;
-    if (containsRenderedText(jsxAttribute(node.openingElement, 'title')?.value, '自动质检诊断分析报告')) mutationReportCard = node;
-    if (jsxAttribute(node.openingElement, 'title')?.value?.value === '运动轨迹与力矩监视 (Telemetry)') mutationTelemetryCard = node;
-  });
-  const mutationTrajectoryPanel = findSmallestDataPanel(mutationTelemetryCard, 'getSvgPath');
-  let mutationTrajectorySvg = null;
-  walk(mutationTrajectoryPanel, (node) => {
-    if (node.type !== 'JSXElement' || node.openingElement.name?.name !== 'svg') return;
-    if (hasReachableDirectSvgPath(node, 'getSvgPath', 'leftTrajectory')) mutationTrajectorySvg = node;
-  });
+  const mutationCandidates = collectDataJsxCandidates(mutationComponent?.returnJsx);
+  const mutationReportCard = mutationCandidates.cards.find((record) => (
+    containsRenderedText(jsxAttribute(record.node.openingElement, 'title')?.value, '自动质检诊断分析报告')
+  ))?.node || null;
+  const mutationTrajectoryPanel = findSmallestVisibleDataPanel(mutationCandidates, 'getSvgPath')?.node || null;
+  const mutationLeftTrajectoryPath = mutationCandidates.paths.find((record) => (
+    dataPathDescriptor(record.node) === 'getSvgPath:leftTrajectory'
+  ));
+  const mutationTrajectorySvg = mutationLeftTrajectoryPath?.ancestors.findLast((ancestor) => (
+    ancestor.type === 'JSXElement' && ancestor.openingElement.name?.name === 'svg'
+  )) || null;
   const wrapNode = (input, node, prefix, suffix) => node
     ? `${input.slice(0, node.start)}${prefix}${input.slice(node.start, node.end)}${suffix}${input.slice(node.end)}`
     : input;
@@ -1231,6 +1266,44 @@ const deadReportUnavailableDecoy = failedRealDataKeys.includes('report') ? (
     'SVG reachability mutation must wrap the real trajectory SVG in a constant-false binary guard',
   );
   check(!analyzeDataUnavailableContract(unreachableTrajectorySvgMutation).valid, 'data unavailable contract must reject a trajectory SVG hidden behind (1 === 2) &&');
+  const unreachableTrajectoryPanelMutation = wrapNode(dataSource, mutationTrajectoryPanel, '{false && (', ')}');
+  check(
+    Boolean(mutationTrajectoryPanel)
+      && unreachableTrajectoryPanelMutation !== dataSource
+      && unreachableTrajectoryPanelMutation.includes('{false && (<div'),
+    'trajectory panel reachability mutation must wrap the real panel in false &&',
+  );
+  check(!analyzeDataUnavailableContract(unreachableTrajectoryPanelMutation).valid, 'data unavailable contract must reject a trajectory panel hidden behind false &&');
+  const reversedPassWithHiddenCorrectMutation = dataSource.replace(
+    `{!failedRealDataKeys.includes('report') && (
+                        <StatusTag status="已通过" style={{ marginLeft: 8 }}>所有检查通过 (PASS)</StatusTag>
+                      )}`,
+    `{failedRealDataKeys.includes('report') && (
+                        <StatusTag status="已通过" style={{ marginLeft: 8 }}>所有检查通过 (PASS)</StatusTag>
+                      )}
+                      {false && (!failedRealDataKeys.includes('report') && (
+                        <StatusTag status="已通过" style={{ marginLeft: 8 }}>所有检查通过 (PASS)</StatusTag>
+                      ))}`,
+  );
+  check(
+    reversedPassWithHiddenCorrectMutation !== dataSource
+      && reversedPassWithHiddenCorrectMutation.includes(`{failedRealDataKeys.includes('report') && (`)
+      && reversedPassWithHiddenCorrectMutation.includes(`{false && (!failedRealDataKeys.includes('report') && (`),
+    'PASS decoy mutation must reverse the visible guard and add a hidden correct guard in the same Card',
+  );
+  check(!analyzeDataUnavailableContract(reversedPassWithHiddenCorrectMutation).valid, 'data unavailable contract must reject a reversed visible PASS guard masked by a hidden correct decoy');
+  const reversedLeftLabelWithHiddenCorrectMutation = dataSource.replace(
+    `{failedRealDataKeys.includes('trajectoryLeft') ? '左臂轨迹不可用' : '● 左臂轨迹 (起:蓝 终:绿)'}`,
+    `{failedRealDataKeys.includes('trajectoryLeft') ? '● 左臂轨迹 (起:蓝 终:绿)' : '左臂轨迹不可用'}
+                  {false && (failedRealDataKeys.includes('trajectoryLeft') ? '左臂轨迹不可用' : '● 左臂轨迹 (起:蓝 终:绿)')}`,
+  );
+  check(
+    reversedLeftLabelWithHiddenCorrectMutation !== dataSource
+      && reversedLeftLabelWithHiddenCorrectMutation.includes(`? '● 左臂轨迹 (起:蓝 终:绿)' : '左臂轨迹不可用'`)
+      && reversedLeftLabelWithHiddenCorrectMutation.includes(`{false && (failedRealDataKeys.includes('trajectoryLeft') ? '左臂轨迹不可用'`),
+    'left-label decoy mutation must reverse the visible label and add a hidden correct label',
+  );
+  check(!analyzeDataUnavailableContract(reversedLeftLabelWithHiddenCorrectMutation).valid, 'data unavailable contract must reject a reversed visible left label masked by a hidden correct decoy');
 }
 
 function hasRequestTokenGuard(functionNode) {
@@ -1260,27 +1333,6 @@ function incrementsFileRequestToken(node) {
       node.operator === '+='
       || (node.right?.type === 'BinaryExpression' && node.right.operator === '+' && containsMember(node.right, 'fileRequestTokenRef', 'current'))
     );
-}
-
-function containsAbruptCompletionOutsideNestedFunctions(node) {
-  let found = false;
-  const visit = (candidate) => {
-    if (!candidate || typeof candidate !== 'object' || found) return;
-    if (Array.isArray(candidate)) {
-      for (const child of candidate) visit(child);
-      return;
-    }
-    if (['ArrowFunctionExpression', 'FunctionExpression', 'FunctionDeclaration'].includes(candidate.type)) return;
-    if (candidate.type === 'ReturnStatement' || candidate.type === 'ThrowStatement') {
-      found = true;
-      return;
-    }
-    for (const [key, value] of Object.entries(candidate)) {
-      if (!['loc', 'start', 'end', 'extra'].includes(key)) visit(value);
-    }
-  };
-  visit(node);
-  return found;
 }
 
 function loopHasReachableUnlabeledBreak(loopNode) {
@@ -1327,7 +1379,27 @@ function isGuaranteedNonTerminatingLoop(statement) {
 }
 
 function statementPreventsFollowingExecution(statement) {
-  return containsAbruptCompletionOutsideNestedFunctions(statement) || isGuaranteedNonTerminatingLoop(statement);
+  if (!statement) return false;
+  if (statement.type === 'ReturnStatement' || statement.type === 'ThrowStatement') return true;
+  if (isGuaranteedNonTerminatingLoop(statement)) return true;
+  if (statement.type === 'BlockStatement') {
+    for (const candidate of executableStatements(statement)) {
+      if (statementPreventsFollowingExecution(candidate)) return true;
+    }
+    return false;
+  }
+  if (statement.type === 'LabeledStatement') {
+    return statementPreventsFollowingExecution(statement.body);
+  }
+  if (statement.type === 'IfStatement') {
+    const testValue = staticTruthValue(statement.test);
+    if (testValue === true) return statementPreventsFollowingExecution(statement.consequent);
+    if (testValue === false) return statementPreventsFollowingExecution(statement.alternate);
+    return Boolean(statement.alternate)
+      && statementPreventsFollowingExecution(statement.consequent)
+      && statementPreventsFollowingExecution(statement.alternate);
+  }
+  return false;
 }
 
 function directCallStatementMatches(statement, calleeName, argumentPredicate) {
@@ -1630,6 +1702,79 @@ useEffect(() => {
     'cleanup for-loop mutation must insert for(;;) before the token increment',
   );
   check(!analyzeVideoRequestContract(nonTerminatingForCleanupMutation).valid, 'file preview contract must reject cleanup invalidation after for(;;)');
+  const blockNonTerminatingEpisodeMutation = source.replace(
+    `    fileRequestTokenRef.current += 1;
+    const findNode = (nodes) => {`,
+    `    fileRequestTokenRef.current += 1;
+    { while (true) {} }
+    const findNode = (nodes) => {`,
+  );
+  check(
+    blockNonTerminatingEpisodeMutation !== source
+      && blockNonTerminatingEpisodeMutation.includes('fileRequestTokenRef.current += 1;\n    { while (true) {} }'),
+    'episode block mutation must insert a nested infinite loop before reset calls',
+  );
+  check(!analyzeVideoRequestContract(blockNonTerminatingEpisodeMutation).valid, 'file preview contract must reject reset calls after a nested block infinite loop');
+  const ifNonTerminatingEpisodeMutation = source.replace(
+    `    fileRequestTokenRef.current += 1;
+    const findNode = (nodes) => {`,
+    `    fileRequestTokenRef.current += 1;
+    if (true) { while (true) {} }
+    const findNode = (nodes) => {`,
+  );
+  check(
+    ifNonTerminatingEpisodeMutation !== source
+      && ifNonTerminatingEpisodeMutation.includes('fileRequestTokenRef.current += 1;\n    if (true) { while (true) {} }'),
+    'episode if mutation must insert a statically reached infinite loop before reset calls',
+  );
+  check(!analyzeVideoRequestContract(ifNonTerminatingEpisodeMutation).valid, 'file preview contract must reject reset calls after an if(true) infinite loop');
+  const labeledNonTerminatingEpisodeMutation = source.replace(
+    `    fileRequestTokenRef.current += 1;
+    const findNode = (nodes) => {`,
+    `    fileRequestTokenRef.current += 1;
+    resetGate: { while (true) {} }
+    const findNode = (nodes) => {`,
+  );
+  check(
+    labeledNonTerminatingEpisodeMutation !== source
+      && labeledNonTerminatingEpisodeMutation.includes('fileRequestTokenRef.current += 1;\n    resetGate: { while (true) {} }'),
+    'episode labeled mutation must insert a labeled nested infinite loop before reset calls',
+  );
+  check(!analyzeVideoRequestContract(labeledNonTerminatingEpisodeMutation).valid, 'file preview contract must reject reset calls after a labeled block infinite loop');
+  const blockNonTerminatingCleanupMutation = source.replace(
+    `    return () => {
+      fileRequestTokenRef.current += 1;
+    };
+  }, [episodeId]);`,
+    `    return () => {
+      { for (;;) {} }
+      fileRequestTokenRef.current += 1;
+    };
+  }, [episodeId]);`,
+  );
+  check(
+    blockNonTerminatingCleanupMutation !== source
+      && blockNonTerminatingCleanupMutation.includes('return () => {\n      { for (;;) {} }\n      fileRequestTokenRef.current += 1;'),
+    'cleanup block mutation must insert a nested for(;;) before token invalidation',
+  );
+  check(!analyzeVideoRequestContract(blockNonTerminatingCleanupMutation).valid, 'file preview contract must reject cleanup invalidation after a nested block for(;;)');
+  const ifNonTerminatingCleanupMutation = source.replace(
+    `    return () => {
+      fileRequestTokenRef.current += 1;
+    };
+  }, [episodeId]);`,
+    `    return () => {
+      if (true) { for (;;) {} }
+      fileRequestTokenRef.current += 1;
+    };
+  }, [episodeId]);`,
+  );
+  check(
+    ifNonTerminatingCleanupMutation !== source
+      && ifNonTerminatingCleanupMutation.includes('return () => {\n      if (true) { for (;;) {} }\n      fileRequestTokenRef.current += 1;'),
+    'cleanup if mutation must insert a statically reached for(;;) before token invalidation',
+  );
+  check(!analyzeVideoRequestContract(ifNonTerminatingCleanupMutation).valid, 'file preview contract must reject cleanup invalidation after an if(true) for(;;)');
   const fileAssetMap = {};
   let readFileResponseFunction = null;
   walk(ast, (node) => {
