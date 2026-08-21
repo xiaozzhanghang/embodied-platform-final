@@ -301,6 +301,63 @@ function collectBuiltNavigations(source) {
   return records.sort();
 }
 
+function navigationCallSink(node) {
+  if (node?.type !== 'CallExpression') return null;
+  const callee = node.callee;
+  if (callee?.type !== 'MemberExpression' || callee.computed) return null;
+  if (
+    callee.object?.type === 'Identifier'
+    && callee.object.name === 'router'
+    && ['push', 'replace'].includes(callee.property?.name)
+  ) return `router.${callee.property.name}`;
+  if (
+    callee.object?.type === 'Identifier'
+    && callee.object.name === 'window'
+    && callee.property?.name === 'open'
+  ) return 'window.open';
+  return null;
+}
+
+function collectNavigationSinkArguments(source) {
+  const records = [];
+  walk(parse(source), (node) => {
+    const sink = navigationCallSink(node);
+    if (!sink) return;
+    const argument = node.arguments[0];
+    records.push({
+      sink,
+      argument,
+      expression: argument ? source.slice(argument.start, argument.end) : '<missing>',
+    });
+  });
+  return records;
+}
+
+function isDirectStaticHrefCall(node) {
+  return (
+    node?.type === 'CallExpression'
+    && node.callee?.type === 'Identifier'
+    && node.callee.name === 'buildStaticHref'
+  );
+}
+
+function staticLiteralPath(node) {
+  if (node?.type === 'StringLiteral') return node.value;
+  if (node?.type === 'TemplateLiteral' && node.expressions.length === 0) {
+    return node.quasis[0]?.value.cooked ?? node.quasis[0]?.value.raw;
+  }
+  return null;
+}
+
+function collectUnsafeNavigationSinks(source) {
+  return collectNavigationSinkArguments(source).flatMap(({ sink, argument, expression }) => {
+    if (isDirectStaticHrefCall(argument)) return [];
+    const literalPath = staticLiteralPath(argument);
+    if (typeof literalPath === 'string' && literalPath.startsWith('/') && !literalPath.includes('?')) return [];
+    return [{ sink, argumentType: argument?.type || 'missing', expression }];
+  });
+}
+
 const navigationContracts = new Map([
   ['src/app/collection/collection-tasks/page.js', [
     'taskDetail|router.push|id=record.taskId&needCollect=needCollect',
@@ -366,8 +423,14 @@ const navigationContracts = new Map([
 ]);
 
 for (const [pagePath, expected] of navigationContracts) {
+  const source = readFileSync(pagePath, 'utf8');
   assert.deepEqual(
-    collectBuiltNavigations(readFileSync(pagePath, 'utf8')),
+    collectUnsafeNavigationSinks(source),
+    [],
+    `${pagePath} 的所有真实导航 sink 必须直接使用 buildStaticHref 或无查询的静态路径 literal`,
+  );
+  assert.deepEqual(
+    collectBuiltNavigations(source),
     [...expected].sort(),
     `${pagePath} 的所有 buildStaticHref 导航必须与完整多重集契约一致`,
   );
@@ -387,6 +450,53 @@ assert.deepEqual(
   `),
   [],
   '未使用 helper、普通对象 href 与注释诱饵不得视为真实导航',
+);
+
+const unsafeNavigationMutations = [
+  {
+    label: '任务编辑 raw query 模板',
+    sourcePath: 'src/app/collection/collection-tasks/page.js',
+    badSink: 'router.push(`/collection/tasks/create?mode=edit&taskId=${record.taskId}`);',
+  },
+  {
+    label: '任务书编辑 raw query 模板',
+    sourcePath: 'src/app/collection/taskbooks/page.js',
+    badSink: 'router.push(`/collection/taskbooks/create?mode=edit&id=${record.id}`);',
+  },
+  {
+    label: '任务书发起采集 raw query 模板',
+    sourcePath: 'src/app/collection/taskbooks/page.js',
+    badSink: 'router.push(`/collection/collection-tasks/create?taskbook=${record.id}`);',
+  },
+  {
+    label: '模板编辑 raw query 模板',
+    sourcePath: 'src/app/collection/templates/page.js',
+    badSink: 'router.push(`/collection/templates/create?id=${tpl.key}`);',
+  },
+  {
+    label: '旧详情 BinaryExpression 拼接',
+    sourcePath: 'src/app/collection/collection-tasks/page.js',
+    badSink: "router.push('/collection/tasks/detail/' + record.taskId);",
+  },
+];
+
+for (const { label, sourcePath, badSink } of unsafeNavigationMutations) {
+  const source = `${readFileSync(sourcePath, 'utf8')}\n${badSink}`;
+  assert.deepEqual(
+    collectUnsafeNavigationSinks(source),
+    [{
+      sink: 'router.push',
+      argumentType: label.includes('BinaryExpression') ? 'BinaryExpression' : 'TemplateLiteral',
+      expression: badSink.slice('router.push('.length, -2),
+    }],
+    `${label} 必须被完整真实 sink 清单拒绝`,
+  );
+}
+
+assert.deepEqual(
+  collectUnsafeNavigationSinks("router.push('/collection/taskbooks/create');"),
+  [],
+  '无查询、无表达式的纯静态管理路径必须继续允许',
 );
 
 const dynamicManagementPrefixes = [
