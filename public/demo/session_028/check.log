@@ -1,0 +1,3 @@
+[2026-08-21 10:00:00] DEMO session=session_028_demo
+[2026-08-21 10:00:01] CHECK trajectory continuity: PASS
+[2026-08-21 10:00:02] CHECK synchronized timestamps: PASS

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, Input, Button, Tree, Form, Select, Row, Col, Space, Tag, Typography, Breadcrumb, Tooltip, Divider, Tabs, Table, Pagination } from 'antd';
+import { App, Card, Input, Button, Tree, Form, Select, Row, Col, Space, Tag, Typography, Breadcrumb, Tooltip, Divider, Tabs, Table, Pagination } from 'antd';
 import { 
   SearchOutlined, 
   EyeOutlined, 
@@ -24,6 +24,7 @@ import {
   InfoCircleOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import StaticVideoPlaceholder from '@/components/StaticVideoPlaceholder';
 import { FilterPanel, PageHeader, StateView, TableToolbar } from '@/components/ui';
 
 const { Text, Title } = Typography;
@@ -91,7 +92,7 @@ const mockCards = [
   { 
     id: 'session_028_6f8b9ee3b57db6db1a8b', 
     title: '鹿鸣双臂手眼协同动作采集 (session_028)', 
-    tags: ['鹿鸣 v1.0', '真实数据'], 
+    tags: ['鹿鸣 v1.0', '静态演示数据'],
     size: '220.90 MB', 
     date: '2026-05-20', 
     frames: 15222, 
@@ -187,7 +188,7 @@ const mockCards = [
   { 
     id: 'session_029_6f8b9ee3b57db6db1a8c', 
     title: '鹿鸣双手臂动作标定测试 (session_029)', 
-    tags: ['鹿鸣 v1.0', '真实数据'], 
+    tags: ['鹿鸣 v1.0', '静态演示数据'],
     size: '185.20 MB', 
     date: '2026-05-21', 
     frames: 11020, 
@@ -203,7 +204,7 @@ const mockCards = [
   { 
     id: 'session_030_6f8b9ee3b57db6db1a8d', 
     title: '鹿鸣商超货架商品理货 (session_030)', 
-    tags: ['鹿鸣 v1.0', '真实数据'], 
+    tags: ['鹿鸣 v1.0', '静态演示数据'],
     size: '290.45 MB', 
     date: '2026-05-22', 
     frames: 16030, 
@@ -393,6 +394,7 @@ const nonLumingFileTree = [
 ];
 
 export default function DataCatalogPage() {
+  const { message } = App.useApp();
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'detail'
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedTreeKey, setSelectedTreeKey] = useState('luming-data');
@@ -408,6 +410,10 @@ export default function DataCatalogPage() {
 
   // Sync player controls
   const playAll = () => {
+    if (selectedCard?.isLuming) {
+      message.info('静态演示包不包含真实视频播放');
+      return;
+    }
     if (leftVideoRef.current) leftVideoRef.current.play();
     if (rightVideoRef.current) rightVideoRef.current.play();
     if (headVideoRef.current) headVideoRef.current.play();
@@ -415,6 +421,10 @@ export default function DataCatalogPage() {
   };
 
   const pauseAll = () => {
+    if (selectedCard?.isLuming) {
+      message.info('静态演示包不包含真实视频播放');
+      return;
+    }
     if (leftVideoRef.current) leftVideoRef.current.pause();
     if (rightVideoRef.current) rightVideoRef.current.pause();
     if (headVideoRef.current) headVideoRef.current.pause();
@@ -422,6 +432,10 @@ export default function DataCatalogPage() {
   };
 
   const resetAll = () => {
+    if (selectedCard?.isLuming) {
+      message.info('静态演示包不包含真实视频播放');
+      return;
+    }
     if (leftVideoRef.current) {
       leftVideoRef.current.pause();
       leftVideoRef.current.currentTime = 0;
@@ -566,7 +580,7 @@ export default function DataCatalogPage() {
                               </div>
                               {card.isLuming && (
                                 <div style={{ position: 'absolute', top: '8px', right: '8px' }}>
-                                  <Tag color="cyan" style={{ margin: 0 }}>真实物理采集</Tag>
+                                  <Tag color="cyan" style={{ margin: 0 }}>静态演示数据</Tag>
                                 </div>
                               )}
                             </div>
@@ -600,7 +614,13 @@ export default function DataCatalogPage() {
                             <Button 
                               icon={<DownloadOutlined />} 
                               style={{ flex: 1 }}
-                              onClick={() => window.open(card.isLuming ? '/videos/session_028_left.mp4' : '#')}
+                              onClick={() => {
+                                if (card.isLuming) {
+                                  message.info('静态演示包不包含真实视频下载');
+                                  return;
+                                }
+                                window.open('#');
+                              }}
                             >
                               下载
                             </Button>
@@ -722,6 +742,7 @@ export default function DataCatalogPage() {
                       type="primary" 
                       icon={<PlayCircleOutlined />} 
                       onClick={playAll}
+                      disabled={selectedCard?.isLuming}
                     >
                       播放全部
                     </Button>
@@ -730,12 +751,14 @@ export default function DataCatalogPage() {
                       danger 
                       icon={<PauseCircleOutlined />} 
                       onClick={pauseAll}
+                      disabled={selectedCard?.isLuming}
                     >
                       暂停全部
                     </Button>
                     <Button 
                       icon={<RedoOutlined />} 
                       onClick={resetAll}
+                      disabled={selectedCard?.isLuming}
                     >
                       重置全部
                     </Button>
@@ -755,13 +778,7 @@ export default function DataCatalogPage() {
                         style={{ background: '#f5f5f5', borderRadius: 6 }}
                       >
                         {selectedCard?.isLuming ? (
-                          <video 
-                            ref={leftVideoRef} 
-                            src="/videos/session_028_left.mp4" 
-                            style={{ width: '100%', height: '380px', borderRadius: 4, background: '#000', objectFit: 'cover' }} 
-                            controls
-                            muted
-                          />
+                          <StaticVideoPlaceholder label="Left（左侧视角）静态演示" />
                         ) : (
                           <div style={{ height: '380px', background: '#262626', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bfbfbf' }}>
                             <span style={{ fontSize: '11px' }}>[ 仿真录制 Left 视角流 ]</span>
@@ -779,13 +796,7 @@ export default function DataCatalogPage() {
                         style={{ background: '#f5f5f5', borderRadius: 6 }}
                       >
                         {selectedCard?.isLuming ? (
-                          <video 
-                            ref={rightVideoRef} 
-                            src="/videos/session_028_right.mp4" 
-                            style={{ width: '100%', height: '380px', borderRadius: 4, background: '#000', objectFit: 'cover' }} 
-                            controls
-                            muted
-                          />
+                          <StaticVideoPlaceholder label="Right（右侧视角）静态演示" />
                         ) : (
                           <div style={{ height: '380px', background: '#262626', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bfbfbf' }}>
                             <span style={{ fontSize: '11px' }}>[ 仿真录制 Right 视角流 ]</span>

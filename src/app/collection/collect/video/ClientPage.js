@@ -13,10 +13,31 @@ import {
   VideoCameraOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import StaticVideoPlaceholder from '@/components/StaticVideoPlaceholder';
 import { StatusTag } from '@/components/ui';
+import { getLumingStaticAsset } from '@/lib/lumingStaticAssets.mjs';
 import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
+
+const fileAssetKeys = {
+  check_log: 'checkLog',
+  report_txt: 'reportText',
+  report_json: 'report',
+  left_timestamps: 'timestampsLeft',
+  right_timestamps: 'timestampsRight',
+  left_queue: 'queueLeft',
+  right_queue: 'queueRight',
+  transforms_lr: 'transformsLeftToRight',
+  transforms_rl: 'transformsRightToLeft',
+};
+
+async function readFileResponse(response, isJson) {
+  if (!response.ok) {
+    throw new Error(`静态演示文件请求失败（${response.status}）`);
+  }
+  return isJson ? response.json() : response.text();
+}
 
 // Directory structure tree data helper (Luming data package style)
 const getTreeData = (episodeId) => {
@@ -398,20 +419,11 @@ export default function EpisodeVideoPage() {
 
                   if (node && node.isText) {
                     setLoadingFileContent(true);
-                    let url = '';
-                    if (key === 'check_log') url = '/api/luming?type=log&file=log';
-                    else if (key === 'report_txt') url = '/api/luming?type=log&file=txt';
-                    else if (key === 'report_json') url = '/api/luming?type=report';
-                    else if (key === 'left_timestamps') url = '/api/luming?type=log&file=left_timestamps';
-                    else if (key === 'right_timestamps') url = '/api/luming?type=log&file=right_timestamps';
-                    else if (key === 'left_queue') url = '/api/luming?type=log&file=left_queue';
-                    else if (key === 'right_queue') url = '/api/luming?type=log&file=right_queue';
-                    else if (key === 'transforms_lr') url = '/api/luming?type=log&file=transforms_lr';
-                    else if (key === 'transforms_rl') url = '/api/luming?type=log&file=transforms_rl';
+                    const assetKey = fileAssetKeys[key];
 
-                    if (url) {
-                      fetch(url)
-                        .then(res => key === 'report_json' ? res.json() : res.text())
+                    if (assetKey) {
+                      fetch(getLumingStaticAsset(assetKey))
+                        .then(response => readFileResponse(response, key === 'report_json'))
                         .then(data => {
                           const text = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
                           setFileContent(text);
@@ -443,7 +455,7 @@ export default function EpisodeVideoPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                 <Space>
                   <EyeOutlined style={{ color: '#1677ff' }} />
-                  <span>实时数据预览区</span>
+                  <span>静态演示数据预览区</span>
                 </Space>
                 {selectedFileNode && (
                   <Space>
@@ -469,18 +481,8 @@ export default function EpisodeVideoPage() {
                 {/* Video Player */}
                 {selectedFileNode.isVideo && (
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ position: 'relative', width: 640, height: 360, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)', background: '#000' }}>
-                      <video 
-                        key={selectedFileKey} // reload on toggle
-                        src={selectedFileKey === 'left_video' 
-                          ? `/session_028/left_hand_250801DR48FP26003296/RGB_Images/video.mp4` 
-                          : `/session_028/right_hand_250801DR48FP26003349/RGB_Images/video.mp4`}
-                        controls
-                        autoPlay
-                        loop
-                        muted
-                        style={{ width: '100%', height: '100%', display: 'block', objectFit: 'contain' }}
-                      />
+                    <div style={{ width: 640, minHeight: 360, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)', background: '#000' }}>
+                      <StaticVideoPlaceholder label={selectedFileKey === 'left_video' ? '左手腕相机静态演示' : '右手腕相机静态演示'} />
                     </div>
                   </div>
                 )}
@@ -502,7 +504,7 @@ export default function EpisodeVideoPage() {
                       margin: 0,
                       lineHeight: '1.6'
                     }}>
-                      {loadingFileContent ? '正在从采集卡目录读取实时数据...' : fileContent}
+                      {loadingFileContent ? '正在读取静态演示数据...' : fileContent}
                     </pre>
                   </div>
                 )}

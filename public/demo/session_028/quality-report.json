@@ -1,0 +1,57 @@
+{
+  "session_name": "session_028_demo",
+  "overall_pass": true,
+  "thresholds": {
+    "max_speed_mps": 0.45,
+    "max_accel_mps2": 5,
+    "max_jerk_mps3": 2200.73,
+    "max_angular_speed_rps": 2.5,
+    "max_angular_accel_rps2": 23,
+    "max_angular_jerk_rps3": 4000.41,
+    "min_position_distance_m": 0.05
+  },
+  "trajectory_analysis": [
+    {
+      "arm_name": "left",
+      "kinematics": {
+        "speed_max_mps": 0.42,
+        "accel_max_mps2": 1.2,
+        "jerk_max_mps3": 18.4,
+        "angular_speed_max_rps": 0.8,
+        "angular_accel_max_rps2": 4.6,
+        "angular_jerk_max_rps3": 120.5
+      },
+      "position": { "max_distance_from_start_m": 0.31 },
+      "checks": {
+        "speed": true,
+        "accel": true,
+        "jerk": true,
+        "angular_speed": true,
+        "angular_accel": true,
+        "angular_jerk": true,
+        "max_pos_dist": true
+      }
+    },
+    {
+      "arm_name": "right",
+      "kinematics": {
+        "speed_max_mps": 0.08,
+        "accel_max_mps2": 0.4,
+        "jerk_max_mps3": 6.2,
+        "angular_speed_max_rps": 0.3,
+        "angular_accel_max_rps2": 1.8,
+        "angular_jerk_max_rps3": 44.2
+      },
+      "position": { "max_distance_from_start_m": 0.12 },
+      "checks": {
+        "speed": true,
+        "accel": true,
+        "jerk": true,
+        "angular_speed": true,
+        "angular_accel": true,
+        "angular_jerk": true,
+        "max_pos_dist": true
+      }
+    }
+  ]
+}

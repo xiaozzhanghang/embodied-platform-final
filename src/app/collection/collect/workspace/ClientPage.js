@@ -51,6 +51,7 @@ import {
   HistoryOutlined
 } from '@ant-design/icons';
 import { StatusTag } from '@/components/ui';
+import StaticVideoPlaceholder from '@/components/StaticVideoPlaceholder';
 
 const { Title, Text } = Typography;
 
@@ -71,42 +72,42 @@ function HumanoidWorkspace({ taskId, router }) {
       description: '右手拿起桌面上的筷子',
       actionGoal: '用右手拇指、食指和中指捏住一根筷子，从桌面垂直拿起，离开桌面约 5cm。',
       precautions: ['不要触碰其他餐具', '筷子保持水平', '动作轻稳，避免抖动'],
-      referenceImage: '/assets/chopsticks-reference.png',
+      referenceImage: '/assets/images/robot_schematic.png',
     },
     {
       title: '右手将筷子放置在厨具盒中',
       description: '右手将筷子放置在厨具盒中',
       actionGoal: '保持筷子垂直，将筷子放入厨具盒的指定槽位中。',
       precautions: ['轻放避免碰撞', '确认筷子已放稳'],
-      referenceImage: '/assets/chopsticks-reference.png',
+      referenceImage: '/assets/images/robot_schematic.png',
     },
     {
       title: '左手拿起桌面上的餐叉',
       description: '左手拿起桌面上的餐叉',
       actionGoal: '用左手拇指、食指和中指捏住餐叉，从桌面拿起。',
       precautions: ['餐叉齿部朝上', '避免戳到其他餐具'],
-      referenceImage: '/assets/chopsticks-reference.png',
+      referenceImage: '/assets/images/robot_schematic.png',
     },
     {
       title: '左手将餐叉放置在厨具盒中',
       description: '左手将餐叉放置在厨具盒中',
       actionGoal: '将餐叉放入厨具盒的指定槽位。',
       precautions: ['确认餐叉已放稳'],
-      referenceImage: '/assets/chopsticks-reference.png',
+      referenceImage: '/assets/images/robot_schematic.png',
     },
     {
       title: '右手拿起桌面上的勺子',
       description: '右手拿起桌面上的勺子',
       actionGoal: '用右手捏住勺子柄部，从桌面拿起。',
       precautions: ['勺子凹面朝上', '避免溅出残留物'],
-      referenceImage: '/assets/chopsticks-reference.png',
+      referenceImage: '/assets/images/robot_schematic.png',
     },
     {
       title: '右手将勺子放置在厨具盒中',
       description: '右手将勺子放置在厨具盒中',
       actionGoal: '将勺子放入厨具盒的指定槽位。',
       precautions: ['轻放避免碰撞'],
-      referenceImage: '/assets/chopsticks-reference.png',
+      referenceImage: '/assets/images/robot_schematic.png',
     },
   ];
 
@@ -294,7 +295,7 @@ function HumanoidWorkspace({ taskId, router }) {
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
-                  <video src="/assets/videos/left_hand.mp4" autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <StaticVideoPlaceholder label="头部左目视角静态演示" />
                   <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
                     <div>Resolution: 848*480</div>
@@ -326,7 +327,7 @@ function HumanoidWorkspace({ taskId, router }) {
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
-                  <video src="/assets/videos/left_hand.mp4" autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <StaticVideoPlaceholder label="左手腕视角静态演示" />
                   <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
                     <div>Resolution: 848*480</div>
@@ -358,7 +359,7 @@ function HumanoidWorkspace({ taskId, router }) {
                   position: 'relative',
                   overflow: 'hidden',
                 }}>
-                  <video src="/assets/videos/right_hand.mp4" autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <StaticVideoPlaceholder label="右手腕视角静态演示" />
                   <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
                     <div>Resolution: 848*480</div>

@@ -29,6 +29,7 @@ import {
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
+import StaticVideoPlaceholder from '@/components/StaticVideoPlaceholder';
 import { AppModal, FilterPanel, PageHeader, TableToolbar } from '@/components/ui';
 import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
@@ -242,21 +243,7 @@ const initialRuleData = [
   },
 ];
 
-// Helper to resolve video filename to a working url in prototype
-const getVideoUrl = (filename) => {
-  if (!filename) return '/assets/videos/left_hand.mp4';
-  if (filename.startsWith('/') || filename.startsWith('http')) return filename;
-  if (filename === 'left_hand.mp4' || filename === 'right_hand.mp4') {
-    return `/assets/videos/${filename}`;
-  }
-  if (filename === 'session_028_left.mp4' || filename === 'session_028_right.mp4') {
-    return `/videos/${filename}`;
-  }
-  if (filename.includes('hand') || filename.includes('tactile')) {
-    return '/assets/videos/left_hand.mp4';
-  }
-  return '/assets/videos/right_hand.mp4';
-};
+const STATIC_VIDEO_PLACEHOLDER_PATH = '/assets/robot_view.png';
 
 function RuleTable({ data, onEdit, onDelete, onPreviewVideo }) {
   const [selectedKeys, setSelectedKeys] = useState([]);
@@ -673,7 +660,7 @@ export default function DeviceTypesPage() {
               message.success('规则已删除');
             }}
             onPreviewVideo={(url) => {
-              setPreviewVideoUrl(url);
+              setPreviewVideoUrl(url ? STATIC_VIDEO_PLACEHOLDER_PATH : null);
             }}
           />
         ) : (
@@ -1107,7 +1094,7 @@ export default function DeviceTypesPage() {
         destroyOnHidden
       >
         <div style={{ padding: '12px 0 0 0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <video src={previewVideoUrl} controls autoPlay style={{ width: '100%', maxHeight: 400, borderRadius: 8, background: '#000' }} />
+          <StaticVideoPlaceholder label="封面视频静态演示" />
         </div>
       </AppModal>
       </div>

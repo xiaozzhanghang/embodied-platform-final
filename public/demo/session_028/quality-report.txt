@@ -1,0 +1,5 @@
+Session: session_028_demo
+Mode: PUBLIC STATIC FIXTURE
+Trajectory continuity: PASS
+Timestamp synchronization: PASS
+Overall status: PASS

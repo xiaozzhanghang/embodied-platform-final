@@ -9,7 +9,9 @@ import {
   FileTextOutlined, SafetyCertificateOutlined, WarningOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
+import StaticVideoPlaceholder from '@/components/StaticVideoPlaceholder';
 import { StateView, StatusTag } from '@/components/ui';
+import { LUMING_STATIC_ASSETS } from '@/lib/lumingStaticAssets.mjs';
 
 const { Title } = Typography;
 
@@ -83,21 +85,36 @@ export default function CollectTaskDataPage() {
     setLoadingEpisodeId(episodeId);
     setRealDataError(null);
 
-    Promise.all([
-      fetch('/api/luming?type=report').then(readJsonResponse),
-      fetch('/api/luming?type=trajectory&hand=left').then(readJsonResponse),
-      fetch('/api/luming?type=trajectory&hand=right').then(readJsonResponse)
-    ]).then(([report, leftTraj, rightTraj]) => {
+    Promise.allSettled([
+      fetch(LUMING_STATIC_ASSETS.report).then(readJsonResponse),
+      fetch(LUMING_STATIC_ASSETS.trajectoryLeft).then(readJsonResponse),
+      fetch(LUMING_STATIC_ASSETS.trajectoryRight).then(readJsonResponse),
+    ]).then(([reportResult, leftResult, rightResult]) => {
       if (cancelled) return;
-      if (report && !report.error) setRealReport(report);
-      if (Array.isArray(leftTraj)) setLeftTrajectory(leftTraj);
-      if (Array.isArray(rightTraj)) setRightTrajectory(rightTraj);
-    }).catch(err => {
-      if (cancelled) return;
-      setRealDataError({
-        episodeId,
-        message: err instanceof Error ? err.message : '真实数据加载失败，请稍后重试。',
-      });
+      if (reportResult.status === 'fulfilled') {
+        setRealReport(reportResult.value);
+      }
+      if (leftResult.status === 'fulfilled') {
+        setLeftTrajectory(Array.isArray(leftResult.value) ? leftResult.value : []);
+      }
+      if (rightResult.status === 'fulfilled') {
+        setRightTrajectory(Array.isArray(rightResult.value) ? rightResult.value : []);
+      }
+
+      const rejectedResults = [
+        ['质检报告', reportResult],
+        ['左臂轨迹', leftResult],
+        ['右臂轨迹', rightResult],
+      ].filter(([, result]) => result.status === 'rejected');
+      if (rejectedResults.length > 0) {
+        setRealDataError({
+          episodeId,
+          message: rejectedResults.map(([label, result]) => {
+            const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+            return `${label}：${reason}`;
+          }).join('；'),
+        });
+      }
     }).finally(() => {
       if (!cancelled) {
         setLoadingEpisodeId(current => current === episodeId ? null : current);
@@ -434,12 +451,12 @@ export default function CollectTaskDataPage() {
             <StateView
               type="loading"
               title="数据解析中"
-              description="正在加载 session_028 质检报告与轨迹数据。"
+              description="正在加载 session_028 静态演示质检报告与轨迹数据。"
             />
           ) : selectedEpisodeError ? (
             <StateView
               type="error"
-              title="真实数据加载失败"
+              title="静态演示数据加载失败"
               description={selectedEpisodeError.message}
               onRetry={retryRealData}
             />
@@ -484,7 +501,7 @@ export default function CollectTaskDataPage() {
                 {/* 4-Camera Video Grid Simulator */}
                 <Col span={14}>
                   <Card className="ui-table-card"
-                    title={selectedEpisode.episodeId === 'session_028' ? "实际数据监控 - 双手臂相机画面" : (isLumos ? "多视角相机流监视 (Lumos Multi-Cam)" : "多视角相机监视 (Camera CCTV)")} 
+                    title={selectedEpisode.episodeId === 'session_028' ? "静态演示数据 - 双手臂相机画面" : (isLumos ? "多视角相机流监视 (Lumos Multi-Cam)" : "多视角相机监视 (Camera CCTV)")}
                     variant="borderless"
                     styles={{ body: { padding: 8 } }} 
                     style={{ background: '#141414', color: '#fff', borderRadius: 8, overflow: 'hidden' }}
@@ -512,18 +529,8 @@ export default function CollectTaskDataPage() {
                             </Button>
                           </Space>
                         </div>
-                        <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', background: '#000', borderRadius: 4, overflow: 'hidden' }}>
-                            <video 
-                              key={activeVideoHand} // force reload on toggle
-                              src={activeVideoHand === 'left'
-                                ? `/session_028/left_hand_250801DR48FP26003296/RGB_Images/video.mp4`
-                                : `/session_028/right_hand_250801DR48FP26003349/RGB_Images/video.mp4`}
-                              controls
-                              autoPlay
-                              loop
-                              muted
-                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
-                          />
+                        <div style={{ width: '100%', minHeight: 300, background: '#000', borderRadius: 4, overflow: 'hidden' }}>
+                          <StaticVideoPlaceholder label={activeVideoHand === 'left' ? '左手腕相机静态演示' : '右手腕相机静态演示'} />
                         </div>
                       </div>
                     ) : (
