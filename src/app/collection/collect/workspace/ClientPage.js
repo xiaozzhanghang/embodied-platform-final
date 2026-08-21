@@ -55,7 +55,7 @@ import { StatusTag } from '@/components/ui';
 const { Title, Text } = Typography;
 
 // ==================== HUMANOID WORKSPACE (ORIGINAL) ====================
-function HumanoidWorkspace({ taskId, router, params }) {
+function HumanoidWorkspace({ taskId, router }) {
   const { message } = App.useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -833,7 +833,7 @@ const defaultCompletedEpisodes = [
   { id: 'EP_003', time: '15.1', frames: 453, status: '已隔离' },
 ];
 
-function LumosWorkspace({ taskId, router, params }) {
+function LumosWorkspace({ taskId, router }) {
   const { message } = App.useApp();
   
   // Lumos State Machine States:
@@ -1543,7 +1543,7 @@ const defaultGalbotEpisodes = [
   { id: 'EP_002', time: '14.8', frames: 444, status: '已保存' },
 ];
 
-function Galbot116Workspace({ taskId, router, params }) {
+function Galbot116Workspace({ taskId, router }) {
   const { message } = App.useApp();
   const [galbotState, setGalbotState] = useState('SERVICE_STOPPED'); // SERVICE_STOPPED, BOOTING, READY, COLLECTING, COMPLETE
   const [voiceLogs, setVoiceLogs] = useState([
@@ -2135,11 +2135,11 @@ export default function WorkspacePage() {
   return (
     <App>
       {isGalbot116 ? (
-        <Galbot116Workspace taskId={taskId} router={router} params={params} />
+        <Galbot116Workspace taskId={taskId} router={router} />
       ) : isLumos ? (
-        <LumosWorkspace taskId={taskId} router={router} params={params} />
+        <LumosWorkspace taskId={taskId} router={router} />
       ) : (
-        <HumanoidWorkspace taskId={taskId} router={router} params={params} />
+        <HumanoidWorkspace taskId={taskId} router={router} />
       )}
     </App>
   );
