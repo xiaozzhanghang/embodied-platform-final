@@ -148,6 +148,7 @@ export default function EpisodeVideoPage() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [frame, setFrame] = useState(0);
   const canvasRef = useRef(null);
+  const fileRequestTokenRef = useRef(0);
 
   const [fileContent, setFileContent] = useState('');
   const [loadingFileContent, setLoadingFileContent] = useState(false);
@@ -393,6 +394,8 @@ export default function EpisodeVideoPage() {
               treeData={currentTreeData}
               selectedKeys={[selectedFileKey]}
               onSelect={(keys, info) => {
+                const requestToken = fileRequestTokenRef.current + 1;
+                fileRequestTokenRef.current = requestToken;
                 if (keys.length > 0) {
                   const key = keys[0];
                   setSelectedFileKey(key);
@@ -418,6 +421,7 @@ export default function EpisodeVideoPage() {
                   }
 
                   if (node && node.isText) {
+                    setFileContent('');
                     setLoadingFileContent(true);
                     const assetKey = fileAssetKeys[key];
 
@@ -425,14 +429,17 @@ export default function EpisodeVideoPage() {
                       fetch(getLumingStaticAsset(assetKey))
                         .then(response => readFileResponse(response, key === 'report_json'))
                         .then(data => {
+                          if (fileRequestTokenRef.current !== requestToken) return;
                           const text = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
                           setFileContent(text);
                         })
                         .catch(err => {
+                          if (fileRequestTokenRef.current !== requestToken) return;
                           console.error(err);
                           setFileContent('读取数据失败: ' + err.message);
                         })
                         .finally(() => {
+                          if (fileRequestTokenRef.current !== requestToken) return;
                           setLoadingFileContent(false);
                         });
                     } else {
@@ -441,7 +448,13 @@ export default function EpisodeVideoPage() {
                     }
                   } else {
                     setFileContent('');
+                    setLoadingFileContent(false);
                   }
+                } else {
+                  setSelectedFileNode(null);
+                  setIsPlaying(false);
+                  setFileContent('');
+                  setLoadingFileContent(false);
                 }
               }}
             />
@@ -459,7 +472,7 @@ export default function EpisodeVideoPage() {
                 </Space>
                 {selectedFileNode && (
                   <Space>
-                    {selectedFileNode.isVideo && <Tag color="processing">Video Stream (MP4)</Tag>}
+                    {selectedFileNode.isVideo && <Tag color="processing">静态演示（无 MP4）</Tag>}
                     {selectedFileNode.isText && <Tag color="orange">Text/Log File</Tag>}
                     {!selectedFileNode.isVideo && !selectedFileNode.isText && <Tag color="default">Binary Data</Tag>}
                   </Space>

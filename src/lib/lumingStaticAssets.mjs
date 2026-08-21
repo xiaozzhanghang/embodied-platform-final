@@ -15,7 +15,9 @@ export const LUMING_STATIC_ASSETS = Object.freeze({
 });
 
 export function getLumingStaticAsset(key) {
+  if (!Object.hasOwn(LUMING_STATIC_ASSETS, key)) {
+    throw new Error(`Unknown Luming static asset: ${key}`);
+  }
   const url = LUMING_STATIC_ASSETS[key];
-  if (!url) throw new Error(`Unknown Luming static asset: ${key}`);
   return url;
 }

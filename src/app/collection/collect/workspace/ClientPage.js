@@ -299,7 +299,7 @@ function HumanoidWorkspace({ taskId, router }) {
                   <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
                     <div>Resolution: 848*480</div>
-                    <div>Live Stream</div>
+                    <div>静态演示占位</div>
                   </div>
                 </div>
               </div>
@@ -331,7 +331,7 @@ function HumanoidWorkspace({ taskId, router }) {
                   <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
                     <div>Resolution: 848*480</div>
-                    <div>Live Stream</div>
+                    <div>静态演示占位</div>
                   </div>
                 </div>
               </div>
@@ -363,7 +363,7 @@ function HumanoidWorkspace({ taskId, router }) {
                   <div style={{ position: 'absolute', right: 16, bottom: 16, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 8px', fontSize: 10, borderRadius: 4, textAlign: 'right' }}>
                     <div>Fps: 30</div>
                     <div>Resolution: 848*480</div>
-                    <div>Live Stream</div>
+                    <div>静态演示占位</div>
                   </div>
                 </div>
               </div>

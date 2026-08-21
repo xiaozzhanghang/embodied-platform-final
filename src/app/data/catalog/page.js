@@ -431,11 +431,7 @@ export default function DataCatalogPage() {
     setIsPlaying(false);
   };
 
-  const resetAll = () => {
-    if (selectedCard?.isLuming) {
-      message.info('静态演示包不包含真实视频播放');
-      return;
-    }
+  const resetPlaybackState = () => {
     if (leftVideoRef.current) {
       leftVideoRef.current.pause();
       leftVideoRef.current.currentTime = 0;
@@ -449,6 +445,14 @@ export default function DataCatalogPage() {
       headVideoRef.current.currentTime = 0;
     }
     setIsPlaying(false);
+  };
+
+  const resetAll = () => {
+    if (selectedCard?.isLuming) {
+      message.info('静态演示包不包含真实视频播放');
+      return;
+    }
+    resetPlaybackState();
   };
 
   // Reset page number on filter change
@@ -481,7 +485,7 @@ export default function DataCatalogPage() {
 
   const handleBack = () => {
     setViewMode('list');
-    resetAll();
+    resetPlaybackState();
   };
 
   return (

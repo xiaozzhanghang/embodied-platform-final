@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, Table, Space, Row, Col, Descriptions, Steps, Button, Typography, Breadcrumb, Collapse } from 'antd';
+import { Alert, Card, Table, Space, Row, Col, Descriptions, Steps, Button, Typography, Breadcrumb, Collapse } from 'antd';
 import { 
   ArrowLeftOutlined, HddOutlined, PlayCircleOutlined, ApiOutlined,
   CheckCircleOutlined, ExclamationCircleOutlined, InfoCircleOutlined,
@@ -84,6 +84,9 @@ export default function CollectTaskDataPage() {
     let cancelled = false;
     setLoadingEpisodeId(episodeId);
     setRealDataError(null);
+    setRealReport(null);
+    setLeftTrajectory([]);
+    setRightTrajectory([]);
 
     Promise.allSettled([
       fetch(LUMING_STATIC_ASSETS.report).then(readJsonResponse),
@@ -453,15 +456,17 @@ export default function CollectTaskDataPage() {
               title="数据解析中"
               description="正在加载 session_028 静态演示质检报告与轨迹数据。"
             />
-          ) : selectedEpisodeError ? (
-            <StateView
-              type="error"
-              title="静态演示数据加载失败"
-              description={selectedEpisodeError.message}
-              onRetry={retryRealData}
-            />
           ) : selectedEpisode ? (
             <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              {selectedEpisodeError && (
+                <Alert
+                  type="warning"
+                  showIcon
+                  message="静态演示数据部分加载失败"
+                  description={selectedEpisodeError.message}
+                  action={<Button size="small" onClick={retryRealData}>重试静态数据</Button>}
+                />
+              )}
               {/* Episode Metadata Details */}
               <Card className="ui-table-card" variant="borderless" styles={{ body: { padding: 16 } }} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)', borderRadius: 8 }}>
                 <Descriptions title={`序列详情: ${selectedEpisode.episodeId}`} size="small" column={3}>

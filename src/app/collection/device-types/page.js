@@ -287,9 +287,14 @@ function RuleTable({ data, onEdit, onDelete, onPreviewVideo }) {
       title: '操作',
       key: 'action',
       fixed: 'right',
-      width: 140,
+      width: 190,
       render: (_, record) => (
         <Space size="middle">
+          {record.coverVideo && (
+            <Button type="link" size="small" icon={<EyeOutlined />} style={{ padding: 0 }} onClick={() => onPreviewVideo(record.coverVideo)}>
+              预览
+            </Button>
+          )}
           <Button type="link" size="small" icon={<EditOutlined />} style={{ padding: 0 }} onClick={() => onEdit(record)}>
             编辑
           </Button>

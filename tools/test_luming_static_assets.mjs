@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 import babelParser from 'next/dist/compiled/babel/parser.js';
 
 const fixtureNames = [
@@ -69,6 +70,64 @@ const expectedTrajectories = {
   ],
 };
 
+const expectedQualityReport = {
+  session_name: 'session_028_demo',
+  overall_pass: true,
+  thresholds: {
+    max_speed_mps: 0.45,
+    max_accel_mps2: 5,
+    max_jerk_mps3: 2200.73,
+    max_angular_speed_rps: 2.5,
+    max_angular_accel_rps2: 23,
+    max_angular_jerk_rps3: 4000.41,
+    min_position_distance_m: 0.05,
+  },
+  trajectory_analysis: [
+    {
+      arm_name: 'left',
+      kinematics: {
+        speed_max_mps: 0.42,
+        accel_max_mps2: 1.2,
+        jerk_max_mps3: 18.4,
+        angular_speed_max_rps: 0.8,
+        angular_accel_max_rps2: 4.6,
+        angular_jerk_max_rps3: 120.5,
+      },
+      position: { max_distance_from_start_m: 0.31 },
+      checks: {
+        speed: true,
+        accel: true,
+        jerk: true,
+        angular_speed: true,
+        angular_accel: true,
+        angular_jerk: true,
+        max_pos_dist: true,
+      },
+    },
+    {
+      arm_name: 'right',
+      kinematics: {
+        speed_max_mps: 0.08,
+        accel_max_mps2: 0.4,
+        jerk_max_mps3: 6.2,
+        angular_speed_max_rps: 0.3,
+        angular_accel_max_rps2: 1.8,
+        angular_jerk_max_rps3: 44.2,
+      },
+      position: { max_distance_from_start_m: 0.12 },
+      checks: {
+        speed: true,
+        accel: true,
+        jerk: true,
+        angular_speed: true,
+        angular_accel: true,
+        angular_jerk: true,
+        max_pos_dist: true,
+      },
+    },
+  ],
+};
+
 const violations = [];
 const check = (condition, message) => {
   if (!condition) violations.push(message);
@@ -99,9 +158,23 @@ function walk(node, visitor, parent = null) {
   }
 }
 
+function walkWithAncestors(node, visitor, ancestors = []) {
+  if (!node || typeof node !== 'object') return;
+  if (Array.isArray(node)) {
+    for (const item of node) walkWithAncestors(item, visitor, ancestors);
+    return;
+  }
+  if (typeof node.type === 'string') visitor(node, ancestors);
+  const nextAncestors = [...ancestors, node];
+  for (const [key, value] of Object.entries(node)) {
+    if (!['loc', 'start', 'end', 'extra'].includes(key)) walkWithAncestors(value, visitor, nextAncestors);
+  }
+}
+
 function memberName(node) {
   if (node?.type !== 'MemberExpression' && node?.type !== 'OptionalMemberExpression') return null;
   if (node.computed && node.property?.type === 'StringLiteral') return node.property.value;
+  if (node.computed && node.property?.type === 'Identifier') return node.property.name;
   if (!node.computed && node.property?.type === 'Identifier') return node.property.name;
   return null;
 }
@@ -115,6 +188,14 @@ function containsMember(node, objectName, propertyName) {
       && candidate.object.name === objectName
       && memberName(candidate) === propertyName
     ) found = true;
+  });
+  return found;
+}
+
+function containsIdentifier(node, name) {
+  let found = false;
+  walk(node, (candidate) => {
+    if (candidate.type === 'Identifier' && candidate.name === name) found = true;
   });
   return found;
 }
@@ -136,6 +217,103 @@ function containsCall(node, calleeObject, calleeProperty, firstStringArgument) {
     if (firstStringArgument === undefined || candidate.arguments[0]?.value === firstStringArgument) found = true;
   });
   return found;
+}
+
+function callArguments(node, calleeName) {
+  const matches = [];
+  walk(node, (candidate) => {
+    if (candidate.type === 'CallExpression' && candidate.callee?.type === 'Identifier' && candidate.callee.name === calleeName) {
+      matches.push(candidate.arguments);
+    }
+  });
+  return matches;
+}
+
+function hasCallWithArgument(node, calleeName, predicate) {
+  return callArguments(node, calleeName).some((args) => predicate(args[0]));
+}
+
+function containsRefMethodCall(node, refName, methodName) {
+  let found = false;
+  walk(node, (candidate) => {
+    const callee = candidate.type === 'CallExpression' ? candidate.callee : null;
+    if (
+      callee?.type === 'MemberExpression'
+      && memberName(callee) === methodName
+      && callee.object?.type === 'MemberExpression'
+      && callee.object.object?.type === 'Identifier'
+      && callee.object.object.name === refName
+      && memberName(callee.object) === 'current'
+    ) found = true;
+  });
+  return found;
+}
+
+function containsRefCurrentTimeReset(node, refName) {
+  let found = false;
+  walk(node, (candidate) => {
+    const left = candidate.type === 'AssignmentExpression' ? candidate.left : null;
+    if (
+      left?.type === 'MemberExpression'
+      && memberName(left) === 'currentTime'
+      && left.object?.type === 'MemberExpression'
+      && left.object.object?.type === 'Identifier'
+      && left.object.object.name === refName
+      && memberName(left.object) === 'current'
+      && candidate.right?.type === 'NumericLiteral'
+      && candidate.right.value === 0
+    ) found = true;
+  });
+  return found;
+}
+
+function isLiteral(node, value) {
+  if (value === null) return node?.type === 'NullLiteral';
+  if (typeof value === 'string') return node?.type === 'StringLiteral' && node.value === value;
+  if (typeof value === 'boolean') return node?.type === 'BooleanLiteral' && node.value === value;
+  return false;
+}
+
+function qualityReportReasons(report) {
+  return isDeepStrictEqual(report, expectedQualityReport) ? [] : ['quality-report.json differs from the complete deterministic object'];
+}
+
+function isPrivateIpv4(candidate) {
+  const parts = candidate.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+  return parts[0] === 10
+    || (parts[0] === 192 && parts[1] === 168)
+    || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31);
+}
+
+function fixtureSafetyReasons(content) {
+  const reasons = [];
+  if (/(?:^|[\s"'=])(?:\/Users\/|\/home\/|\/private\/|[A-Za-z]:\\)/m.test(content)) reasons.push('absolute user/private path');
+  const ipv4Candidates = content.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || [];
+  if (ipv4Candidates.some(isPrivateIpv4)) reasons.push('private IPv4 address');
+  if (/(?:^|[^0-9a-f])(?:fc[0-9a-f]{2}|fd[0-9a-f]{2}|fe(?:8|9|a|b)[0-9a-f]):[0-9a-f:]+/i.test(content)) reasons.push('private/link-local IPv6 address');
+  if (/\bAuthorization\s*:\s*Basic\s+[A-Za-z0-9+/=]+/i.test(content) || /\bBasic\s+[A-Za-z0-9+/]{8,}={0,2}\b/.test(content)) reasons.push('Basic authorization');
+  if (/\b(?:username|user_name|login_user)\s*[=:]\s*[^\s,;]+/i.test(content)) reasons.push('username');
+  if (/\b(?:password|passwd|credential|api[_-]?key|secret|bearer|token)\b\s*[=:]?\s*[^\s,;]*/i.test(content)) reasons.push('credential-like value');
+  if (/\b(?:serial(?:_number)?|device[_-]?sn|sn)\s*[=:]\s*[A-Za-z0-9_-]{6,}\b/i.test(content)) reasons.push('device serial number');
+  if (/\b\d{6}[A-Z]{2}\d{8,}\b/.test(content)) reasons.push('unlabelled device serial number');
+  return reasons;
+}
+
+for (const unsafeProbe of [
+  '/private/var/demo/session',
+  'username=alice',
+  'peer=fd00::1',
+  'peer=fc00::1',
+  'peer=fe80::1',
+  'Authorization: Basic dXNlcjpwYXNz',
+  'serial_number=ABC123456',
+  'device_sn=SN987654',
+]) {
+  check(fixtureSafetyReasons(unsafeProbe).length > 0, `fixture safety probe must be rejected: ${unsafeProbe}`);
+}
+for (const safeProbe of ['10.999.999.999', 'secretary']) {
+  check(fixtureSafetyReasons(safeProbe).length === 0, `fixture safety probe must not be a false positive: ${safeProbe}`);
 }
 
 const fixtureDirectory = 'public/demo/session_028';
@@ -161,26 +339,21 @@ for (const name of fixtureNames) {
       violations.push(`trajectory fixture must be valid JSON: ${fixturePath} (${error.message})`);
     }
   }
-  check(!/(?:^|[\s"'])(?:\/Users\/|\/home\/|[A-Za-z]:\\)/m.test(content), `fixture contains an absolute user path: ${fixturePath}`);
-  check(!/\b(?:10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2})\b/.test(content), `fixture contains a private IP: ${fixturePath}`);
-  check(!/(?:password|passwd|credential|api[_-]?key|secret|bearer\s+|token\s*[=:])/i.test(content), `fixture contains a credential-like value: ${fixturePath}`);
-  check(!/\b\d{6}[A-Z]{2}\d{8,}\b/.test(content), `fixture contains a device serial number: ${fixturePath}`);
+  for (const reason of fixtureSafetyReasons(content)) violations.push(`fixture contains ${reason}: ${fixturePath}`);
 }
 
 if (existsSync(path.join(fixtureDirectory, 'quality-report.json'))) {
   try {
     const report = JSON.parse(readFileSync(path.join(fixtureDirectory, 'quality-report.json'), 'utf8'));
-    check(report.session_name === 'session_028_demo' && report.overall_pass === true, 'quality report must use the public demo identity and passing result');
-    check(JSON.stringify(Object.keys(report.thresholds)) === JSON.stringify([
-      'max_speed_mps', 'max_accel_mps2', 'max_jerk_mps3', 'max_angular_speed_rps',
-      'max_angular_accel_rps2', 'max_angular_jerk_rps3', 'min_position_distance_m',
-    ]), 'quality report must contain the complete threshold shape');
-    check(report.trajectory_analysis?.length === 2, 'quality report must contain left and right trajectory analysis');
-    for (const arm of ['left', 'right']) {
-      const analysis = report.trajectory_analysis.find((item) => item.arm_name === arm);
-      check(Boolean(analysis?.kinematics && analysis?.position && analysis?.checks), `quality report must contain complete ${arm} analysis fields`);
-      check(Object.values(analysis?.checks || {}).every((value) => value === true), `quality report ${arm} checks must use deterministic passing values`);
-    }
+    check(qualityReportReasons(report).length === 0, 'quality report must deep-equal the complete deterministic object');
+
+    const badSpeed = structuredClone(report);
+    badSpeed.trajectory_analysis[0].kinematics.speed_max_mps = 999;
+    check(qualityReportReasons(badSpeed).length > 0, 'quality report mutation with speed=999 must be rejected');
+
+    const missingThreshold = structuredClone(report);
+    delete missingThreshold.thresholds.max_angular_jerk_rps3;
+    check(qualityReportReasons(missingThreshold).length > 0, 'quality report mutation missing max_angular_jerk_rps3 must be rejected');
   } catch (error) {
     violations.push(`quality report must be valid JSON: ${error.message}`);
   }
@@ -198,9 +371,18 @@ if (!existsSync(manifestPath)) {
     for (const [key, url] of Object.entries(expectedManifest)) {
       check(getLumingStaticAsset(key) === url, `getLumingStaticAsset must resolve ${key}`);
     }
-    let unknownKeyThrows = false;
-    try { getLumingStaticAsset('unknown'); } catch (error) { unknownKeyThrows = /Unknown Luming static asset: unknown/.test(error.message); }
-    check(unknownKeyThrows, 'getLumingStaticAsset must reject an unknown key');
+    for (const unknownKey of ['unknown', 'toString', 'constructor', '__proto__']) {
+      let unknownKeyError = null;
+      try { getLumingStaticAsset(unknownKey); } catch (error) { unknownKeyError = error; }
+      check(unknownKeyError?.message === `Unknown Luming static asset: ${unknownKey}`, `getLumingStaticAsset must reject inherited/unknown key ${unknownKey} with the canonical error`);
+    }
+
+    const manifestAst = parse(readFileSync(manifestPath, 'utf8'));
+    let usesOwnPropertyGuard = false;
+    walk(manifestAst, (node) => {
+      if (containsCall(node, 'Object', 'hasOwn') && containsMember(node, 'LUMING_STATIC_ASSETS', 'key')) usesOwnPropertyGuard = true;
+    });
+    check(usesOwnPropertyGuard, 'getLumingStaticAsset must guard keys with Object.hasOwn');
   } catch (error) {
     violations.push(`manifest could not be loaded: ${error.message}`);
   }
@@ -239,9 +421,110 @@ for (const assetPath of ['public/assets/robot_view.png', 'public/assets/images/r
   check(trackedPaths.includes(assetPath), `placeholder asset must be tracked: ${assetPath}`);
 }
 
+function analyzeDataLoadingContract(source) {
+  const ast = parse(source);
+  const promiseAllSettledCalls = [];
+  const promiseAllCalls = [];
+  let loadingEffect = null;
+  let importsAlert = false;
+  let rendersPartialAlert = false;
+  let hasFullPageErrorGate = false;
+
+  walk(ast, (node) => {
+    if (node.type === 'ImportDeclaration' && node.source.value === 'antd') {
+      importsAlert = node.specifiers.some((specifier) => specifier.imported?.name === 'Alert');
+    }
+    if (
+      node.type === 'CallExpression'
+      && node.callee?.type === 'MemberExpression'
+      && node.callee.object?.type === 'Identifier'
+      && node.callee.object.name === 'Promise'
+    ) {
+      if (memberName(node.callee) === 'allSettled') promiseAllSettledCalls.push(node);
+      if (memberName(node.callee) === 'all') promiseAllCalls.push(node);
+    }
+    if (
+      node.type === 'JSXElement'
+      && node.openingElement.name?.name === 'Alert'
+      && containsIdentifier(node, 'selectedEpisodeError')
+      && containsIdentifier(node, 'retryRealData')
+    ) {
+      rendersPartialAlert = true;
+    }
+    if (node.type === 'ConditionalExpression' && containsIdentifier(node.test, 'selectedEpisodeError')) {
+      let errorStateView = false;
+      walk(node.consequent, (candidate) => {
+        if (candidate.type !== 'JSXOpeningElement' || candidate.name?.name !== 'StateView') return;
+        const typeAttribute = candidate.attributes.find((attribute) => attribute.type === 'JSXAttribute' && attribute.name.name === 'type');
+        if (typeAttribute?.value?.type === 'StringLiteral' && typeAttribute.value.value === 'error') errorStateView = true;
+      });
+      if (errorStateView) hasFullPageErrorGate = true;
+    }
+  });
+
+  if (promiseAllSettledCalls.length === 1) {
+    walkWithAncestors(ast, (node, ancestors) => {
+      if (node !== promiseAllSettledCalls[0]) return;
+      loadingEffect = [...ancestors].reverse().find((ancestor) => (
+        (ancestor.type === 'ArrowFunctionExpression' || ancestor.type === 'FunctionExpression')
+        && ancestors.some((candidate) => (
+          candidate.type === 'CallExpression'
+          && candidate.callee?.type === 'Identifier'
+          && candidate.callee.name === 'useEffect'
+          && candidate.arguments[0] === ancestor
+        ))
+      ));
+    });
+  }
+
+  const clearBeforeRequest = new Set();
+  if (loadingEffect && promiseAllSettledCalls[0]) {
+    for (const statement of loadingEffect.body.body || []) {
+      if (statement.start >= promiseAllSettledCalls[0].start || statement.type !== 'ExpressionStatement') continue;
+      const node = statement.expression;
+      if (node.type !== 'CallExpression' || node.callee?.type !== 'Identifier') continue;
+      if (node.callee.name === 'setRealReport' && isLiteral(node.arguments[0], null)) clearBeforeRequest.add('report');
+      if (node.callee.name === 'setLeftTrajectory' && node.arguments[0]?.type === 'ArrayExpression' && node.arguments[0].elements.length === 0) clearBeforeRequest.add('left');
+      if (node.callee.name === 'setRightTrajectory' && node.arguments[0]?.type === 'ArrayExpression' && node.arguments[0].elements.length === 0) clearBeforeRequest.add('right');
+    }
+  }
+
+  const allSettled = promiseAllSettledCalls[0];
+  const canonicalAllSettled = (
+    promiseAllSettledCalls.length === 1
+    && allSettled?.arguments[0]?.type === 'ArrayExpression'
+    && allSettled.arguments[0].elements.length === 3
+  );
+
+  return {
+    canonicalAllSettled,
+    promiseAllSettledCount: promiseAllSettledCalls.length,
+    promiseAllCount: promiseAllCalls.length,
+    clearsAllSlicesBeforeRequest: clearBeforeRequest.size === 3,
+    importsAlert,
+    rendersPartialAlert,
+    hasFullPageErrorGate,
+    valid: canonicalAllSettled
+      && promiseAllCalls.length === 0
+      && clearBeforeRequest.size === 3
+      && importsAlert
+      && rendersPartialAlert
+      && !hasFullPageErrorGate,
+  };
+}
+
 const dataClientPath = 'src/app/collection/collect/data/ClientPage.js';
 if (existsSync(dataClientPath)) {
-  const ast = parse(readFileSync(dataClientPath, 'utf8'));
+  const dataSource = readFileSync(dataClientPath, 'utf8');
+  const ast = parse(dataSource);
+  const loadingContract = analyzeDataLoadingContract(dataSource);
+  check(loadingContract.promiseAllSettledCount === 1 && loadingContract.canonicalAllSettled, 'data Client must contain exactly one canonical Promise.allSettled call');
+  check(loadingContract.promiseAllCount === 0, 'data Client must not contain Promise.all');
+  check(loadingContract.clearsAllSlicesBeforeRequest, 'data Client must clear report, left trajectory, and right trajectory before starting each request');
+  check(loadingContract.importsAlert && loadingContract.rendersPartialAlert, 'data Client must render selectedEpisodeError as an in-content retryable Alert');
+  check(!loadingContract.hasFullPageErrorGate, 'data Client must not gate selectedEpisode content behind an error StateView');
+  const badPromiseAllMutation = `${dataSource}\nPromise.all([]);\n`;
+  check(!analyzeDataLoadingContract(badPromiseAllMutation).valid, 'data loading contract must reject a Promise.all mutation');
   let allSettledCall = null;
   walk(ast, (node) => {
     if (
@@ -294,10 +577,111 @@ if (existsSync(dataClientPath)) {
   check(combinesRejectedReasons, 'data Client must combine rejected result reasons into realDataError');
 }
 
+function hasRequestTokenGuard(functionNode) {
+  let guarded = false;
+  walk(functionNode.body, (node) => {
+    if (node.type !== 'IfStatement' || node.test?.type !== 'BinaryExpression' || !['!==', '!='].includes(node.test.operator)) return;
+    const comparesToken = (
+      containsMember(node.test.left, 'fileRequestTokenRef', 'current') && containsIdentifier(node.test.right, 'requestToken')
+    ) || (
+      containsMember(node.test.right, 'fileRequestTokenRef', 'current') && containsIdentifier(node.test.left, 'requestToken')
+    );
+    if (!comparesToken) return;
+    let returns = node.consequent?.type === 'ReturnStatement';
+    walk(node.consequent, (candidate) => {
+      if (candidate.type === 'ReturnStatement') returns = true;
+    });
+    if (returns) guarded = true;
+  });
+  return guarded;
+}
+
+function analyzeVideoRequestContract(source) {
+  const ast = parse(source);
+  let hasTokenRef = false;
+  let onSelectHandler = null;
+  walk(ast, (node) => {
+    if (
+      node.type === 'VariableDeclarator'
+      && node.id?.type === 'Identifier'
+      && node.id.name === 'fileRequestTokenRef'
+      && node.init?.type === 'CallExpression'
+      && node.init.callee?.type === 'Identifier'
+      && node.init.callee.name === 'useRef'
+      && node.init.arguments[0]?.type === 'NumericLiteral'
+      && node.init.arguments[0].value === 0
+    ) hasTokenRef = true;
+    if (node.type === 'JSXOpeningElement' && node.name?.name === 'Tree') {
+      const attribute = node.attributes.find((candidate) => candidate.type === 'JSXAttribute' && candidate.name.name === 'onSelect');
+      if (attribute?.value?.type === 'JSXExpressionContainer' && attribute.value.expression?.type === 'ArrowFunctionExpression') {
+        onSelectHandler = attribute.value.expression;
+      }
+    }
+  });
+
+  if (!onSelectHandler) return { valid: false, hasTokenRef, hasOnSelect: false };
+
+  let fetchCall = null;
+  let fetchChain = null;
+  let tokenInvalidation = null;
+  let clearsNonTextImmediately = false;
+  walk(onSelectHandler.body, (node) => {
+    if (node.type === 'CallExpression' && node.callee?.type === 'Identifier' && node.callee.name === 'fetch') fetchCall = node;
+    if (node.type === 'CallExpression' && memberName(node.callee) === 'finally' && containsCall(node, 'fetch')) fetchChain = node;
+    if (
+      node.type === 'AssignmentExpression'
+      && containsMember(node.left, 'fileRequestTokenRef', 'current')
+      && containsIdentifier(node.right, 'requestToken')
+    ) tokenInvalidation = node;
+    if (node.type === 'IfStatement' && containsMember(node.test, 'node', 'isText') && node.alternate) {
+      const clearsContent = hasCallWithArgument(node.alternate, 'setFileContent', (argument) => isLiteral(argument, ''));
+      const clearsLoading = hasCallWithArgument(node.alternate, 'setLoadingFileContent', (argument) => isLiteral(argument, false));
+      if (clearsContent && clearsLoading) clearsNonTextImmediately = true;
+    }
+  });
+
+  const chainCallbacks = [];
+  if (fetchChain) {
+    walk(fetchChain, (node) => {
+      if (node.type !== 'CallExpression') return;
+      for (const argument of node.arguments) {
+        if (argument?.type === 'ArrowFunctionExpression' || argument?.type === 'FunctionExpression') chainCallbacks.push(argument);
+      }
+    });
+  }
+  const contentCallbacks = chainCallbacks.filter((callback) => containsCall(callback.body, 'setFileContent'));
+  const loadingCallbacks = chainCallbacks.filter((callback) => hasCallWithArgument(callback.body, 'setLoadingFileContent', (argument) => isLiteral(argument, false)));
+  const guardedContentCallbacks = contentCallbacks.filter(hasRequestTokenGuard);
+  const guardedLoadingCallbacks = loadingCallbacks.filter(hasRequestTokenGuard);
+
+  return {
+    valid: hasTokenRef
+      && Boolean(fetchCall && fetchChain && tokenInvalidation)
+      && tokenInvalidation.start < fetchCall.start
+      && contentCallbacks.length === 2
+      && guardedContentCallbacks.length === 2
+      && loadingCallbacks.length === 1
+      && guardedLoadingCallbacks.length === 1
+      && clearsNonTextImmediately,
+    hasTokenRef,
+    hasOnSelect: true,
+    invalidatesBeforeFetch: Boolean(fetchCall && tokenInvalidation && tokenInvalidation.start < fetchCall.start),
+    contentCallbackCount: contentCallbacks.length,
+    guardedContentCallbackCount: guardedContentCallbacks.length,
+    loadingCallbackCount: loadingCallbacks.length,
+    guardedLoadingCallbackCount: guardedLoadingCallbacks.length,
+    clearsNonTextImmediately,
+  };
+}
+
 const videoClientPath = 'src/app/collection/collect/video/ClientPage.js';
 if (existsSync(videoClientPath)) {
   const source = readFileSync(videoClientPath, 'utf8');
   const ast = parse(source);
+  const requestContract = analyzeVideoRequestContract(source);
+  check(requestContract.valid, `file preview request token contract failed: ${JSON.stringify(requestContract)}`);
+  const unguardedMutation = source.replaceAll('if (fileRequestTokenRef.current !== requestToken) return;', '');
+  check(unguardedMutation !== source && !analyzeVideoRequestContract(unguardedMutation).valid, 'file preview contract must reject removing real fetch callback token guards');
   const fileAssetMap = {};
   let readFileResponseFunction = null;
   walk(ast, (node) => {
@@ -357,9 +741,127 @@ for (const [filePath, minimumCount] of placeholderConsumers) {
   check(videoCount === 0, `${filePath} must not retain video elements`);
 }
 
+function analyzeDevicePreviewReachability(source) {
+  const ast = parse(source);
+  let ruleTable = null;
+  let rowPreviewCallReachable = false;
+  let parentCallbackOpensModal = false;
+  let modalContainsPlaceholder = false;
+
+  walk(ast, (node) => {
+    if (node.type === 'FunctionDeclaration' && node.id?.name === 'RuleTable') ruleTable = node;
+    if (node.type === 'JSXOpeningElement' && node.name?.name === 'RuleTable') {
+      const previewAttribute = node.attributes.find((attribute) => attribute.type === 'JSXAttribute' && attribute.name.name === 'onPreviewVideo');
+      if (previewAttribute?.value?.type === 'JSXExpressionContainer' && containsCall(previewAttribute.value.expression, 'setPreviewVideoUrl')) {
+        parentCallbackOpensModal = true;
+      }
+    }
+  });
+
+  if (ruleTable) {
+    walkWithAncestors(ruleTable, (node, ancestors) => {
+      if (
+        node.type === 'CallExpression'
+        && node.callee?.type === 'Identifier'
+        && node.callee.name === 'onPreviewVideo'
+        && node.arguments[0]?.type === 'MemberExpression'
+        && node.arguments[0].object?.name === 'record'
+        && memberName(node.arguments[0]) === 'coverVideo'
+        && ancestors.some((ancestor) => containsMember(ancestor.type === 'LogicalExpression' ? ancestor.left : null, 'record', 'coverVideo'))
+      ) rowPreviewCallReachable = true;
+    });
+  }
+
+  walk(ast, (node) => {
+    if (node.type !== 'JSXElement' || node.openingElement.name?.name !== 'AppModal') return;
+    const openAttribute = node.openingElement.attributes.find((attribute) => attribute.type === 'JSXAttribute' && attribute.name.name === 'open');
+    if (!openAttribute?.value || !containsIdentifier(openAttribute.value, 'previewVideoUrl')) return;
+    let containsPlaceholder = false;
+    walk(node, (candidate) => {
+      if (candidate.type === 'JSXOpeningElement' && candidate.name?.name === 'StaticVideoPlaceholder') containsPlaceholder = true;
+    });
+    if (containsPlaceholder) modalContainsPlaceholder = true;
+  });
+
+  return {
+    valid: Boolean(ruleTable && rowPreviewCallReachable && parentCallbackOpensModal && modalContainsPlaceholder),
+    rowPreviewCallReachable,
+    parentCallbackOpensModal,
+    modalContainsPlaceholder,
+  };
+}
+
+const deviceTypesPath = 'src/app/collection/device-types/page.js';
+if (existsSync(deviceTypesPath)) {
+  const deviceSource = readFileSync(deviceTypesPath, 'utf8');
+  const previewContract = analyzeDevicePreviewReachability(deviceSource);
+  check(previewContract.valid, `device cover preview must be reachable from the RuleTable row action: ${JSON.stringify(previewContract)}`);
+  const removedPreviewMutation = deviceSource.replace('onClick={() => onPreviewVideo(record.coverVideo)}', 'onClick={() => {}}');
+  check(removedPreviewMutation !== deviceSource && !analyzeDevicePreviewReachability(removedPreviewMutation).valid, 'device preview contract must reject deleting the row preview call');
+}
+
+const workspaceSource = readFileSync('src/app/collection/collect/workspace/ClientPage.js', 'utf8');
+check((workspaceSource.match(/静态演示占位/g) || []).length === 3, 'workspace camera overlays must label all three views as static demo placeholders');
+check(!workspaceSource.includes('Live Stream'), 'workspace must not label static placeholders as live streams');
+const videoSourceForLabels = readFileSync(videoClientPath, 'utf8');
+check(videoSourceForLabels.includes('静态演示（无 MP4）'), 'video file preview must label video nodes as static demo without MP4');
+check(!videoSourceForLabels.includes('Video Stream (MP4)'), 'video file preview must not claim an MP4 stream');
+
+function findBindingFunction(ast, bindingName) {
+  let binding = null;
+  walk(ast, (node) => {
+    if (
+      node.type === 'VariableDeclarator'
+      && node.id?.type === 'Identifier'
+      && node.id.name === bindingName
+      && (node.init?.type === 'ArrowFunctionExpression' || node.init?.type === 'FunctionExpression')
+    ) binding = node.init;
+  });
+  return binding;
+}
+
+function analyzeCatalogSilentReset(source) {
+  const ast = parse(source);
+  const resetPlaybackState = findBindingFunction(ast, 'resetPlaybackState');
+  const resetAll = findBindingFunction(ast, 'resetAll');
+  const handleBack = findBindingFunction(ast, 'handleBack');
+  const silentResetIsSilent = Boolean(
+    resetPlaybackState
+    && !containsCall(resetPlaybackState.body, 'message', 'info')
+    && hasCallWithArgument(resetPlaybackState.body, 'setIsPlaying', (argument) => isLiteral(argument, false))
+    && containsRefMethodCall(resetPlaybackState.body, 'leftVideoRef', 'pause')
+    && containsRefMethodCall(resetPlaybackState.body, 'rightVideoRef', 'pause')
+    && containsRefMethodCall(resetPlaybackState.body, 'headVideoRef', 'pause')
+    && containsRefCurrentTimeReset(resetPlaybackState.body, 'leftVideoRef')
+    && containsRefCurrentTimeReset(resetPlaybackState.body, 'rightVideoRef')
+    && containsRefCurrentTimeReset(resetPlaybackState.body, 'headVideoRef')
+  );
+  const resetAllKeepsManualGuard = Boolean(
+    resetAll
+    && containsMember(resetAll.body, 'selectedCard', 'isLuming')
+    && containsCall(resetAll.body, 'message', 'info')
+    && containsCall(resetAll.body, 'resetPlaybackState')
+  );
+  const backUsesSilentReset = Boolean(
+    handleBack
+    && containsCall(handleBack.body, 'resetPlaybackState')
+    && !containsCall(handleBack.body, 'resetAll')
+    && !containsCall(handleBack.body, 'message', 'info')
+  );
+  return {
+    valid: silentResetIsSilent && resetAllKeepsManualGuard && backUsesSilentReset,
+    silentResetIsSilent,
+    resetAllKeepsManualGuard,
+    backUsesSilentReset,
+  };
+}
+
 const catalogPath = 'src/app/data/catalog/page.js';
 if (existsSync(catalogPath)) {
-  const ast = parse(readFileSync(catalogPath, 'utf8'));
+  const catalogSource = readFileSync(catalogPath, 'utf8');
+  const ast = parse(catalogSource);
+  const silentResetContract = analyzeCatalogSilentReset(catalogSource);
+  check(silentResetContract.valid, `catalog handleBack must use a silent playback reset: ${JSON.stringify(silentResetContract)}`);
   const requiredControls = new Set(['播放全部', '暂停全部', '重置全部']);
   const disabledControls = new Set();
   let guardedStaticDownload = false;
