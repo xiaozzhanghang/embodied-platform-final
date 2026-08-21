@@ -674,12 +674,31 @@ function failedKeyIncludes(node, key) {
 }
 
 function returnsEmptyStringForMissingTrajectory(functionNode) {
-  return Boolean(functionNode?.body?.body?.some((statement) => (
-    statement.type === 'IfStatement'
-    && containsIdentifier(statement.test, 'traj')
-    && statement.consequent?.type === 'ReturnStatement'
-    && isLiteral(statement.consequent.argument, '')
-  )));
+  const [firstStatement] = executableStatements(functionNode?.body);
+  return Boolean(
+    firstStatement?.type === 'IfStatement'
+    && containsIdentifier(firstStatement.test, 'traj')
+    && containsMember(firstStatement.test, 'traj', 'length')
+    && firstStatement.consequent?.type === 'ReturnStatement'
+    && isLiteral(firstStatement.consequent.argument, '')
+  );
+}
+
+function isExactFailedKeyTest(node, key) {
+  return node?.type === 'CallExpression'
+    && node.callee?.type === 'MemberExpression'
+    && node.callee.object?.type === 'Identifier'
+    && node.callee.object.name === 'failedRealDataKeys'
+    && memberName(node.callee) === 'includes'
+    && node.arguments.length === 1
+    && node.arguments[0]?.type === 'StringLiteral'
+    && node.arguments[0].value === key;
+}
+
+function executableStatements(blockStatement) {
+  return blockStatement?.type === 'BlockStatement'
+    ? blockStatement.body.filter((statement) => statement.type !== 'EmptyStatement')
+    : [];
 }
 
 function pathUsesDataCall(openingElement, functionName, trajectoryName) {
@@ -722,6 +741,62 @@ function panelHasUnavailableGuard(panel, key, label) {
   return found;
 }
 
+function staticTruthValue(node) {
+  if (node?.type === 'BooleanLiteral') return node.value;
+  if (node?.type === 'NullLiteral') return false;
+  if (node?.type === 'NumericLiteral') return Boolean(node.value);
+  if (node?.type === 'StringLiteral') return Boolean(node.value);
+  if (node?.type === 'UnaryExpression' && node.operator === '!') {
+    const argumentValue = staticTruthValue(node.argument);
+    return argumentValue === null ? null : !argumentValue;
+  }
+  return null;
+}
+
+function subtreeContainsNode(root, target) {
+  let found = false;
+  walk(root, (node) => {
+    if (node === target) found = true;
+  });
+  return found;
+}
+
+function isStaticallyUnreachable(target, ancestors) {
+  for (const ancestor of ancestors) {
+    if (ancestor.type === 'LogicalExpression') {
+      const leftValue = staticTruthValue(ancestor.left);
+      const targetInRight = subtreeContainsNode(ancestor.right, target);
+      if (targetInRight && ((ancestor.operator === '&&' && leftValue === false) || (ancestor.operator === '||' && leftValue === true))) return true;
+    }
+    if (ancestor.type === 'ConditionalExpression') {
+      const testValue = staticTruthValue(ancestor.test);
+      if (testValue === false && subtreeContainsNode(ancestor.consequent, target)) return true;
+      if (testValue === true && subtreeContainsNode(ancestor.alternate, target)) return true;
+    }
+  }
+  return false;
+}
+
+function hasReachableDirectSvgPath(panel, functionName, trajectoryName) {
+  let found = false;
+  walkWithAncestors(panel, (node, ancestors) => {
+    if (node.type !== 'JSXElement' || !pathUsesDataCall(node.openingElement, functionName, trajectoryName)) return;
+    const svgAncestorIndex = ancestors.findLastIndex((ancestor) => ancestor.type === 'JSXElement' && ancestor.openingElement.name?.name === 'svg');
+    if (svgAncestorIndex < 0) return;
+    const wrappers = ancestors.slice(svgAncestorIndex + 1);
+    const expectedFailureKey = trajectoryName === 'leftTrajectory' ? 'trajectoryLeft' : 'trajectoryRight';
+    const directChild = wrappers.length === 0;
+    const conditionalChild = wrappers.length === 2
+      && wrappers[0].type === 'JSXExpressionContainer'
+      && wrappers[1].type === 'ConditionalExpression'
+      && isExactFailedKeyTest(wrappers[1].test, expectedFailureKey)
+      && subtreeContainsNode(wrappers[1].alternate, node);
+    if (!directChild && !conditionalChild) return;
+    if (!isStaticallyUnreachable(node, ancestors)) found = true;
+  });
+  return found;
+}
+
 function analyzeDataUnavailableContract(source) {
   const ast = parse(source);
   const componentContext = getDefaultExportedComponent(ast, 'CollectTaskDataPage');
@@ -755,27 +830,33 @@ function analyzeDataUnavailableContract(source) {
     ) reportCards.push(node);
   });
   const reportCard = reportCards.length === 1 ? reportCards[0] : null;
-  walk(reportCard, (node) => {
-    if (node.type === 'ConditionalExpression' && failedKeyIncludes(node.test, 'report')) {
-      let unavailableAlert = false;
-      let successfulReportTable = false;
-      walk(node.consequent, (candidate) => {
-        if (
-          candidate.type === 'JSXOpeningElement'
-          && candidate.name?.name === 'Alert'
-          && jsxAttribute(candidate, 'message')?.value?.type === 'StringLiteral'
-          && jsxAttribute(candidate, 'message').value.value === '质检报告不可用'
-        ) unavailableAlert = true;
-      });
-      walk(node.alternate, (candidate) => {
-        if (candidate.type === 'JSXOpeningElement' && candidate.name?.name === 'Table') {
-          const dataSource = jsxAttribute(candidate, 'dataSource');
-          if (dataSource?.value?.type === 'JSXExpressionContainer' && containsCall(dataSource.value.expression, 'getKinematicsData')) successfulReportTable = true;
-        }
-      });
-      if (unavailableAlert && successfulReportTable) reportUnavailableBranch = true;
-    }
-  });
+  const directReportConditions = (reportCard?.children || []).flatMap((child) => (
+    child.type === 'JSXExpressionContainer'
+      && child.expression?.type === 'ConditionalExpression'
+      && isExactFailedKeyTest(child.expression.test, 'report')
+      ? [child.expression]
+      : []
+  ));
+  if (directReportConditions.length === 1) {
+    const reportCondition = directReportConditions[0];
+    let unavailableAlert = false;
+    let successfulReportTable = false;
+    walk(reportCondition.consequent, (candidate) => {
+      if (
+        candidate.type === 'JSXOpeningElement'
+        && candidate.name?.name === 'Alert'
+        && jsxAttribute(candidate, 'message')?.value?.type === 'StringLiteral'
+        && jsxAttribute(candidate, 'message').value.value === '质检报告不可用'
+      ) unavailableAlert = true;
+    });
+    walk(reportCondition.alternate, (candidate) => {
+      if (candidate.type === 'JSXOpeningElement' && candidate.name?.name === 'Table') {
+        const dataSource = jsxAttribute(candidate, 'dataSource');
+        if (dataSource?.value?.type === 'JSXExpressionContainer' && containsCall(dataSource.value.expression, 'getKinematicsData')) successfulReportTable = true;
+      }
+    });
+    reportUnavailableBranch = unavailableAlert && successfulReportTable;
+  }
 
   walkWithAncestors(reportCard, (node, ancestors) => {
     if (node.type !== 'JSXText' || !node.value.includes('所有检查通过')) return;
@@ -827,13 +908,14 @@ function analyzeDataUnavailableContract(source) {
 
   const emptySvgFallback = returnsEmptyStringForMissingTrajectory(getSvgPathFunction);
   const emptySpeedFallback = returnsEmptyStringForMissingTrajectory(getSpeedPathFunction);
-  const emptyKinematicsFallback = Boolean(getKinematicsDataFunction?.body?.body?.some((statement) => (
-    statement.type === 'IfStatement'
-    && containsIdentifier(statement.test, 'realReport')
-    && statement.consequent?.type === 'ReturnStatement'
-    && statement.consequent.argument?.type === 'ArrayExpression'
-    && statement.consequent.argument.elements.length === 0
-  )));
+  const [firstKinematicsStatement] = executableStatements(getKinematicsDataFunction?.body);
+  const emptyKinematicsFallback = Boolean(
+    firstKinematicsStatement?.type === 'IfStatement'
+    && containsIdentifier(firstKinematicsStatement.test, 'realReport')
+    && firstKinematicsStatement.consequent?.type === 'ReturnStatement'
+    && firstKinematicsStatement.consequent.argument?.type === 'ArrayExpression'
+    && firstKinematicsStatement.consequent.argument.elements.length === 0
+  );
   const telemetryCards = [];
   walk(componentContext?.returnJsx, (node) => {
     if (
@@ -852,13 +934,10 @@ function analyzeDataUnavailableContract(source) {
     speedLeft: false,
     speedRight: false,
   };
-  walk(telemetryCard, (node) => {
-    if (node.type !== 'JSXOpeningElement') return;
-    if (pathUsesDataCall(node, 'getSvgPath', 'leftTrajectory')) renderedPaths.trajectoryLeft = true;
-    if (pathUsesDataCall(node, 'getSvgPath', 'rightTrajectory')) renderedPaths.trajectoryRight = true;
-    if (pathUsesDataCall(node, 'getSpeedPath', 'leftTrajectory')) renderedPaths.speedLeft = true;
-    if (pathUsesDataCall(node, 'getSpeedPath', 'rightTrajectory')) renderedPaths.speedRight = true;
-  });
+  renderedPaths.trajectoryLeft = hasReachableDirectSvgPath(trajectoryPanel, 'getSvgPath', 'leftTrajectory');
+  renderedPaths.trajectoryRight = hasReachableDirectSvgPath(trajectoryPanel, 'getSvgPath', 'rightTrajectory');
+  renderedPaths.speedLeft = hasReachableDirectSvgPath(speedPanel, 'getSpeedPath', 'leftTrajectory');
+  renderedPaths.speedRight = hasReachableDirectSvgPath(speedPanel, 'getSpeedPath', 'rightTrajectory');
   const trajectoryLabelsGuarded = Boolean(
     trajectoryPanel
     && panelHasUnavailableGuard(trajectoryPanel, 'trajectoryLeft', '左臂轨迹不可用')
@@ -932,6 +1011,19 @@ if (existsSync(dataClientPath)) {
   );
   check(hardcodedSpeedMutation !== dataSource, 'synthetic speed-path mutation must alter the data Client');
   check(!analyzeDataUnavailableContract(hardcodedSpeedMutation).valid, 'data unavailable contract must reject restoring a synthetic speed path');
+  const unreachableSpeedGuardMutation = dataSource.replace(
+    `  const getSpeedPath = (traj, maxLimit) => {
+    if (!traj || traj.length === 0) return "";`,
+    `  const getSpeedPath = (traj, maxLimit) => {
+    return "M 10 30 L 190 30";
+    if (!traj || traj.length === 0) return "";`,
+  );
+  check(
+    unreachableSpeedGuardMutation !== dataSource
+      && unreachableSpeedGuardMutation.includes('return "M 10 30 L 190 30";\n    if (!traj || traj.length === 0)'),
+    'unreachable speed-guard mutation must insert a synthetic return before the real guard',
+  );
+  check(!analyzeDataUnavailableContract(unreachableSpeedGuardMutation).valid, 'data unavailable contract must reject an unreachable empty speed guard after a synthetic return');
   const brokenReportWithDeadDecoy = dataSource
     .replace('message="质检报告不可用"', 'message="质检报告加载失败"')
     .concat(`
@@ -948,6 +1040,24 @@ const deadReportUnavailableDecoy = failedRealDataKeys.includes('report') ? (
     'dead report JSX mutation must alter the rendered branch and append its decoy',
   );
   check(!analyzeDataUnavailableContract(brokenReportWithDeadDecoy).valid, 'data unavailable contract must reject a broken rendered report branch plus dead JSX decoy');
+  const constantReportWithFalseDecoy = dataSource.replace(
+    `{failedRealDataKeys.includes('report') ? (`,
+    `{false && (
+                    failedRealDataKeys.includes('report') ? (
+                      <Alert message="质检报告不可用" />
+                    ) : (
+                      <Table dataSource={getKinematicsData()} />
+                    )
+                  )}
+                  {false ? (`,
+  );
+  check(
+    constantReportWithFalseDecoy !== dataSource
+      && constantReportWithFalseDecoy.includes('{false && (')
+      && constantReportWithFalseDecoy.includes('{false ? ('),
+    'constant report mutation must replace the real report test and insert a false logical decoy in the same Card',
+  );
+  check(!analyzeDataUnavailableContract(constantReportWithFalseDecoy).valid, 'data unavailable contract must reject an always-success report branch plus false logical decoy');
   const missingLeftRenderedPathsMutation = dataSource
     .replace(
       `<path d={getSvgPath(leftTrajectory, '#1677ff', true)} fill="none" stroke="#1677ff" strokeWidth="2" />`,
@@ -965,6 +1075,16 @@ const deadReportUnavailableDecoy = failedRealDataKeys.includes('report') ? (
     'rendered path mutation must remove both real left paths and retain only comment decoys',
   );
   check(!analyzeDataUnavailableContract(missingLeftRenderedPathsMutation).valid, 'data unavailable contract must reject missing rendered trajectory/speed paths even when comments retain matching strings');
+  const unreachableLeftTrajectoryPathMutation = dataSource.replace(
+    `<path d={getSvgPath(leftTrajectory, '#1677ff', true)} fill="none" stroke="#1677ff" strokeWidth="2" />`,
+    `{false && (<path d={getSvgPath(leftTrajectory, '#1677ff', true)} fill="none" stroke="#1677ff" strokeWidth="2" />)}`,
+  );
+  check(
+    unreachableLeftTrajectoryPathMutation !== dataSource
+      && unreachableLeftTrajectoryPathMutation.includes(`{false && (<path d={getSvgPath(leftTrajectory, '#1677ff', true)}`),
+    'unreachable telemetry-path mutation must wrap the real left trajectory path in false &&',
+  );
+  check(!analyzeDataUnavailableContract(unreachableLeftTrajectoryPathMutation).valid, 'data unavailable contract must reject a telemetry path hidden behind false &&');
   const missingTrajectoryLabelWithCommentDecoy = dataSource
     .replace("? '左臂轨迹不可用' : '● 左臂轨迹 (起:蓝 终:绿)'", "? '左臂轨迹加载失败' : '● 左臂轨迹 (起:蓝 终:绿)'")
     .concat('\n// 左臂轨迹不可用\n');
@@ -1004,6 +1124,44 @@ function incrementsFileRequestToken(node) {
       node.operator === '+='
       || (node.right?.type === 'BinaryExpression' && node.right.operator === '+' && containsMember(node.right, 'fileRequestTokenRef', 'current'))
     );
+}
+
+function containsAbruptCompletionOutsideNestedFunctions(node) {
+  let found = false;
+  const visit = (candidate) => {
+    if (!candidate || typeof candidate !== 'object' || found) return;
+    if (Array.isArray(candidate)) {
+      for (const child of candidate) visit(child);
+      return;
+    }
+    if (['ArrowFunctionExpression', 'FunctionExpression', 'FunctionDeclaration'].includes(candidate.type)) return;
+    if (candidate.type === 'ReturnStatement' || candidate.type === 'ThrowStatement') {
+      found = true;
+      return;
+    }
+    for (const [key, value] of Object.entries(candidate)) {
+      if (!['loc', 'start', 'end', 'extra'].includes(key)) visit(value);
+    }
+  };
+  visit(node);
+  return found;
+}
+
+function directCallStatementMatches(statement, calleeName, argumentPredicate) {
+  const expression = statement?.type === 'ExpressionStatement' ? statement.expression : null;
+  return expression?.type === 'CallExpression'
+    && expression.callee?.type === 'Identifier'
+    && expression.callee.name === calleeName
+    && argumentPredicate(expression.arguments[0]);
+}
+
+function cleanupHasReachableTokenIncrement(cleanupFunction) {
+  if (cleanupFunction?.body?.type !== 'BlockStatement') return false;
+  for (const statement of executableStatements(cleanupFunction.body)) {
+    if (statement.type === 'ExpressionStatement' && incrementsFileRequestToken(statement.expression)) return true;
+    if (containsAbruptCompletionOutsideNestedFunctions(statement)) return false;
+  }
+  return false;
 }
 
 function analyzeVideoRequestContract(source) {
@@ -1090,25 +1248,24 @@ function analyzeVideoRequestContract(source) {
   let episodeEffectCleanupInvalidates = false;
   let episodeEffectResetsSelection = false;
   if (episodeEffect?.body?.type === 'BlockStatement') {
-    const [firstStatement] = episodeEffect.body.body;
+    const statements = executableStatements(episodeEffect.body);
+    const [firstStatement] = statements;
     episodeEffectInvalidatesAtStart = firstStatement?.type === 'ExpressionStatement' && incrementsFileRequestToken(firstStatement.expression);
-    const cleanup = episodeEffect.body.body.find((statement) => statement.type === 'ReturnStatement')?.argument;
-    if (cleanup?.type === 'ArrowFunctionExpression' || cleanup?.type === 'FunctionExpression') {
-      episodeEffectCleanupInvalidates = containsCall(cleanup.body, 'setFileContent') ? false : (() => {
-        let invalidates = false;
-        walk(cleanup.body, (node) => {
-          if (incrementsFileRequestToken(node)) invalidates = true;
-        });
-        return invalidates;
-      })();
-    }
+    const finalStatement = statements.at(-1);
+    const directReturns = statements.filter((statement) => statement.type === 'ReturnStatement');
+    const hasEarlierAbruptCompletion = statements.slice(1, -1).some(containsAbruptCompletionOutsideNestedFunctions);
+    const cleanup = directReturns.length === 1 && finalStatement?.type === 'ReturnStatement' ? finalStatement.argument : null;
+    episodeEffectCleanupInvalidates = !hasEarlierAbruptCompletion
+      && (cleanup?.type === 'ArrowFunctionExpression' || cleanup?.type === 'FunctionExpression')
+      && cleanupHasReachableTokenIncrement(cleanup);
+    const reachableResetStatements = !hasEarlierAbruptCompletion ? statements.slice(1, -1) : [];
     episodeEffectResetsSelection = (
-      hasCallWithArgument(episodeEffect.body, 'setSelectedFileKey', (argument) => isLiteral(argument, 'left_video'))
-      && hasCallWithArgument(episodeEffect.body, 'setSelectedFileNode', (argument) => argument?.type === 'Identifier' && argument.name === 'node')
-      && hasCallWithArgument(episodeEffect.body, 'setFileContent', (argument) => isLiteral(argument, ''))
-      && hasCallWithArgument(episodeEffect.body, 'setLoadingFileContent', (argument) => isLiteral(argument, false))
-      && hasCallWithArgument(episodeEffect.body, 'setIsPlaying', (argument) => isLiteral(argument, true))
-      && hasCallWithArgument(episodeEffect.body, 'setFrame', (argument) => argument?.type === 'NumericLiteral' && argument.value === 0)
+      reachableResetStatements.some((statement) => directCallStatementMatches(statement, 'setSelectedFileKey', (argument) => isLiteral(argument, 'left_video')))
+      && reachableResetStatements.some((statement) => directCallStatementMatches(statement, 'setSelectedFileNode', (argument) => argument?.type === 'Identifier' && argument.name === 'node'))
+      && reachableResetStatements.some((statement) => directCallStatementMatches(statement, 'setFileContent', (argument) => isLiteral(argument, '')))
+      && reachableResetStatements.some((statement) => directCallStatementMatches(statement, 'setLoadingFileContent', (argument) => isLiteral(argument, false)))
+      && reachableResetStatements.some((statement) => directCallStatementMatches(statement, 'setIsPlaying', (argument) => isLiteral(argument, true)))
+      && reachableResetStatements.some((statement) => directCallStatementMatches(statement, 'setFrame', (argument) => argument?.type === 'NumericLiteral' && argument.value === 0))
     );
   }
 
@@ -1213,6 +1370,36 @@ useEffect(() => {
   const extraEpisodeDependencyMutation = source.replace('}, [episodeId]);', '}, [episodeId, taskId]);');
   check(extraEpisodeDependencyMutation !== source, 'episode dependency mutation must alter the video Client');
   check(!analyzeVideoRequestContract(extraEpisodeDependencyMutation).valid, 'file preview contract must require the exact [episodeId] dependency array');
+  const unreachableEpisodeResetMutation = source.replace(
+    `    fileRequestTokenRef.current += 1;
+    const findNode = (nodes) => {`,
+    `    fileRequestTokenRef.current += 1;
+    if (true) return;
+    const findNode = (nodes) => {`,
+  );
+  check(
+    unreachableEpisodeResetMutation !== source
+      && unreachableEpisodeResetMutation.includes('fileRequestTokenRef.current += 1;\n    if (true) return;'),
+    'unreachable episode-reset mutation must insert an early return immediately after the initial invalidation',
+  );
+  check(!analyzeVideoRequestContract(unreachableEpisodeResetMutation).valid, 'file preview contract must reject reset calls made unreachable by an earlier return');
+  const unreachableCleanupIncrementMutation = source.replace(
+    `    return () => {
+      fileRequestTokenRef.current += 1;
+    };
+  }, [episodeId]);`,
+    `    return () => {
+      return;
+      fileRequestTokenRef.current += 1;
+    };
+  }, [episodeId]);`,
+  );
+  check(
+    unreachableCleanupIncrementMutation !== source
+      && unreachableCleanupIncrementMutation.includes('return () => {\n      return;\n      fileRequestTokenRef.current += 1;'),
+    'unreachable cleanup mutation must insert a return before the cleanup invalidation',
+  );
+  check(!analyzeVideoRequestContract(unreachableCleanupIncrementMutation).valid, 'file preview contract must reject cleanup invalidation after an earlier return');
   const fileAssetMap = {};
   let readFileResponseFunction = null;
   walk(ast, (node) => {
