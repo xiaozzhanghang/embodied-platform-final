@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, Table, Space, Row, Col, Descriptions, Steps, Button, Typography, Breadcrumb, Collapse } from 'antd';
 import { 
   ArrowLeftOutlined, HddOutlined, PlayCircleOutlined, ApiOutlined,
@@ -52,8 +52,8 @@ const readJsonResponse = async (response) => {
 
 export default function CollectTaskDataPage() {
   const router = useRouter();
-  const params = useParams();
-  const taskId = params?.taskId || 'CT-20250301002';
+  const searchParams = useSearchParams();
+  const taskId = searchParams.get('taskId') || 'CT-20250301002';
   const isLumos = taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos');
 
   const [hasUploaded, setHasUploaded] = useState(false);

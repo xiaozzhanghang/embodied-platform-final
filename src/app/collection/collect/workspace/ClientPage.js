@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, 
   Typography, 
@@ -2125,10 +2125,10 @@ function Galbot116Workspace({ taskId, router, params }) {
 
 // ==================== WORKSPACE ENTRY SWITCHER ====================
 export default function WorkspacePage() {
-  const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
 
-  const taskId = params?.taskId || 'CT-20250301001';
+  const taskId = searchParams.get('taskId') || 'CT-20250301001';
   const isGalbot116 = taskId?.includes('1.16') || taskId?.includes('GB116') || taskId?.includes('GB105') || taskId === 'CT-20260605001';
   const isLumos = !isGalbot116 && (taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos'));
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, Badge, Space, Typography, Progress, App } from 'antd';
 import { 
   ApiOutlined, 
@@ -15,6 +15,7 @@ import {
   GlobalOutlined
 } from '@ant-design/icons';
 import { StatusTag } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 
@@ -90,14 +91,14 @@ const galbot116Logs = [
 
 export default function DeviceConnectionPage() {
   const router = useRouter();
-  const params = useParams();
+  const searchParams = useSearchParams();
   const { message } = App.useApp();
   const [step, setStep] = useState(0);
   const [logs, setLogs] = useState([]);
   const [scanning, setScanning] = useState(true);
   const logEndRef = useRef(null);
 
-  const taskId = params?.taskId || 'CT-20250301001';
+  const taskId = searchParams.get('taskId') || 'CT-20250301001';
   const isGalbot116 = taskId?.includes('1.16') || taskId?.includes('GB116') || taskId?.includes('GB105') || taskId === 'CT-20260605001';
   const isLumos = !isGalbot116 && (taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos'));
 
@@ -114,7 +115,7 @@ export default function DeviceConnectionPage() {
       setScanning(false);
       message.success('所有硬件已就绪，正在进入采集工作台...');
       setTimeout(() => {
-        router.push(`/collection/collect/workspace/${taskId}`);
+        router.push(buildStaticHref(STATIC_ROUTES.collectWorkspace, { taskId }));
       }, 1500);
     }
   }, [step, taskId, router, steps.length, message]);

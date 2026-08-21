@@ -8,6 +8,7 @@ import { QueryFilter, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant
 import MainLayout from '@/components/MainLayout';
 import SpecMarker from '@/components/SpecMarker';
 import { FilterPanel, PageHeader, StatusTag, TableToolbar } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 
@@ -674,7 +675,7 @@ export default function CollectTaskPage() {
                             type="link"
                             size="small"
                             icon={<EyeOutlined />}
-                            onClick={() => router.push(`/collection/collect/detail/${record.taskId}`)}
+                            onClick={() => router.push(buildStaticHref(STATIC_ROUTES.collectDetail, { taskId: record.taskId }))}
                             style={{ padding: '0 6px', display: 'inline-flex', alignItems: 'center', gap: 3 }}
                         >
                             查看
@@ -684,7 +685,7 @@ export default function CollectTaskPage() {
                             type="link"
                             size="small"
                             icon={<PlayCircleOutlined />}
-                            onClick={() => window.open(`/collection/collect/workspace/${record.taskId}`, '_blank')}
+                            onClick={() => window.open(buildStaticHref(STATIC_ROUTES.collectWorkspace, { taskId: record.taskId }), '_blank')}
                             style={{ padding: '0 6px', display: 'inline-flex', alignItems: 'center', gap: 3 }}
                         >
                             开始采集

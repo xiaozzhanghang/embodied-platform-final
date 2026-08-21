@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Tabs, Card, Typography, Space, Row, Col, Divider, List, Badge, Alert } from 'antd';
 import { 
   ArrowLeftOutlined, 
@@ -21,16 +21,17 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { StatusTag } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 
 export default function DeviceStatusPage() {
   const router = useRouter();
-  const params = useParams();
+  const searchParams = useSearchParams();
   const [activeKey, setActiveKey] = useState('1');
   const [isErrorMode, setIsErrorMode] = useState(false); // Healthy state initially for smooth demo flow
 
-  const taskId = params?.taskId || 'CT-20250301001';
+  const taskId = searchParams.get('taskId') || 'CT-20250301001';
   const isGalbot116 = taskId?.includes('1.16') || taskId?.includes('GB116') || taskId?.includes('GB105') || taskId === 'CT-20260605001';
   const isLumos = !isGalbot116 && (taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos'));
 
@@ -840,13 +841,13 @@ export default function DeviceStatusPage() {
             <Button size="small" onClick={() => setIsErrorMode(!isErrorMode)} style={{ fontSize: 11 }}>
               {isErrorMode ? '模拟恢复正常' : '模拟硬件故障'}
             </Button>
-            <Button icon={<HistoryOutlined />} onClick={() => router.push(`/collection/collect/connection/${taskId}`)}>重连设备</Button>
+            <Button icon={<HistoryOutlined />} onClick={() => router.push(buildStaticHref(STATIC_ROUTES.collectConnection, { taskId }))}>重连设备</Button>
             <Button 
               type="primary" 
               size="large" 
               disabled={isErrorMode}
               icon={<PlayCircleOutlined />} 
-              onClick={() => window.open(`/collection/collect/workspace/${taskId}`, '_blank')}
+              onClick={() => window.open(buildStaticHref(STATIC_ROUTES.collectWorkspace, { taskId }), '_blank')}
             >
               {isErrorMode ? '请先排除异常' : '确认并进入工作台'}
             </Button>

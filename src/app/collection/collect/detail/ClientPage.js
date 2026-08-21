@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Card, Space, Descriptions,
   Progress, Table, Steps, App, Modal, Tree, Row, Col
@@ -14,12 +14,13 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { PageHeader, StatusTag } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 export default function CollectTaskDetailPage() {
   const router = useRouter();
-  const params = useParams();
+  const searchParams = useSearchParams();
   const { message } = App.useApp();
-  const taskId = params?.taskId || 'CT-20250301001';
+  const taskId = searchParams.get('taskId') || 'CT-20250301001';
   const isLumos = taskId === 'CT-20260414001' || taskId?.includes('2026') || taskId?.includes('Lumos');
   
   const [hasUploaded, setHasUploaded] = useState(false);
@@ -71,7 +72,7 @@ export default function CollectTaskDetailPage() {
 
   const handleOpenVideoModal = (episodeId) => {
     const epId = episodeId || 'session_028';
-    window.open(`/collection/collect/video/${taskId}/${epId}`, '_blank');
+    window.open(buildStaticHref(STATIC_ROUTES.collectVideo, { taskId, episodeId: epId }), '_blank');
   };
 
   // Mock data based on taskId
@@ -97,7 +98,7 @@ export default function CollectTaskDetailPage() {
 
   const columns = [
     { title: '包 ID (Episode)', dataIndex: 'episodeId', key: 'episodeId', render: text => <span style={{ fontFamily: 'monospace' }}>{text}</span> },
-    { title: '所属质检批次', dataIndex: 'qaBatch', key: 'qaBatch', render: (text) => text !== '-' ? <a onClick={() => router.push(`/collection/qa/${encodeURIComponent(text)}`)} style={{ color: '#1677ff', fontWeight: 500 }}>{text}</a> : <span style={{ color: '#aaa' }}>-</span> },
+    { title: '所属质检批次', dataIndex: 'qaBatch', key: 'qaBatch', render: (text) => text !== '-' ? <a onClick={() => router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { id: text }))} style={{ color: '#1677ff', fontWeight: 500 }}>{text}</a> : <span style={{ color: '#aaa' }}>-</span> },
     { title: '采集时间', dataIndex: 'time', key: 'time' },
     { title: '视频时长', dataIndex: 'duration', key: 'duration' },
     { title: '包含动作数', dataIndex: 'steps', key: 'steps' },
@@ -133,9 +134,9 @@ export default function CollectTaskDetailPage() {
             disabled={record.status === '废弃' || record.qaBatch === '-'} 
             onClick={() => {
               if (record.episodeId === 'session_028') {
-                window.open(`/collection/collect/data/${taskId}`, '_blank');
+                window.open(buildStaticHref(STATIC_ROUTES.collectData, { taskId }), '_blank');
               } else {
-                router.push(`/collection/qa/${encodeURIComponent(record.qaBatch)}`);
+                router.push(buildStaticHref(STATIC_ROUTES.qaDetail, { id: record.qaBatch }));
               }
             }}
           >
@@ -153,7 +154,7 @@ export default function CollectTaskDetailPage() {
         title="工作台采集任务详情"
         description={`${selectedTask.name} · ${taskId}`}
         back={() => router.back()}
-        extra={<Button type="primary" size="large" onClick={() => window.open(`/collection/collect/connection/${taskId}`, '_blank')}>进入数采自检与工作台</Button>}
+        extra={<Button type="primary" size="large" onClick={() => window.open(buildStaticHref(STATIC_ROUTES.collectConnection, { taskId }), '_blank')}>进入数采自检与工作台</Button>}
       />
 
       <Card className="ui-table-card" title="任务信息" variant="borderless" style={{ marginBottom: 24, borderRadius: 8 }}>

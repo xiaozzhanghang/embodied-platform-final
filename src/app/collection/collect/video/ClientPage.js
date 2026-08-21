@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Button, Card, Typography, Space, Table, Tag, Row, Col, 
   Breadcrumb, Progress, App 
@@ -14,6 +14,7 @@ import {
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { StatusTag } from '@/components/ui';
+import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
 const { Title, Text } = Typography;
 
@@ -117,9 +118,9 @@ import { Tree } from 'antd';
 
 export default function EpisodeVideoPage() {
   const router = useRouter();
-  const params = useParams();
-  const taskId = params?.taskId || 'CT-20250301001';
-  const episodeId = params?.episodeId || 'session_028';
+  const searchParams = useSearchParams();
+  const taskId = searchParams.get('taskId') || 'CT-20250301001';
+  const episodeId = searchParams.get('episodeId') || 'session_028';
 
   const [selectedFileKey, setSelectedFileKey] = useState('left_video');
   const [selectedFileNode, setSelectedFileNode] = useState(null);
@@ -338,7 +339,7 @@ export default function EpisodeVideoPage() {
             <Breadcrumb items={[
               { title: '数据采集' },
               { title: '采集任务' },
-              { title: '详情', href: `/collection/collect/detail/${taskId}` },
+              { title: '详情', href: buildStaticHref(STATIC_ROUTES.collectDetail, { taskId }) },
               { title: '原始包视频与数据预览' }
             ]} />
             <Title level={4} style={{ margin: 0, marginTop: 4 }}>
@@ -513,7 +514,7 @@ export default function EpisodeVideoPage() {
                     <div style={{ fontSize: 15, fontWeight: 500, color: '#fff', marginBottom: 8 }}>非预览格式二进制传感器数据</div>
                     <div style={{ fontSize: 12, maxWidth: 500 }}>本文件类型为机械手臂关节力矩、位姿标定等底层二进制数据（如 HDF5/NPY/CSV 原始流格式），无法直接渲染为音视频。</div>
                     <div style={{ fontSize: 12, marginTop: 12, color: '#1677ff', cursor: 'pointer' }} onClick={() => {
-                      window.open(`/collection/collect/data/${taskId}`, '_blank');
+                      window.open(buildStaticHref(STATIC_ROUTES.collectData, { taskId }), '_blank');
                     }}>
                       👉 点击这里进行可视化质检曲线分析
                     </div>
