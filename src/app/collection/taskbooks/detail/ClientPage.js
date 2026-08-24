@@ -21,8 +21,7 @@ const { Title, Text, Paragraph } = Typography;
 export default function TaskbookDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawId = searchParams.get('id') || '';
-  const id = decodeURIComponent(rawId);
+  const id = searchParams.get('id') || '';
 
   // Mock metadata lookup
   const taskbook = {

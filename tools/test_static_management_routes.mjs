@@ -166,8 +166,14 @@ function analyzeClientContract(source, componentName) {
   const queryReads = [];
   const defaults = new Map();
   let useParamsFound = false;
+  let redundantUriDecodeFound = false;
   walk(ast, (node) => {
     if (node.type === 'Identifier' && node.name === 'useParams') useParamsFound = true;
+    if (
+      node.type === 'CallExpression'
+      && node.callee?.type === 'Identifier'
+      && node.callee.name === 'decodeURIComponent'
+    ) redundantUriDecodeFound = true;
     if (node.type === 'VariableDeclarator' && node.id?.type === 'Identifier' && node.id.name === 'searchParams') {
       allSearchParamsBindings.push(node);
     }
@@ -189,6 +195,7 @@ function analyzeClientContract(source, componentName) {
   return {
     ast,
     hasNoUseParams: !useParamsFound,
+    hasNoRedundantUriDecode: !redundantUriDecodeFound,
     hasCanonicalSearchParamsBinding: (
       allSearchParamsBindings.length === 1
       && directSearchParamsBindings.length === 1
@@ -207,6 +214,7 @@ function analyzeClientContract(source, componentName) {
 for (const [clientPath, contract] of allClientContracts) {
   const analysis = analyzeClientContract(readFileSync(clientPath, 'utf8'), contract.component);
   assert.ok(analysis.hasNoUseParams, `${clientPath} 不得保留 useParams`);
+  assert.ok(analysis.hasNoRedundantUriDecode, `${clientPath} 不得二次解码 useSearchParams 已解码的查询值`);
   assert.ok(analysis.hasCanonicalSearchParamsBinding, `${clientPath} 必须在页面直接作用域唯一声明 const searchParams = useSearchParams()`);
   assert.deepEqual(analysis.queryReads, [...contract.queries].sort(), `${clientPath} 必须且只能读取 canonical 查询参数`);
   for (const [bindingName, fallback] of Object.entries(contract.defaults || {})) {
@@ -226,6 +234,18 @@ assert.equal(
   )).hasCanonicalSearchParamsBinding,
   false,
   '把 searchParams 移入嵌套函数不得通过页面作用域契约',
+);
+
+const taskbookClientSource = readFileSync('src/app/collection/taskbooks/detail/ClientPage.js', 'utf8');
+const redundantDecodeMutation = taskbookClientSource.replace(
+  "const id = searchParams.get('id') || '';",
+  "const id = decodeURIComponent(searchParams.get('id') || '');",
+);
+assert.notEqual(redundantDecodeMutation, taskbookClientSource, '二次解码 mutation 必须实际修改任务书详情页');
+assert.equal(
+  analyzeClientContract(redundantDecodeMutation).hasNoRedundantUriDecode,
+  false,
+  '任务书详情页重新加入 decodeURIComponent 必须被拒绝',
 );
 
 function expressionSignature(node) {

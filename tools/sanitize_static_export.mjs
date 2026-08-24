@@ -84,6 +84,13 @@ const ALLOWED_OUTPUT_EXTENSIONS = new Set([
   '.xml',
 ]);
 
+const SECRET_FILE_PATTERNS = Object.freeze([
+  /^\.env(?:\..+)?$/iu,
+  /^\.(?:npmrc|netrc|pypirc)$/iu,
+  /^id_(?:rsa|dsa|ecdsa|ed25519)(?:\.pub)?$/iu,
+  /^(?:credentials?|secrets?)(?:\.[^.]+)?$/iu,
+]);
+
 const TEXT_VIOLATIONS = Object.freeze([
   {
     label: 'RFC1918 address',
@@ -106,7 +113,23 @@ const TEXT_VIOLATIONS = Object.freeze([
   },
   {
     label: 'known device serial literal',
-    pattern: /(?:GALBOT-116-GB105|R001GBD-2026040[1-7]|LUMOS-UMI-009|R001FBBCBABA0058|R002FBBCBABA0066)/u,
+    pattern: /(?:GALBOT-116-GB105|R001GBD-2026040[1-7]|LUMOS-UMI-009|R001FBBCBABA0058|R002FBBCBABA0066|250801DR48FP26003296|250801DR48FP26003349)/u,
+  },
+  {
+    label: 'non-empty credential assignment',
+    pattern: /(?<![A-Za-z0-9_])(?:api[_-]?key|client[_-]?secret|access[_-]?token|refresh[_-]?token|private[_-]?key|credential|secret)\s*["']?\s*[:=]\s*["'][^"'\r\n]{8,}["']/iu,
+  },
+  {
+    label: 'environment credential assignment',
+    pattern: /\b[A-Z][A-Z0-9_]*(?:SECRET|TOKEN|API_KEY|PRIVATE_KEY|PASSWORD)[A-Z0-9_]*\s*=\s*[A-Za-z0-9_./+=-]{8,}/u,
+  },
+  {
+    label: 'authorization header credential',
+    pattern: /\bAuthorization\s*[:=]\s*["'](?:Basic|Bearer)\s+[^"'\s]{8,}["']/iu,
+  },
+  {
+    label: 'private key material',
+    pattern: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u,
   },
 ]);
 
@@ -178,6 +201,9 @@ async function collectAuditViolations(outputRoot) {
 
       filesScanned += 1;
       const extension = path.extname(entry.name).toLowerCase();
+      if (SECRET_FILE_PATTERNS.some((pattern) => pattern.test(entry.name))) {
+        violations.push(`${relativePath}: forbidden secret-bearing filename`);
+      }
       if (MEDIA_EXTENSIONS.has(extension)) {
         violations.push(`${relativePath}: forbidden media extension ${extension}`);
       }

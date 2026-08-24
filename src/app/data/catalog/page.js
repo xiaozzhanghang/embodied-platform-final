@@ -102,7 +102,7 @@ const mockCards = [
     serial: 'SYNTHETIC-SN-CATALOG-002',
     scene: 'Luming / lab_table',
     desc: '双臂手眼机器人在实验室桌面前，执行高频协同抓取及运动位姿标定',
-    dataDir: ['left_hand_250801DR48FP26003296', 'right_hand_250801DR48FP26003349', 'quality_report', 'relative_transforms_left_to_right.txt', 'relative_transforms_right_to_left.txt'],
+    dataDir: ['left_hand_demo', 'right_hand_demo', 'quality_report', 'relative_transforms_left_to_right.txt', 'relative_transforms_right_to_left.txt'],
     isLuming: true
   },
   { 
@@ -198,7 +198,7 @@ const mockCards = [
     serial: 'SYNTHETIC-SN-CATALOG-002',
     scene: 'Luming / lab_table',
     desc: '双手臂机器人在实验室桌面前，执行协同抓取及运动位姿标定',
-    dataDir: ['left_hand_250801DR48FP26003296', 'right_hand_250801DR48FP26003349', 'quality_report', 'relative_transforms_left_to_right.txt', 'relative_transforms_right_to_left.txt'],
+    dataDir: ['left_hand_demo', 'right_hand_demo', 'quality_report', 'relative_transforms_left_to_right.txt', 'relative_transforms_right_to_left.txt'],
     isLuming: true
   },
   { 
@@ -214,7 +214,7 @@ const mockCards = [
     serial: 'SYNTHETIC-SN-CATALOG-002',
     scene: 'Luming / lab_table',
     desc: '双手臂机器人在实验室桌面前，执行协同抓取及运动位姿标定',
-    dataDir: ['left_hand_250801DR48FP26003296', 'right_hand_250801DR48FP26003349', 'quality_report', 'relative_transforms_left_to_right.txt', 'relative_transforms_right_to_left.txt'],
+    dataDir: ['left_hand_demo', 'right_hand_demo', 'quality_report', 'relative_transforms_left_to_right.txt', 'relative_transforms_right_to_left.txt'],
     isLuming: true
   }
 ];
@@ -227,7 +227,7 @@ const sessionFileTree = [
     icon: <FolderOpenOutlined />,
     children: [
       {
-        title: 'left_hand_250801DR48FP26003296',
+        title: 'left_hand_demo',
         key: 'left_hand',
         icon: <FolderOutlined />,
         children: [
@@ -270,7 +270,7 @@ const sessionFileTree = [
         ]
       },
       {
-        title: 'right_hand_250801DR48FP26003349',
+        title: 'right_hand_demo',
         key: 'right_hand',
         icon: <FolderOutlined />,
         children: [

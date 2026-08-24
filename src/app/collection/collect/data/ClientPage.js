@@ -409,11 +409,11 @@ export default function CollectTaskDataPage() {
                     <Descriptions.Item label="ToF模式">关闭 (off)</Descriptions.Item>
                     <Descriptions.Item label="采集脚本">single_session_data_collector_buffered.py</Descriptions.Item>
                     <Descriptions.Item label="左臂 XV 序列号" span={2}>
-                      <span style={{ fontFamily: 'monospace' }}>250801DR48FP26003296 (Vive 已禁用)</span>
+                      <span style={{ fontFamily: 'monospace' }}>SYNTHETIC-XV-LEFT (Vive 已禁用)</span>
                     </Descriptions.Item>
                     <Descriptions.Item label="左臂标签">left_hand</Descriptions.Item>
                     <Descriptions.Item label="右臂 XV 序列号" span={2}>
-                      <span style={{ fontFamily: 'monospace' }}>250801DR48FP26003349 (Vive 已禁用)</span>
+                      <span style={{ fontFamily: 'monospace' }}>SYNTHETIC-XV-RIGHT (Vive 已禁用)</span>
                     </Descriptions.Item>
                     <Descriptions.Item label="右臂标签">right_hand</Descriptions.Item>
                     <Descriptions.Item label="主控配置文件" span={3}>
@@ -444,7 +444,7 @@ export default function CollectTaskDataPage() {
                               onClick={() => setActiveVideoHand('left')}
                               style={{ fontSize: 11 }}
                             >
-                              左手腕相机 (left_hand_250801DR48FP26003296)
+                              左手腕相机 (left_hand_demo)
                             </Button>
                             <Button 
                               type={activeVideoHand === 'right' ? 'primary' : 'default'} 
@@ -452,7 +452,7 @@ export default function CollectTaskDataPage() {
                               onClick={() => setActiveVideoHand('right')}
                               style={{ fontSize: 11 }}
                             >
-                              右手腕相机 (right_hand_250801DR48FP26003349)
+                              右手腕相机 (right_hand_demo)
                             </Button>
                           </Space>
                         </div>
@@ -725,7 +725,7 @@ export default function CollectTaskDataPage() {
                           <div style={{ padding: '0 8px' }}>
                             <Row gutter={16}>
                               <Col span={12}>
-                                <Card type="inner" title="左臂位移检测 (left_hand_250801DR48FP26003296)" size="small">
+                                <Card type="inner" title="左臂位移检测 (left_hand_demo)" size="small">
                                   <p style={{ margin: '4px 0' }}>判定基准: <b>MERGE</b> (结果: <StatusTag status="已通过">通过</StatusTag>)</p>
                                   <ul style={{ paddingLeft: 16, margin: 0, fontSize: 12, lineHeight: 1.8 }}>
                                     <li><b>MERGE:</b> 阈值 = 7.00mm | 超标数 = 0/15221 (0.00%) | 最大位移 = 6.13mm | 平均位移 = 0.13mm</li>
@@ -735,7 +735,7 @@ export default function CollectTaskDataPage() {
                                 </Card>
                               </Col>
                               <Col span={12}>
-                                <Card type="inner" title="右臂位移检测 (right_hand_250801DR48FP26003349)" size="small">
+                                <Card type="inner" title="右臂位移检测 (right_hand_demo)" size="small">
                                   <p style={{ margin: '4px 0' }}>判定基准: <b>MERGE</b> (结果: <StatusTag status="已通过">通过</StatusTag>)</p>
                                   <ul style={{ paddingLeft: 16, margin: 0, fontSize: 12, lineHeight: 1.8 }}>
                                     <li><b>MERGE:</b> 阈值 = 7.00mm | 超标数 = 0/15234 (0.00%) | 最大位移 = 0.10mm | 平均位移 = 0.00mm</li>

@@ -49,7 +49,7 @@ const getTreeData = (episodeId) => {
       icon: <FolderOpenOutlined style={{ color: '#ffc069' }} />,
       children: [
         {
-          title: 'left_hand_250801DR48FP26003296 (左手腕传感器数据)',
+          title: 'left_hand_demo (左手腕传感器数据)',
           key: 'left_hand',
           icon: <FolderOutlined style={{ color: '#ffc069' }} />,
           children: [
@@ -69,7 +69,7 @@ const getTreeData = (episodeId) => {
           ]
         },
         {
-          title: 'right_hand_250801DR48FP26003349 (右手腕传感器数据)',
+          title: 'right_hand_demo (右手腕传感器数据)',
           key: 'right_hand',
           icon: <FolderOutlined style={{ color: '#ffc069' }} />,
           children: [

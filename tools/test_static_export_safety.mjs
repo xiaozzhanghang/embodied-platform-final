@@ -52,6 +52,26 @@ const sourceRules = [
     label: 'known device serial literal',
     pattern: /(?:GALBOT-116-GB105|R001GBD-2026040[1-7]|LUMOS-UMI-009|R001FBBCBABA0058|R002FBBCBABA0066)/u,
   },
+  {
+    label: 'high-entropy device serial literal',
+    pattern: /(?<![A-Z0-9])(?=[A-Z0-9]{16,}(?![A-Z0-9]))(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*\d)[A-Z0-9]+(?![A-Z0-9])/u,
+  },
+  {
+    label: 'non-empty credential assignment',
+    pattern: /(?<![A-Za-z0-9_])(?:api[_-]?key|client[_-]?secret|access[_-]?token|refresh[_-]?token|private[_-]?key|credential|secret)\s*["']?\s*[:=]\s*["'][^"'\r\n]{8,}["']/iu,
+  },
+  {
+    label: 'environment credential assignment',
+    pattern: /\b[A-Z][A-Z0-9_]*(?:SECRET|TOKEN|API_KEY|PRIVATE_KEY|PASSWORD)[A-Z0-9_]*\s*=\s*[A-Za-z0-9_./+=-]{8,}/u,
+  },
+  {
+    label: 'authorization header credential',
+    pattern: /\bAuthorization\s*[:=]\s*["'](?:Basic|Bearer)\s+[^"'\s]{8,}["']/iu,
+  },
+  {
+    label: 'private key material',
+    pattern: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u,
+  },
 ];
 
 const contractViolations = [];
@@ -197,10 +217,21 @@ for (const { label, contents, expected } of [
   { label: 'credential', contents: 'Password: gb@2023', expected: /known credential literal/u },
   { label: 'wifi-ssid', contents: 'const ssid = "miracle-office-5g";', expected: /known Wi-Fi SSID literal/u },
   { label: 'device-serial', contents: 'const serial = "R001GBD-20260401";', expected: /known device serial literal/u },
+  { label: 'xv-device-serial', contents: 'const serial = "250801DR48FP26003296";', expected: /known device serial literal/u },
+  { label: 'api-key-assignment', contents: '{"apiKey":"EXAMPLE_NOT_REAL_SECRET_1234567890"}', expected: /non-empty credential assignment/u },
+  { label: 'environment-secret', contents: 'AWS_SECRET_ACCESS_KEY=EXAMPLE_NOT_REAL_SECRET_1234567890', expected: /environment credential assignment/u },
+  { label: 'authorization-header', contents: 'Authorization: "Bearer EXAMPLE_NOT_REAL_TOKEN_1234567890"', expected: /authorization header credential/u },
+  { label: 'private-key', contents: '-----BEGIN PRIVATE KEY-----', expected: /private key material/u },
 ]) {
   await expectSafetyFailure(label, async ({ outDir }) => {
     await writeFile(path.join(outDir, 'bundle.js'), contents);
   }, expected);
+}
+
+for (const secretFileName of ['.env', '.npmrc', '.netrc', '.pypirc', 'id_rsa', 'id_ed25519', 'credentials.json', 'secrets.json']) {
+  await expectSafetyFailure(`secret-file-${secretFileName.replaceAll('.', '-')}`, async ({ outDir }) => {
+    await writeFile(path.join(outDir, secretFileName), 'STATIC_DEMO_PLACEHOLDER=true');
+  }, /forbidden secret-bearing filename/u);
 }
 
 await expectSafetyFailure('dotenv-text', async ({ outDir }) => {

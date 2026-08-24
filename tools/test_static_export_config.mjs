@@ -6,6 +6,7 @@ import { isDeepStrictEqual } from 'node:util';
 const [
   { default: nextConfig },
   packageSource,
+  packageLockSource,
   nextPackageSource,
   readmeSource,
   handoverSource,
@@ -14,6 +15,7 @@ const [
 ] = await Promise.all([
   import(pathToFileURL('next.config.mjs').href),
   readFile('package.json', 'utf8'),
+  readFile('package-lock.json', 'utf8'),
   readFile('node_modules/next/package.json', 'utf8'),
   readFile('README.md', 'utf8'),
   readFile('docs/release_notes_and_ops_handover.md', 'utf8'),
@@ -22,6 +24,7 @@ const [
 ]);
 
 const pkg = JSON.parse(packageSource);
+const packageLock = JSON.parse(packageLockSource);
 const nextPkg = JSON.parse(nextPackageSource);
 
 const exactWorkflow = '```bash\nnpm ci\nnpm run build\nnpm start\n```';
@@ -51,6 +54,7 @@ function visibleMarkdown(source) {
 function collectContractViolations({
   nextConfigValue = nextConfig,
   pkgValue = pkg,
+  packageLockValue = packageLock,
   nextPkgValue = nextPkg,
   readmeValue = readmeSource,
   handoverValue = handoverSource,
@@ -71,6 +75,10 @@ function collectContractViolations({
   check(nextConfigValue.basePath === undefined, 'nextConfig.basePath must remain unset');
   check(nextConfigValue.assetPrefix === undefined, 'nextConfig.assetPrefix must remain unset');
   check(pkgValue.engines?.node === '>=20.9.0', 'package engines.node must be exactly ">=20.9.0"');
+  check(
+    packageLockValue.packages?.['']?.engines?.node === pkgValue.engines?.node,
+    'package-lock root Node minimum must match package.json',
+  );
   check(nextPkgValue.engines?.node === '>=20.9.0', 'installed Next.js metadata must require Node >=20.9.0');
   check(
     pkgValue.engines?.node === nextPkgValue.engines?.node,
@@ -193,6 +201,22 @@ assertMutationRejected(
     handoverValue: handoverSource.replaceAll('20.9.0', '20.0.0'),
   },
   'package engines.node must be exactly ">=20.9.0"',
+);
+assertMutationRejected(
+  'stale package-lock Node minimum',
+  {
+    packageLockValue: {
+      ...packageLock,
+      packages: {
+        ...packageLock.packages,
+        '': {
+          ...packageLock.packages[''],
+          engines: { node: '>=20.0.0' },
+        },
+      },
+    },
+  },
+  'package-lock root Node minimum must match package.json',
 );
 console.log('STATIC_EXPORT_CONFIG_MUTATION_PROBES_OK');
 
