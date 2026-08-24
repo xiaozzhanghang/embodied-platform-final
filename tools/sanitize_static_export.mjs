@@ -22,13 +22,16 @@ const MEDIA_EXTENSIONS = new Set([
   '.3g2',
   '.3gp',
   '.aac',
+  '.asf',
   '.avi',
+  '.f4v',
   '.flac',
   '.flv',
   '.h264',
   '.hevc',
   '.m4a',
   '.m2ts',
+  '.m2v',
   '.m4v',
   '.mkv',
   '.mov',
@@ -41,6 +44,7 @@ const MEDIA_EXTENSIONS = new Set([
   '.ogg',
   '.ogv',
   '.opus',
+  '.rmvb',
   '.ts',
   '.vob',
   '.wav',
@@ -48,21 +52,35 @@ const MEDIA_EXTENSIONS = new Set([
   '.wmv',
 ]);
 
-const TEXT_EXTENSIONS = new Set([
+const ALLOWED_OUTPUT_EXTENSIONS = new Set([
+  '',
+  '.avif',
   '.cjs',
   '.css',
   '.csv',
+  '.eot',
+  '.gif',
   '.htm',
   '.html',
+  '.ico',
+  '.jpeg',
+  '.jpg',
   '.js',
   '.json',
   '.log',
   '.map',
   '.md',
   '.mjs',
+  '.otf',
+  '.png',
   '.svg',
+  '.ttf',
   '.txt',
+  '.wasm',
   '.webmanifest',
+  '.webp',
+  '.woff',
+  '.woff2',
   '.xml',
 ]);
 
@@ -134,15 +152,6 @@ async function assertOutputRoot(outputDirectory) {
   return realOutputRoot;
 }
 
-function isDeclaredTextFile(fileName, extension) {
-  return TEXT_EXTENSIONS.has(extension) || fileName === '.env' || fileName.startsWith('.env.');
-}
-
-function shouldInspectText(fileName, extension, size) {
-  if (isDeclaredTextFile(fileName, extension)) return true;
-  return extension === '' && size <= 1024 * 1024;
-}
-
 async function collectAuditViolations(outputRoot) {
   const violations = [];
   let filesScanned = 0;
@@ -172,13 +181,15 @@ async function collectAuditViolations(outputRoot) {
       if (MEDIA_EXTENSIONS.has(extension)) {
         violations.push(`${relativePath}: forbidden media extension ${extension}`);
       }
+      if (!ALLOWED_OUTPUT_EXTENSIONS.has(extension)) {
+        violations.push(`${relativePath}: unsupported static output extension ${extension || '<none>'}`);
+      }
       if (stats.size > MAX_FILE_BYTES) {
         violations.push(`${relativePath}: larger than 50 MiB (${stats.size} bytes)`);
       }
-      if (!shouldInspectText(entry.name, extension, stats.size) || stats.size > MAX_FILE_BYTES) continue;
+      if (stats.size > MAX_FILE_BYTES) continue;
 
       const source = await readFile(entryPath, 'utf8');
-      if (source.includes('\0') && !isDeclaredTextFile(entry.name, extension)) continue;
       for (const { label, pattern } of TEXT_VIOLATIONS) {
         if (pattern.test(source)) violations.push(`${relativePath}: ${label}`);
       }

@@ -166,7 +166,7 @@ await expectSafetyFailure('unknown-media', async ({ outDir }) => {
   await writeFile(path.join(outDir, 'uploads/leak.mkv'), 'unknown-media-must-not-be-deleted');
 }, /forbidden media extension/u);
 
-for (const extension of ['.264', '.3g2', '.3gp', '.hevc', '.mxf', '.vob', '.wav', '.flac']) {
+for (const extension of ['.264', '.3g2', '.3gp', '.asf', '.f4v', '.hevc', '.m2v', '.mxf', '.rmvb', '.vob', '.wav', '.flac']) {
   await expectSafetyFailure(`media-${extension.slice(1)}`, async ({ outDir }) => {
     await writeFile(path.join(outDir, `unexpected${extension}`), 'unexpected-media');
   }, /forbidden media extension/u);
@@ -214,6 +214,14 @@ await expectSafetyFailure('dotenv-text-with-nul', async ({ outDir }) => {
 await expectSafetyFailure('extensionless-text', async ({ outDir }) => {
   await writeFile(path.join(outDir, 'CONFIG'), 'source=/home/example/private');
 }, /absolute user\/home path/u);
+
+await expectSafetyFailure('extensionless-text-with-nul', async ({ outDir }) => {
+  await writeFile(path.join(outDir, 'CONFIG'), 'HOST=192.168.1.5\0');
+}, /RFC1918/u);
+
+await expectSafetyFailure('yaml-text', async ({ outDir }) => {
+  await writeFile(path.join(outDir, 'config.yaml'), 'host: 192.168.1.5');
+}, /RFC1918/u);
 
 {
   const root = await mkdtemp(path.join(tmpdir(), 'static-export-parent-link-'));
