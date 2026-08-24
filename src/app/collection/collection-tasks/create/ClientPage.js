@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Button, Typography, Space, Input, Select, Form, Row, Col,
   Card, Table, Radio, Switch, App, Breadcrumb, Steps,
-  InputNumber, Upload, Checkbox, Avatar, Tag, Divider, Alert, Modal
+  InputNumber, Upload, Checkbox, Avatar, Tag, Divider, Alert, Modal, Empty
 } from 'antd';
 import {
   ArrowLeftOutlined, SaveOutlined, PlusOutlined,
@@ -15,7 +15,8 @@ import {
   ShoppingOutlined, SkinOutlined, ToolOutlined, ExperimentOutlined,
   RestOutlined, VideoCameraOutlined, DatabaseOutlined, LinkOutlined,
   UserOutlined, AuditOutlined, ThunderboltOutlined, SyncOutlined,
-  UnorderedListOutlined, InfoCircleFilled, EditOutlined, MinusCircleOutlined
+  UnorderedListOutlined, InfoCircleFilled, EditOutlined, MinusCircleOutlined,
+  SearchOutlined, InboxOutlined
 } from '@ant-design/icons';
 import MainLayout from '@/components/MainLayout';
 import { ActionFooter, AppModal, FormSection, PageHeader, StateView, StatusTag } from '@/components/ui';
@@ -312,56 +313,150 @@ function CreateCollectionTaskContent() {
   const mode = searchParams.get('mode');
   const taskId = searchParams.get('taskId');
 
+  const [templateSearchKey, setTemplateSearchKey] = useState('');
+  const [templateCategoryFilter, setTemplateCategoryFilter] = useState('ALL');
+
   const mockTemplates = [
     {
-      id: 'desk',
-      name: '桌面整理',
-      desc: '书籍、收纳盒、垃圾清理等桌面物品整理任务',
-      type: '服务数据',
+      id: 'desk_organize',
+      name: '桌面物品整理',
+      desc: '书籍、文具、收纳盒与水杯等桌面多类别物品规整与收纳任务',
+      type: '桌面操作',
       device: 'galbot_2.2_RGB',
       tele: 'Master-slaveArm',
       mode: 'WholeBody',
+      sceneCat: 'Kitchen',
+      subScene: 'sub_cuisine',
       icon: <ShoppingOutlined />,
       bgColor: '#e6f4ff',
       iconColor: '#1677ff'
     },
     {
-      id: 'clothing',
-      name: '衣物折叠',
-      desc: '叠牛仔裤等柔性物体折叠操作，步骤多、精度高',
-      type: '服务数据',
+      id: 'clothing_folding',
+      name: '柔性衣物折叠',
+      desc: '叠T恤、毛巾及长裤等柔性布料双臂协同展平与对齐折叠',
+      type: '双臂协同',
       device: 'galbot_2.2_RGB',
-      tele: 'VR(VR)',
+      tele: 'DualHandControl',
       mode: 'WholeBody',
+      sceneCat: 'LivingRoom',
+      subScene: 'sub_sofa',
       icon: <SkinOutlined />,
       bgColor: '#f0f5ff',
       iconColor: '#2f54eb'
     },
     {
-      id: 'galbot116_lab',
-      name: '精细整理作业',
-      desc: '使用Galbot 1.16双端控制台进行精细桌面/实验室整理任务数据采集',
-      type: '双端数采',
+      id: 'kitchen_dish',
+      name: '厨房台面与餐具',
+      desc: '餐盘入槽、水槽清洗、微波炉开门与调料瓶定点归位',
+      type: '家庭服务',
       device: 'galbot_1.16_G2',
-      tele: 'DualHandControl',
+      tele: 'Master-slaveArm',
       mode: 'DualArm',
-      icon: <ExperimentOutlined />,
+      sceneCat: 'Kitchen',
+      subScene: 'sub_sink',
+      icon: <RestOutlined />,
+      bgColor: '#fff7e6',
+      iconColor: '#fa8c16'
+    },
+    {
+      id: 'industrial_part',
+      name: '工业料箱拣选装配',
+      desc: '结构化料箱工件抓取、卡槽精密对准、紧固件插入与装配',
+      type: '工业制造',
+      device: 'franka_std',
+      tele: 'Master-slaveArm',
+      mode: 'SingleArm',
+      sceneCat: 'Warehouse',
+      subScene: 'sub_shelf',
+      icon: <ToolOutlined />,
       bgColor: '#f6ffed',
       iconColor: '#52c41a'
     },
     {
-      id: 'lumos_tabletop',
-      name: '离线台面采集',
-      desc: '使用Lumos FastUMI Go背包终端进行离线台面数据采集',
-      type: '离线数采',
+      id: 'drawer_operation',
+      name: '抽屉柜门与取物',
+      desc: '阻尼抽屉拉开、多层储物柜开门、盲区探物与平稳复位闭合',
+      type: '环境交互',
+      device: 'galbot_2.2_RGB',
+      tele: 'VRController',
+      mode: 'WholeBody',
+      sceneCat: 'LivingRoom',
+      subScene: 'sub_sofa',
+      icon: <LayoutOutlined />,
+      bgColor: '#fcffe6',
+      iconColor: '#7cb305'
+    },
+    {
+      id: 'waste_cleaning',
+      name: '垃圾分类与清洁',
+      desc: '识别易拉罐、纸团、果皮并分类投放至不同分类垃圾箱',
+      type: '环境保洁',
+      device: 'galbot_2.2_RGBD',
+      tele: 'Master-slaveArm',
+      mode: 'WholeBody',
+      sceneCat: 'LivingRoom',
+      subScene: 'sub_sofa',
+      icon: <DeleteOutlined />,
+      bgColor: '#e6fffb',
+      iconColor: '#13c2c2'
+    },
+    {
+      id: 'warehouse_picking',
+      name: '仓储货架跨层拣选',
+      desc: '结合底盘自主导航与双臂升降，完成高低货架物料箱搬运',
+      type: '移动操作',
+      device: 'galbot_2.2_RGB',
+      tele: 'Master-slaveArm',
+      mode: 'MobileManipulation',
+      sceneCat: 'Warehouse',
+      subScene: 'sub_shelf',
+      icon: <DatabaseOutlined />,
+      bgColor: '#f9f0ff',
+      iconColor: '#722ed1'
+    },
+    {
+      id: 'tool_storage',
+      name: '五金工具使用与收纳',
+      desc: '扳手、螺丝刀与测量工具的稳态抓握、操作与挂板归位',
+      type: '工具操作',
+      device: 'franka_std',
+      tele: 'DualHandControl',
+      mode: 'DualArm',
+      sceneCat: 'Warehouse',
+      subScene: 'sub_shelf',
+      icon: <ToolOutlined />,
+      bgColor: '#fff0f6',
+      iconColor: '#eb2f96'
+    },
+    {
+      id: 'lumos_backpack',
+      name: '离线便携背包数采',
+      desc: '穿戴式Lumos FastUMI便携背包终端，支持任意多工况离线采集',
+      type: '便携采集',
       device: 'lumos_fastumi',
       tele: 'DualHandControl',
       mode: 'DualHand',
-      icon: <RestOutlined />,
-      bgColor: '#fff7e6',
-      iconColor: '#fa8c16'
+      sceneCat: 'Kitchen',
+      subScene: 'sub_cuisine',
+      icon: <ExperimentOutlined />,
+      bgColor: '#fffbe6',
+      iconColor: '#d48806'
     }
   ];
+
+  const filteredTemplates = mockTemplates.filter(tpl => {
+    const query = (templateSearchKey || '').trim().toLowerCase();
+    const matchesSearch = !query ||
+      tpl.name.toLowerCase().includes(query) ||
+      tpl.desc.toLowerCase().includes(query) ||
+      tpl.type.toLowerCase().includes(query) ||
+      tpl.device.toLowerCase().includes(query) ||
+      tpl.tele.toLowerCase().includes(query);
+
+    const matchesCategory = templateCategoryFilter === 'ALL' || tpl.type === templateCategoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   useEffect(() => {
     if (mode === 'copy' || mode === 'edit') {
@@ -459,13 +554,13 @@ function CreateCollectionTaskContent() {
         p2: 'GroceryVLA',
         usage: 'Training',
         name: `基于模版_${tpl.name}_数采任务`,
-        sceneCat: 'Kitchen',
-        subScene: 'sub_cuisine',
+        sceneCat: tpl.sceneCat || 'Kitchen',
+        subScene: tpl.subScene || 'sub_cuisine',
         mode: 'Real',
         deviceType: tpl.device,
         teleType: tpl.tele,
         count: 500,
-        initState: `模版[${tpl.name}]的物理工作区准备完毕`
+        initState: `模版[${tpl.name}]的物理工作区准备完毕，机器人完成自检并处于就绪初始位姿。`
       });
       handleDeviceTypeChange(tpl.device);
     }
@@ -501,48 +596,146 @@ function CreateCollectionTaskContent() {
     setSelectedRowKeys(mockEpList.slice(0, 20).map(item => item.key));
   };
 
+  const templateCategories = ['ALL', '桌面操作', '双臂协同', '家庭服务', '工业制造', '环境交互', '环境保洁', '移动操作', '工具操作', '便携采集'];
+
   const renderSelection = () => (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <FormSection title="基于模板快速创建" description="选择预置的标准化任务模板，快速继承硬件与场景配置。">
-        <Row gutter={[20, 20]}>
-          {mockTemplates.map((tpl) => (
-            <Col span={6} key={tpl.id}>
-              <Card
-                hoverable
-                onClick={() => handleSelectTemplate(tpl)}
-                style={{
-                  borderRadius: 12,
-                  border: '1px solid #e8e8e8',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justify: 'space-between'
-                }}
-                styles={{ body: { padding: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
-              >
-                <div>
-                  <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-                    <Avatar size={44} icon={tpl.icon} style={{ backgroundColor: tpl.bgColor, color: tpl.iconColor, flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <Text strong style={{ fontSize: 15 }}>{tpl.name}</Text>
-                        <Tag color="blue" variant="borderless" style={{ fontSize: 10 }}>{tpl.type}</Tag>
+      <FormSection title="基于模板快速创建" description="选择预置的标准化任务模板（共 9 个常用模版），快速继承硬件与场景配置。">
+        {/* Search & Category Filter Toolbar */}
+        <div style={{
+          background: '#fff',
+          padding: '14px 18px',
+          borderRadius: 10,
+          border: '1px solid #e2e8f0',
+          marginBottom: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>
+                常用模版库
+              </span>
+              <Tag color="blue" style={{ margin: 0, fontWeight: 600 }}>
+                {templateSearchKey || templateCategoryFilter !== 'ALL'
+                  ? `匹配到 ${filteredTemplates.length} / 9 个模版`
+                  : `共 9 个常用模版`}
+              </Tag>
+            </div>
+
+            <Input.Search
+              placeholder="搜索模版名称、分类、设备型号、遥控类型..."
+              allowClear
+              value={templateSearchKey}
+              onChange={e => setTemplateSearchKey(e.target.value)}
+              style={{ width: 340 }}
+            />
+          </div>
+
+          {/* Quick Category Filter Pills */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: '#64748b', marginRight: 4 }}>快速筛选：</span>
+            {templateCategories.map(cat => {
+              const isSelected = templateCategoryFilter === cat;
+              return (
+                <Tag.CheckableTag
+                  key={cat}
+                  checked={isSelected}
+                  onChange={() => setTemplateCategoryFilter(cat)}
+                  style={{
+                    borderRadius: 14,
+                    padding: '2px 10px',
+                    fontSize: 12,
+                    border: isSelected ? '1px solid #2563eb' : '1px solid #e2e8f0',
+                    background: isSelected ? '#eff6ff' : '#f8fafc',
+                    color: isSelected ? '#1d4ed8' : '#475569',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {cat === 'ALL' ? '全部模版 (9)' : cat}
+                </Tag.CheckableTag>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 9 Templates Grid (3x3 layout) */}
+        {filteredTemplates.length > 0 ? (
+          <Row gutter={[16, 16]}>
+            {filteredTemplates.map((tpl) => (
+              <Col span={8} key={tpl.id}>
+                <Card
+                  hoverable
+                  onClick={() => handleSelectTemplate(tpl)}
+                  style={{
+                    borderRadius: 12,
+                    border: '1px solid #e2e8f0',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                  }}
+                  styles={{ body: { padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+                      <Avatar size={42} icon={tpl.icon} style={{ backgroundColor: tpl.bgColor, color: tpl.iconColor, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
+                          <Text strong style={{ fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {tpl.name}
+                          </Text>
+                          <Tag color="blue" variant="borderless" style={{ fontSize: 10, margin: 0, flexShrink: 0 }}>
+                            {tpl.type}
+                          </Tag>
+                        </div>
+                        <Text type="secondary" style={{ fontSize: 11, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '16px', height: 32 }}>
+                          {tpl.desc}
+                        </Text>
                       </div>
-                      <Text type="secondary" style={{ fontSize: 12, display: 'block', minHeight: 32 }}>{tpl.desc}</Text>
                     </div>
+                    <Divider style={{ margin: '10px 0' }} />
+                    <Row gutter={[0, 6]}>
+                      <Col span={8}><Text type="secondary" style={{ fontSize: 11 }}>预设设备：</Text></Col>
+                      <Col span={16} style={{ textAlign: 'right' }}>
+                        <Tag color="cyan" style={{ margin: 0, fontSize: 10, lineHeight: '18px' }}>{tpl.device}</Tag>
+                      </Col>
+                      <Col span={8}><Text type="secondary" style={{ fontSize: 11 }}>遥操方式：</Text></Col>
+                      <Col span={16} style={{ textAlign: 'right' }}>
+                        <Tag color="purple" style={{ margin: 0, fontSize: 10, lineHeight: '18px' }}>{tpl.tele}</Tag>
+                      </Col>
+                    </Row>
                   </div>
-                  <Divider style={{ margin: '12px 0' }} />
-                  <Row gutter={[0, 8]}>
-                    <Col span={8}><Text type="secondary" style={{ fontSize: 11 }}>设备：</Text></Col>
-                    <Col span={16} style={{ textAlign: 'right' }}><Text style={{ fontSize: 11 }}>{tpl.device}</Text></Col>
-                    <Col span={8}><Text type="secondary" style={{ fontSize: 11 }}>遥控：</Text></Col>
-                    <Col span={16} style={{ textAlign: 'right' }}><Text style={{ fontSize: 11 }}>{tpl.tele}</Text></Col>
-                  </Row>
+
+                  <div style={{ marginTop: 12, paddingTop: 8, borderTop: '1px dashed #f1f5f9', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 600 }}>
+                      选用此模版 <RightOutlined style={{ fontSize: 9 }} />
+                    </span>
+                  </div>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          <div style={{ background: '#fff', padding: '40px 20px', borderRadius: 12, border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+            <Empty
+              description={
+                <div style={{ marginTop: 8 }}>
+                  <Text style={{ color: '#64748b' }}>未找到与「{templateSearchKey}」相关的任务模版</Text>
+                  <div style={{ marginTop: 8 }}>
+                    <Button size="small" type="primary" ghost onClick={() => { setTemplateSearchKey(''); setTemplateCategoryFilter('ALL'); }}>
+                      重置搜索与筛选条件
+                    </Button>
+                  </div>
                 </div>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+              }
+            />
+          </div>
+        )}
       </FormSection>
 
       <FormSection title="自定义新建" description="从空白表单开始，自主配置全部采集参数。">

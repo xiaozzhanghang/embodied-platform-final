@@ -430,15 +430,7 @@ const navigationContracts = new Map([
     'qaDetail|router.push|instanceId=text',
   ]],
   ['src/app/annotation/audit/workbench/ClientPage.js', [
-    'auditDetail|router.push|id=instanceId',
-    'auditDetail|router.push|id=instanceId',
-    'auditDetail|router.push|id=instanceId&tab="annotated"',
-    'auditWorkbench|router.push|episodeId=nextEp.id&id=instanceId&mode="audit"&type=nextEp.annoType',
-    'auditWorkbench|router.push|episodeId=nextEp.id&id=instanceId&mode="audit"&type=nextEp.annoType',
-    'auditWorkbench|router.push|episodeId=nextEp.id&id=instanceId&mode="annotate"&type=nextEp.annoType',
-    'qaDetail|router.push|instanceId=instanceId',
-    '/annotation/review-list|router.push|instanceId=instanceId',
-    '/annotation/workbench-solutions|router.push|episodeId=episodeId&instanceId=instanceId&mode=workMode&type=annoType',
+    'auditDetail|router.push|id=effectiveInstanceId',
   ]],
 ]);
 
