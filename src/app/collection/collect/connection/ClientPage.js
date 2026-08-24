@@ -30,8 +30,8 @@ const humanoidSteps = [
 const humanoidLogs = [
   { time: '16:20:01', msg: '初始化边缘客户端硬件驱动...', type: 'info' },
   { time: '16:20:02', msg: '正在扫描以太网接口 (en0)...', type: 'info' },
-  { time: '16:20:03', msg: '检测到网口直连: 192.168.1.50', type: 'success' },
-  { time: '16:20:04', msg: '正在尝试 Ping 机器人控制器 (192.168.1.100)...', type: 'info' },
+  { time: '16:20:03', msg: '静态演示网口: 192.0.2.50 (TEST-NET)', type: 'success' },
+  { time: '16:20:04', msg: '正在演示机器人控制器握手 (192.0.2.100)...', type: 'info' },
   { time: '16:20:05', msg: '机器人控制器响应正常 (Latency: 0.8ms)', type: 'success' },
   { time: '16:20:06', msg: '正在建立 ROS2 Node: /edge_collector_node', type: 'info' },
   { time: '16:20:07', msg: 'ROS2 握手成功, 版本: Galactic', type: 'success' },
@@ -44,16 +44,16 @@ const humanoidLogs = [
 // Lumos Steps and Logs
 const lumosSteps = [
   { title: '本地网络', icon: <GlobalOutlined />, desc: '网卡直连 (en0)' },
-  { title: '数采背包主机', icon: <HddOutlined />, desc: '背包 192.168.54.110 通信' },
+  { title: '数采背包主机', icon: <HddOutlined />, desc: '背包 198.51.100.110 (TEST-NET) 演示' },
   { title: '夹爪控制器', icon: <RobotOutlined />, desc: '双侧夹爪对位与校验' },
   { title: '多目相机系统', icon: <VideoCameraOutlined />, desc: '3路 RGB 及雷达自检' },
 ];
 
 const lumosLogs = [
   { time: '16:20:01', msg: '启动 Lumos FastUMI Go 离线数采系统驱动...', type: 'info' },
-  { time: '16:20:02', msg: '正在扫描本地网段 192.168.54.x...', type: 'info' },
-  { time: '16:20:03', msg: '发现本地网卡直连: 192.168.54.53', type: 'success' },
-  { time: '16:20:04', msg: '正在尝试通信握手 Lumos 背包主机 (192.168.54.110)...', type: 'info' },
+  { time: '16:20:02', msg: '正在加载 TEST-NET 静态网络 fixture...', type: 'info' },
+  { time: '16:20:03', msg: '演示网卡地址: 198.51.100.53 (TEST-NET)', type: 'success' },
+  { time: '16:20:04', msg: '正在演示 Lumos 背包主机握手 (198.51.100.110)...', type: 'info' },
   { time: '16:20:05', msg: '数采背包主机已接入 (延迟: 1.2ms)', type: 'success' },
   { time: '16:20:06', msg: '正在检测左右夹爪 USB 总线控制接口 (/dev/ttyUSB*)...', type: 'info' },
   { time: '16:20:07', msg: '双侧力反馈手势夹爪配置对齐成功', type: 'success' },
@@ -67,23 +67,23 @@ const lumosLogs = [
 const galbot116Steps = [
   { title: '物理网络', icon: <GlobalOutlined />, desc: 'XCU & HPU 双端心跳检测' },
   { title: 'Supervisor 网桥', icon: <RobotOutlined />, desc: '守护服务 galbot_upper_bridge 运行' },
-  { title: 'WiFi 场景参数', icon: <HddOutlined />, desc: 'miracle-office-5g & 场景 JSON' },
+  { title: 'WiFi 场景参数', icon: <HddOutlined />, desc: 'SYNTHETIC_WIFI & 场景 JSON' },
   { title: '感知自检', icon: <VideoCameraOutlined />, desc: '4路多目相机与雷达深度流' },
 ];
 
 const galbot116Logs = [
   { time: '14:20:01', msg: '启动 Galbot 1.16 双端物理数采环境自检程序...', type: 'info' },
-  { time: '14:20:02', msg: '正在 Ping 控制底座 XCU 节点 (192.168.1.66)...', type: 'info' },
-  { time: '14:20:03', msg: '发现 XCU 节点响应正常 (延迟: 0.4ms)，SSH 验证通过，系统版本: OS v1.16.0.2', type: 'success' },
-  { time: '14:20:04', msg: '正在 Ping 计算单元 HPU 节点 (192.168.1.88)...', type: 'info' },
-  { time: '14:20:05', msg: '发现 HPU (Nvidia Orin) 响应正常 (延迟: 0.9ms)，SSH 授权通过，系统版本: Ubuntu 22.04', type: 'success' },
+  { time: '14:20:02', msg: '正在演示 XCU 节点 (192.0.2.66, TEST-NET)...', type: 'info' },
+  { time: '14:20:03', msg: 'XCU 静态 fixture 已就绪；不发起 SSH 连接，不包含可用凭据。', type: 'success' },
+  { time: '14:20:04', msg: '正在演示 HPU 节点 (192.0.2.88, TEST-NET)...', type: 'info' },
+  { time: '14:20:05', msg: 'HPU 静态 fixture 已就绪；不发起 SSH 连接，不包含可用凭据。', type: 'success' },
   { time: '14:20:06', msg: '正在查询 HPU Supervisor 网桥进程守护状态...', type: 'info' },
   { time: '14:20:07', msg: 'Supervisor 服务激活：galbot_upper_bridge 处于 RUNNING 状态，PID: 4820', type: 'success' },
   { time: '14:20:08', msg: '正在拉取 XCU 本地服务 remote_ctrl_record.target 状态...', type: 'info' },
   { time: '14:20:09', msg: '数采记录服务已就绪 (ACTIVE)，正向标定矩阵同步成功。', type: 'success' },
-  { time: '14:20:10', msg: '正在校验局域网 WiFi miracle-office-5g 连接与上报场景 JSON...', type: 'info' },
-  { time: '14:20:11', msg: '无线网已接入 (IP: 192.168.76.57)，场景参数加载成功。', type: 'success' },
-  { time: '14:20:12', msg: '执行 sys_tool SN 码比对检查：GALBOT-116-GB105，鉴权验证成功。', type: 'success' },
+  { time: '14:20:10', msg: '正在加载 WiFi fixture SYNTHETIC_WIFI 与场景 JSON...', type: 'info' },
+  { time: '14:20:11', msg: '演示无线网地址 203.0.113.57 (TEST-NET)，不发起真实连接。', type: 'success' },
+  { time: '14:20:12', msg: '加载合成序列号：SYNTHETIC-SN-GALBOT-001。', type: 'success' },
   { time: '14:20:13', msg: '正在开启 4 路多目感知流与 1 路雷达深度流帧率校验...', type: 'info' },
   { time: '14:20:14', msg: '相机流正常激活 [Head_L, Head_R, Hand_L, Hand_R] @ 30fps，PTP 时钟偏差 <= 0.2ms', type: 'success' },
   { time: '14:20:15', msg: '自检 100% 通过：Galbot 1.16 双物理核心环境全部就绪。', type: 'done' },
@@ -234,10 +234,10 @@ export default function DeviceConnectionPage() {
 
               {/* Hardware Points */}
               <div style={{ position: 'absolute', top: '20%', left: '30%' }}>
-                <Badge status={step > 1 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isGalbot116 ? 'XCU NODE (192.168.1.66)' : isLumos ? 'LUMOS BACKPACK' : 'ROBOT CONTROL BOX'}</span>} />
+                <Badge status={step > 1 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isGalbot116 ? 'XCU NODE (192.0.2.66 TEST-NET)' : isLumos ? 'LUMOS BACKPACK' : 'ROBOT CONTROL BOX'}</span>} />
               </div>
               <div style={{ position: 'absolute', top: '40%', right: '25%' }}>
-                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isGalbot116 ? 'HPU NODE (192.168.1.88)' : isLumos ? 'LEFT GRIPPER' : 'CAM_01 (FRONT)'}</span>} />
+                <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isGalbot116 ? 'HPU NODE (192.0.2.88 TEST-NET)' : isLumos ? 'LEFT GRIPPER' : 'CAM_01 (FRONT)'}</span>} />
               </div>
               <div style={{ position: 'absolute', bottom: '30%', left: '45%' }}>
                 <Badge status={step > 2 ? 'success' : 'processing'} text={<span style={{ color: '#fff', fontSize: 12 }}>{isGalbot116 ? 'SUPERVISOR GATEWAY (ACTIVE)' : isLumos ? 'RIGHT GRIPPER' : 'CAM_02 (WRIST)'}</span>} />

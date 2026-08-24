@@ -820,7 +820,7 @@ const defaultLumosTasksConfig = {
   task_name: "Lumos 双手整理筷子与勺子",
   rgb_frame_number: 450,
   depth_frame_number: 225,
-  save_path: "/home/lumos/FastUMI_Data_Collection-Data_Collection_evaluation/data_collector_opt/Data/",
+  save_path: "/demo/session_028/",
   if_quality_check: true,
   camera_sync_alignment: true,
   total_count: 50,
@@ -1127,13 +1127,13 @@ function LumosWorkspace({ taskId, router }) {
           </Space>
 
           <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
-            <span>静态IP:</span>
-            <span style={{ color: '#10b981', fontWeight: 'bold' }}>192.168.54.53</span>
+            <span>TEST-NET 示例:</span>
+            <span style={{ color: '#10b981', fontWeight: 'bold' }}>198.51.100.53</span>
           </Space>
           
           <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
             <span>背包主机:</span>
-            <span style={{ color: '#10b981', fontWeight: 'bold' }}>192.168.54.110</span>
+            <span style={{ color: '#10b981', fontWeight: 'bold' }}>198.51.100.110</span>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
           </Space>
 
@@ -1488,7 +1488,7 @@ function LumosWorkspace({ taskId, router }) {
           display: configEditorOpen ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center', padding: 24
         }}>
           <Card 
-            title="编辑本地 tasks_config.json 配置文件" 
+            title="编辑静态 tasks_config.json fixture"
             style={{ width: 600, background: '#ffffff', border: '1px solid #e2e8f0' }}
             extra={
               <Space>
@@ -1498,7 +1498,7 @@ function LumosWorkspace({ taskId, router }) {
             }
           >
             <div style={{ fontSize: 11, color: 'rgba(15, 23, 42, 0.45)', marginBottom: 8 }}>
-              系统已检测到宿主机配置文件路径: `/home/lumos/FastUMI_Data_Collection-Data_Collection_evaluation/config/tasks_config.json`
+              静态演示仅编辑浏览器内 fixture，不检测宿主机；便携资源根路径为 `/demo/session_028/`。
             </div>
             <Input.TextArea 
               rows={12} 
@@ -1531,7 +1531,7 @@ const defaultGalbotTasksConfig = {
   task_name: "Galbot 1.16 双臂精细整理作业",
   rgb_frame_number: 450,
   depth_frame_number: 225,
-  save_path: "/userdata/user_config/data_collection/data/",
+  save_path: "/demo/session_028/",
   if_quality_check: true,
   camera_sync_alignment: true,
   ptp_sync_limit_ms: 0.2,
@@ -1583,18 +1583,18 @@ function Galbot116Workspace({ taskId, router }) {
     if (galbotState !== 'SERVICE_STOPPED') return;
     setGalbotState('BOOTING');
     setBootLogs([]);
-    speakText('正在建立 SSH 连接，尝试拉起 XCU 底座运动控制服务和 HPU 守护进程...');
+    speakText('正在播放 XCU 和 HPU 静态连接演示；不会访问真实设备或使用 SSH 凭据。');
 
     const simulatedTerminalSteps = [
-      { t: 0, log: 'Connecting to root@192.168.1.66...' },
-      { t: 300, log: '[XCU] SSH Authenticated (Password: 12345678)' },
+      { t: 0, log: '[DEMO] XCU endpoint: 192.0.2.66 (TEST-NET); no connection is attempted.' },
+      { t: 300, log: '[XCU] Credentials unavailable in static demo; SSH step skipped.' },
       { t: 600, log: '[XCU] Executing: systemctl start remote_ctrl_record.target' },
       { t: 900, log: '[XCU] Service remote_ctrl_record.target loaded successfully.' },
-      { t: 1200, log: 'Connecting to galbot@192.168.1.88...' },
-      { t: 1500, log: '[HPU] SSH Authenticated (Password: gb@2023)' },
+      { t: 1200, log: '[DEMO] HPU endpoint: 192.0.2.88 (TEST-NET); no connection is attempted.' },
+      { t: 1500, log: '[HPU] Credentials unavailable in static demo; SSH step skipped.' },
       { t: 1800, log: '[HPU] Executing: systemctl start supervisor' },
       { t: 2100, log: '[HPU] supervisor.service started. Spawning subprocesses...' },
-      { t: 2400, log: '[HPU] [supervisor] galbot_upper_bridge active (PID: 18442, log: /userdata/log/data-gather-upper/galbot-upper)' },
+      { t: 2400, log: '[HPU] [supervisor] synthetic bridge fixture active (log: demo://host/logs/bridge)' },
       { t: 2700, log: '[SYS] Commencing PTP clock synchronization (IEEE 1588)...' },
       { t: 3000, log: '[SYS] Clock lock: DELTA=0.08ms (<= 0.2ms benchmark). PTP synchronized.' },
       { t: 3300, log: '[SYS] 4-camera GMSL2 streams verified. Frame sync initialized.' },
@@ -1743,17 +1743,17 @@ function Galbot116Workspace({ taskId, router }) {
 
           <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
             <span>XCU 控制底座:</span>
-            <span style={{ color: galbotState === 'SERVICE_STOPPED' ? '#94a3b8' : '#10b981', fontWeight: 'bold' }}>192.168.1.66</span>
+            <span style={{ color: galbotState === 'SERVICE_STOPPED' ? '#94a3b8' : '#10b981', fontWeight: 'bold' }}>192.0.2.66 (TEST-NET)</span>
           </Space>
           
           <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
             <span>HPU 算力板:</span>
-            <span style={{ color: galbotState === 'SERVICE_STOPPED' ? '#94a3b8' : '#10b981', fontWeight: 'bold' }}>192.168.1.88</span>
+            <span style={{ color: galbotState === 'SERVICE_STOPPED' ? '#94a3b8' : '#10b981', fontWeight: 'bold' }}>192.0.2.88 (TEST-NET)</span>
           </Space>
 
           <Space size="small" style={{ color: 'rgba(15, 23, 42, 0.45)' }}>
             <span>Wi-Fi SSID:</span>
-            <span style={{ color: '#10b981' }}>miracle-office-5g</span>
+            <span style={{ color: '#10b981' }}>SYNTHETIC_WIFI</span>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: galbotState === 'SERVICE_STOPPED' ? '#94a3b8' : '#10b981', display: 'inline-block' }}></span>
           </Space>
 
@@ -2098,7 +2098,7 @@ function Galbot116Workspace({ taskId, router }) {
           display: configEditorOpen ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center', padding: 24
         }}>
           <Card 
-            title="编辑本地 tasks_config.json 配置文件 (HPU)" 
+            title="编辑静态 tasks_config.json fixture (HPU)"
             style={{ width: 600, background: '#ffffff', border: '1px solid #e2e8f0' }}
             extra={
               <Space>
@@ -2108,7 +2108,7 @@ function Galbot116Workspace({ taskId, router }) {
             }
           >
             <div style={{ fontSize: 11, color: 'rgba(15, 23, 42, 0.45)', marginBottom: 8 }}>
-              HPU 本地任务配置文件路径: `/userdata/user_config/data_collection/tasks_config.json`
+              静态演示不读取 HPU 或宿主机文件；便携资源根路径为 `/demo/session_028/`。
             </div>
             <Input.TextArea 
               rows={12} 

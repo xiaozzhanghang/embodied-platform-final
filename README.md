@@ -27,8 +27,9 @@ npm start
 - **部署根路径**：`/`
 - **Luming 数据说明**：页面仅使用可公开发布的合成 fixture，不包含真实采集数据。
 - **回滚方式**：重新部署上一份已归档的 `out/` 静态产物。
+- **导出安全净化**：`npm run build` 会自动清理本机媒体副本并安全检查 `out/`；仅部署检查通过的产物。
 
-After the build, publish the contents of `out/` at the site root. The deployed artifact does not require a Node.js application process.
+The build requires Node.js 20.9.0 or newer. Its automatic safety step removes only generated copies under `out/`; it does not modify `public/`. After the build succeeds, publish the sanitized contents of `out/` at the site root. The deployed artifact does not require a Node.js application process.
 
 ## Learn More
 

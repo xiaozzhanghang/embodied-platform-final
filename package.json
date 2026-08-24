@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.9.0"
   },
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build",
+    "postbuild": "node tools/sanitize_static_export.mjs",
     "start": "npx --yes serve@14.2.4 out"
   },
   "dependencies": {

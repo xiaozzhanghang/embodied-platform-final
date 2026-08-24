@@ -34,7 +34,7 @@ export default function DeviceInstanceDetailPage() {
   const [deployStep, setDeployStep] = useState(0);
   const [deployStatus, setDeployStatus] = useState('idle'); // 'idle' | 'running' | 'paused' | 'success' | 'failed'
   const [terminalLogs, setTerminalLogs] = useState([
-    'GB-OS Terminal v1.16.0 (SSH Terminal Console)',
+    'GB-OS v1.16.0 (STATIC DEMO CONSOLE)',
     '==================================================',
     '[READY] 等待建立连接并载入升级配置文件...',
     '请选择部署模式: "单步调试执行" 或 "一键自动部署"'
@@ -48,16 +48,16 @@ export default function DeviceInstanceDetailPage() {
     // Step 0: XCU 固件刷写
     [
       '>> [步骤 1/7] 开始部署 XCU 底层控制箱固件与全局参数...',
-      '>> 正在通过 SSH 登录 XCU 物理节点: root@192.168.1.66 (端口: 22)...',
-      '>> [SUCCESS] SSH 会话已建立。检测到原内核版本: Galbot-OS 1.15',
-      '>> 执行命令: cd /userdata/update',
+      '>> [DEMO] XCU endpoint: 192.0.2.66 (TEST-NET); no SSH connection is attempted.',
+      '>> [DEMO] Credentials unavailable; loading synthetic Galbot-OS 1.15 state.',
+      '>> 演示命令: cd demo://host/update',
       '>> 执行命令: rm -f config.json galbot.pac',
       '>> [INFO] 正在清理缓存，删除旧版 config.json 与 galbot.pac 成功。',
-      '>> 正在从本地硬盘复制新版 config.json 至 /userdata/update/ ... 100% (校验和: C93F8A)',
-      '>> 正在复制新版固件 galbot.pac 至 /userdata/update/ ... 100% (大小: 128MB, 校验和: A2F31B)',
+      '>> 正在演示复制 config.json 至 demo://host/update/ ... 100% (合成校验和: C93F8A)',
+      '>> 正在演示复制 galbot.pac 至 demo://host/update/ ... 100% (合成大小: 128MB, 校验和: A2F31B)',
       '>> 执行升级与引导重启指令: reboot bootloader',
       '>> [WARNING] 机器人进入 Bootloader 升级模式，硬件底座正在重启并断电，通信断开！',
-      '>> [6分钟物理重启监控] 正在监听 192.168.1.66 的 ICMP 响应...',
+      '>> [静态重启演示] 显示 192.0.2.66 (TEST-NET) 预定义响应...',
       '>> [自动快进] 跳过 6 分钟漫长重启，检测到设备以太网心跳信号已恢复！',
       '>> [SUCCESS] XCU 底层网络接入成功，当前固件成功升级为: Galbot-OS v1.16.0.2',
       '>> [INFO] 步骤 1 执行完毕，设备就绪。'
@@ -65,13 +65,13 @@ export default function DeviceInstanceDetailPage() {
     // Step 1: VLA Capsule 解压部署
     [
       '>> [步骤 2/7] 开始向双端节点下发并部署 VLA 大模型算法包...',
-      '>> 目标存储路径: /userdata/pak/',
-      '>> 双端节点执行环境清理: rm -rf /userdata/pak/*',
+      '>> 演示存储路径: demo://host/packages/',
+      '>> 演示双端环境清理: demo://host/packages/*',
       '>> 正在传输 release-VLA-CAPSULE-GBS_1.16.0.2.rc88-G1_2.2-20260526.tar.gz (大小: 3.7GB) ...',
-      '>> [XCU] 传输至 192.168.1.66 ... 速率: 115MB/s ... 成功！MD5 校验一致。',
-      '>> [HPU] 传输至 192.168.1.88 ... 速率: 980MB/s ... 成功！MD5 校验一致。',
-      '>> [XCU] 执行命令: cd /userdata/pak/ && tar -zxvf release-VLA-CAPSULE-GBS_1.16.0.2.rc88-G1_2.2-20260526.tar.gz',
-      '>> [HPU] 执行命令: cd /userdata/pak/ && tar -zxvf release-VLA-CAPSULE-GBS_1.16.0.2.rc88-G1_2.2-20260526.tar.gz',
+      '>> [XCU] 演示传输至 192.0.2.66 (TEST-NET) ... 合成校验一致。',
+      '>> [HPU] 演示传输至 192.0.2.88 (TEST-NET) ... 合成校验一致。',
+      '>> [XCU] 演示命令: cd demo://host/packages/ && unpack synthetic-vla-capsule',
+      '>> [HPU] 演示命令: cd demo://host/packages/ && unpack synthetic-vla-capsule',
       '>> 解包成功，双端已解压至当前 output 目录下。',
       '>> [XCU] 进入目录并执行底层驱动安装: cd output && ./install_version.sh',
       '>> [提示] 场景选择: 1 (常规实验室场景配置)。',
@@ -81,8 +81,8 @@ export default function DeviceInstanceDetailPage() {
     // Step 2: IAP 临时程序配置
     [
       '>> [步骤 3/7] 正在配置 IAP 底座关节固件自更新临时环境...',
-      '>> SSH 连接 XCU: root@192.168.1.66',
-      '>> 执行命令: cd /userdata/iapTemp && rm -rf *',
+      '>> [DEMO] XCU endpoint 192.0.2.66；凭据未配置，跳过 SSH 连接。',
+      '>> 演示命令: cd demo://host/iap-temp',
       '>> 正在向 XCU 传输临时修复包 iapTemp.zip ... 100% 成功。',
       '>> 执行解压命令: unzip iapTemp.zip',
       '>> 赋予安装脚本执行权限并启动: chmod +x install.sh && ./install.sh',
@@ -92,11 +92,11 @@ export default function DeviceInstanceDetailPage() {
     // Step 3: Orin 补丁包部署
     [
       '>> [步骤 4/7] 正在配置 HPU (Orin 核心计算节点) 硬件兼容性与时钟同步补丁...',
-      '>> SSH 连接 HPU: galbot@192.168.1.88 (密码: gb@2023)...',
-      '>> 正在拷贝补丁文件 patch_20260424.zip 至 /userdata/pak/ ... 100% 成功。',
-      '>> 执行命令: cd /userdata/pak/ && unzip patch_20260424.zip',
+      '>> [DEMO] HPU endpoint 192.0.2.88；凭据未配置，跳过 SSH 连接。',
+      '>> 正在演示拷贝补丁文件至 demo://host/packages/ ... 100%。',
+      '>> 演示命令: cd demo://host/packages/ && unzip synthetic-patch.zip',
       '>> 进入补丁目录: cd orin_patch-GBS_1.16/patch',
-      '>> 执行内核级别升级: sudo bash ./patch.sh (密码: galbot)',
+      '>> 演示内核升级步骤（不执行命令，不使用凭据）',
       '>> [PATCH] 正在向 Linux 内核写入 GPU 驱动修正映射表... 成功。',
       '>> [PATCH] PTP (IEEE 1588) 时钟源优先级校准配置中... 成功。',
       '>> [SUCCESS] Orin 补丁包 patch_20260424 成功生效！'
@@ -104,16 +104,16 @@ export default function DeviceInstanceDetailPage() {
     // Step 4: 上位机网桥 & Supervisor 配置
     [
       '>> [步骤 5/7] 正在部署上位机数采桥接服务与 Supervisor 守护进程服务...',
-      '>> SSH 连接 HPU: galbot@192.168.1.88',
-      '>> 备份旧版网桥程序: sudo mv /userdata/data-gather-upper/galbot_upper_bridge/ /userdata/data-gather-upper/galbot_upper_bridge.bak+',
+      '>> [DEMO] HPU endpoint 192.0.2.88；不发起 SSH 连接。',
+      '>> 演示备份网桥程序: demo://host/bridge/backup',
       '>> 正在复制新版上位机程序包 galbot_upper_bridge.zip 至 HPU... 成功。',
-      '>> 执行解压命令: sudo unzip galbot_upper_bridge.zip -d /userdata/data-gather-upper',
-      '>> 进入二进制目录并修改执行权限: cd /userdata/data-gather-upper/galbot_upper_bridge && sudo chmod +x galbot_upper',
-      '>> 创建上位机运行日志目录: sudo mkdir -p /userdata/log/data-gather-upper/galbot-upper',
+      '>> 演示解压命令: unpack synthetic-bridge to demo://host/bridge',
+      '>> 演示二进制目录: demo://host/bridge/bin',
+      '>> 演示日志目录: demo://host/logs/bridge',
       '>> [INFO] 正在安装 Linux 进程管理器 Supervisor...',
       '>> 执行命令: sudo apt update && sudo apt install -y supervisor',
       '>> 正在拷贝 Supervisor 进程守护配置文件...',
-      '>> 执行命令: sudo cp /userdata/data-gather-upper/galbot_upper_bridge/galbot_upper_bridge.conf /etc/supervisor/conf.d/',
+      '>> 演示配置位置: demo://host/supervisor/bridge.conf',
       '>> 启动 Supervisor 守护守护服务并设置开机自动启动...',
       '>> 执行命令: sudo systemctl start supervisor && sudo systemctl enable supervisor',
       '>> 重新载入进程配置项: sudo supervisorctl reload',
@@ -124,15 +124,15 @@ export default function DeviceInstanceDetailPage() {
     [
       '>> [步骤 6/7] 开始进行 WiFi 局域网接入与数采工作空间初始化...',
       '>> HPU 正在扫描 Miracle 局域网频段...',
-      '>> 正在连接 WiFi: SSID="miracle-office-5g", 密码="miracle666" ...',
-      '>> [SUCCESS] HPU 连接成功！获取内网 IP: 192.168.76.57',
-      '>> 创建数采场景配置路径: mkdir -p /userdata/user_config/data_collection',
+      '>> [DEMO] WiFi SSID="SYNTHETIC_WIFI"；凭据未配置，不发起真实连接。',
+      '>> [DEMO] 加载 TEST-NET 示例地址: 203.0.113.57',
+      '>> 静态数据资源路径: /demo/session_028/',
       '>> 正在将场景配置文件写入数据采集工作空间... 成功。',
-      '>> 修改配置文件读写权限为可读取: chmod 644 /userdata/user_config/data_collection/*.json',
+      '>> 静态 fixture 为只读公开演示数据。',
       '>> 正在将控制脚本拷贝至 XCU 控制箱...',
-      '>> 执行命令: scp robot_remote_v2.sh root@192.168.1.66:/root',
+      '>> [DEMO] 跳过向 192.0.2.66 传输文件；静态包不访问设备。',
       '>> [XCU] 执行脚本进行节点登录同步: sh robot_remote_v2.sh',
-      '>> [XCU] 正在检验 /userdata/config/upper_login.json 与上位机登录参数一致性... 通过。',
+      '>> [XCU] 演示配置位置: demo://host/config/upper_login.json',
       '>> 执行 XCU 控制板重启生效命令: reboot',
       '>> [SUCCESS] WiFi 联调与上位机登录桥接数据配置完成！'
     ],
@@ -140,8 +140,8 @@ export default function DeviceInstanceDetailPage() {
     [
       '>> [步骤 7/7] 开始进行最终的系统状态全面验证与 SN 节点鉴权...',
       '>> 正在验证硬件 ID 授权码及 SN 序列号...',
-      '>> 执行命令: cd /data/bin && ./sys_tool -V',
-      '>> [SYS_TOOL] 读取硬件设备 SN 码: GALBOT-116-GB105',
+      '>> 演示工具路径: demo://host/bin/sys_tool',
+      '>> [SYS_TOOL] 合成设备序列号: SYNTHETIC-SN-GALBOT-001',
       '>> [SYS_TOOL] 系统鉴权通过，该机型支持 Galbot 1.16 的全量多目遥控。',
       '>> 正在重启本地数采数据记录服务 (Target)...',
       '>> 执行命令: sudo systemctl stop remote_ctrl_record.target',
@@ -252,7 +252,7 @@ export default function DeviceInstanceDetailPage() {
     setCurrentProgress(0);
     setDeviceStatus('维护中');
     setTerminalLogs([
-      'GB-OS Terminal v1.16.0 (SSH Terminal Console)',
+      'GB-OS v1.16.0 (STATIC DEMO CONSOLE)',
       '==================================================',
       '[READY] 等待建立连接并载入升级配置文件...',
       '请选择部署模式: "单步调试执行" 或 "一键自动部署"'
@@ -267,13 +267,13 @@ export default function DeviceInstanceDetailPage() {
     deviceNum: 'DEV-2026-001',
     type: 'galbot_1.16_G2',
     status: '在线',
-    ip: '192.168.1.105',
+    ip: '192.0.2.105',
     lastActive: '2026-05-11 13:15:22',
     urdf: 'galbot_model.urdf',
     image: null,
     parts: [
-      { name: 'XCU 底层控制箱', status: 'normal', ip: '192.168.1.66', service: 'remote_ctrl_record' },
-      { name: 'HPU Orin 算力单元', status: 'normal', ip: '192.168.1.88', service: 'supervisor' },
+      { name: 'XCU 底层控制箱', status: 'normal', ip: '192.0.2.66 (TEST-NET)', service: 'remote_ctrl_record' },
+      { name: 'HPU Orin 算力单元', status: 'normal', ip: '192.0.2.88 (TEST-NET)', service: 'supervisor' },
       { name: '双臂机械臂_G2', status: 'normal', type: 'RobotArm', version: 'G2.2' },
       { name: '灵巧手_G1.16', status: 'normal', type: 'DexterousHand', version: 'G1.16' },
       { name: '头部RGB相机_G2', status: 'normal', type: 'Camera', version: 'G2.2' }
@@ -325,7 +325,7 @@ export default function DeviceInstanceDetailPage() {
               <Card bordered={false} styles={{ body: { padding: '20px' } }} style={{ borderRadius: 8 }}>
                 <Text type="secondary" style={{ fontSize: 12 }}>XCU 物理网络连通</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                  <Title level={4} style={{ margin: 0, fontSize: 16 }}>192.168.1.66</Title>
+                  <Title level={4} style={{ margin: 0, fontSize: 16 }}>192.0.2.66 (TEST-NET)</Title>
                   <StatusTag status="已连接" />
                 </div>
               </Card>
@@ -334,7 +334,7 @@ export default function DeviceInstanceDetailPage() {
               <Card bordered={false} styles={{ body: { padding: '20px' } }} style={{ borderRadius: 8 }}>
                 <Text type="secondary" style={{ fontSize: 12 }}>HPU 物理网络连通</Text>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                  <Title level={4} style={{ margin: 0, fontSize: 16 }}>192.168.1.88</Title>
+                  <Title level={4} style={{ margin: 0, fontSize: 16 }}>192.0.2.88 (TEST-NET)</Title>
                   <StatusTag status="已连接" />
                 </div>
               </Card>
@@ -426,7 +426,7 @@ export default function DeviceInstanceDetailPage() {
                       ) : (
                         <Alert 
                           message="Galbot 1.16.x XCU/HPU 双端部署模式" 
-                          description="当前模块支持管理物理控制板 (XCU, 192.168.1.66) 与上位机 Orin 单元 (HPU, 192.168.1.88) 的固件刷写、VLA 算法解压、IAP 环境自更新以及 Supervisor 网桥进程管理。升级过程中底盘将会短暂断电重启。"
+                          description="本模块仅演示 XCU (192.0.2.66) 与 HPU (192.0.2.88) TEST-NET fixture 的部署流程；不访问物理设备、不提供凭据且不执行命令。"
                           type="info" 
                           showIcon 
                           style={{ marginBottom: 24 }} 
@@ -438,16 +438,16 @@ export default function DeviceInstanceDetailPage() {
                         <Col span={12}>
                           <Card title={<Space><LaptopOutlined style={{ color: '#1677ff' }} /><span>XCU 底层控制器 (控制箱板)</span></Space>} size="small" style={{ borderRadius: 10, border: '1px solid #f0f0f0' }} styles={{ body: { padding: '12px' } }}>
                             <Descriptions column={1} size="small" bordered>
-                              <Descriptions.Item label="内网 IP">192.168.1.66</Descriptions.Item>
-                              <Descriptions.Item label="登录凭证">root / 12345678</Descriptions.Item>
+                              <Descriptions.Item label="示例 IP">192.0.2.66 (TEST-NET)</Descriptions.Item>
+                              <Descriptions.Item label="登录凭证">未配置（静态演示不可用）</Descriptions.Item>
                               <Descriptions.Item label="固件版本">Galbot-OS v1.16.0.2 (已部署)</Descriptions.Item>
                               <Descriptions.Item label="底层守护服务">
                                 <StatusTag status="已完成">remote_ctrl_record.target (Active)</StatusTag>
                               </Descriptions.Item>
                               <Descriptions.Item label="主要文件路径">
                                 <div style={{ fontSize: 11, fontFamily: 'monospace' }}>
-                                  /userdata/update/galbot.pac<br/>
-                                  /userdata/iapTemp/install.sh
+                                  demo://host/update/galbot.pac<br/>
+                                  demo://host/iap-temp/install.sh
                                 </div>
                               </Descriptions.Item>
                             </Descriptions>
@@ -456,8 +456,8 @@ export default function DeviceInstanceDetailPage() {
                         <Col span={12}>
                           <Card title={<Space><CodeOutlined style={{ color: '#52c41a' }} /><span>HPU 上位机算力单元 (Nvidia Orin)</span></Space>} size="small" style={{ borderRadius: 10, border: '1px solid #f0f0f0' }} styles={{ body: { padding: '12px' } }}>
                             <Descriptions column={1} size="small" bordered>
-                              <Descriptions.Item label="内网 IP">192.168.1.88</Descriptions.Item>
-                              <Descriptions.Item label="登录凭证">galbot / gb@2023</Descriptions.Item>
+                              <Descriptions.Item label="示例 IP">192.0.2.88 (TEST-NET)</Descriptions.Item>
+                              <Descriptions.Item label="登录凭证">未配置（静态演示不可用）</Descriptions.Item>
                               <Descriptions.Item label="VLA 镜像">release-VLA-CAPSULE-GBS_1.16.0.2 (3.7GB)</Descriptions.Item>
                               <Descriptions.Item label="进程守护">
                                 <StatusTag status="已完成">Supervisor Daemon (Active)</StatusTag>
@@ -484,7 +484,7 @@ export default function DeviceInstanceDetailPage() {
                                 { title: 'IAP 底座自更新环境配置', description: '上传解压 iapTemp.zip，执行安装并授权' },
                                 { title: 'Orin 内核兼容性补丁', description: '解包 orin_patch，执行 patch.sh 配置内核与PTP' },
                                 { title: '上位机网桥与进程守护', description: '解压网桥，安装 supervisor 并配置自启动' },
-                                { title: 'WiFi 场景与登录配置', description: 'Miracle WiFi 接入，校验 upper_login 参数' },
+                                { title: 'WiFi 场景 fixture', description: 'SYNTHETIC_WIFI 静态演示，不包含可用凭据' },
                                 { title: '验证注册与 SN 自检', description: 'sys_tool -V 校验SN，重启数采录制 target 服务' }
                               ]}
                             />
@@ -493,7 +493,7 @@ export default function DeviceInstanceDetailPage() {
                         
                         <Col span={14}>
                           <Card 
-                            title="实时 SSH 部署终端 (Simulator)" 
+                            title="静态部署终端 (Simulator)"
                             size="small" 
                             style={{ borderRadius: 10, border: '1px solid #f0f0f0' }}
                             extra={

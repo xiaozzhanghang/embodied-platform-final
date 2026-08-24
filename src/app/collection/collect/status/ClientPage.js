@@ -38,7 +38,7 @@ export default function DeviceStatusPage() {
   // Logs for Galbot 1.16
   const galbotStatusLogs = [
     { time: '14:20:11', msg: '系统自检完成: 发现 1 个硬件模块异常 (XCU 控制器通信超时)', type: 'error' },
-    { time: '14:20:10', msg: 'HPU 算力板: 发现 192.168.1.88 节点正常响应 (延迟: 0.9ms)', type: 'success' },
+    { time: '14:20:10', msg: 'HPU 算力板: 192.0.2.88 (TEST-NET) 异常态静态 fixture', type: 'success' },
     { time: '14:20:09', msg: 'XCU 控制器: 警告！通信连通超时，请检查控制箱网口或 SSH 配置。', type: 'error' },
     { time: '14:20:05', msg: '时钟环境: 双端 PTP (IEEE 1588) 时钟同步精度正常 (时滞 <= 0.12ms)', type: 'success' },
   ];
@@ -46,7 +46,7 @@ export default function DeviceStatusPage() {
   const galbotHealthyLogs = [
     { time: '14:20:15', msg: '系统自检完成: 所有核心硬件已就绪，可以安全进入数据采集工作台。', type: 'success' },
     { time: '14:20:10', msg: 'HPU 算力板: 运行状态良好 (CPU: 24% | GPU: 82% 显存就绪)', type: 'success' },
-    { time: '14:20:08', msg: 'XCU 控制器: 物理通信握手成功 (192.168.1.66)，控制箱服务运行正常', type: 'success' },
+    { time: '14:20:08', msg: 'XCU 控制器: 192.0.2.66 (TEST-NET) 健康态静态 fixture', type: 'success' },
     { time: '14:20:05', msg: '网口环境: 双物理端网口直连通路及 WiFi 5G 信号连通良好', type: 'success' },
   ];
 
@@ -56,7 +56,7 @@ export default function DeviceStatusPage() {
     { time: '16:20:10', msg: '背包主机: 已进入就绪态 (Ready State)', type: 'info' },
     { time: '16:20:09', msg: '夹爪控制器: 警告！检测到 1 个设备。请检查 USB 数据线连接', type: 'error' },
     { time: '16:20:08', msg: '移动电源: 握手成功 (输出功率 22.5W, 备用电池在线)', type: 'info' },
-    { time: '16:20:05', msg: '网口环境: 本地 IP 192.168.54.53 与背包 192.168.54.110 双向通路正常', type: 'success' },
+    { time: '16:20:05', msg: '网口环境: 198.51.100.53 与背包 198.51.100.110 为 TEST-NET 异常态 fixture', type: 'success' },
   ];
 
   const lumosHealthyLogs = [
@@ -64,7 +64,7 @@ export default function DeviceStatusPage() {
     { time: '16:20:10', msg: '背包主机: 已进入就绪态 (Ready State)', type: 'info' },
     { time: '16:20:09', msg: '夹爪控制器: 检测到两台设备。左右侧夹爪配对校验成功', type: 'success' },
     { time: '16:20:08', msg: '移动电源: 握手成功 (输出功率 22.5W, 电量 92%)', type: 'info' },
-    { time: '16:20:05', msg: '网口环境: 本地 IP 192.168.54.53 与背包 192.168.54.110 通信正常', type: 'success' },
+    { time: '16:20:05', msg: '网口环境: 198.51.100.53 与背包 198.51.100.110 为 TEST-NET 健康态 fixture', type: 'success' },
   ];
 
   // Logs for Humanoid G1/VR
@@ -133,11 +133,11 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">序列号 (SN)</Text>
-                <Text>LUMOS-GO-OFFLINE-2026105</Text>
+                <Text>SYNTHETIC-SN-LUMOS-GO-001</Text>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">背包 IP 地址</Text>
-                <Text strong style={{ color: '#1677ff' }}>192.168.54.110</Text>
+                <Text strong style={{ color: '#1677ff' }}>198.51.100.110 (TEST-NET)</Text>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">移动电源电量</Text>
@@ -390,11 +390,11 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">XCU 内网 IP</Text>
-                <Text strong style={{ color: isErrorMode ? '#ff4d4f' : '#1677ff' }}>192.168.1.66</Text>
+                <Text strong style={{ color: isErrorMode ? '#ff4d4f' : '#1677ff' }}>192.0.2.66 (TEST-NET)</Text>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">SSH 状态</Text>
-                <StatusTag status={isErrorMode ? '失败' : '正常'}>{isErrorMode ? '连接失败' : '成功连通'}</StatusTag>
+                <StatusTag status={isErrorMode ? '失败' : '正常'}>{isErrorMode ? '异常态 fixture' : '健康态 fixture（未连接）'}</StatusTag>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">系统服务</Text>
@@ -409,7 +409,7 @@ export default function DeviceStatusPage() {
               <div style={{ padding: '0 12px' }}>
                 <Alert
                   title="XCU 控制器未响应"
-                  description="请确认 XCU 底座是否已加电开机。检查笔记本与控制箱的物理网口连接，或者检查网段是否配置为 192.168.1.x。"
+                  description="静态演示不会连接 XCU；若需理解网络配置，请仅参考 192.0.2.x (TEST-NET) 示例网段。"
                   type="error"
                   showIcon
                 />
@@ -473,7 +473,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">HPU 内网 IP</Text>
-                <Text strong style={{ color: '#52c41a' }}>192.168.1.88</Text>
+                <Text strong style={{ color: '#52c41a' }}>192.0.2.88 (TEST-NET)</Text>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">VLA 镜像</Text>
@@ -481,7 +481,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">WiFi 网络</Text>
-                <StatusTag status="已连接">miracle-office-5g (已连接)</StatusTag>
+                <StatusTag status="未执行">SYNTHETIC_WIFI（静态演示）</StatusTag>
               </div>
             </div>
           </div>
@@ -718,7 +718,7 @@ export default function DeviceStatusPage() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">IP地址</Text>
-                <Text strong>192.168.1.100</Text>
+                <Text strong>192.0.2.100 (TEST-NET)</Text>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Text type="secondary">电池状态</Text>

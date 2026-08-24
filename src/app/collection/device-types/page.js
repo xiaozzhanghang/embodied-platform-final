@@ -86,9 +86,9 @@ const initialPartData = [
     category: 'ControlUnit',
     version: 'v1.16.0.2',
     urdf: '',
-    ip: '192.168.1.66',
-    sshUser: 'root',
-    sshPass: '12345678',
+    ip: '192.0.2.66',
+    sshUser: 'demo-user',
+    sshPass: '',
     firmwareVersion: 'Galbot-OS v1.16.0.2',
     topics: [
       { label: '固件状态', enName: 'firmware_status', path: '/xcu/firmware_status', tag: 'xcu_fw', note: 'Galbot-OS 固件心跳' },
@@ -104,9 +104,9 @@ const initialPartData = [
     category: 'ComputeUnit',
     version: 'v1.16.0.2',
     urdf: '',
-    ip: '192.168.1.88',
-    sshUser: 'galbot',
-    sshPass: 'gb@2023',
+    ip: '192.0.2.88',
+    sshUser: 'demo-user',
+    sshPass: '',
     firmwareVersion: 'Orin-JetPack 5.1.2 + VLA-Capsule',
     topics: [
       { label: 'VLA推理', enName: 'vla_inference', path: '/hpu/vla_inference', tag: 'hpu_vla', note: 'VLA 大模型推理输出' },
@@ -186,7 +186,7 @@ const initialRuleData = [
     ruleName: '视觉相机高帧率同步规则',
     targetPart: 'Camera',
     targetPartName: '头部相机',
-    path: '/etc/galbot/rules/cam_head_sync.json',
+    path: 'demo://host/rules/cam_head_sync.json',
     fpsRange: '30 ± 2 fps',
     syncThreshold: '≤ 5 ms',
     lossTolerance: '≤ 0.1%',
@@ -201,7 +201,7 @@ const initialRuleData = [
     ruleName: '机械臂关节轨迹对齐规则',
     targetPart: 'RobotArm',
     targetPartName: '双臂机械臂_G2',
-    path: '/etc/galbot/rules/arm_g2_trajectory.json',
+    path: 'demo://host/rules/arm_g2_trajectory.json',
     fpsRange: '50 ± 1 fps',
     syncThreshold: '≤ 2 ms',
     lossTolerance: '0%',
@@ -216,7 +216,7 @@ const initialRuleData = [
     ruleName: '灵巧手高频触觉采集校验',
     targetPart: 'DexterousHand',
     targetPartName: '灵巧手_G1.16',
-    path: '/etc/galbot/rules/hand_tactile_sync.json',
+    path: 'demo://host/rules/hand_tactile_sync.json',
     fpsRange: '100 ± 5 fps',
     syncThreshold: '≤ 3 ms',
     lossTolerance: '≤ 0.2%',
@@ -231,7 +231,7 @@ const initialRuleData = [
     ruleName: '底层控制箱心跳对齐规则',
     targetPart: 'ControlUnit',
     targetPartName: 'XCU 底层控制箱',
-    path: '/etc/galbot/rules/xcu_heartbeat.json',
+    path: 'demo://host/rules/xcu_heartbeat.json',
     fpsRange: '20 ± 1 fps',
     syncThreshold: '≤ 10 ms',
     lossTolerance: '≤ 0.5%',
@@ -267,7 +267,7 @@ function RuleTable({ data, onEdit, onDelete, onPreviewVideo }) {
       key: 'path',
       width: 220,
       render: (text) => {
-        if (!text) return <Text code style={{ fontSize: 11 }}>/etc/galbot/rules/default.json</Text>;
+        if (!text) return <Text code style={{ fontSize: 11 }}>demo://host/rules/default.json</Text>;
         const paths = text.split(', ');
         return (
           <Space direction="vertical" size={2} style={{ display: 'flex' }}>
@@ -732,8 +732,8 @@ export default function DeviceTypesPage() {
                   <Alert
                     message={cat === 'ControlUnit' ? 'XCU 控制单元专属配置' : 'HPU 算力单元专属配置'}
                     description={cat === 'ControlUnit' 
-                      ? '请填写 XCU 底层控制箱的网络接入信息、SSH 登录凭证和固件版本，用于后续固件刷写与远程部署。'
-                      : '请填写 HPU (Nvidia Orin) 上位机的网络接入信息、SSH 登录凭证和算力环境版本，用于 VLA 算法包部署与 Supervisor 服务管理。'}
+                      ? 'XCU 字段仅使用 TEST-NET 地址和不可用的演示账号；静态包不提供 SSH 凭据或远程部署。'
+                      : 'HPU 字段仅使用 TEST-NET 地址和不可用的演示账号；静态包不提供 SSH 凭据或真实服务管理。'}
                     type="info"
                     showIcon
                     style={{ marginBottom: 16 }}
@@ -741,17 +741,17 @@ export default function DeviceTypesPage() {
                   <Row gutter={24}>
                     <Col span={8}>
                       <Form.Item name="ip" label="内网 IP 地址" rules={[{ required: true, message: '请输入内网IP' }]}>
-                        <Input placeholder={cat === 'ControlUnit' ? '192.168.1.66' : '192.168.1.88'} />
+                        <Input placeholder={cat === 'ControlUnit' ? '192.0.2.66 (TEST-NET)' : '192.0.2.88 (TEST-NET)'} />
                       </Form.Item>
                     </Col>
                     <Col span={8}>
                       <Form.Item name="sshUser" label="SSH 账号" rules={[{ required: true }]}>
-                        <Input placeholder={cat === 'ControlUnit' ? 'root' : 'galbot'} />
+                        <Input placeholder="demo-user (unavailable example)" />
                       </Form.Item>
                     </Col>
                     <Col span={8}>
-                      <Form.Item name="sshPass" label="SSH 密码" rules={[{ required: true }]}>
-                        <Input.Password placeholder="请输入密码" />
+                      <Form.Item name="sshPass" label="SSH 凭据（静态演示为空）">
+                        <Input.Password disabled placeholder="未配置（不可用于登录）" />
                       </Form.Item>
                     </Col>
                   </Row>
@@ -1043,7 +1043,7 @@ export default function DeviceTypesPage() {
                             ]}
                             noStyle
                           >
-                            <Input placeholder="请输入维护路径，例如: /etc/galbot/rules/cam_head_sync.json" addonBefore={`Path ${index + 1}:`} />
+                            <Input placeholder="请输入演示路径，例如: demo://host/rules/cam_head_sync.json" addonBefore={`Path ${index + 1}:`} />
                           </Form.Item>
                         </Col>
                         <Col span={2}>

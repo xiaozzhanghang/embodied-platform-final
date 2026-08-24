@@ -77,8 +77,8 @@ const initialDeviceData = [
     name: 'Galbot-G2-Node-105',
     deviceType: 'galbot_1.16_G2',
     deviceNum: 'DEV-2026-001',
-    ip: '192.168.1.105',
-    wifiSsid: 'miracle-office-5g',
+    ip: '192.0.2.105',
+    wifiSsid: 'SYNTHETIC_WIFI',
     status: '维护中',
     regTime: '2026-05-29 14:00:00',
     activeTime: '2026-05-29 14:30:00'
@@ -313,8 +313,8 @@ export default function DeviceListPage() {
                 message="Galbot 1.16 双端架构 (XCU + HPU)"
                 description={
                   <div>
-                    <p style={{ margin: '4px 0' }}>该设备类型包含 XCU 底层控制箱 (192.168.1.66) 和 HPU Orin 算力单元 (192.168.1.88)，请确保已在「设备类型管理」中完成对应的部件类型与设备类型配置。</p>
-                    <p style={{ margin: '4px 0', color: '#1677ff' }}>创建成功后可在设备详情页执行固件部署、VLA 算法包分发、Supervisor 服务管理等操作。</p>
+                    <p style={{ margin: '4px 0' }}>该静态设备类型使用 XCU (192.0.2.66) 和 HPU (192.0.2.88) TEST-NET fixture，不对应真实内网设备。</p>
+                    <p style={{ margin: '4px 0', color: '#1677ff' }}>设备详情页仅播放固件部署与服务管理演示，不执行命令或使用凭据。</p>
                   </div>
                 }
                 type="info"
@@ -324,12 +324,12 @@ export default function DeviceListPage() {
               <Row gutter={24}>
                 <Col span={12}>
                   <Form.Item name="ip" label="内网 IP 地址">
-                    <Input placeholder="192.168.1.105" />
+                    <Input placeholder="192.0.2.105 (TEST-NET)" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item name="wifiSsid" label="关联 WiFi SSID">
-                    <Input placeholder="miracle-office-5g" />
+                    <Input placeholder="SYNTHETIC_WIFI" />
                   </Form.Item>
                 </Col>
               </Row>

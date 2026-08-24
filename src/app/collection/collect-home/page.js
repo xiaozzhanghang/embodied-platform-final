@@ -124,7 +124,7 @@ export default function CollectorHomePage() {
                     <RobotOutlined style={{ fontSize: '28px', color: '#1890ff' }} />
                     <div>
                       <strong style={{ fontSize: '15px' }}>Lumos UMI 双手控制台</strong>
-                      <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '2px' }}>IP: 192.168.10.105 | PTP 时钟已同步</div>
+                      <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '2px' }}>IP: 203.0.113.105 (TEST-NET) | PTP 时钟演示已同步</div>
                     </div>
                   </div>
                   <StatusTag status="在线" />
@@ -135,7 +135,7 @@ export default function CollectorHomePage() {
                     <RobotOutlined style={{ fontSize: '28px', color: '#52c41a' }} />
                     <div>
                       <strong style={{ fontSize: '15px' }}>FRANKA-FR3 机械臂</strong>
-                      <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '2px' }}>IP: 192.168.10.110 | 控制器连接正常</div>
+                      <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '2px' }}>IP: 203.0.113.110 (TEST-NET) | 控制器连接静态演示</div>
                     </div>
                   </div>
                   <StatusTag status="在线" />
