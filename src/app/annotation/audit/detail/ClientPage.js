@@ -105,6 +105,11 @@ export default function AnnotationAuditEpisodeListPage() {
   const [isCopying, setIsCopying] = useState(false);
   const [copyProgress, setCopyProgress] = useState(0);
 
+  // Template Search & Category Filter State
+  const [templateSearchKeyword, setTemplateSearchKeyword] = useState('');
+  const [templateCategoryTab, setTemplateCategoryTab] = useState('all');
+  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
+
   // Upload Data Modal State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadFileList, setUploadFileList] = useState([]);
@@ -120,42 +125,124 @@ export default function AnnotationAuditEpisodeListPage() {
 
   const activeBatchType = getActiveBatchType();
 
+  // Rich system presets library
+  const systemPresetLibrary = [
+    {
+      id: 'SYSTEM_PRESET_1',
+      taskName: '工业纸箱打包封装与装箱模版',
+      category: 'dual_arm',
+      device: '双臂手眼协同设备 (Galbot-1.16)',
+      annoType: '语义标注',
+      stepMode: '结构化四元组',
+      totalFrames: 180,
+      usageCount: 1420,
+      segments: [
+        { start: 0, end: 45, text: '[右手] [抓取] [工业纸箱] [展开封底]', color: '#2563eb' },
+        { start: 46, end: 90, text: '[左手] [扶持] [纸箱侧边] [稳固姿态]', color: '#16a34a' },
+        { start: 91, end: 135, text: '[右手] [装填] [零件泡沫] [放入底部]', color: '#d97706' },
+        { start: 136, end: 180, text: '[双臂] [搬运] [已封装纸箱] [置入托盘]', color: '#7c3aed' }
+      ]
+    },
+    {
+      id: 'SYSTEM_PRESET_2',
+      taskName: '桌面书籍与物品整理摆放模版',
+      category: 'single_arm',
+      device: '单臂物理遥操设备 (Air-SN201)',
+      annoType: '范围标注',
+      stepMode: '自然语言Prompt',
+      totalFrames: 150,
+      usageCount: 890,
+      segments: [
+        { start: 10, end: 50, text: '机械臂靠近桌面散落书籍并完成边缘识别', color: '#13c2c2' },
+        { start: 55, end: 105, text: '吸附抓取书籍并平移至书架指定插槽', color: '#1890ff' },
+        { start: 110, end: 145, text: '推进对齐书脊并缓慢松开夹爪复位', color: '#52c41a' }
+      ]
+    },
+    {
+      id: 'SYSTEM_PRESET_3',
+      taskName: '餐盘清理与双臂协同搬运模版',
+      category: 'dual_arm',
+      device: '双臂手眼协同设备 (Galbot-1.16)',
+      annoType: '语义标注',
+      stepMode: '结构化四元组',
+      totalFrames: 160,
+      usageCount: 650,
+      segments: [
+        { start: 15, end: 55, text: '[双臂] [靠近] [餐台托盘] [调整夹角]', color: '#2563eb' },
+        { start: 60, end: 110, text: '[双手] [合力托举] [餐盘] [离地平移]', color: '#16a34a' },
+        { start: 115, end: 155, text: '[双手] [放置] [托盘] [餐具回收架]', color: '#7c3aed' }
+      ]
+    },
+    {
+      id: 'SYSTEM_PRESET_4',
+      taskName: '抽屉开关与精细物品抓取模版',
+      category: 'single_arm',
+      device: '单臂物理遥操设备 (Air-SN201)',
+      annoType: '范围标注',
+      stepMode: '自然语言Prompt',
+      totalFrames: 140,
+      usageCount: 520,
+      segments: [
+        { start: 10, end: 40, text: '末端夹爪对准抽屉把手并拉开至最大开度', color: '#13c2c2' },
+        { start: 45, end: 95, text: '伸手探入抽屉精准抓取目标药品包装盒', color: '#fa8c16' },
+        { start: 100, end: 135, text: '取出药品并顺势将抽屉推回复位', color: '#1890ff' }
+      ]
+    },
+    {
+      id: 'SYSTEM_PRESET_5',
+      taskName: '系统预设标准示范模版 (双臂猕猴桃抓取)',
+      category: 'dual_arm',
+      device: '双臂手眼协同设备 (Galbot-1.16)',
+      annoType: '语义标注',
+      stepMode: '结构化四元组',
+      totalFrames: 120,
+      usageCount: 2310,
+      segments: [
+        { start: 18, end: 54, text: 'pick {Kiwi} from {desktop}', color: '#2563eb' },
+        { start: 66, end: 102, text: 'place {Kiwi} on {Fruit Bowl}', color: '#16a34a' }
+      ]
+    }
+  ];
+
   const annotatedTemplates = episodes.filter(ep => 
     ep.annoStatus === '已标注' && 
-    ep.annoType === activeBatchType && 
     ep.segments && 
     ep.segments.length > 0
   );
 
-  const defaultSystemTemplate = activeBatchType === '语义标注' ? {
-    id: 'SYSTEM_PRESET',
-    taskName: '系统预设语义模版 (双臂)',
-    annoType: '语义标注',
-    totalFrames: 120,
-    segments: [
-      { start: 18, end: 54, text: 'pick {Kiwi} from {desktop}', color: '#2563eb' },
-      { start: 66, end: 102, text: 'place {Kiwi} on {Fruit Bowl}', color: '#16a34a' }
-    ]
-  } : {
-    id: 'SYSTEM_PRESET',
-    taskName: '系统预设范围模版 (单臂)',
-    annoType: '范围标注',
-    totalFrames: 120,
-    segments: [
-      { start: 15, end: 45, text: '右手从置物架抓取药品到药房工作台', color: '#13c2c2' },
-      { start: 55, end: 95, text: '双手从台面上方放置托盘到桌子', color: '#1890ff' }
-    ]
-  };
+  // All available templates
+  const allTemplates = [
+    ...systemPresetLibrary,
+    ...annotatedTemplates.map(ep => ({
+      id: ep.id,
+      taskName: ep.taskName,
+      category: ep.device.includes('双臂') ? 'dual_arm' : 'single_arm',
+      device: ep.device,
+      annoType: ep.annoType,
+      stepMode: ep.annoType === '语义标注' ? '结构化四元组' : '自然语言Prompt',
+      totalFrames: ep.totalFrames,
+      usageCount: 120,
+      segments: ep.segments
+    }))
+  ];
+
+  const defaultSystemTemplate = systemPresetLibrary[0];
 
   const getSelectedTemplate = () => {
-    if (batchTemplateId === 'SYSTEM_PRESET') return defaultSystemTemplate;
-    return episodes.find(ep => ep.id === batchTemplateId) || defaultSystemTemplate;
+    return allTemplates.find(t => String(t.id) === String(batchTemplateId)) || defaultSystemTemplate;
   };
 
   const handleOpenBatchModal = () => {
-    const firstTemplate = annotatedTemplates[0];
-    setBatchTemplateId(firstTemplate ? firstTemplate.id : 'SYSTEM_PRESET');
+    // Smart match top template based on selected rows
+    const firstRow = selectedRows[0];
+    const recommended = allTemplates.find(t => 
+      firstRow && (t.annoType === firstRow.annoType || t.device === firstRow.device)
+    ) || allTemplates[0];
+
+    setBatchTemplateId(recommended ? recommended.id : defaultSystemTemplate.id);
     setBatchStrategy('proportional');
+    setTemplateSearchKeyword('');
+    setTemplateCategoryTab('all');
     setCopyProgress(0);
     setIsCopying(false);
     setIsBatchModalOpen(true);
@@ -773,32 +860,175 @@ export default function AnnotationAuditEpisodeListPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             
-            {/* 1. Select Template */}
-            <Card size="small" title={<span style={{ fontSize: 12, fontWeight: 'bold' }}>1. 选择标注模版 (Template Source)</span>} style={{ background: '#f8fafc' }}>
-              <div style={{ display: 'flex', gap: 12, flexDirection: 'column' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 12, color: '#475569', width: 90 }}>选择模版:</span>
+            {/* 1. Select Template with Quick Search & Category Filters */}
+            <Card 
+              size="small" 
+              title={
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, fontWeight: 'bold' }}>1. 选择标注模版 (Template Source)</span>
+                  <Button 
+                    type="link" 
+                    size="small" 
+                    icon={<SearchOutlined />} 
+                    style={{ fontSize: 12, padding: 0 }}
+                    onClick={() => setIsTemplatePickerOpen(true)}
+                  >
+                    模版库大图检索 ({allTemplates.length}) ➔
+                  </Button>
+                </div>
+              } 
+              style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8 }}
+            >
+              <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
+                {/* Category Quick Tags */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 11, color: '#64748b' }}>快速分类:</span>
+                  {[
+                    { key: 'all', label: '全部模版' },
+                    { key: 'recommend', label: '🎯 最佳匹配推荐' },
+                    { key: 'preset', label: '⭐ 系统标准SOP' },
+                    { key: 'dual_arm', label: '🤖 双臂协同' },
+                    { key: 'single_arm', label: '🦾 单臂遥操' },
+                  ].map(tab => (
+                    <Tag.CheckableTag
+                      key={tab.key}
+                      checked={templateCategoryTab === tab.key}
+                      onChange={() => setTemplateCategoryTab(tab.key)}
+                      style={{
+                        fontSize: 11,
+                        padding: '2px 8px',
+                        borderRadius: 4,
+                        background: templateCategoryTab === tab.key ? '#1677ff' : '#f1f5f9',
+                        color: templateCategoryTab === tab.key ? '#fff' : '#475569',
+                        border: '1px solid ' + (templateCategoryTab === tab.key ? '#1677ff' : '#cbd5e1')
+                      }}
+                    >
+                      {tab.label}
+                    </Tag.CheckableTag>
+                  ))}
+                </div>
+
+                {/* Search & Select Row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Select 
+                    showSearch
+                    placeholder="输入模版名称 / 实例ID / 动作关键词搜索..."
                     style={{ flex: 1 }} 
                     value={batchTemplateId} 
                     onChange={setBatchTemplateId}
+                    filterOption={(input, option) => {
+                      const label = String(option?.label || option?.children || '');
+                      return label.toLowerCase().includes(input.toLowerCase());
+                    }}
+                    dropdownMatchSelectWidth={false}
                   >
-                    {annotatedTemplates.map(t => (
-                      <Option key={t.id} value={t.id}>
-                        实例 #{t.id} - {t.taskName} ({t.totalFrames}帧, 已含 {t.segments.length}段标注)
-                      </Option>
-                    ))}
-                    <Option value="SYSTEM_PRESET">
-                      【系统预设示范模板】抓取及放置场景 (120帧, 2段标注段)
-                    </Option>
+                    {/* Category 1: 智能推荐 */}
+                    {(templateCategoryTab === 'all' || templateCategoryTab === 'recommend') && (
+                      <Select.OptGroup label="🎯 最佳匹配推荐 (根据选中的设备与任务自动计算)">
+                        {allTemplates
+                          .filter(t => {
+                            const firstRow = selectedRows[0];
+                            if (!firstRow) return false;
+                            return t.annoType === firstRow.annoType || t.device === firstRow.device;
+                          })
+                          .slice(0, 3)
+                          .map(t => (
+                            <Option key={`rec_${t.id}`} value={t.id} label={`${t.taskName} ${t.id} ${t.device} ${t.stepMode}`}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>
+                                  <Tag color="blue" style={{ fontSize: 10 }}>推荐</Tag>
+                                  <strong>{t.taskName}</strong>
+                                </span>
+                                <span style={{ fontSize: 11, color: '#64748b' }}>
+                                  {t.totalFrames}帧 · {t.segments.length}步 · <Tag color="geekblue" style={{ fontSize: 10 }}>{t.stepMode}</Tag>
+                                </span>
+                              </div>
+                            </Option>
+                          ))}
+                      </Select.OptGroup>
+                    )}
+
+                    {/* Category 2: 系统预设SOP模版 */}
+                    {(templateCategoryTab === 'all' || templateCategoryTab === 'preset' || templateCategoryTab === 'dual_arm' || templateCategoryTab === 'single_arm') && (
+                      <Select.OptGroup label="⭐ 系统标准 SOP 模版库">
+                        {systemPresetLibrary
+                          .filter(t => {
+                            if (templateCategoryTab === 'dual_arm') return t.category === 'dual_arm';
+                            if (templateCategoryTab === 'single_arm') return t.category === 'single_arm';
+                            return true;
+                          })
+                          .map(t => (
+                            <Option key={t.id} value={t.id} label={`${t.taskName} ${t.id} ${t.device} ${t.stepMode}`}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>
+                                  <Tag color="gold" style={{ fontSize: 10 }}>SOP</Tag>
+                                  {t.taskName}
+                                </span>
+                                <span style={{ fontSize: 11, color: '#64748b' }}>
+                                  {t.totalFrames}帧 · {t.segments.length}步 · <Tag color="purple" style={{ fontSize: 10 }}>{t.stepMode}</Tag>
+                                </span>
+                              </div>
+                            </Option>
+                          ))}
+                      </Select.OptGroup>
+                    )}
+
+                    {/* Category 3: 项目历史精选标注实例 */}
+                    {(templateCategoryTab === 'all' || templateCategoryTab === 'dual_arm' || templateCategoryTab === 'single_arm') && annotatedTemplates.length > 0 && (
+                      <Select.OptGroup label="📋 本项目历史优质已标注实例">
+                        {annotatedTemplates
+                          .filter(ep => {
+                            if (templateCategoryTab === 'dual_arm') return ep.device.includes('双臂');
+                            if (templateCategoryTab === 'single_arm') return !ep.device.includes('双臂');
+                            return true;
+                          })
+                          .map(t => (
+                            <Option key={t.id} value={t.id} label={`${t.taskName} 实例_${t.id} ${t.device}`}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>
+                                  <Tag color="cyan" style={{ fontSize: 10 }}>实例#{t.id}</Tag>
+                                  {t.taskName}
+                                </span>
+                                <span style={{ fontSize: 11, color: '#64748b' }}>
+                                  {t.totalFrames}帧 · {t.segments.length}段标注
+                                </span>
+                              </div>
+                            </Option>
+                          ))}
+                      </Select.OptGroup>
+                    )}
                   </Select>
+
+                  <Button 
+                    icon={<SearchOutlined />} 
+                    onClick={() => setIsTemplatePickerOpen(true)}
+                  >
+                    图库浏览
+                  </Button>
                 </div>
-                <div style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: 6, fontSize: 11, color: '#1e40af' }}>
-                  <strong>模版标注段预览：</strong>
-                  <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+                {/* Selected Template Live Preview Card */}
+                <div style={{ background: '#f0f9ff', padding: '10px 14px', borderRadius: 6, fontSize: 12, color: '#0369a1', border: '1px solid #bae6fd' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <strong>🔍 当前模版时序步骤预览 ({getSelectedTemplate().taskName})：</strong>
+                    <Space size={4}>
+                      <Tag color="blue">{getSelectedTemplate().device}</Tag>
+                      <Tag color="geekblue">{getSelectedTemplate().stepMode || '结构化步骤'}</Tag>
+                      <Tag color="orange">{getSelectedTemplate().totalFrames} 帧</Tag>
+                    </Space>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {getSelectedTemplate().segments.map((seg, idx) => (
-                      <div key={idx}>
-                        • 区间 <strong>{seg.start}f - {seg.end}f</strong>: <code style={{ background: '#fff', padding: '1px 4px', border: '1px solid #bfdbfe', borderRadius: 3 }}>{seg.text}</code>
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ minWidth: 20, height: 20, borderRadius: '50%', background: seg.color || '#2563eb', color: '#fff', fontSize: 11, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                          {idx + 1}
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 'bold', color: '#334155', minWidth: 90 }}>
+                          [{seg.start}f - {seg.end}f]
+                        </span>
+                        <code style={{ background: '#fff', padding: '2px 6px', border: '1px solid #bfdbfe', borderRadius: 4, color: '#1e293b', flex: 1 }}>
+                          {seg.text}
+                        </code>
                       </div>
                     ))}
                   </div>
@@ -987,6 +1217,211 @@ export default function AnnotationAuditEpisodeListPage() {
         )}
       </Modal>
 
+      {/* ----------------------------------------------------
+          POPUP MODAL: 模版库大图检索选择器 (Visual Template Picker)
+          ---------------------------------------------------- */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 24 }}>
+            <span style={{ fontSize: 16, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <SearchOutlined style={{ color: '#1677ff' }} /> 动作标注模版库全屏检索 (共 {allTemplates.length} 个模版)
+            </span>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              当前适配任务：{selectedRows[0]?.taskName || '批量所选实例'} · 设备：{selectedRows[0]?.device || '通用'}
+            </Text>
+          </div>
+        }
+        open={isTemplatePickerOpen}
+        onCancel={() => setIsTemplatePickerOpen(false)}
+        footer={null}
+        width={980}
+        styles={{ body: { padding: '16px 20px' } }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Top Search & Filter Bar */}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+            <Input 
+              placeholder="快速搜索模版名称、四元组技能(如抓取/装填/扶持)、Prompt关键词..." 
+              prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+              value={templateSearchKeyword}
+              onChange={e => setTemplateSearchKeyword(e.target.value)}
+              style={{ flex: 1 }}
+              allowClear
+            />
+            <Radio.Group 
+              value={templateCategoryTab} 
+              onChange={e => setTemplateCategoryTab(e.target.value)}
+              buttonStyle="solid"
+            >
+              <Radio.Button value="all">全部 ({allTemplates.length})</Radio.Button>
+              <Radio.Button value="dual_arm">🤖 双臂协同</Radio.Button>
+              <Radio.Button value="single_arm">🦾 单臂操作</Radio.Button>
+              <Radio.Button value="preset">⭐ 系统SOP</Radio.Button>
+            </Radio.Group>
+          </div>
+
+          {/* Grid of Templates & Preview */}
+          <Row gutter={16}>
+            {/* Left Column: Template Cards List */}
+            <Col span={14}>
+              <div style={{ maxHeight: 440, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 6 }}>
+                {allTemplates
+                  .filter(t => {
+                    if (templateCategoryTab === 'dual_arm' && t.category !== 'dual_arm') return false;
+                    if (templateCategoryTab === 'single_arm' && t.category !== 'single_arm') return false;
+                    if (templateCategoryTab === 'preset' && !String(t.id).startsWith('SYSTEM_PRESET')) return false;
+                    if (templateSearchKeyword) {
+                      const kw = templateSearchKeyword.toLowerCase();
+                      const matchName = t.taskName.toLowerCase().includes(kw);
+                      const matchId = String(t.id).toLowerCase().includes(kw);
+                      const matchSeg = t.segments.some(s => s.text.toLowerCase().includes(kw));
+                      const matchDevice = (t.device || '').toLowerCase().includes(kw);
+                      if (!matchName && !matchId && !matchSeg && !matchDevice) return false;
+                    }
+                    return true;
+                  })
+                  .map(t => {
+                    const isSelected = String(batchTemplateId) === String(t.id);
+                    return (
+                      <Card 
+                        key={t.id}
+                        size="small" 
+                        hoverable
+                        onClick={() => setBatchTemplateId(t.id)}
+                        style={{
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          borderColor: isSelected ? '#1677ff' : '#e2e8f0',
+                          background: isSelected ? '#eff6ff' : '#fff',
+                          boxShadow: isSelected ? '0 0 0 2px rgba(22, 119, 255, 0.2)' : 'none',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                          <div>
+                            <span style={{ fontWeight: 'bold', fontSize: 13, color: isSelected ? '#1677ff' : '#1e293b' }}>
+                              {t.taskName}
+                            </span>
+                            <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 6 }}>
+                              #{t.id}
+                            </span>
+                          </div>
+                          <Space size={4}>
+                            <Tag color={t.stepMode === '结构化四元组' ? 'geekblue' : 'purple'} style={{ fontSize: 10 }}>
+                              {t.stepMode || '结构化步骤'}
+                            </Tag>
+                            <Tag color="orange" style={{ fontSize: 10 }}>{t.totalFrames}帧</Tag>
+                          </Space>
+                        </div>
+
+                        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>
+                          适配设备：{t.device} · 已包含 <strong>{t.segments.length}</strong> 段标注步骤 · 累计套用 {t.usageCount || 100}+ 次
+                        </div>
+
+                        {/* Step Tags flow */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {t.segments.map((s, idx) => (
+                            <Tag key={idx} color="default" style={{ fontSize: 10, background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#334155' }}>
+                              {idx + 1}. {s.text.length > 18 ? s.text.substring(0, 18) + '...' : s.text}
+                            </Tag>
+                          ))}
+                        </div>
+                      </Card>
+                    );
+                  })}
+              </div>
+            </Col>
+
+            {/* Right Column: Selected Template Deep Visual Timeline Preview */}
+            <Col span={10}>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 14, height: 440, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid #e2e8f0', paddingBottom: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 'bold', color: '#1e293b' }}>
+                      📋 模版时序结构深度预览
+                    </span>
+                    <Tag color="blue">{getSelectedTemplate().stepMode}</Tag>
+                  </div>
+
+                  <div style={{ fontSize: 12, fontWeight: 'bold', color: '#0f172a', marginBottom: 4 }}>
+                    {getSelectedTemplate().taskName}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>
+                    总时序跨度：0f ~ {getSelectedTemplate().totalFrames}f（{getSelectedTemplate().segments.length} 个动作时序段）
+                  </div>
+
+                  {/* Visual Bar Preview */}
+                  <div style={{ height: 18, background: '#e2e8f0', borderRadius: 9, position: 'relative', overflow: 'hidden', marginBottom: 16, display: 'flex' }}>
+                    {getSelectedTemplate().segments.map((seg, idx) => {
+                      const total = getSelectedTemplate().totalFrames || 120;
+                      const widthPct = Math.max(8, ((seg.end - seg.start) / total) * 100);
+                      return (
+                        <div 
+                          key={idx}
+                          title={`${seg.text} [${seg.start}f - ${seg.end}f]`}
+                          style={{
+                            width: `${widthPct}%`,
+                            background: seg.color || '#2563eb',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontSize: 9,
+                            fontWeight: 'bold',
+                            borderRight: '1px solid #fff'
+                          }}
+                        >
+                          {idx + 1}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Step by Step List */}
+                  <div style={{ maxHeight: 210, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {getSelectedTemplate().segments.map((seg, idx) => (
+                      <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6, padding: '6px 10px', fontSize: 11 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                          <span style={{ fontWeight: 'bold', color: seg.color || '#2563eb' }}>
+                            步骤 {idx + 1}
+                          </span>
+                          <span style={{ color: '#64748b', fontWeight: 'bold' }}>
+                            {seg.start}f - {seg.end}f ({seg.end - seg.start}帧)
+                          </span>
+                        </div>
+                        <div style={{ color: '#1e293b' }}>
+                          {seg.text}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Confirm Apply Button */}
+                <div style={{ marginTop: 12, borderTop: '1px solid #e2e8f0', paddingTop: 10, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  <Button onClick={() => setIsTemplatePickerOpen(false)}>
+                    关闭
+                  </Button>
+                  <Button 
+                    type="primary" 
+                    icon={<CheckCircleOutlined />}
+                    style={{ background: '#1677ff', fontWeight: 'bold' }}
+                    onClick={() => {
+                      message.success(`已成功选用模版：【${getSelectedTemplate().taskName}】`);
+                      setIsTemplatePickerOpen(false);
+                    }}
+                  >
+                    选用此模版
+                  </Button>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+      </Modal>
+
     </MainLayout>
   );
 }
+

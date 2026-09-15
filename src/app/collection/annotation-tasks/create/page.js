@@ -97,10 +97,21 @@ const MOCK_EPISODES = [
 ];
 
 const ACTION_TEMPLATES = [
-  { value: 'tpl-shelf-01', label: '货架抓取放置SOP标准模板 V1.2' },
-  { value: 'tpl-table-02', label: '桌面整理动作时序模板 V2.0' },
-  { value: 'tpl-bimanual-03', label: '双手协同装配动作序列模板 V1.0' },
-  { value: 'tpl-box-04', label: '工业箱包打包SOP模板 V1.5' },
+  {
+    label: '🔵 结构化步骤模版 (四元组原子定义)',
+    options: [
+      { value: 'tpl-shelf-01', label: '📦 货架抓取放置SOP标准模板 V1.2 (结构化)' },
+      { value: 'tpl-bimanual-03', label: '🍽️ 双手协同装配动作序列模板 V1.0 (结构化)' },
+      { value: 'tpl-box-04', label: '📦 工业箱包打包SOP模板 V1.5 (结构化)' }
+    ]
+  },
+  {
+    label: '🟢 自然语言模版 (自由Prompt描述)',
+    options: [
+      { value: 'tpl-table-02', label: '📚 桌面整理动作时序模板 V2.0 (自然语言)' },
+      { value: 'tpl-drawer-05', label: '🚪 抽屉开关与取物提示词模板 V1.0 (自然语言)' }
+    ]
+  }
 ];
 
 export default function CreateAnnotationTaskPage() {

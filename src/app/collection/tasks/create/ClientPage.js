@@ -1076,15 +1076,19 @@ function CreateTaskContent() {
                   </span>
                   <Select
                     placeholder="选择预设动作模版一键填充步骤数据..."
-                    style={{ width: 340 }}
+                    style={{ width: 360 }}
                     size="middle"
                     onChange={handleTemplateSelectForSop}
                     allowClear
                   >
-                    <Select.Option value="box_packing">📦 工业纸箱打包封装与装箱模版 (6 步)</Select.Option>
-                    <Select.Option value="books_organize">📚 桌面书籍整理与摆放模版 (4 步)</Select.Option>
-                    <Select.Option value="dishes_clean">🍽️ 餐盘清理与协同搬运模版 (4 步)</Select.Option>
-                    <Select.Option value="drawer_operation">🚪 抽屉开关与取物操作模版 (4 步)</Select.Option>
+                    <Select.OptGroup label="🔵 结构化步骤模版 (四元组原子定义)">
+                      <Select.Option value="box_packing">📦 工业纸箱打包封装与装箱模版 (6 步)</Select.Option>
+                      <Select.Option value="dishes_clean">🍽️ 餐盘清理与协同搬运模版 (4 步)</Select.Option>
+                    </Select.OptGroup>
+                    <Select.OptGroup label="🟢 自然语言模版 (自由Prompt描述)">
+                      <Select.Option value="books_organize">📚 桌面书籍整理与摆放模版 (4 步)</Select.Option>
+                      <Select.Option value="drawer_operation">🚪 抽屉开关与取物操作模版 (4 步)</Select.Option>
+                    </Select.OptGroup>
                   </Select>
                 </div>
               </div>

@@ -45,10 +45,64 @@ const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
 // Role constants
-const ROLES = {
-  ADMIN: 'ADMIN',
-  QA: 'QA',
-  COLLECTOR: 'COLLECTOR',
+export const ROLES = {
+  ADMIN_ZHOU: 'ADMIN_ZHOU',
+  COLLECTOR_LIN: 'COLLECTOR_LIN',
+  QC_ZHAO: 'QC_ZHAO',
+  ANNOTATOR_CHEN: 'ANNOTATOR_CHEN',
+  REVIEWER_GU: 'REVIEWER_GU',
+  // Backwards compatibility aliases
+  ADMIN: 'ADMIN_ZHOU',
+  QA: 'QC_ZHAO',
+  COLLECTOR: 'COLLECTOR_LIN',
+};
+
+export const ROLE_USER_MAP = {
+  ADMIN_ZHOU: {
+    key: 'ADMIN_ZHOU',
+    username: 'admin_zhou',
+    name: '周启明',
+    display: '周启明 · 系统管理员',
+    title: '采集系统管理员',
+    badgeColor: 'gold',
+    defaultRoute: '/collection/collection-tasks'
+  },
+  COLLECTOR_LIN: {
+    key: 'COLLECTOR_LIN',
+    username: 'collector_lin',
+    name: '林嘉禾',
+    display: '林嘉禾 · 数据采集员',
+    title: '数据采集员',
+    badgeColor: 'blue',
+    defaultRoute: '/collection/collect'
+  },
+  QC_ZHAO: {
+    key: 'QC_ZHAO',
+    username: 'qc_zhao',
+    name: '赵妍',
+    display: '赵妍 · 数据质检员',
+    title: '数据质检员',
+    badgeColor: 'cyan',
+    defaultRoute: '/collection/qa'
+  },
+  ANNOTATOR_CHEN: {
+    key: 'ANNOTATOR_CHEN',
+    username: 'annotator_chen',
+    name: '陈曦',
+    display: '陈曦 · 数据标注员',
+    title: '数据标注员',
+    badgeColor: 'purple',
+    defaultRoute: '/collection/annotation-tasks'
+  },
+  REVIEWER_GU: {
+    key: 'REVIEWER_GU',
+    username: 'reviewer_gu',
+    name: '顾衡',
+    display: '顾衡 · 数据审核员',
+    title: '数据审核员',
+    badgeColor: 'magenta',
+    defaultRoute: '/annotation/review'
+  }
 };
 
 const menuItems = [
@@ -56,7 +110,7 @@ const menuItems = [
     key: 'config_labels',
     icon: <TagsOutlined />,
     label: '基础数据',
-    roles: [ROLES.ADMIN],
+    roles: [ROLES.ADMIN_ZHOU],
     children: [
       { key: '/collection/projects', label: '项目管理' },
       { key: '/collection/objects', label: '物体库' },
@@ -68,10 +122,10 @@ const menuItems = [
     key: 'config_devices',
     icon: <RobotOutlined />,
     label: '设备管理',
-    roles: [ROLES.ADMIN],
+    roles: [ROLES.ADMIN_ZHOU, ROLES.COLLECTOR_LIN],
     children: [
-      { key: '/collection/device-types', label: '设备类型' },
-      { key: '/collection/devices', label: '设备列表' },
+      { key: '/collection/device-types', label: '设备类型', roles: [ROLES.ADMIN_ZHOU] },
+      { key: '/collection/devices', label: '设备列表', roles: [ROLES.ADMIN_ZHOU, ROLES.COLLECTOR_LIN] },
     ],
   },
   {
@@ -79,27 +133,28 @@ const menuItems = [
     icon: <DatabaseOutlined />,
     label: '任务管理',
     children: [
-      { key: '/collection/collection-tasks', icon: <CameraOutlined />, label: '数据采集', roles: [ROLES.ADMIN] },
-      { key: '/collection/qa', icon: <FileSearchOutlined />, label: '数据质检', roles: [ROLES.ADMIN, ROLES.QA] },
-      { key: '/collection/annotation-tasks', icon: <FormOutlined />, label: '数据标注', roles: [ROLES.ADMIN] },
-      { key: '/annotation/review', icon: <AuditOutlined />, label: '数据审核', roles: [ROLES.ADMIN, ROLES.QA] },
-      { key: '/annotation/audit', icon: <EyeOutlined />, label: '标注工作台', roles: [ROLES.ADMIN, ROLES.QA] },
-      { key: '/collection/templates', icon: <LayoutOutlined />, label: '模版中心', roles: [ROLES.ADMIN] },
-      { key: '/collection/taskbooks', icon: <ReadOutlined />, label: '任务书', roles: [ROLES.ADMIN] },
+      { key: '/collection/collection-tasks', icon: <CameraOutlined />, label: '数据采集', roles: [ROLES.ADMIN_ZHOU, ROLES.COLLECTOR_LIN] },
+      { key: '/collection/qa', icon: <FileSearchOutlined />, label: '数据质检', roles: [ROLES.ADMIN_ZHOU, ROLES.QC_ZHAO] },
+      { key: '/collection/annotation-tasks', icon: <FormOutlined />, label: '数据标注', roles: [ROLES.ADMIN_ZHOU, ROLES.ANNOTATOR_CHEN] },
+      { key: '/annotation/review', icon: <AuditOutlined />, label: '数据审核', roles: [ROLES.ADMIN_ZHOU, ROLES.REVIEWER_GU] },
+      { key: '/annotation/audit', icon: <EyeOutlined />, label: '标注工作台', roles: [ROLES.ADMIN_ZHOU, ROLES.ANNOTATOR_CHEN, ROLES.REVIEWER_GU] },
+      { key: '/collection/templates', icon: <LayoutOutlined />, label: '模版中心', roles: [ROLES.ADMIN_ZHOU, ROLES.ANNOTATOR_CHEN] },
+      { key: '/collection/taskbooks', icon: <ReadOutlined />, label: '任务书', roles: [ROLES.ADMIN_ZHOU, ROLES.COLLECTOR_LIN, ROLES.QC_ZHAO, ROLES.ANNOTATOR_CHEN, ROLES.REVIEWER_GU] },
     ],
   },
   {
     key: '/collection/collect',
     icon: <VideoCameraOutlined />,
     label: '任务中心（采集端）',
-    roles: [ROLES.ADMIN, ROLES.COLLECTOR],
+    roles: [ROLES.ADMIN_ZHOU, ROLES.COLLECTOR_LIN],
   },
   {
     key: 'data_assets',
     icon: <DatabaseOutlined />,
     label: '数据资产',
-    roles: [ROLES.ADMIN, ROLES.QA, ROLES.COLLECTOR],
+    roles: [ROLES.ADMIN_ZHOU, ROLES.QC_ZHAO, ROLES.COLLECTOR_LIN],
     children: [
+      { key: '/screen', label: '📊 数采工厂大屏 (指挥中心)' },
       { key: '/data/catalog', label: '数据资产目录' },
       { key: '/data/datasets', label: '高质量数据集' },
       { key: '/data/reports', label: '数据资产报表' },
@@ -109,12 +164,11 @@ const menuItems = [
     key: 'permissions',
     icon: <SafetyCertificateOutlined />,
     label: '权限设置',
-    roles: [ROLES.ADMIN],
+    roles: [ROLES.ADMIN_ZHOU],
     children: [
       { key: '/accounts/list', label: '用户管理' },
     ],
   },
-
 ];
 
 const breadcrumbMap = {
@@ -148,7 +202,7 @@ const breadcrumbMap = {
 function MainLayoutContent({ children }) {
   const { specMode, toggleSpecMode, activeSpec, setActiveSpec } = useSpec();
   const [collapsed, setCollapsed] = useState(false);
-  const [userRole, setUserRole] = useState(ROLES.ADMIN);
+  const [userRole, setUserRole] = useState(ROLES.ADMIN_ZHOU);
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -156,8 +210,9 @@ function MainLayoutContent({ children }) {
 
   useEffect(() => {
     const savedRole = typeof window !== 'undefined' ? localStorage.getItem('userRole') : null;
-    if (savedRole && ROLES[savedRole]) {
-      setUserRole(savedRole);
+    if (savedRole && (ROLE_USER_MAP[savedRole] || ROLES[savedRole])) {
+      const normalized = ROLES[savedRole] || savedRole;
+      setUserRole(normalized);
     }
   }, []);
 
@@ -197,24 +252,21 @@ function MainLayoutContent({ children }) {
     });
   }, [router]);
 
-  const handleRoleChange = (role) => {
-    if (role === ROLES.COLLECTOR) {
-      router.push('/collector-login');
-      return;
-    }
+  const handleRoleChange = (roleKey) => {
+    const roleInfo = ROLE_USER_MAP[roleKey];
+    if (!roleInfo) return;
     
-    // Redirect based on role
-    message.loading(`正在切换至 ${role === ROLES.QA ? '质检端' : '管理端'}...`, 1);
-    setTimeout(() => {
-      if (role === ROLES.QA) {
-        router.push('/qa-login');
-      } else {
-        router.push('/login');
-      }
-    }, 800);
+    setUserRole(roleKey);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('userRole', roleKey);
+    }
+    message.success(`已切换为角色：${roleInfo.display}`);
+    if (roleInfo.defaultRoute) {
+      router.push(roleInfo.defaultRoute);
+    }
   };
 
-  const crumbs = breadcrumbMap[pathname] || ['数据采集'];
+  const crumbs = breadcrumbMap[pathname] || ['任务管理'];
 
   const filterMenuItems = (items) => {
     return items
@@ -234,7 +286,7 @@ function MainLayoutContent({ children }) {
 
   const filteredItems = filterMenuItems(menuItems);
   const getMenuItems = () => {
-    if (userRole === ROLES.COLLECTOR) {
+    if (userRole === ROLES.COLLECTOR_LIN && pathname === '/collection/collect-home') {
       return [
         { key: '/collection/collect-home', icon: <HomeOutlined />, label: '首页' },
         { key: '/collection/collect', icon: <SolutionOutlined />, label: '任务中心（采集端）' },
@@ -257,7 +309,6 @@ function MainLayoutContent({ children }) {
     };
     traverse(menuItems);
     
-    // Find parent of current pathname
     let current = pathname;
     const openKeys = [];
     while (parentMap[current]) {
@@ -267,12 +318,41 @@ function MainLayoutContent({ children }) {
     return openKeys;
   };
 
+  const currentUser = ROLE_USER_MAP[userRole] || ROLE_USER_MAP.ADMIN_ZHOU;
+
   const userMenu = {
     items: [
-      { key: 'role-header', label: <Text type="secondary" style={{ fontSize: 11 }}>角色切换</Text>, disabled: true },
-      { key: ROLES.ADMIN, icon: <SafetyCertificateOutlined />, label: '超级管理员', className: userRole === ROLES.ADMIN ? 'ant-dropdown-menu-item-selected' : '' },
-      { key: ROLES.QA, icon: <AuditOutlined />, label: '质检员', className: userRole === ROLES.QA ? 'ant-dropdown-menu-item-selected' : '' },
-      { key: ROLES.COLLECTOR, icon: <UserOutlined />, label: '采集员', className: userRole === ROLES.COLLECTOR ? 'ant-dropdown-menu-item-selected' : '' },
+      { key: 'role-header', label: <Text type="secondary" style={{ fontSize: 11 }}>测试账号角色快速切换</Text>, disabled: true },
+      {
+        key: ROLES.ADMIN_ZHOU,
+        icon: <SafetyCertificateOutlined style={{ color: '#d97706' }} />,
+        label: <span>周启明 · 系统管理员 <Tag color="gold" style={{ fontSize: 10, marginLeft: 4 }}>admin_zhou</Tag></span>,
+        className: userRole === ROLES.ADMIN_ZHOU ? 'ant-dropdown-menu-item-selected' : ''
+      },
+      {
+        key: ROLES.COLLECTOR_LIN,
+        icon: <VideoCameraOutlined style={{ color: '#2563eb' }} />,
+        label: <span>林嘉禾 · 数据采集员 <Tag color="blue" style={{ fontSize: 10, marginLeft: 4 }}>collector_lin</Tag></span>,
+        className: userRole === ROLES.COLLECTOR_LIN ? 'ant-dropdown-menu-item-selected' : ''
+      },
+      {
+        key: ROLES.QC_ZHAO,
+        icon: <FileSearchOutlined style={{ color: '#059669' }} />,
+        label: <span>赵妍 · 数据质检员 <Tag color="cyan" style={{ fontSize: 10, marginLeft: 4 }}>qc_zhao</Tag></span>,
+        className: userRole === ROLES.QC_ZHAO ? 'ant-dropdown-menu-item-selected' : ''
+      },
+      {
+        key: ROLES.ANNOTATOR_CHEN,
+        icon: <FormOutlined style={{ color: '#7c3aed' }} />,
+        label: <span>陈曦 · 数据标注员 <Tag color="purple" style={{ fontSize: 10, marginLeft: 4 }}>annotator_chen</Tag></span>,
+        className: userRole === ROLES.ANNOTATOR_CHEN ? 'ant-dropdown-menu-item-selected' : ''
+      },
+      {
+        key: ROLES.REVIEWER_GU,
+        icon: <AuditOutlined style={{ color: '#db2777' }} />,
+        label: <span>顾衡 · 数据审核员 <Tag color="magenta" style={{ fontSize: 10, marginLeft: 4 }}>reviewer_gu</Tag></span>,
+        className: userRole === ROLES.REVIEWER_GU ? 'ant-dropdown-menu-item-selected' : ''
+      },
       { type: 'divider' },
       { key: 'profile', icon: <IdcardOutlined />, label: '个人中心' },
       { key: 'settings', icon: <SettingOutlined />, label: '系统设置' },
@@ -280,21 +360,17 @@ function MainLayoutContent({ children }) {
       { key: 'logout', icon: <LogoutOutlined />, label: '退出登录', danger: true },
     ],
     onClick: ({ key }) => {
-      if (ROLES[key]) {
+      if (ROLE_USER_MAP[key]) {
         handleRoleChange(key);
       } else if (key === 'logout') {
-        router.push('/');
+        router.push('/login');
       }
     },
   };
 
   const getRoleBadge = () => {
-    switch (userRole) {
-      case ROLES.ADMIN: return <Tag color="gold" style={{ margin: 0 }}>管理员</Tag>;
-      case ROLES.QA: return <Tag color="cyan" style={{ margin: 0 }}>质检员</Tag>;
-      case ROLES.COLLECTOR: return <Tag color="blue" style={{ margin: 0 }}>采集员</Tag>;
-      default: return null;
-    }
+    const user = ROLE_USER_MAP[userRole] || ROLE_USER_MAP.ADMIN_ZHOU;
+    return <Tag color={user.badgeColor} style={{ margin: 0 }}>{user.title}</Tag>;
   };
 
   return (
@@ -435,8 +511,8 @@ function MainLayoutContent({ children }) {
                   <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 4 }} className="user-dropdown-hover">
                     <Avatar size="small" style={{ backgroundColor: '#1890ff' }} icon={<UserOutlined />} />
                     <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-                      <Text strong style={{ fontSize: 13 }}>cy00831</Text>
-                      <Tag color="blue" style={{ margin: 0, fontSize: 10, padding: '0 4px', lineHeight: 1.5 }}>采集员</Tag>
+                      <Text strong style={{ fontSize: 13 }}>{currentUser.name} ({currentUser.username})</Text>
+                      {getRoleBadge()}
                     </div>
                   </Space>
                 </Dropdown>
@@ -454,7 +530,27 @@ function MainLayoutContent({ children }) {
                 </div>
               </div>
               <div className="header-right">
-                <Space size="large">
+                <Space size="middle">
+                  <Button
+                    type="primary"
+                    icon={<DashboardOutlined />}
+                    onClick={() => router.push('/screen')}
+                    style={{
+                      background: 'linear-gradient(135deg, #00f2fe 0%, #1677ff 100%)',
+                      border: 'none',
+                      color: '#050b17',
+                      fontWeight: 700,
+                      borderRadius: 16,
+                      height: 28,
+                      padding: '0 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      boxShadow: '0 2px 8px rgba(0,242,254,0.3)'
+                    }}
+                  >
+                    📊 数采工厂大屏
+                  </Button>
+
                   <div style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -482,9 +578,9 @@ function MainLayoutContent({ children }) {
                   </Badge>
                   <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
                     <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 4, transition: 'all 0.3s' }} className="user-dropdown-hover">
-                      <Avatar size="small" style={{ backgroundColor: userRole === ROLES.ADMIN ? '#faad14' : '#1677ff' }} icon={<UserOutlined />} />
+                      <Avatar size="small" style={{ backgroundColor: currentUser.badgeColor === 'gold' ? '#faad14' : currentUser.badgeColor === 'cyan' ? '#13c2c2' : currentUser.badgeColor === 'purple' ? '#722ed1' : currentUser.badgeColor === 'magenta' ? '#eb2f96' : '#1677ff' }} icon={<UserOutlined />} />
                       <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-                        <Text strong style={{ fontSize: 13 }}>Admin User</Text>
+                        <Text strong style={{ fontSize: 13 }}>{currentUser.name} ({currentUser.username})</Text>
                         {getRoleBadge()}
                       </div>
                     </Space>

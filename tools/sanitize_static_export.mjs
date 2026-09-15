@@ -60,6 +60,8 @@ const ALLOWED_OUTPUT_EXTENSIONS = new Set([
   '.csv',
   '.eot',
   '.gif',
+  '.glb',
+  '.gltf',
   '.htm',
   '.html',
   '.ico',

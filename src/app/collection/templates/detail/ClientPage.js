@@ -176,6 +176,11 @@ export default function TemplateDetailPage() {
           boxShadow: 'var(--shadow-sm)',
         }}>
           <Space size={8}>
+            <Text type="secondary">格式规范</Text>
+            <Tag color="blue">🔵 结构化步骤 (四元组标准)</Tag>
+          </Space>
+          <Divider type="vertical" style={{ height: 20 }} />
+          <Space size={8}>
             <Text type="secondary">状态</Text>
             <Tag color="green" icon={<CheckCircleOutlined />}>{template.status}</Tag>
           </Space>
@@ -279,10 +284,13 @@ export default function TemplateDetailPage() {
 
         {/* SOP Steps */}
         <FormSection title={
-          <Space>
-            <span>SOP 动作步骤</span>
-            <Tag color="blue">{steps.length} 步</Tag>
-          </Space>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <Space>
+              <span>SOP 动作步骤编排明细</span>
+              <Tag color="blue">{steps.length} 步 (结构化四元组)</Tag>
+            </Space>
+            <Tag color="cyan">已绑定智能物理质检自检</Tag>
+          </div>
         }>
           <Table 
             dataSource={steps} 
@@ -298,8 +306,12 @@ export default function TemplateDetailPage() {
             display: 'flex',
             alignItems: 'center',
             gap: 0,
-            padding: '20px 0 4px',
+            padding: '20px 10px 10px',
             overflowX: 'auto',
+            background: '#fafbfc',
+            borderRadius: 8,
+            border: '1px solid #f0f0f0',
+            marginTop: 16
           }}>
             {steps.map((step, idx) => (
               <React.Fragment key={step.key}>
@@ -323,7 +335,7 @@ export default function TemplateDetailPage() {
                   }}>
                     {step.key}
                   </div>
-                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.65)', fontWeight: 500 }}>
+                  <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.75)', fontWeight: 600 }}>
                     {step.skill}
                   </div>
                   <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)', marginTop: 2 }}>
@@ -341,6 +353,48 @@ export default function TemplateDetailPage() {
                 )}
               </React.Fragment>
             ))}
+          </div>
+
+          {/* QC Rules Associated */}
+          <div style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: 8,
+            padding: '14px 18px',
+            marginTop: 16
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>🛡️ 该任务模版自动关联的【物理质检校验规则】：</span>
+            </div>
+            <Row gutter={[12, 12]}>
+              <Col span={8}>
+                <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#0f172a', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>抓取技能夹持力上限校验</span>
+                    <Tag color="green" style={{ margin: 0 }}>&le; 18.5 N</Tag>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>防止过载压损或夹碎物体（基于 Torque Sensor 阈值）</div>
+                </div>
+              </Col>
+              <Col span={8}>
+                <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#0f172a', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>接近与对齐位姿容差</span>
+                    <Tag color="cyan" style={{ margin: 0 }}>&le; 2.5 mm / 3&deg;</Tag>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>避免末端执行器与目标发生非预期碰撞</div>
+                </div>
+              </Col>
+              <Col span={8}>
+                <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#0f172a', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>轨迹平滑度与抖动率</span>
+                    <Tag color="purple" style={{ margin: 0 }}>Jerk &lt; 0.08</Tag>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>确保示教轨迹动力学连续，无机械臂急停震颤</div>
+                </div>
+              </Col>
+            </Row>
           </div>
         </FormSection>
 

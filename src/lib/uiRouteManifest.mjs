@@ -3,6 +3,7 @@ export const UI_ROUTE_MANIFEST = [
   { path: 'src/app/dashboard/page.js', type: 'list', phase: 2 },
 
   { path: 'src/app/annotation/acceptance/page.js', type: 'list', phase: 2 },
+  { path: 'src/app/annotation/ai-workbench/page.js', type: 'workspace', phase: 2 },
   { path: 'src/app/annotation/answer/page.js', type: 'workspace', phase: 2 },
   { path: 'src/app/annotation/audit/page.js', type: 'list', phase: 2 },
   { path: 'src/app/annotation/audit/create/page.js', type: 'form', phase: 2 },

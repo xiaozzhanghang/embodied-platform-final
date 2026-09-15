@@ -1,6 +1,7 @@
 export const STATIC_ROUTES = Object.freeze({
   auditDetail: '/annotation/audit/detail',
   auditWorkbench: '/annotation/audit/workbench',
+  aiWorkbench: '/annotation/ai-workbench',
   annotationEditor: '/annotation/editor',
   collectDetail: '/collection/collect/detail',
   collectConnection: '/collection/collect/connection',
