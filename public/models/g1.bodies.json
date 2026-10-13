@@ -1,6 +1,6 @@
 {
   "robot": "unitree_g1_29dof",
-  "source_xml": "/Users/lev/github.com/wbc-mjlab/wbc-mjlab/src/wbc_mjlab/robots/g1/xmls/g1.xml",
+  "source_xml": "robots/g1/xmls/g1.xml",
   "coordinate_frame": "z_up_world (MuJoCo native)",
   "note": "Order/naming is the contract. Trajectory exporter (wbc-mjlab-5uw) must emit body_pos_w / body_quat_w (quat = w,x,y,z) per body in THIS order. Renderer sets each GLB node's world transform from those. Index 0 is the MuJoCo 'world' body; it has no mesh node in the GLB.",
   "body_count": 31,

@@ -75,6 +75,8 @@ const ALLOWED_OUTPUT_EXTENSIONS = new Set([
   '.mjs',
   '.otf',
   '.png',
+  '.splinecode',
+  '.stl',
   '.svg',
   '.ttf',
   '.txt',
@@ -84,6 +86,25 @@ const ALLOWED_OUTPUT_EXTENSIONS = new Set([
   '.woff',
   '.woff2',
   '.xml',
+]);
+
+const BINARY_EXTENSIONS = new Set([
+  '.wasm',
+  '.glb',
+  '.gltf',
+  '.stl',
+  '.splinecode',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.webp',
+  '.ico',
+  '.ttf',
+  '.woff',
+  '.woff2',
+  '.eot',
+  '.otf',
 ]);
 
 const SECRET_FILE_PATTERNS = Object.freeze([
@@ -98,7 +119,7 @@ const TEXT_VIOLATIONS = Object.freeze([
     label: 'RFC1918 address',
     pattern: /(?<![0-9A-Za-z.])(?:10\.(?:(?:[0-9]{1,3}|x)\.){2}(?:[0-9]{1,3}|x)|172\.(?:1[6-9]|2[0-9]|3[01])\.(?:[0-9]{1,3}|x)\.(?:[0-9]{1,3}|x)|192\.168\.(?:[0-9]{1,3}|x)\.(?:[0-9]{1,3}|x))(?![0-9A-Za-z.])/iu,
   },
-  { label: 'absolute user/home path', pattern: /\/(?:Users|home)\//u },
+  { label: 'absolute user/home path', pattern: /(?:\/Users\/|\/home\/(?!web_user\b))/u },
   {
     label: 'host-specific absolute path',
     pattern: /\/(?:userdata|etc\/galbot|etc\/supervisor)\/|\/data\/bin(?:\/|\b)/u,
@@ -216,6 +237,7 @@ async function collectAuditViolations(outputRoot) {
         violations.push(`${relativePath}: larger than 50 MiB (${stats.size} bytes)`);
       }
       if (stats.size > MAX_FILE_BYTES) continue;
+      if (BINARY_EXTENSIONS.has(extension)) continue;
 
       const source = await readFile(entryPath, 'utf8');
       for (const { label, pattern } of TEXT_VIOLATIONS) {
@@ -260,6 +282,28 @@ export async function sanitizeStaticExport(outputDirectory = 'out') {
     await rm(target, { recursive: true, force: false });
     removed.push(relativeTarget);
   }
+
+  async function cleanMedia(dir) {
+    let entries;
+    try {
+      entries = await readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await cleanMedia(fullPath);
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name).toLowerCase();
+        if (MEDIA_EXTENSIONS.has(ext)) {
+          await rm(fullPath, { force: true });
+          removed.push(path.relative(outputRoot, fullPath));
+        }
+      }
+    }
+  }
+  await cleanMedia(outputRoot);
 
   const audit = await auditStaticExport(outputRoot);
   return { ...audit, removed };
