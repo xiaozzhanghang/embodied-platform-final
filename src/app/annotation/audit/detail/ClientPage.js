@@ -1137,32 +1137,6 @@ export default function AnnotationAuditEpisodeListPage() {
           ]}
           back={<Button type="text" icon={<LeftOutlined />} onClick={() => router.push('/annotation/audit')} style={{ fontWeight: 500 }}>返回列表</Button>}
           extra={[
-            <Tag key="singleTypeTag" color={annoTypeColors[currentAnnoType] || 'blue'} style={{ fontSize: 13, padding: '3px 12px', fontWeight: 700, margin: 0 }}>
-              专项目标：{currentAnnoType}
-            </Tag>,
-            <Button
-              key="aiAnno"
-              type="primary"
-              icon={<RobotOutlined />}
-              onClick={handleOpenAiModal}
-              style={{
-                background: 'linear-gradient(135deg, #1677ff 0%, #2563eb 100%)',
-                borderColor: '#1677ff',
-                fontWeight: 600,
-                boxShadow: '0 2px 6px rgba(22, 119, 255, 0.28)'
-              }}
-            >
-              AI 标注
-            </Button>,
-            <Button
-              key="upload"
-              type="default"
-              icon={<UploadOutlined />}
-              onClick={() => { uploadForm.resetFields(); setUploadFileList([]); setIsUploadModalOpen(true); }}
-              style={{ fontWeight: 500 }}
-            >
-              上传数据
-            </Button>,
             <Button key="close" type="text" aria-label="关闭" icon={<CloseOutlined />} onClick={() => router.push('/annotation/audit')} />,
           ]}
         />
