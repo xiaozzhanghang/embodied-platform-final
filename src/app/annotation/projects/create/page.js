@@ -10,8 +10,9 @@ import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 const { Title, Text } = Typography;
 
 const ANNOTATION_TYPES = [
-  { value: '点标注', label: '点标注', color: 'purple', desc: '在图像/帧中标注关键点坐标，适用于关节点、目标中心等' },
-  { value: '范围标注', label: '范围标注', color: 'blue', desc: '标注动作的起止时间范围，用于动作分段' },
+  { value: '范围标注', label: '动作范围标注', color: 'blue', desc: '标注动作时序起止区间与工步，支持AI多模态大模型自动推理切分' },
+  { value: '手势标注', label: 'EGO手势关键点标注', color: 'green', desc: '标注21关节点拓扑坐标与抓握分类(Grasp Taxonomy)，适用于机械手/示教' },
+  { value: '点标注', label: '通用点标注', color: 'purple', desc: '在图像/帧中标注关键点坐标，适用于关节点、目标中心等' },
   { value: '框标注', label: '框标注（BBox）', color: 'orange', desc: '用矩形框圈选目标区域，适用于物体检测' },
   { value: '范围&框标注', label: '范围&框标注', color: 'geekblue', desc: '同时标注时间范围与空间边界框，复合任务' },
   { value: '无需标注', label: '无需标注', color: 'default', desc: '仅做质检，无需进行额外标注操作' },

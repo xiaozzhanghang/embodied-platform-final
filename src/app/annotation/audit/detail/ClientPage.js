@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Radio, Progress, List, Upload, InputNumber } from 'antd';
-import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Radio, Progress, List, Upload, InputNumber, Alert, Checkbox, Slider } from 'antd';
+import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined, ThunderboltOutlined, RobotOutlined, VideoCameraOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import { PageHeader, StatusTag, TableToolbarActions } from '@/components/ui';
@@ -12,11 +12,13 @@ import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const ANNO_TYPES = ['语义标注', '范围标注'];
+export const ANNO_TYPES = ['范围标注', '手势标注', '语义标注'];
 
 const annoTypeColors = {
-  '语义标注': 'blue',
-  '范围标注': 'purple',
+  '动作范围标注': 'blue',
+  '范围标注': 'blue',
+  '手势标注': 'green',
+  '语义标注': 'purple',
 };
 
 const annoStatusConfig = {
@@ -32,10 +34,183 @@ const auditStatusConfig = {
   '不通过': { color: 'error' },
 };
 
+// 专一标注类型 Episode 生成函数：严格保证每个任务详情页内 100% 仅有一种标注类型！
+const generateEpisodesForType = (type, instId) => {
+  const annoType = type === '动作范围标注' ? '范围标注' : type;
+
+  if (annoType === '手势标注') {
+    const gestureTasks = [
+      '工装模块电动拧紧装配双手手势标定 (DM_20260814173416_001)',
+      '双手21关节手势关键点标定 (Google MediaPipe 3D)',
+      '螺栓拾取双手抓握触觉姿态标定 (GoPro_Right)',
+      '电池包稳固双手接触点标定 (EgoCam_LeftRight)',
+      '电批扳机按压食指关节点标定 (GoPro_Macro)',
+      '双目第一视角双手骨骼点标定 (ZED2i_Stereo)',
+      '精细捏合手势姿态分类标定 (GoPro_Zoom)',
+      '双手托举物料位姿标定 (EgoCam_Wide)',
+      '工具抓放手势接触临界点标定 (GoPro_Hero11_02)',
+      '工装螺母精确定位手势标定 (EgoCam_Macro)'
+    ];
+
+    return Array.from({ length: 20 }).map((_, i) => {
+      const id = 744108 + i;
+      const annoStatus = i === 0 ? '未标注' : i < 6 ? '已标注' : i < 14 ? (i % 2 === 0 ? '未标注' : '待校验') : '未标注';
+      const auditStatus = annoStatus === '已标注' ? ['通过', '审核中', '未审核', '不通过'][i % 4] : annoStatus === '待校验' ? '审核中' : '未审核';
+      const totalFrames = i === 0 ? 9168 : 4800 + i * 240;
+      const taskName = gestureTasks[i % gestureTasks.length];
+
+      return {
+        key: `gesture-${id}`,
+        id,
+        episodeId: String(id),
+        taskName,
+        instance: `实例_${instId}_${String(i + 1).padStart(3, '0')}`,
+        annoTaskName: `双手21关节关键点标定_${['张三', '李四', '王五', '赵六'][i % 4]}`,
+        device: i % 2 === 0 ? 'Ego第一视角头戴相机 (GoPro)' : '双目立体视觉相机 (ZED 2i)',
+        annoType: '手势标注',
+        targetType: '手势标注',
+        totalFrames,
+        manualTime: annoStatus === '已标注' ? '2026-07-08 09:15:20' : '',
+        modelTime: '2026-07-08 08:35:00',
+        parseStatus: '解析完成',
+        annoStatus,
+        auditStatus,
+        hasError: i === 4 || i === 12,
+        segments: annoStatus !== '未标注' ? [
+          { start: Math.round(totalFrames * 0.1), end: Math.round(totalFrames * 0.35), text: '双手抓握准备：拇指食指精准捏合姿态标定', color: '#16a34a' },
+          { start: Math.round(totalFrames * 0.4), end: Math.round(totalFrames * 0.8), text: '触碰工装：双手21关节点解剖级定位与接触受力判定', color: '#2563eb' }
+        ] : []
+      };
+    });
+  }
+
+  if (annoType === '语义标注') {
+    const semanticTasks = [
+      '抓取猕猴桃放置果盘语义解析 (Galbot_Episode_01)',
+      '移动高脚杯至清洗区原子动作语义 (Galbot_Episode_02)',
+      '旋转微调液压阀门动作语义四元组 (Industrial_Episode_03)',
+      '装配工具盒开盖取螺丝刀操作语义 (Assembly_Episode_04)',
+      '细粒度动作语义四元组标定 (Galbot_Episode_05)',
+      '双臂协同物料搬运语义解析 (DualArm_Episode_06)',
+      '工位清洁与物料归位语义解析 (Clean_Episode_07)',
+      '托盘装载与定点放置操作语义 (Place_Episode_08)',
+      '抽屉开关与工具抓取原子动作 (Drawer_Episode_09)',
+      '多视角动作语义意图分类 (Intent_Episode_10)'
+    ];
+
+    return Array.from({ length: 20 }).map((_, i) => {
+      const id = 744108 + i;
+      const annoStatus = i === 0 ? '未标注' : i < 6 ? '已标注' : i < 14 ? (i % 2 === 0 ? '未标注' : '待校验') : '未标注';
+      const auditStatus = annoStatus === '已标注' ? ['通过', '审核中', '未审核', '不通过'][i % 4] : annoStatus === '待校验' ? '审核中' : '未审核';
+      const totalFrames = i === 0 ? 2400 : 1800 + i * 120;
+      const taskName = semanticTasks[i % semanticTasks.length];
+
+      return {
+        key: `semantic-${id}`,
+        id,
+        episodeId: String(id),
+        taskName,
+        instance: `实例_${instId}_${String(i + 1).padStart(3, '0')}`,
+        annoTaskName: `动作语义四元组标定_${['张三', '李四', '王五', '赵六'][i % 4]}`,
+        device: '双臂手眼协同设备 (Galbot-1.16)',
+        annoType: '语义标注',
+        targetType: '语义标注',
+        totalFrames,
+        manualTime: annoStatus === '已标注' ? '2026-07-08 09:12:16' : '',
+        modelTime: '2026-07-08 08:30:00',
+        parseStatus: '解析完成',
+        annoStatus,
+        auditStatus,
+        hasError: i === 3 || i === 11,
+        segments: annoStatus !== '未标注' ? [
+          { start: Math.round(totalFrames * 0.15), end: Math.round(totalFrames * 0.45), text: 'pick {Kiwi} from {desktop} [Agent: 右手, Skill: Pick, Object: 猕猴桃]', color: '#2563eb' },
+          { start: Math.round(totalFrames * 0.55), end: Math.round(totalFrames * 0.9), text: 'place {Kiwi} on {Fruit Bowl} [Agent: 双手, Skill: Place, Object: 果盘]', color: '#16a34a' }
+        ] : []
+      };
+    });
+  }
+
+  // 默认：范围标注 (动作时序范围切分)
+  const rangeTasks = [
+    '螺丝预装配示教录像 (ego_cam1)',
+    '电池模组紧固装配示教 (ego_cam2)',
+    '零部件扫码与对齐示教 (station_cam)',
+    '充电口盖板扣合装配示教 (ego_cam1)',
+    '电动拧紧枪回位示教 (station_cam2)',
+    '托盘抓取与定点放置示教 (cam_top)',
+    '右侧紧固件装配示教 (ego_cam1)',
+    '工装卡爪开合动作切分 (station_cam)',
+    '双目时钟同步二维码校准 (ego_cam1)',
+    '工装基准对齐时序标定 (station_cam2)'
+  ];
+
+  return Array.from({ length: 20 }).map((_, i) => {
+    const id = 744108 + i;
+    const annoStatus = i === 0 ? '未标注' : i < 6 ? '已标注' : i < 14 ? (i % 2 === 0 ? '未标注' : '待校验') : '未标注';
+    const auditStatus = annoStatus === '已标注' ? ['通过', '审核中', '未审核', '不通过'][i % 4] : annoStatus === '待校验' ? '审核中' : '未审核';
+    const totalFrames = i === 0 ? 3454 : 2600 + i * 180;
+    const taskName = rangeTasks[i % rangeTasks.length];
+
+    return {
+      key: `range-${id}`,
+      id,
+      episodeId: String(id),
+      taskName,
+      instance: `实例_${instId}_${String(i + 1).padStart(3, '0')}`,
+      annoTaskName: `打螺丝工步时序范围切分_${['张三', '李四', '王五', '赵六'][i % 4]}`,
+      device: '天奇新动力 (Ego-Cam1)',
+      annoType: '范围标注',
+      targetType: '范围标注',
+      totalFrames,
+      manualTime: annoStatus === '已标注' ? '2026-07-08 09:12:16' : '',
+      modelTime: '2026-07-08 08:30:00',
+      parseStatus: '解析完成',
+      annoStatus,
+      auditStatus,
+      hasError: i === 3 || i === 11,
+      segments: annoStatus !== '未标注' ? [
+        { start: 0, end: Math.round(totalFrames * 0.15), text: '双手持手机近景展示二维码完成时钟同步对齐', color: '#2563eb' },
+        { start: Math.round(totalFrames * 0.15), end: Math.round(totalFrames * 0.4), text: '右手向前探出拾取电动螺栓枪并移至待命区', color: '#16a34a' },
+        { start: Math.round(totalFrames * 0.4), end: totalFrames, text: '双手扶持电池模组，对准预装配螺栓紧固拧紧', color: '#7c3aed' }
+      ] : []
+    };
+  });
+};
+
 export default function AnnotationAuditEpisodeListPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const instanceId = searchParams.get('id') || '19884';
+  const typeParam = searchParams.get('type');
+
+  // 根据 URL 参数或 instanceId 确定当前任务唯一且固定的标注类型（手势标注 / 范围标注 / 语义标注）
+  const currentAnnoType = useMemo(() => {
+    if (typeParam) {
+      if (typeParam === '动作范围标注' || typeParam === '范围标注') return '范围标注';
+      if (typeParam === '手势标注') return '手势标注';
+      if (typeParam === '语义标注') return '语义标注';
+    }
+    // 优先读取 localStorage 中的任务配置
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('embodied_anno_tasks_v2');
+        if (saved) {
+          const list = JSON.parse(saved);
+          const found = list.find(t => String(t.instanceId) === String(instanceId) || String(t.id) === String(instanceId));
+          if (found && found.annoType) {
+            return found.annoType === '动作范围标注' ? '范围标注' : found.annoType;
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    // 默认映射：19883为手势标注，19882为语义标注，19884为范围标注
+    if (String(instanceId) === '19883') return '手势标注';
+    if (String(instanceId) === '19882') return '语义标注';
+    return '范围标注';
+  }, [typeParam, instanceId]);
+
   const [activeAnnoTab, setActiveAnnoTab] = useState('unannotated');
   const [tableDensity, setTableDensity] = useState('middle');
   const [hiddenColumns, setHiddenColumns] = useState([]);
@@ -52,47 +227,12 @@ export default function AnnotationAuditEpisodeListPage() {
   const [filterAuditStatus, setFilterAuditStatus] = useState(null);
   const [filterId, setFilterId] = useState('');
 
+  // Stateful list of episodes for dynamic updates: 100% 遵循单一标注类型 currentAnnoType
+  const [episodes, setEpisodes] = useState(() => generateEpisodesForType(currentAnnoType, instanceId));
 
-  // Stateful list of episodes for dynamic updates
-  const [episodes, setEpisodes] = useState(() => {
-    return Array.from({ length: 20 }).map((_, i) => {
-      const isDual = i % 2 === 0;
-      const device = isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)';
-      const annoType = isDual ? '语义标注' : '范围标注';
-
-      const annoStatuses = ['已标注', '未标注', '待校验'];
-      const auditStatuses = ['未审核', '审核中', '通过', '不通过'];
-      const annoStatus = i < 6 ? '已标注' : i < 16 ? annoStatuses[i % 3] : '未标注';
-      const auditStatus = (annoStatus === '已标注' || annoStatus === '待校验') ? auditStatuses[i % 4] : '未审核';
-      const totalFrames = 120 + (i * 12);
-
-      return {
-        key: i,
-        id: 744101 + i,
-        taskName: isDual ? ['抓取猕猴桃', '移动杯子', '扭动阀门'][i % 3] : ['桌面整理', '垃圾分类', '抽屉开关'][i % 3],
-        instance: `实例_${instanceId}_${String(i + 1).padStart(3, '0')}`,
-        annoTaskName: `标注任务_${['张三', '李四', '王五', '赵六'][i % 4]}_${String(i + 1).padStart(2, '0')}`,
-        device,
-        annoType,
-        totalFrames,
-        manualTime: (annoStatus === '已标注' || annoStatus === '待校验') ? `2026-07-08 09:12:16` : '',
-        modelTime: i % 5 === 0 ? `2026-07-08 08:00:00` : '',
-        parseStatus: '解析完成',
-        annoStatus,
-        auditStatus,
-        hasError: i === 3 || i === 11,
-        segments: (annoStatus === '已标注' || annoStatus === '待校验') ? (
-          isDual ? [
-            { start: Math.round(totalFrames * 0.15), end: Math.round(totalFrames * 0.45), text: 'pick {Kiwi} from {desktop}', color: '#2563eb' },
-            { start: Math.round(totalFrames * 0.55), end: Math.round(totalFrames * 0.85), text: 'place {Kiwi} on {Fruit Bowl}', color: '#16a34a' }
-          ] : [
-            { start: Math.round(totalFrames * 0.1), end: Math.round(totalFrames * 0.4), text: '右手从置物架抓取药品到药房工作台', color: '#13c2c2' },
-            { start: Math.round(totalFrames * 0.5), end: Math.round(totalFrames * 0.9), text: '双手从台面上方放置托盘到桌子', color: '#1890ff' }
-          ]
-        ) : []
-      };
-    });
-  });
+  useEffect(() => {
+    setEpisodes(generateEpisodesForType(currentAnnoType, instanceId));
+  }, [currentAnnoType, instanceId]);
 
   // Table Row Selection States
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -102,8 +242,28 @@ export default function AnnotationAuditEpisodeListPage() {
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [batchTemplateId, setBatchTemplateId] = useState(null);
   const [batchStrategy, setBatchStrategy] = useState('proportional');
+  const [batchTargetScope, setBatchTargetScope] = useState('unannotated'); // 'selected' | 'unannotated' | 'all'
   const [isCopying, setIsCopying] = useState(false);
   const [copyProgress, setCopyProgress] = useState(0);
+
+  // AI Annotation States (与工作台保持一致的交互架构)
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiInferenceStep, setAiInferenceStep] = useState('config'); // 'config' | 'inferring' | 'review'
+  const [aiProgress, setAiProgress] = useState(0);
+  const [aiProgressStage, setAiProgressStage] = useState('');
+  const [aiModel, setAiModel] = useState('local_qwen');
+  const [aiMode, setAiMode] = useState('full_segmentation'); // 'full_segmentation' | 'window_sliding' | 'template_align'
+  const [aiFramesPerWindow, setAiFramesPerWindow] = useState(6);
+  const [aiConfidenceThreshold, setAiConfidenceThreshold] = useState(85);
+  const [aiStrategy, setAiStrategy] = useState('append'); // 'append' | 'replace' | 'conflict_detect'
+  const [aiCandidateSteps, setAiCandidateSteps] = useState([]);
+  const [aiSelectedCandidateIds, setAiSelectedCandidateIds] = useState([]);
+  const [aiAudit, setAiAudit] = useState({
+    latencyMs: 1180,
+    tokens: 2420,
+    traceId: 'qwen_06ffd6466ef0',
+    endpoint: 'qwen2.5-vl-7b (HTTP 200 OK)'
+  });
 
   // Template Search & Category Filter State
   const [templateSearchKeyword, setTemplateSearchKeyword] = useState('');
@@ -232,9 +392,311 @@ export default function AnnotationAuditEpisodeListPage() {
     return allTemplates.find(t => String(t.id) === String(batchTemplateId)) || defaultSystemTemplate;
   };
 
+  const handleOpenAiModal = () => {
+    setAiInferenceStep('config');
+    setAiProgress(0);
+    setAiProgressStage('');
+    setIsAiModalOpen(true);
+  };
+
+  // AI 自动标注处理函数 (与工作台保持 100% 一致)
+  const handleStartAiInference = () => {
+    setAiInferenceStep('inferring');
+    setAiProgress(15);
+    setAiProgressStage('阶段 1/5: 视频时序密集采样 (覆盖 3454 帧全视频 00:00~01:55 全程，提取动作关键切片)...');
+
+    setTimeout(() => {
+      setAiAudit({
+        latencyMs: 1180,
+        tokens: 2420,
+        traceId: 'qwen_' + Math.random().toString(16).substring(2, 14),
+        endpoint: 'qwen2.5-vl-7b (HTTP 200 OK)'
+      });
+    }, 1100);
+
+    setTimeout(() => {
+      setAiProgress(38);
+      setAiProgressStage('阶段 2/5: 连接通义千问 Qwen2.5-VL 视觉内核，执行多模态时序切分...');
+    }, 600);
+
+    setTimeout(() => {
+      setAiProgress(68);
+      setAiProgressStage(`阶段 3/5: Qwen2.5-VL 云端推理响应成功 (HTTP 200 OK · 耗时 1180ms) · 提取机械臂姿态与接触临界点...`);
+    }, 1200);
+
+    setTimeout(() => {
+      setAiProgress(88);
+      setAiProgressStage('阶段 4/5: 工业动作语义四元组解析与受控词表匹配 (12 组工步首尾相连，0 时序空隙)...');
+    }, 1800);
+
+    setTimeout(() => {
+      setAiProgress(100);
+      setAiProgressStage('阶段 5/5: 🎉 通义千问 Qwen2.5-VL 动作切分完成！全视频 3454 帧 100% 满铺覆盖，共生成 12 个连贯工步！');
+
+      const candidates = [
+        {
+          id: 101,
+          text: '双手持手机近景展示二维码完成时钟同步对齐',
+          arm: '双手 (Dual Arms)',
+          skill: '基准校准',
+          object: '动态时钟二维码',
+          goal: '多视场时钟对齐 (<10ms)',
+          startFrame: 0,
+          endFrame: 368,
+          color: '#2563eb',
+          confidence: '99.8%',
+          graspType: '双手托举持握',
+          speedProfile: '平稳静止 (0.05m/s)',
+          torqueLimit: '3.0 N·m',
+          vlaToken: 'ACTION_QR_SYNC',
+          isAiGenerated: true,
+        },
+        {
+          id: 102,
+          text: '手机撤出视场，操作员步入装配工位准备',
+          arm: '双手 (Dual Arms)',
+          skill: '工位就绪',
+          object: '装配工作台',
+          goal: '进入操作视场完成净空',
+          startFrame: 368,
+          endFrame: 520,
+          color: '#64748b',
+          confidence: '99.1%',
+          graspType: '释手待命',
+          speedProfile: '平稳步入 (0.4m/s)',
+          torqueLimit: '0.0 N·m',
+          vlaToken: 'ACTION_ENTER_STATION',
+          isAiGenerated: true,
+        },
+        {
+          id: 103,
+          text: '右手向前探出拾取电动螺栓枪并移至待命区',
+          arm: '右手 (Right Arm)',
+          skill: '工具拾取',
+          object: '电动螺栓枪/电钻',
+          goal: '牢固握持提升至待命高度',
+          startFrame: 520,
+          endFrame: 720,
+          color: '#16a34a',
+          confidence: '99.5%',
+          graspType: '枪式力矩握持',
+          speedProfile: '匀速拾取 (0.35m/s)',
+          torqueLimit: '12.0 N·m',
+          vlaToken: 'ACTION_PICKUP_DRILL',
+          isAiGenerated: true,
+        },
+        {
+          id: 104,
+          text: '左手扶持第1电池模组，右手对准安装孔螺栓',
+          arm: '双手 (Dual Arms)',
+          skill: '协同对齐',
+          object: '第1电池模组与螺栓',
+          goal: '钻头精准对准螺栓槽',
+          startFrame: 720,
+          endFrame: 1100,
+          color: '#0284c7',
+          confidence: '99.2%',
+          graspType: '双臂协同定位',
+          speedProfile: '精密对齐 (0.15m/s)',
+          torqueLimit: '8.0 N·m',
+          vlaToken: 'ACTION_ALIGN_MODULE_1',
+          isAiGenerated: true,
+        },
+        {
+          id: 105,
+          text: '右手电钻紧固第1模组固定螺栓达定扭锁死',
+          arm: '右手 (Right Arm)',
+          skill: '定扭紧固',
+          object: '模组螺栓 (第1组)',
+          goal: '达到定扭扭矩 8.5N·m 紧固',
+          startFrame: 1100,
+          endFrame: 1480,
+          color: '#ea580c',
+          confidence: '99.6%',
+          graspType: '动力输出锁紧',
+          speedProfile: '定扭低速 (0.1m/s)',
+          torqueLimit: '22.5 N·m',
+          vlaToken: 'ACTION_FASTEN_MODULE_1',
+          isAiGenerated: true,
+        },
+        {
+          id: 106,
+          text: '工位微调，左手按压第2模组，右手对齐侧向安装孔',
+          arm: '双手 (Dual Arms)',
+          skill: '工件压合',
+          object: '第2电池模组',
+          goal: '消除侧隙并对齐孔位',
+          startFrame: 1480,
+          endFrame: 1820,
+          color: '#7c3aed',
+          confidence: '98.9%',
+          graspType: '侧向压紧定位',
+          speedProfile: '平稳对准 (0.2m/s)',
+          torqueLimit: '15.0 N·m',
+          vlaToken: 'ACTION_ALIGN_MODULE_2',
+          isAiGenerated: true,
+        },
+        {
+          id: 107,
+          text: '右手电钻高速旋拧紧固第2模组侧向螺栓',
+          arm: '右手 (Right Arm)',
+          skill: '定扭紧固',
+          object: '模组螺栓 (第2组)',
+          goal: '紧固侧向支架螺栓定扭',
+          startFrame: 1820,
+          endFrame: 2160,
+          color: '#d946ef',
+          confidence: '99.3%',
+          graspType: '动力输出锁紧',
+          speedProfile: '定扭低速 (0.1m/s)',
+          torqueLimit: '22.0 N·m',
+          vlaToken: 'ACTION_FASTEN_MODULE_2',
+          isAiGenerated: true,
+        },
+        {
+          id: 108,
+          text: '右手对准并拧紧电池包金属提手支架螺栓',
+          arm: '右手 (Right Arm)',
+          skill: '结构紧固',
+          object: '金属提手固定螺栓',
+          goal: '完全锁定提手支架',
+          startFrame: 2160,
+          endFrame: 2480,
+          color: '#059669',
+          confidence: '99.0%',
+          graspType: '动力输出锁紧',
+          speedProfile: '定扭低速 (0.1m/s)',
+          torqueLimit: '20.0 N·m',
+          vlaToken: 'ACTION_FASTEN_BRACKET',
+          isAiGenerated: true,
+        },
+        {
+          id: 109,
+          text: '右手平稳将电动螺栓枪放回台面右侧托架并脱手',
+          arm: '右手 (Right Arm)',
+          skill: '工具归位',
+          object: '电动螺栓枪托架',
+          goal: '安全归位工具释手',
+          startFrame: 2480,
+          endFrame: 2720,
+          color: '#475569',
+          confidence: '99.4%',
+          graspType: '松开释放',
+          speedProfile: '平稳归位 (0.3m/s)',
+          torqueLimit: '4.0 N·m',
+          vlaToken: 'ACTION_PUTDOWN_DRILL',
+          isAiGenerated: true,
+        },
+        {
+          id: 110,
+          text: '装配完成，操作员双手释手并直立后退脱离工作台',
+          arm: '双手 (Dual Arms)',
+          skill: '作业释手',
+          object: '电池包与工作台',
+          goal: '完全脱离装配接触',
+          startFrame: 2720,
+          endFrame: 2950,
+          color: '#0891b2',
+          confidence: '98.8%',
+          graspType: '零力矩释放',
+          speedProfile: '后退释手 (0.4m/s)',
+          torqueLimit: '0.0 N·m',
+          vlaToken: 'ACTION_STEP_BACK',
+          isAiGenerated: true,
+        },
+        {
+          id: 111,
+          text: '步巡离开工位，配合多目传感器完成示教后视场核验',
+          arm: '双手 (Dual Arms)',
+          skill: '环境核验',
+          object: '周边多目传感器',
+          goal: '确认台面作业质量及无遮挡',
+          startFrame: 2950,
+          endFrame: 3250,
+          color: '#ca8a04',
+          confidence: '98.5%',
+          graspType: '自然下垂',
+          speedProfile: '步巡移动 (0.5m/s)',
+          torqueLimit: '0.0 N·m',
+          vlaToken: 'ACTION_INSPECT_AREA',
+          isAiGenerated: true,
+        },
+        {
+          id: 112,
+          text: '双臂与身体回到初始待命区，示教采集任务结束',
+          arm: '双手 (Dual Arms)',
+          skill: '任务结束',
+          object: '示教待命区',
+          goal: '回到原点待命终止录制',
+          startFrame: 3250,
+          endFrame: 3454,
+          color: '#6366f1',
+          confidence: '99.7%',
+          graspType: '初始待命姿态',
+          speedProfile: '复位归零 (0.3m/s)',
+          torqueLimit: '0.0 N·m',
+          vlaToken: 'ACTION_FINISH_DEMO',
+          isAiGenerated: true,
+        },
+      ];
+
+      setAiCandidateSteps(candidates);
+      setAiSelectedCandidateIds(candidates.map(c => c.id));
+      setAiInferenceStep('review');
+    }, 2400);
+  };
+
+  // 确认导入并应用 AI 识别动作步骤至实例列表
+  const handleApplyAiSteps = () => {
+    let selected = aiCandidateSteps.filter(s => aiSelectedCandidateIds.includes(s.id));
+    if (selected.length === 0) {
+      selected = aiCandidateSteps;
+    }
+    if (selected.length === 0) {
+      message.warning('请至少勾选一个 AI 识别步骤');
+      return;
+    }
+
+    const segmentsFromAi = selected.map(step => ({
+      start: step.startFrame,
+      end: step.endFrame,
+      text: step.text,
+      color: step.color || '#2563eb'
+    }));
+
+    const targetEpisodes = selectedRowKeys.length > 0
+      ? episodes.filter(e => selectedRowKeys.includes(e.key))
+      : episodes.filter(e => e.annoStatus !== '已标注');
+
+    const targetKeys = targetEpisodes.length > 0 
+      ? targetEpisodes.map(e => e.key)
+      : [episodes[0].key];
+
+    const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+    setEpisodes(prev => prev.map(ep => {
+      if (targetKeys.includes(ep.key)) {
+        return {
+          ...ep,
+          annoStatus: '待校验',
+          modelTime: nowStr,
+          segments: segmentsFromAi
+        };
+      }
+      return ep;
+    }));
+
+    setIsAiModalOpen(false);
+    setSelectedRowKeys([]);
+    setSelectedRows([]);
+    setActiveAnnoTab('to_verify');
+    message.success(`🎉 AI 智能标注完成！已成功将通义千问 Qwen2.5-VL 推理的 ${selected.length} 项动作工步导入实例数据（自动切换至【待校验】页签）。`);
+  };
+
   const handleOpenBatchModal = () => {
-    // Smart match top template based on selected rows
-    const firstRow = selectedRows[0];
+    // If rows are selected, default to 'selected'; otherwise default to 'unannotated'
+    setBatchTargetScope(selectedRowKeys.length > 0 ? 'selected' : 'unannotated');
+    const firstRow = selectedRows[0] || episodes.find(e => e.annoStatus !== '已标注') || episodes[0];
     const recommended = allTemplates.find(t => 
       firstRow && (t.annoType === firstRow.annoType || t.device === firstRow.device)
     ) || allTemplates[0];
@@ -284,17 +746,30 @@ export default function AnnotationAuditEpisodeListPage() {
   const handleStartBatchCopy = () => {
     setIsCopying(true);
     setCopyProgress(0);
-    const activeBatchType = getActiveBatchType();
+    const template = getSelectedTemplate();
+
+    const targets = batchTargetScope === 'selected' && selectedRowKeys.length > 0
+      ? episodes.filter(ep => selectedRowKeys.includes(ep.key))
+      : batchTargetScope === 'all'
+        ? episodes
+        : episodes.filter(ep => ep.annoStatus !== '已标注');
+
+    if (targets.length === 0) {
+      message.warning('当前范围内无待适配的目标实例');
+      setIsCopying(false);
+      return;
+    }
+
+    const targetKeys = targets.map(t => t.key);
 
     const interval = setInterval(() => {
       setCopyProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
-          const template = getSelectedTemplate();
 
           setEpisodes(prevEpisodes => {
             return prevEpisodes.map(ep => {
-              if (selectedRowKeys.includes(ep.key) && ep.id !== template.id && ep.annoType === activeBatchType) {
+              if (targetKeys.includes(ep.key) && ep.id !== template.id) {
                 const adjustedSegments = applyStrategy(
                   template.segments,
                   batchStrategy,
@@ -319,12 +794,12 @@ export default function AnnotationAuditEpisodeListPage() {
             setSelectedRowKeys([]);
             setSelectedRows([]);
             setActiveAnnoTab('to_verify');
-            message.success(`✨ 批量标注完成！已自动为您切换至【待校验】页签等待审核。`);
+            message.success(`✨ 批量时序适配标注完成！已自动为您切换至【待校验】页签等待审核。`);
           }, 300);
 
           return 100;
         }
-        return prev + 10;
+        return prev + 15;
       });
     }, 100);
   };
@@ -376,8 +851,9 @@ export default function AnnotationAuditEpisodeListPage() {
                 taskName: values.dataType === 'mp4' ? '抓取物品示范(RGB视频)' : values.dataType === 'trajectory' ? '桌面整理任务(双臂协同)' : '垃圾分类投放(点位)',
                 instance: `实例_${instanceId}_${String(currentLength + 1).padStart(3, '0')}`,
                 annoTaskName: `自动解析标注_${String(currentLength + 1).padStart(2, '0')}`,
-                device: isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)',
-                annoType: isDual ? '语义标注' : '范围标注',
+                device: isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '天奇新动力 (Ego-Cam1)',
+                annoType: currentAnnoType,
+                targetType: currentAnnoType,
                 totalFrames: values.totalFrames || 150,
                 manualTime: '',
                 modelTime: nowStr,
@@ -393,8 +869,9 @@ export default function AnnotationAuditEpisodeListPage() {
                 taskName: values.dataType === 'mp4' ? '移动水杯演示(RGB视频)' : values.dataType === 'trajectory' ? '旋转圆形阀门(双臂)' : '工具使用反馈',
                 instance: `实例_${instanceId}_${String(currentLength + 2).padStart(3, '0')}`,
                 annoTaskName: `自动解析标注_${String(currentLength + 2).padStart(2, '0')}`,
-                device: isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)',
-                annoType: isDual ? '语义标注' : '范围标注',
+                device: isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '天奇新动力 (Ego-Cam1)',
+                annoType: currentAnnoType,
+                targetType: currentAnnoType,
                 totalFrames: values.totalFrames || 180,
                 manualTime: '',
                 modelTime: nowStr,
@@ -410,8 +887,9 @@ export default function AnnotationAuditEpisodeListPage() {
                 taskName: values.dataType === 'mp4' ? '垃圾处理教学(RGB视频)' : values.dataType === 'trajectory' ? '餐盘整理序列' : '开合抽屉轨迹',
                 instance: `实例_${instanceId}_${String(currentLength + 3).padStart(3, '0')}`,
                 annoTaskName: `自动解析标注_${String(currentLength + 3).padStart(2, '0')}`,
-                device: isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '单臂物理遥操设备 (Air-SN201)',
-                annoType: isDual ? '语义标注' : '范围标注',
+                device: isDual ? '双臂手眼协同设备 (Galbot-1.16)' : '天奇新动力 (Ego-Cam1)',
+                annoType: currentAnnoType,
+                targetType: currentAnnoType,
                 totalFrames: values.totalFrames || 210,
                 manualTime: '',
                 modelTime: nowStr,
@@ -505,7 +983,7 @@ export default function AnnotationAuditEpisodeListPage() {
       return idMatch && annoMatch && auditMatch;
     });
 
-    // Sort: '可标注' (annoStatus !== '已标注' && annoStatus !== '待校验') at the top, '已标注'/'待校验' at the bottom
+    // Sort: '未标注' 置前，已标注/待校验置后
     return [...list].sort((a, b) => {
       const aIsFinished = a.annoStatus === '已标注' || a.annoStatus === '待校验';
       const bIsFinished = b.annoStatus === '已标注' || b.annoStatus === '待校验';
@@ -523,7 +1001,7 @@ export default function AnnotationAuditEpisodeListPage() {
 
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 90, render: (t) => <Text style={{ fontFamily: 'monospace', color: '#1677ff' }}>{t}</Text> },
-    { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 120 },
+    { title: '任务名称', dataIndex: 'taskName', key: 'taskName', width: 140 },
     { title: '实例', dataIndex: 'instance', key: 'instance', width: 160, ellipsis: true },
     { 
       title: '采集设备', 
@@ -542,8 +1020,8 @@ export default function AnnotationAuditEpisodeListPage() {
     },
     { title: '标注任务名', dataIndex: 'annoTaskName', width: 180, ellipsis: true },
     {
-      title: '标注类型', dataIndex: 'annoType', width: 110, align: 'center',
-      render: (t) => <Tag color={annoTypeColors[t]} style={{ margin: 0 }}>{t}</Tag>
+      title: '标注类型', dataIndex: 'annoType', width: 120, align: 'center',
+      render: (t) => <Tag color={annoTypeColors[t] || 'blue'} style={{ margin: 0, fontWeight: 600 }}>{t}</Tag>
     },
     { title: '数据帧数', dataIndex: 'totalFrames', width: 100, align: 'right', render: (t) => <strong>{t} f</strong> },
     { title: '人工标注时间', dataIndex: 'manualTime', width: 160, render: (t) => t || <Text type="secondary">-</Text> },
@@ -583,6 +1061,8 @@ export default function AnnotationAuditEpisodeListPage() {
     {
       title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_, r) => {
+        const targetType = currentAnnoType;
+        const targetEpisodeId = r.episodeId || r.id;
         return (
           <Space size={4}>
             <Button 
@@ -593,8 +1073,8 @@ export default function AnnotationAuditEpisodeListPage() {
               disabled={r.annoStatus === '已标注' || r.annoStatus === '待校验' || activeAnnoTab === 'to_verify'}
               onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditWorkbench, {
                 id: instanceId,
-                episodeId: r.id,
-                type: r.annoType,
+                episodeId: targetEpisodeId,
+                type: targetType,
                 mode: 'annotate',
               }))}
             >
@@ -607,8 +1087,8 @@ export default function AnnotationAuditEpisodeListPage() {
               style={{ padding: '0 4px' }}
               onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditWorkbench, {
                 id: instanceId,
-                episodeId: r.id,
-                type: r.annoType,
+                episodeId: targetEpisodeId,
+                type: targetType,
                 mode: 'view',
               }))}
             >
@@ -648,21 +1128,38 @@ export default function AnnotationAuditEpisodeListPage() {
     <MainLayout>
       <div className="ui-page ui-detail-page">
         <PageHeader
-          title={`标注工作台 — 实例 #${instanceId}`}
-          description="统一查看、标注与审核当前实例的 Episode 数据"
+          title={`标注工作台 — 实例 #${instanceId} (${currentAnnoType})`}
+          description={`统一管理当前任务【${currentAnnoType}】下的视频切片与数据标注进度。本任务单一专项目标：【${currentAnnoType}】，已按规范隔离其他标注类型。`}
           breadcrumbs={[
             { title: '数据标注' },
             { title: '标注工作台', href: '/annotation/audit' },
-            { title: '实例详情' },
+            { title: `实例详情 (${currentAnnoType})` },
           ]}
           back={<Button type="text" icon={<LeftOutlined />} onClick={() => router.push('/annotation/audit')} style={{ fontWeight: 500 }}>返回列表</Button>}
           extra={[
+            <Tag key="singleTypeTag" color={annoTypeColors[currentAnnoType] || 'blue'} style={{ fontSize: 13, padding: '3px 12px', fontWeight: 700, margin: 0 }}>
+              专项目标：{currentAnnoType}
+            </Tag>,
+            <Button
+              key="aiAnno"
+              type="primary"
+              icon={<RobotOutlined />}
+              onClick={handleOpenAiModal}
+              style={{
+                background: 'linear-gradient(135deg, #1677ff 0%, #2563eb 100%)',
+                borderColor: '#1677ff',
+                fontWeight: 600,
+                boxShadow: '0 2px 6px rgba(22, 119, 255, 0.28)'
+              }}
+            >
+              AI 标注
+            </Button>,
             <Button
               key="upload"
-              type="primary"
+              type="default"
               icon={<UploadOutlined />}
               onClick={() => { uploadForm.resetFields(); setUploadFileList([]); setIsUploadModalOpen(true); }}
-              style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
+              style={{ fontWeight: 500 }}
             >
               上传数据
             </Button>,
@@ -716,12 +1213,29 @@ export default function AnnotationAuditEpisodeListPage() {
             <Row gutter={[12, 12]} style={{ width: '100%' }}>
               <Col><Input placeholder="ID" style={{ width: 140 }} value={filterId} onChange={e => setFilterId(e.target.value)} prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear /></Col>
               <Col>
-                <Select placeholder="标注状态" style={{ width: 160 }} allowClear value={filterAnnoStatus} onChange={setFilterAnnoStatus}
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  height: 32,
+                  padding: '0 10px',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 6
+                }}>
+                  <span style={{ fontSize: 12, color: '#64748b' }}>标注类型:</span>
+                  <Tag color={annoTypeColors[currentAnnoType] || 'blue'} style={{ margin: 0, fontWeight: 700 }}>
+                    {currentAnnoType}（本任务单一固定）
+                  </Tag>
+                </div>
+              </Col>
+              <Col>
+                <Select placeholder="标注状态" style={{ width: 140 }} allowClear value={filterAnnoStatus} onChange={setFilterAnnoStatus}
                   options={['已标注', '未标注', '待校验'].map(s => ({ label: s, value: s }))}
                 />
               </Col>
               <Col>
-                <Select placeholder="审核状态" style={{ width: 160 }} allowClear value={filterAuditStatus} onChange={setFilterAuditStatus}
+                <Select placeholder="审核状态" style={{ width: 140 }} allowClear value={filterAuditStatus} onChange={setFilterAuditStatus}
                   options={['未审核', '审核中', '通过', '不通过'].map(s => ({ label: s, value: s }))}
                 />
               </Col>
@@ -735,69 +1249,70 @@ export default function AnnotationAuditEpisodeListPage() {
           </Form>
         </div>
 
-        {/* Interactive Floating Selection alert bar */}
-        {selectedRowKeys.length > 0 && (
-          <div className="ui-toolbar" style={{
-            background: '#e6f4ff',
-            border: '1px solid #91caff',
-            padding: '12px 18px',
-            borderRadius: 8,
-            marginBottom: 16,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-          }}>
-            <Space size={12}>
-              <span style={{ fontSize: 13, color: '#0958d9', fontWeight: 600 }}>
-                已选中 {selectedRowKeys.length} 个实例数据
-              </span>
-              <span style={{ fontSize: 12, color: '#4b5563' }}>
-                (其中已标注: {selectedRows.filter(r => r.annoStatus === '已标注').length} 个，未标注: {selectedRows.filter(r => r.annoStatus !== '已标注').length} 个)
-              </span>
-            </Space>
-            <Space>
-              <Button 
-                type="primary" 
-                size="middle" 
-                icon={<CopyOutlined />} 
-                style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
-                onClick={handleOpenBatchModal}
-              >
-                批量时序适配标注
-              </Button>
-              <Button 
-                size="middle" 
-                danger
-                icon={<UndoOutlined />}
-                onClick={handleBatchReset}
-              >
-                批量清除标注
-              </Button>
-              <Button 
-                size="middle"
-                type="text"
-                onClick={() => { setSelectedRowKeys([]); setSelectedRows([]); }}
-              >
-                取消选择
-              </Button>
-            </Space>
-          </div>
-        )}
-
         {/* Table Section */}
         <Card
           className="ui-table-card"
-          title={<span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>数据列表</span>}
+          title={
+            <Space size={12} style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontWeight: 'bold', fontSize: '15px', color: '#1e293b' }}>数据列表</span>
+              {selectedRowKeys.length > 0 && (
+                <span style={{ fontSize: 12, color: '#0958d9', fontWeight: 600, marginLeft: 4 }}>
+                  已选 {selectedRowKeys.length} 条
+                  <Button size="small" type="link" style={{ fontSize: 12, padding: '0 4px' }} onClick={() => { setSelectedRowKeys([]); setSelectedRows([]); }}>取消</Button>
+                </span>
+              )}
+            </Space>
+          }
           extra={
-            <TableToolbarActions
-              columns={columns}
-              density={tableDensity}
-              onDensityChange={setTableDensity}
-              hiddenColumns={hiddenColumns}
-              onHiddenColumnsChange={setHiddenColumns}
-              onRefresh={() => message.success('数据已刷新')}
-            />
+            <Space size={8} style={{ display: 'flex', alignItems: 'center' }}>
+              {/* AI标注按钮 */}
+              <Button 
+                type="primary" 
+                size="small" 
+                icon={<RobotOutlined />} 
+                style={{ 
+                  background: 'linear-gradient(135deg, #1677ff 0%, #2563eb 100%)', 
+                  borderColor: '#1677ff', 
+                  fontWeight: 600,
+                  boxShadow: '0 2px 6px rgba(22, 119, 255, 0.28)'
+                }}
+                onClick={handleOpenAiModal}
+              >
+                AI标注{selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ''}
+              </Button>
+              {/* 批量时序适配标注按钮 */}
+              <Button 
+                type="primary" 
+                size="small" 
+                icon={<CopyOutlined />} 
+                style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 600 }}
+                onClick={handleOpenBatchModal}
+              >
+                批量时序适配标注{selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ''}
+              </Button>
+              {/* 批量清除标注 (勾选时显示) */}
+              {selectedRowKeys.length > 0 && (
+                <Button 
+                  size="small" 
+                  danger
+                  icon={<UndoOutlined />}
+                  onClick={handleBatchReset}
+                >
+                  批量清除
+                </Button>
+              )}
+              {/* 分隔线 */}
+              <Divider type="vertical" style={{ height: 20, margin: '0 4px' }} />
+              {/* 原有刷新/密度/列设置 */}
+              <TableToolbarActions
+                columns={columns}
+                density={tableDensity}
+                onDensityChange={setTableDensity}
+                hiddenColumns={hiddenColumns}
+                onHiddenColumnsChange={setHiddenColumns}
+                onRefresh={() => message.success('数据已刷新')}
+              />
+            </Space>
           }
           tabList={[
             { key: 'unannotated', tab: `未标注 (${episodes.filter(e => e.annoStatus === '未标注').length})` },
@@ -832,6 +1347,446 @@ export default function AnnotationAuditEpisodeListPage() {
           />
         </Card>
       </div>
+
+      {/* ----------------------------------------------------
+          POPUP MODAL: AI 智能标注 (通义千问 Qwen2.5-VL)
+          ---------------------------------------------------- */}
+      <Modal
+        title={(
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 24 }}>
+            <Space size={10}>
+              <div style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: 16
+              }}>
+                <RobotOutlined />
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
+                  通义千问 Qwen2.5-VL 动作时序切分与预标注
+                </div>
+                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 400 }}>
+                  阿里千问多模态模型架构 · 工业细粒度动作四元组直解
+                </div>
+              </div>
+            </Space>
+            <Tag color="blue" style={{ fontWeight: 700, margin: 0, padding: '2px 10px' }}>通义千问 Qwen2.5-VL 就绪</Tag>
+          </div>
+        )}
+        open={isAiModalOpen}
+        onCancel={() => {
+          setIsAiModalOpen(false);
+          setAiInferenceStep('config');
+        }}
+        width={780}
+        footer={null}
+        destroyOnClose={false}
+      >
+        <div style={{ marginTop: 10 }}>
+          {/* STAGE 1: 算法与策略配置 */}
+          {aiInferenceStep === 'config' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* 顶部视频元数据卡片 */}
+              <Card
+                size="small"
+                style={{
+                  borderRadius: 8,
+                  backgroundColor: '#f8fafc',
+                  borderColor: '#e2e8f0'
+                }}
+                styles={{ body: { padding: '10px 14px' } }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                  <Space size={6} wrap>
+                    <Tag color="blue" icon={<VideoCameraOutlined />}>
+                      当前目标: {selectedRows[0]?.taskName || '螺丝预装配示教录像 (ego_cam1)'}
+                    </Tag>
+                    <Tag color="purple">30 FPS · {selectedRows[0]?.totalFrames || 3454} 帧 (全长录像)</Tag>
+                    <Tag color="cyan">工位: 天奇新动力·打螺丝工位</Tag>
+                    <Tag color="geekblue">
+                      {selectedRowKeys.length > 0 ? `已选 ${selectedRowKeys.length} 个实例待标注` : '覆盖本任务未标注实例'}
+                    </Tag>
+                  </Space>
+                  <Space size={4}>
+                    <SafetyCertificateOutlined style={{ color: '#16a34a' }} />
+                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>全视频覆盖率 100% · 0空白</span>
+                  </Space>
+                </div>
+              </Card>
+
+              {/* 通义千问多模态模型 */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                background: '#eff6ff',
+                border: '1.5px solid #bfdbfe',
+                borderRadius: 8,
+                gap: 12
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 8,
+                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: 18,
+                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)'
+                  }}>
+                    <RobotOutlined />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <strong style={{ fontSize: 13, color: '#0f172a' }}>大模型引擎：通义千问 Qwen2.5-VL-7B</strong>
+                      <Tag color="blue" style={{ fontSize: 10, margin: 0, padding: '0 5px' }}>通义千问多模态</Tag>
+                      <Tag color="green" style={{ fontSize: 10, margin: 0, padding: '0 5px' }}>100% 满铺切分</Tag>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>
+                      基于阿里通义千问视觉大模型时序解析架构，对视频全片 3454 帧进行密集动作切分与姿态解析，100% 满铺覆盖无任何时序空隙。
+                    </div>
+                  </div>
+                </div>
+                <Tag color="geekblue" style={{ fontWeight: 600, fontSize: 11, margin: 0 }}>模型服务就绪 · 延迟 &lt;150ms</Tag>
+              </div>
+
+              {/* 1. 标注任务执行模式 */}
+              <Card size="small" title="1. 标注任务执行模式与时序范围" style={{ borderRadius: 8 }}>
+                <Radio.Group
+                  value={aiMode}
+                  onChange={e => setAiMode(e.target.value)}
+                  style={{ width: '100%' }}
+                >
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Radio value="full_segmentation">
+                      <span><strong>全视频端到端时序切分 (Full Video Scope)</strong>：覆盖 00:00 至 01:55 全程 3454 帧，密集切分且 12 个工步紧密相接，100% 满铺无任何空白</span>
+                    </Radio>
+                    <Radio value="window_sliding">
+                      <span><strong>局部短窗口精准采样分析 (Sliding Window)</strong>：硬件级均匀截帧切片，防止长视频特征稀释，毫秒级定位物理接触临界跳变点</span>
+                    </Radio>
+                    <Radio value="template_align">
+                      <span><strong>工业装配 SOP 动作模板对齐 (Template Alignment)</strong>：依据天奇新动力工序标准（扫码/提电钻/打螺丝/扣帽/螺母分拣），AI 自动对齐区间</span>
+                    </Radio>
+                  </Space>
+                </Radio.Group>
+              </Card>
+
+              {/* 2. 采样密度、置信度过滤与导入策略 */}
+              <Card size="small" title="2. 采样切片密度、置信度过滤与导入策略" style={{ borderRadius: 8 }}>
+                <Row gutter={[16, 12]} align="middle">
+                  <Col span={8}>
+                    <div style={{ fontSize: 12, color: '#334155', marginBottom: 4, fontWeight: 600 }}>
+                       抽帧切片密度：
+                    </div>
+                    <Radio.Group
+                      value={aiFramesPerWindow}
+                      onChange={e => setAiFramesPerWindow(e.target.value)}
+                      size="small"
+                    >
+                      <Radio.Button value={6}>6 帧 (推荐极速)</Radio.Button>
+                      <Radio.Button value={10}>10 帧 (平衡)</Radio.Button>
+                      <Radio.Button value={12}>12 帧 (精细)</Radio.Button>
+                    </Radio.Group>
+                  </Col>
+                  <Col span={8}>
+                    <div style={{ fontSize: 12, color: '#334155', marginBottom: 4, fontWeight: 600 }}>
+                      置信度过滤阈值：{aiConfidenceThreshold}%
+                    </div>
+                    <Slider
+                      min={70}
+                      max={99}
+                      value={aiConfidenceThreshold}
+                      onChange={setAiConfidenceThreshold}
+                      styles={{
+                        track: { background: '#2563eb' },
+                        handle: { borderColor: '#2563eb' }
+                      }}
+                    />
+                  </Col>
+                  <Col span={8}>
+                    <div style={{ fontSize: 12, color: '#334155', marginBottom: 4, fontWeight: 600 }}>
+                      工作台导入策略：
+                    </div>
+                    <Radio.Group
+                      value={aiStrategy}
+                      onChange={e => setAiStrategy(e.target.value)}
+                      size="small"
+                    >
+                      <Radio.Button value="append">追加合并</Radio.Button>
+                      <Radio.Button value="replace">全新覆盖</Radio.Button>
+                    </Radio.Group>
+                  </Col>
+                </Row>
+              </Card>
+
+              {/* 底部操作栏 */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
+                <Button onClick={() => setIsAiModalOpen(false)}>
+                  取消
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<RobotOutlined />}
+                  onClick={handleStartAiInference}
+                  style={{
+                    background: 'linear-gradient(135deg, #1677ff 0%, #2563eb 100%)',
+                    border: 'none',
+                    fontWeight: 700,
+                    boxShadow: '0 2px 8px rgba(22, 119, 255, 0.35)',
+                    color: '#fff'
+                  }}
+                >
+                  启动千问 Qwen2.5-VL 动作切分推理
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STAGE 2: 推理中动效 */}
+          {aiInferenceStep === 'inferring' && (
+            <div style={{ padding: '36px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+              <div style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#1677ff',
+                fontSize: 28,
+                boxShadow: '0 0 24px rgba(22, 119, 255, 0.25)'
+              }}>
+                <RobotOutlined spin />
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
+                  通义千问 Qwen2.5-VL 正在执行多模态时序分析...
+                </div>
+                <div style={{ fontSize: 12, color: '#64748b' }}>
+                  {aiProgressStage}
+                </div>
+              </div>
+
+              <div style={{ width: '80%' }}>
+                <Progress
+                  percent={aiProgress}
+                  status="active"
+                  strokeColor={{ '0%': '#1677ff', '50%': '#2563eb', '100%': '#0284c7' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 18, fontSize: 11, color: '#64748b', marginTop: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <span>✓ 4路多机位时钟对齐</span>
+                <span>✓ Qwen2.5-VL 视觉内核直连</span>
+                <span>✓ 关节力矩跳变提取</span>
+                <span>✓ 3454帧 100% 满铺切分</span>
+              </div>
+
+              <Button
+                size="small"
+                onClick={() => {
+                  setAiInferenceStep('config');
+                }}
+                style={{ marginTop: 10 }}
+              >
+                取消推理
+              </Button>
+            </div>
+          )}
+
+          {/* STAGE 3: 人机协同审核与导入确认 */}
+          {aiInferenceStep === 'review' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Alert
+                type="success"
+                showIcon
+                message="🎉 通义千问 Qwen2.5-VL 推理完成！全视频 3454 帧 100% 满铺覆盖"
+                description="基于通义千问 Qwen2.5-VL 多模态时序推理，已识别出 12 个首尾相连的标准动作工步，全时段覆盖率 100%，无任何时序空白。"
+                style={{ borderRadius: 8 }}
+              />
+
+              {/* 大模型推理审计横幅 */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: 6,
+                fontSize: 12,
+                color: '#166534',
+                flexWrap: 'wrap',
+                gap: 6
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <Tag color="success" style={{ fontWeight: 600 }}>Qwen2.5-VL 视觉内核</Tag>
+                  <span>推理端点：<strong style={{ fontFamily: 'monospace' }}>qwen2.5-vl-7b</strong> (HTTP 200 OK)</span>
+                  <Tag color="cyan">时序覆盖率: 100% (3454/3454 帧)</Tag>
+                </div>
+                <div style={{ fontSize: 11, color: '#15803d', fontFamily: 'monospace' }}>
+                  耗时: {aiAudit.latencyMs}ms | Token: {aiAudit.tokens} | 审计ID: {aiAudit.traceId.slice(0, 18)}
+                </div>
+              </div>
+
+              {/* 候选列表工具栏 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Space size={8}>
+                  <Checkbox
+                    indeterminate={aiSelectedCandidateIds.length > 0 && aiSelectedCandidateIds.length < aiCandidateSteps.length}
+                    checked={aiSelectedCandidateIds.length === aiCandidateSteps.length}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setAiSelectedCandidateIds(aiCandidateSteps.map(s => s.id));
+                      } else {
+                        setAiSelectedCandidateIds([]);
+                      }
+                    }}
+                  >
+                    全选候选步骤
+                  </Checkbox>
+                  <span style={{ fontSize: 12, color: '#64748b' }}>
+                    (已选 <strong style={{ color: '#1677ff' }}>{aiSelectedCandidateIds.length}</strong> / {aiCandidateSteps.length} 项)
+                  </span>
+                </Space>
+                <Tag color="green">平均置信度 98.7% · 12 个工步密集相接</Tag>
+              </div>
+
+              {/* 候选列表卡片 */}
+              <div style={{ maxHeight: 360, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+                {aiCandidateSteps.map((candidate, idx) => {
+                  const isChecked = aiSelectedCandidateIds.includes(candidate.id);
+                  return (
+                    <div
+                      key={candidate.id}
+                      style={{
+                        border: isChecked ? '1.5px solid #1677ff' : '1px solid #e2e8f0',
+                        borderRadius: 8,
+                        background: isChecked ? '#f0f7ff' : '#fff',
+                        padding: '10px 12px',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Checkbox
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setAiSelectedCandidateIds([...aiSelectedCandidateIds, candidate.id]);
+                              } else {
+                                setAiSelectedCandidateIds(aiSelectedCandidateIds.filter(id => id !== candidate.id));
+                              }
+                            }}
+                          />
+                          <span style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: '50%',
+                            background: candidate.color || '#7c3aed',
+                            color: '#fff',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 11,
+                            fontWeight: 800
+                          }}>
+                            {idx + 1}
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                            {candidate.text}
+                          </span>
+                        </div>
+
+                        <Space size={6}>
+                          <Tag color="purple" style={{ margin: 0, fontSize: 11, fontWeight: 600 }}>
+                            置信度: {candidate.confidence}
+                          </Tag>
+                          <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>
+                            {candidate.endFrame - candidate.startFrame} 帧
+                          </Tag>
+                        </Space>
+                      </div>
+
+                      {/* 结构化标签行 */}
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8, paddingLeft: 30 }}>
+                        <Tag color="purple">{candidate.arm}</Tag>
+                        <Tag color="green">{candidate.skill}</Tag>
+                        <Tag color="blue">{candidate.object}</Tag>
+                        <Tag color="orange">{candidate.goal}</Tag>
+                      </div>
+
+                      {/* 帧区间微调行 */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingLeft: 30, background: '#f8fafc', padding: '4px 8px', borderRadius: 4 }}>
+                        <span style={{ fontSize: 11, color: '#64748b' }}>起始帧:</span>
+                        <InputNumber
+                          size="small"
+                          value={candidate.startFrame}
+                          onChange={(val) => {
+                            setAiCandidateSteps(prev => prev.map(s => s.id === candidate.id ? { ...s, startFrame: val } : s));
+                          }}
+                          style={{ width: 85, fontSize: 11 }}
+                        />
+                        <span style={{ fontSize: 11, color: '#64748b' }}>结束帧:</span>
+                        <InputNumber
+                          size="small"
+                          value={candidate.endFrame}
+                          onChange={(val) => {
+                            setAiCandidateSteps(prev => prev.map(s => s.id === candidate.id ? { ...s, endFrame: val } : s));
+                          }}
+                          style={{ width: 85, fontSize: 11 }}
+                        />
+                        <span style={{ fontSize: 10, color: '#94a3b8' }}>区间: [{candidate.startFrame}, {candidate.endFrame}]</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 审核底部操作栏 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, borderTop: '1px solid #f1f5f9', paddingTop: 10 }}>
+                <Button
+                  size="small"
+                  onClick={() => setAiInferenceStep('config')}
+                >
+                  重新配置
+                </Button>
+                <Space>
+                  <Button onClick={() => setIsAiModalOpen(false)}>
+                    取消
+                  </Button>
+                  <Button
+                    type="primary"
+                    onClick={handleApplyAiSteps}
+                    style={{
+                      background: 'linear-gradient(135deg, #1677ff 0%, #2563eb 100%)',
+                      border: 'none',
+                      fontWeight: 700,
+                      boxShadow: '0 2px 8px rgba(22, 119, 255, 0.35)',
+                      color: '#fff'
+                    }}
+                  >
+                    确认导入并应用 ({aiSelectedCandidateIds.length} 项 · 全时序 100% 覆盖)
+                  </Button>
+                </Space>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* ----------------------------------------------------
           POPUP MODAL: 批量时序适配标注配置 
@@ -1073,36 +2028,69 @@ export default function AnnotationAuditEpisodeListPage() {
             </Card>
 
             {/* 3. Targets Adaptation Preview */}
-            <Card size="small" title={<span style={{ fontSize: 12, fontWeight: 'bold' }}>3. 目标实例自适应预览 (Adaptation Preview)</span>}>
-              <div style={{ maxHeight: 150, overflowY: 'auto' }}>
-                <List
-                  size="small"
-                  dataSource={selectedRows.filter(r => r.id !== getSelectedTemplate().id)}
-                  renderItem={item => {
-                    const template = getSelectedTemplate();
-                    const adapted = applyStrategy(template.segments, batchStrategy, template.totalFrames, item.totalFrames);
-                    return (
-                      <List.Item style={{ fontSize: 11, padding: '4px 8px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                          <span>
-                            实例 <strong>#{item.id}</strong> ({item.taskName}, 总长 <strong>{item.totalFrames}帧</strong>)
-                          </span>
-                          <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
-                            {adapted.length > 0 
-                              ? adapted.map(a => `[${a.start}-${a.end}f]`).join(' + ')
-                              : '无标注段'}
-                          </span>
-                        </div>
-                      </List.Item>
-                    );
-                  }}
-                />
-                {selectedRows.filter(r => r.id !== getSelectedTemplate().id).length === 0 && (
-                  <div style={{ textAlign: 'center', color: '#8c8c8c', padding: 8, fontSize: 11 }}>
-                    请选择除模板实例之外的其它目标实例进行批量复制
+            <Card 
+              size="small" 
+              title={
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, fontWeight: 'bold' }}>3. 目标实例范围与自适应预览 (Adaptation Preview)</span>
+                  <Radio.Group 
+                    size="small" 
+                    value={batchTargetScope} 
+                    onChange={e => setBatchTargetScope(e.target.value)}
+                  >
+                    <Radio.Button value="unannotated">
+                      未标注 ({episodes.filter(e => e.annoStatus !== '已标注').length})
+                    </Radio.Button>
+                    <Radio.Button value="selected" disabled={selectedRowKeys.length === 0}>
+                      当前勾选 ({selectedRowKeys.length})
+                    </Radio.Button>
+                    <Radio.Button value="all">
+                      全部 ({episodes.length})
+                    </Radio.Button>
+                  </Radio.Group>
+                </div>
+              }
+            >
+              {(() => {
+                const template = getSelectedTemplate();
+                const targetList = batchTargetScope === 'selected' && selectedRowKeys.length > 0
+                  ? episodes.filter(ep => selectedRowKeys.includes(ep.key))
+                  : batchTargetScope === 'all'
+                    ? episodes
+                    : episodes.filter(ep => ep.annoStatus !== '已标注');
+                const validTargets = targetList.filter(r => r.id !== template.id);
+
+                return (
+                  <div style={{ maxHeight: 150, overflowY: 'auto' }}>
+                    <List
+                      size="small"
+                      dataSource={validTargets}
+                      renderItem={item => {
+                        const adapted = applyStrategy(template.segments, batchStrategy, template.totalFrames, item.totalFrames);
+                        return (
+                          <List.Item style={{ fontSize: 11, padding: '4px 8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                              <span>
+                                实例 <strong>#{item.id}</strong> ({item.taskName}, 总长 <strong>{item.totalFrames}帧</strong>)
+                              </span>
+                              <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
+                                {adapted.length > 0 
+                                  ? adapted.map(a => `[${a.start}-${a.end}f]`).join(' + ')
+                                  : '无标注段'}
+                              </span>
+                            </div>
+                          </List.Item>
+                        );
+                      }}
+                    />
+                    {validTargets.length === 0 && (
+                      <div style={{ textAlign: 'center', color: '#8c8c8c', padding: 8, fontSize: 11 }}>
+                        当前目标范围内暂无待适配实例（如需指定请切换上方目标范围或在列表勾选）
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
             </Card>
 
             {/* Footer Buttons */}
@@ -1110,14 +2098,25 @@ export default function AnnotationAuditEpisodeListPage() {
               <Button onClick={() => setIsBatchModalOpen(false)}>
                 取消
               </Button>
-              <Button 
-                type="primary" 
-                disabled={selectedRows.filter(r => r.id !== getSelectedTemplate().id).length === 0}
-                onClick={handleStartBatchCopy}
-                style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
-              >
-                开始批量时序适配
-              </Button>
+              {(() => {
+                const template = getSelectedTemplate();
+                const targetList = batchTargetScope === 'selected' && selectedRowKeys.length > 0
+                  ? episodes.filter(ep => selectedRowKeys.includes(ep.key))
+                  : batchTargetScope === 'all'
+                    ? episodes
+                    : episodes.filter(ep => ep.annoStatus !== '已标注');
+                const validTargets = targetList.filter(r => r.id !== template.id);
+                return (
+                  <Button 
+                    type="primary" 
+                    disabled={validTargets.length === 0}
+                    onClick={handleStartBatchCopy}
+                    style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 'bold' }}
+                  >
+                    开始批量时序适配 ({validTargets.length})
+                  </Button>
+                );
+              })()}
             </div>
             
           </div>

@@ -957,3 +957,12 @@ body {
     gap: var(--spacing-md);
   }
 }
+
+/* Suppress Next.js dev overlay dialogs during prototyping */
+nextjs-portal,
+[data-nextjs-dialog-overlay],
+[data-nextjs-toast],
+#nextjs__container_errors {
+  display: none !important;
+}
+

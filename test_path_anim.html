@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+@keyframes movePathCSS {
+  0% { d: path('M 100 100 C 120 150, 150 180, 200 200'); }
+  50% { d: path('M 100 100 C 140 120, 180 150, 200 250'); }
+  100% { d: path('M 100 100 C 120 150, 150 180, 200 200'); }
+}
+.css-animated {
+  animation: movePathCSS 1s linear infinite;
+}
+</style>
+</head>
+<body>
+<svg width="400" height="400" viewBox="0 0 400 400">
+  <path class="css-animated" d="M 100 100 C 120 150, 150 180, 200 200" stroke="red" stroke-width="8" fill="none" />
+  <path d="M 250 100 C 270 150, 300 180, 350 200" stroke="blue" stroke-width="8" fill="none">
+    <animate attributeName="d" dur="1s" repeatCount="indefinite"
+      values="M 250 100 C 270 150, 300 180, 350 200; M 250 100 C 290 120, 330 150, 350 250; M 250 100 C 270 150, 300 180, 350 200" />
+  </path>
+</svg>
+</body>
+</html>

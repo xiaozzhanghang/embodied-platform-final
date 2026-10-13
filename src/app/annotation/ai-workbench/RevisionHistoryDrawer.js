@@ -59,7 +59,7 @@ export default function RevisionHistoryDrawer({
           </Space>
         }
         placement="right"
-        width={580}
+        size={580}
         open={open}
         onClose={onClose}
       >

@@ -47,7 +47,7 @@ import { ActionFooter, FormSection, PageHeader } from '@/components/ui';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const ANNO_TYPES = ['框标注', '点标注', '范围标注', '范围&框标注'];
+const ANNO_TYPES = ['范围标注', '手势标注', '语义标注'];
 const DEVICE_TYPES = ['galbot', '鹿鸣', '真机', '仿真机'];
 
 const projectNames = [

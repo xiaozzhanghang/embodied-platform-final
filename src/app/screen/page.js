@@ -52,7 +52,7 @@ const initialEvents = [
 
 export default function FactoryScreenPage() {
   const router = useRouter();
-  const [currentMode, setCurrentMode] = useState('3D_THREE'); // '3D_THREE' | '3D_TWIN' | 'MULTIMODAL' | 'FLYWHEEL'
+  const [currentMode, setCurrentMode] = useState('BIGYM_3D'); // 'BIGYM_3D' | '3D_THREE' | '3D_TWIN' | 'MULTIMODAL' | 'FLYWHEEL'
   const [currentTime, setCurrentTime] = useState('');
   const [selectedBase, setSelectedBase] = useState('WUXI_01');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -356,10 +356,17 @@ export default function FactoryScreenPage() {
             {/* Mode Switcher Tabs */}
             <div className={styles.centerModeBar}>
               <button
+                className={`${styles.modeTabBtn} ${currentMode === 'BIGYM_3D' ? styles.modeTabBtnActive : ''}`}
+                onClick={() => setCurrentMode('BIGYM_3D')}
+              >
+                <RobotOutlined />
+                BiGym 2.0 具身 3D 交互主图
+              </button>
+              <button
                 className={`${styles.modeTabBtn} ${currentMode === '3D_THREE' ? styles.modeTabBtnActive : ''}`}
                 onClick={() => setCurrentMode('3D_THREE')}
               >
-                <RobotOutlined />
+                <CompassOutlined />
                 Three.js 3D 车间孪生
               </button>
               <button
@@ -387,6 +394,19 @@ export default function FactoryScreenPage() {
 
             {/* Dynamic Visual Content */}
             <div style={{ width: '100%', height: '100%', paddingTop: 52 }}>
+              {currentMode === 'BIGYM_3D' && (
+                <iframe
+                  src="/embodied-3d/index.html"
+                  title="BiGym 2.0 具身智能 3D 交互场景展示系统"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                    borderRadius: '8px',
+                    background: '#060a14'
+                  }}
+                />
+              )}
               {currentMode === '3D_THREE' && (
                 <Factory3DThree onSelectStation={handleStationClick} />
               )}

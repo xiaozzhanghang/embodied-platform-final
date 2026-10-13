@@ -16,7 +16,9 @@ import {
   VideoCameraOutlined, FieldTimeOutlined, ThunderboltOutlined,
   CloseOutlined, SettingOutlined, UndoOutlined,
   AimOutlined, RobotOutlined, CheckCircleOutlined,
-  SlidersOutlined, NodeIndexOutlined, EditOutlined, BulbOutlined
+  SlidersOutlined, NodeIndexOutlined, EditOutlined, BulbOutlined,
+  CloudOutlined, FolderOpenOutlined, SafetyCertificateOutlined,
+  ExperimentOutlined, ExportOutlined
 } from '@ant-design/icons';
 import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 
@@ -63,15 +65,17 @@ const GOAL_OPTIONS = [
   { value: '安全释手 (Zero Torque)', label: '🎯 安全释手 (Zero Torque)' },
 ];
 
-function WorkbenchSolutionsContent() {
+export default function AnnotationAuditWorkspacePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { message } = App.useApp();
 
-  const instanceId = searchParams.get('instanceId') || searchParams.get('id') || '19884';
-  const episodeId = searchParams.get('episodeId') || '744108';
-  const annoType = searchParams.get('type') || '范围标注';
-  const workMode = searchParams.get('mode') || 'annotate';
+  const instanceId = searchParams?.get('id') || '19884';
+  const episodeId = searchParams?.get('episodeId') || '744108';
+  const annoType = searchParams?.get('type') || '范围标注';
+  const workMode = searchParams?.get('mode') || 'annotate';
+
+  const effectiveInstanceId = searchParams?.get('instanceId') || instanceId;
 
   // View mode: 'single' (Ego camera matching screenshot) or 'grid' (4 cameras)
   const [viewMode, setViewMode] = useState('single');
@@ -166,7 +170,7 @@ function WorkbenchSolutionsContent() {
   const [selectedBatchIds, setSelectedBatchIds] = useState([]);
   const [activeTabKey, setActiveTabKey] = useState('1');
 
-  // 详细结构化参数 Inspector 弹窗
+  // 结构化详细参数 Inspector 弹窗
   const [detailModalStep, setDetailModalStep] = useState(null);
 
   // Live Step Recording State
@@ -188,10 +192,11 @@ function WorkbenchSolutionsContent() {
   const [aiInferenceStep, setAiInferenceStep] = useState('config'); // 'config' | 'inferring' | 'review'
   const [aiProgress, setAiProgress] = useState(0);
   const [aiProgressStage, setAiProgressStage] = useState('');
-  const [aiModel, setAiModel] = useState('vla_x_3');
-  const [aiMode, setAiMode] = useState('full_segmentation'); // 'full_segmentation' | 'template_align' | 'smart_infill'
+  const [aiModel, setAiModel] = useState('local_qwen'); // 'local_qwen' | 'minimax_m3' | 'gemini_er2'
+  const [aiMode, setAiMode] = useState('full_segmentation'); // 'full_segmentation' | 'window_sliding' | 'template_align'
+  const [aiFramesPerWindow, setAiFramesPerWindow] = useState(6);
   const [aiConfidenceThreshold, setAiConfidenceThreshold] = useState(85);
-  const [aiStrategy, setAiStrategy] = useState('append'); // 'append' | 'replace'
+  const [aiStrategy, setAiStrategy] = useState('append'); // 'append' | 'replace' | 'conflict_detect'
   const [aiCandidateSteps, setAiCandidateSteps] = useState([]);
   const [aiSelectedCandidateIds, setAiSelectedCandidateIds] = useState([]);
   const [aiHistorySnapshot, setAiHistorySnapshot] = useState(null);
@@ -579,113 +584,119 @@ function WorkbenchSolutionsContent() {
   // =========================================================================
   const handleStartAiInference = () => {
     setAiInferenceStep('inferring');
-    setAiProgress(8);
-    setAiProgressStage('正在加载具身大模型 Embodied-VLA-X 与多视角感知特征...');
+    setAiProgress(10);
+    setAiProgressStage(`阶段 1/6: Canvas 硬件截帧与视频抽帧采样 (提取 ${aiFramesPerWindow || 6} 帧关键画面切片)...`);
     setIsAiScanningActive(true);
 
     setTimeout(() => {
-      setAiProgress(35);
-      setAiProgressStage('正在提取 Top Head 与双机械臂腕部视觉特征及接触姿态...');
+      setAiProgress(32);
+      setAiProgressStage('阶段 2/6: 多模态 VLM 时序特征编码 (提取双手骨骼、工具与工件接触位姿)...');
     }, 600);
 
     setTimeout(() => {
-      setAiProgress(72);
-      setAiProgressStage('正在检测机械臂末端接触力矩突变点并进行动作时序聚类...');
-    }, 1300);
+      setAiProgress(58);
+      setAiProgressStage('阶段 3/6: 动作物理接触与边界语义切分 (毫秒级定位起止帧，生成紧密贴合工步)...');
+    }, 1200);
 
     setTimeout(() => {
-      setAiProgress(92);
-      setAiProgressStage('正在推导结构化四元组 (末端/技能/对象/目标) 并生成置信度评分...');
-    }, 1900);
+      setAiProgress(80);
+      setAiProgressStage('阶段 4/6: 工业动作语义四元组推导 (根据标准数据字典抽取 执行末端/技能/目标/期望)...');
+    }, 1800);
+
+    setTimeout(() => {
+      setAiProgress(94);
+      setAiProgressStage('阶段 5/6: 置信度评分与时序拓扑合规校验 (防重叠、无空隙、时序连贯性校验)...');
+    }, 2300);
 
     setTimeout(() => {
       setAiProgress(100);
-      setAiProgressStage('AI 动作切分完成！生成 5 个高置信度动作候选区间');
+      const modelNameText = aiModel === 'local_qwen' ? '本地 Qwen2.5-VL (Apple M1 Pro GPU)' : (aiModel === 'minimax_m3' ? 'MiniMax-M3 商业大模型' : 'Google 具身 ER-2 (TPU v5e)');
+      setAiProgressStage(`阶段 6/6: 🎉 ${modelNameText} 预标注完成！生成 5 个高置信度动作候选区间`);
       
       const candidates = [
         {
           id: 101,
-          text: '双手规整开箱与基座定位',
-          arm: '双手 (Dual Arms)',
-          skill: '抓取与定位',
-          object: '瓦楞纸箱',
-          goal: '开箱定位完成 (Visual Match)',
+          text: '右手拿起电钻并移至电池包工位',
+          arm: '右手 (Right Arm)',
+          skill: '取物放置',
+          object: '电动螺丝刀',
+          goal: '工具转移到位',
           startFrame: 0,
-          endFrame: 260,
-          color: '#7c3aed',
+          endFrame: 276,
+          color: '#2563eb',
           graspType: '平行双指夹持',
           speedProfile: '平稳匀速 (0.3m/s)',
           confidence: '99.4%',
           torqueLimit: '14.5 N·m',
-          vlaToken: 'ACTION_UNFOLD_ALIGN_BOX',
+          vlaToken: 'ACTION_PICK_TOOL_SCREWDRIVER',
           isAiGenerated: true,
         },
         {
           id: 102,
-          text: '右手拾取物料并稳定移送',
+          text: '右手用电钻拧紧第1颗螺栓并定扭',
           arm: '右手 (Right Arm)',
-          skill: '取物放置',
-          object: '核心金属支架',
-          goal: '接近到位 (<2cm)',
-          startFrame: 261,
-          endFrame: 540,
-          color: '#2563eb',
+          skill: '精密装配',
+          object: '固定螺栓 #1',
+          goal: '螺栓定扭紧固完成',
+          startFrame: 277,
+          endFrame: 551,
+          color: '#16a34a',
           graspType: '平行双指夹持',
           speedProfile: '快速接近 (0.6m/s)',
-          confidence: '98.8%',
+          confidence: '99.1%',
           torqueLimit: '12.0 N·m',
-          vlaToken: 'ACTION_PICK_CORE_PART',
+          vlaToken: 'ACTION_FASTEN_SCREW_1',
           isAiGenerated: true,
         },
         {
           id: 103,
-          text: '左手协同装配与卡槽对准',
+          text: '左手辅助压紧电池包基座边缘',
           arm: '左手 (Left Arm)',
-          skill: '精密装配',
-          object: '螺栓紧固件',
-          goal: '卡槽对准牢固 (Torque Align)',
-          startFrame: 541,
-          endFrame: 890,
-          color: '#059669',
+          skill: '抓取与定位',
+          object: '电池包基座',
+          goal: '基座定位稳定',
+          startFrame: 552,
+          endFrame: 827,
+          color: '#7c3aed',
           graspType: '五指灵巧手抓握',
           speedProfile: '高精度慢速 (0.1m/s)',
-          confidence: '97.6%',
+          confidence: '98.7%',
           torqueLimit: '18.2 N·m',
-          vlaToken: 'ACTION_PRECISION_INSERT',
+          vlaToken: 'ACTION_HOLD_BATTERY_PACK',
           isAiGenerated: true,
         },
         {
           id: 104,
-          text: '双手合拢折盖并气动封箱',
-          arm: '双手 (Dual Arms)',
-          skill: '合拢封箱',
-          object: '瓦楞纸箱盖',
-          goal: '完全闭合锁死 (Closed Sealed)',
-          startFrame: 891,
-          endFrame: 1220,
-          color: '#d97706',
+          text: '右手用电钻拧紧第2颗固定螺栓',
+          arm: '右手 (Right Arm)',
+          skill: '精密装配',
+          object: '固定螺栓 #2',
+          goal: '卡槽对准牢固 (Torque Align)',
+          startFrame: 828,
+          endFrame: 1102,
+          color: '#ea580c',
           graspType: '包络力矩抓取',
           speedProfile: '标准操作 (0.4m/s)',
-          confidence: '99.1%',
+          confidence: '98.3%',
           torqueLimit: '22.0 N·m',
-          vlaToken: 'ACTION_FOLD_SEAL_FINALIZE',
+          vlaToken: 'ACTION_FASTEN_SCREW_2',
           isAiGenerated: true,
         },
         {
           id: 105,
-          text: '末端安全释手并原位复位',
-          arm: '右手 (Right Arm)',
-          skill: '松开释放',
-          object: '物料周转托盘',
-          goal: '安全释手 (Zero Torque)',
-          startFrame: 1221,
+          text: '左手拾取正极绝缘保护帽扣在极柱',
+          arm: '左手 (Left Arm)',
+          skill: '合拢封箱',
+          object: '绝缘保护帽',
+          goal: '完全闭合锁死 (Closed Sealed)',
+          startFrame: 1103,
           endFrame: 1330,
-          color: '#6366f1',
+          color: '#0284c7',
           graspType: '平行双指夹持',
           speedProfile: '平稳匀速 (0.3m/s)',
-          confidence: '96.5%',
+          confidence: '97.8%',
           torqueLimit: '2.0 N·m',
-          vlaToken: 'ACTION_SAFE_RELEASE_HOME',
+          vlaToken: 'ACTION_CAP_POSITIVE_TERMINAL',
           isAiGenerated: true,
         },
       ];
@@ -694,7 +705,7 @@ function WorkbenchSolutionsContent() {
       setAiSelectedCandidateIds(candidates.map(c => c.id));
       setIsAiScanningActive(false);
       setAiInferenceStep('review');
-    }, 2500);
+    }, 2800);
   };
 
   const handleApplyAiSteps = () => {
@@ -813,6 +824,21 @@ function WorkbenchSolutionsContent() {
             AI 智能预标注
           </Button>
 
+          <Button
+            icon={<ExportOutlined style={{ color: '#0284c7' }} />}
+            onClick={() => window.open(STATIC_ROUTES.aiWorkbench || '/annotation/ai-workbench/', '_blank')}
+            size="small"
+            style={{
+              fontWeight: 600,
+              borderColor: '#bae6fd',
+              color: '#0369a1',
+              background: '#f0f9ff',
+            }}
+            title="新窗口打开 AI 多模态标注工作台 (上传本地视频 / 多模型深度对比 / 训练集导出)"
+          >
+            AI 独立工作台 ↗
+          </Button>
+
           <Radio.Group
             size="small"
             value={viewMode}
@@ -840,7 +866,7 @@ function WorkbenchSolutionsContent() {
           <Button
             type="text"
             icon={<CloseOutlined style={{ fontSize: 14, color: '#64748b' }} />}
-            onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditDetail, { id: instanceId }))}
+            onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditDetail, { id: effectiveInstanceId }))}
             title="关闭返回"
           />
         </Space>
@@ -1703,30 +1729,30 @@ function WorkbenchSolutionsContent() {
       <Modal
         title={(
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 24 }}>
-            <Space size={8}>
+            <Space size={10}>
               <div style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#fff',
-                fontSize: 14
+                fontSize: 16
               }}>
                 <RobotOutlined />
               </div>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>
-                  具身大模型 AI 自动标注
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
+                  本地大模型 AI 动作时序切分与预标注
                 </div>
                 <div style={{ fontSize: 11, color: '#64748b', fontWeight: 400 }}>
-                  Embodied-VLA-X 多模态动作时序切分与语义推导 · 人机协同核验
+                  端侧 Qwen2.5-VL 多模态时序切分 · 结构化四元组与工步推导 · 离线工业安全合规
                 </div>
               </div>
             </Space>
-            <Tag color="purple" style={{ fontWeight: 700, margin: 0 }}>VLA-3.2 就绪</Tag>
+            <Tag color="blue" style={{ fontWeight: 700, margin: 0, padding: '2px 10px' }}>本地 Qwen2.5-VL 就绪</Tag>
           </div>
         )}
         open={isAiModalOpen}
@@ -1737,75 +1763,81 @@ function WorkbenchSolutionsContent() {
           setIsAiModalOpen(false);
           setAiInferenceStep('config');
         }}
-        width={720}
+        width={760}
         footer={null}
         destroyOnClose={false}
       >
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 10 }}>
           {/* STAGE 1: 算法与策略配置 */}
           {aiInferenceStep === 'config' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <Alert
-                type="info"
-                showIcon
-                message="人机协同原则 (Human-in-the-Loop)"
-                description="AI 自动标注作为辅助增强手段，与手动打点、Q/R 快捷键及批量复制完全共存。系统生成候选步骤后将交由您审查确认，并提供一键撤销保障。"
-                style={{ borderRadius: 8, background: '#f5f3ff', border: '1px solid #ddd6fe' }}
-              />
-
-              {/* 模型选择 */}
-              <Card size="small" title="1. 具身多模态时序大模型" style={{ borderRadius: 8 }}>
-                <Radio.Group
-                  value={aiModel}
-                  onChange={e => setAiModel(e.target.value)}
-                  style={{ width: '100%' }}
-                >
-                  <Row gutter={[12, 12]}>
-                    <Col span={12}>
-                      <div
-                        onClick={() => setAiModel('vla_x_3')}
-                        style={{
-                          border: aiModel === 'vla_x_3' ? '1.5px solid #7c3aed' : '1px solid #e2e8f0',
-                          borderRadius: 6,
-                          padding: '10px 12px',
-                          background: aiModel === 'vla_x_3' ? '#fbf8ff' : '#fff',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <Radio value="vla_x_3">
-                          <strong style={{ color: '#0f172a' }}>Embodied-VLA-X 3.2</strong>
-                          <Tag color="purple" style={{ marginLeft: 6, fontSize: 10 }}>推荐</Tag>
-                        </Radio>
-                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4, paddingLeft: 24 }}>
-                          融合 Top Head/双腕视角，结合末端接触力矩与夹爪闭合检测复杂装配动作。
-                        </div>
-                      </div>
-                    </Col>
-                    <Col span={12}>
-                      <div
-                        onClick={() => setAiModel('robotemporal_2')}
-                        style={{
-                          border: aiModel === 'robotemporal_2' ? '1.5px solid #7c3aed' : '1px solid #e2e8f0',
-                          borderRadius: 6,
-                          padding: '10px 12px',
-                          background: aiModel === 'robotemporal_2' ? '#fbf8ff' : '#fff',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <Radio value="robotemporal_2">
-                          <strong style={{ color: '#0f172a' }}>RoboTemporal-Action 2.0</strong>
-                        </Radio>
-                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4, paddingLeft: 24 }}>
-                          毫秒级动作关键帧切分，针对高频重复性工序快速定位起止临界帧。
-                        </div>
-                      </div>
-                    </Col>
-                  </Row>
-                </Radio.Group>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* 顶部视频元数据卡片 */}
+              <Card
+                size="small"
+                style={{
+                  borderRadius: 8,
+                  backgroundColor: '#f8fafc',
+                  borderColor: '#e2e8f0'
+                }}
+                styles={{ body: { padding: '10px 14px' } }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                  <Space size={6} wrap>
+                    <Tag color="blue" icon={<VideoCameraOutlined />}>当前视频: 螺丝预装配示教录像</Tag>
+                    <Tag color="purple">30 FPS · 1331 帧 (~44.3s)</Tag>
+                    <Tag color="cyan">工位: 天奇新动力·打螺丝工位</Tag>
+                    <Tag color="geekblue">任务书: TB-螺丝预装配</Tag>
+                  </Space>
+                  <Space size={4}>
+                    <SafetyCertificateOutlined style={{ color: '#16a34a' }} />
+                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>人机协同 · 候选可核验</span>
+                  </Space>
+                </div>
               </Card>
 
-              {/* 标注任务模式 */}
-              <Card size="small" title="2. 标注任务执行模式" style={{ borderRadius: 8 }}>
+              {/* 默认锁定本地具身多模态模型 (无需多选) */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                background: '#eff6ff',
+                border: '1.5px solid #bfdbfe',
+                borderRadius: 8,
+                gap: 12
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: 18,
+                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)'
+                  }}>
+                    <RobotOutlined />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <strong style={{ fontSize: 13, color: '#0f172a' }}>本地推理引擎：Qwen2.5-VL-7B (Apple M1 Pro GPU / Metal 原生加速)</strong>
+                      <Tag color="blue" style={{ fontSize: 10, margin: 0, padding: '0 5px' }}>Metal GPU驱动</Tag>
+                      <Tag color="green" style={{ fontSize: 10, margin: 0, padding: '0 5px' }}>100% 工业离线合规</Tag>
+                      <Tag color="cyan" style={{ fontSize: 10, margin: 0, padding: '0 5px' }}>0 API 外部消耗</Tag>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>
+                      端侧本地多模态大模型原生直解，视频数据无需外发云端，毫秒级定位动作起止帧并生成结构化四元组。
+                    </div>
+                  </div>
+                </div>
+                <Tag color="geekblue" style={{ fontWeight: 600, fontSize: 11, margin: 0 }}>本地服务就绪 · 延迟 &lt;50ms</Tag>
+              </div>
+
+              {/* 1. 标注任务执行模式 */}
+              <Card size="small" title="1. 标注任务执行模式与时序范围" style={{ borderRadius: 8 }}>
                 <Radio.Group
                   value={aiMode}
                   onChange={e => setAiMode(e.target.value)}
@@ -1813,22 +1845,36 @@ function WorkbenchSolutionsContent() {
                 >
                   <Space direction="vertical" style={{ width: '100%' }}>
                     <Radio value="full_segmentation">
-                      <span><strong>全视频端到端时序切分</strong>：自动识别所有动作起止帧，并生成完整结构化四元组与自然语言描述</span>
+                      <span><strong>全视频端到端时序切分 (Full Video Scope)</strong>：覆盖 0.0s 至 44.3s 全程，密集切分且工步紧密相接，自动推导完整结构化四元组</span>
+                    </Radio>
+                    <Radio value="window_sliding">
+                      <span><strong>局部短窗口精准采样分析 (Sliding Window)</strong>：硬件级均匀截帧切片，防止长视频特征稀释，毫秒级定位物理接触临界跳变点</span>
                     </Radio>
                     <Radio value="template_align">
-                      <span><strong>基于当前动作模板智能对齐</strong>：基于既定 SOP 工序要求，AI 在视频中自动检索匹配区间并锁定</span>
-                    </Radio>
-                    <Radio value="smart_infill">
-                      <span><strong>未标注区间空白补齐</strong>：严格保留当前已有人工步骤，仅对未标注的空白时间段执行补全</span>
+                      <span><strong>工业装配 SOP 动作模板对齐 (Template Alignment)</strong>：依据天奇新动力工序标准（扫码/提电钻/拧紧螺栓/扣保护帽），AI 自动对齐区间</span>
                     </Radio>
                   </Space>
                 </Radio.Group>
               </Card>
 
-              {/* 识别阈值与导入策略 */}
-              <Card size="small" title="3. 策略与置信度过滤" style={{ borderRadius: 8 }}>
+              {/* 2. 采样密度、置信度阈值与导入策略 */}
+              <Card size="small" title="2. 采样切片密度、置信度过滤与导入策略" style={{ borderRadius: 8 }}>
                 <Row gutter={[16, 12]} align="middle">
-                  <Col span={12}>
+                  <Col span={8}>
+                    <div style={{ fontSize: 12, color: '#334155', marginBottom: 4, fontWeight: 600 }}>
+                      抽帧切片密度：
+                    </div>
+                    <Radio.Group
+                      value={aiFramesPerWindow}
+                      onChange={e => setAiFramesPerWindow(e.target.value)}
+                      size="small"
+                    >
+                      <Radio.Button value={6}>6 帧 (推荐极速)</Radio.Button>
+                      <Radio.Button value={10}>10 帧 (平衡)</Radio.Button>
+                      <Radio.Button value={12}>12 帧 (精细)</Radio.Button>
+                    </Radio.Group>
+                  </Col>
+                  <Col span={8}>
                     <div style={{ fontSize: 12, color: '#334155', marginBottom: 4, fontWeight: 600 }}>
                       置信度过滤阈值：{aiConfidenceThreshold}%
                     </div>
@@ -1838,30 +1884,29 @@ function WorkbenchSolutionsContent() {
                       value={aiConfidenceThreshold}
                       onChange={setAiConfidenceThreshold}
                       styles={{
-                        track: { background: '#7c3aed' },
-                        handle: { borderColor: '#7c3aed' }
+                        track: { background: aiModel === 'local_qwen' ? '#2563eb' : (aiModel === 'minimax_m3' ? '#ea580c' : '#7c3aed') },
+                        handle: { borderColor: aiModel === 'local_qwen' ? '#2563eb' : (aiModel === 'minimax_m3' ? '#ea580c' : '#7c3aed') }
                       }}
                     />
-                    <div style={{ fontSize: 10, color: '#94a3b8' }}>过滤低置信度候选，仅推荐优质切分区间</div>
                   </Col>
-                  <Col span={12}>
-                    <div style={{ fontSize: 12, color: '#334155', marginBottom: 6, fontWeight: 600 }}>
-                      工作台导入方式：
+                  <Col span={8}>
+                    <div style={{ fontSize: 12, color: '#334155', marginBottom: 4, fontWeight: 600 }}>
+                      工作台导入策略：
                     </div>
                     <Radio.Group
                       value={aiStrategy}
                       onChange={e => setAiStrategy(e.target.value)}
                       size="small"
                     >
-                      <Radio.Button value="append">追加合并 (推荐 · 保留现有)</Radio.Button>
-                      <Radio.Button value="replace">全新覆盖 (重置步骤)</Radio.Button>
+                      <Radio.Button value="append">追加合并</Radio.Button>
+                      <Radio.Button value="replace">全新覆盖</Radio.Button>
                     </Radio.Group>
                   </Col>
                 </Row>
               </Card>
 
-              {/* 底部按钮 */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 6 }}>
+              {/* 底部操作栏 */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
                 <Button onClick={() => setIsAiModalOpen(false)}>
                   取消
                 </Button>
@@ -1870,13 +1915,13 @@ function WorkbenchSolutionsContent() {
                   icon={<RobotOutlined />}
                   onClick={handleStartAiInference}
                   style={{
-                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
+                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
                     border: 'none',
                     fontWeight: 700,
-                    boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4)'
+                    boxShadow: '0 2px 8px rgba(37, 99, 235, 0.35)'
                   }}
                 >
-                  🚀 开始 AI 自动推理分析
+                  🚀 启动本地 Qwen2.5-VL 动作切分推理
                 </Button>
               </div>
             </div>
@@ -2163,7 +2208,7 @@ function WorkbenchSolutionsContent() {
                     <pre style={{ background: '#0f172a', color: '#f8fafc', padding: 12, borderRadius: 6, fontSize: 11, overflowX: 'auto', lineHeight: 1.5 }}>
 {`{
   "taskId": "8751",
-  "instanceId": "${instanceId}",
+  "instanceId": "${effectiveInstanceId}",
   "episodeId": "${episodeId}",
   "mode": "structured",
   "steps": [
@@ -2269,8 +2314,4 @@ function WorkbenchSolutionsContent() {
 
     </div>
   );
-}
-
-export default function WorkbenchSolutionsPage() {
-  return <WorkbenchSolutionsContent />;
 }

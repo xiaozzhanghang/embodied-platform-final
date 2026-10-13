@@ -5,7 +5,7 @@ import { Modal, Card, Tag, Button, Space, Typography, Row, Col, Divider, Alert }
 import {
   VideoCameraOutlined, CheckCircleOutlined, UploadOutlined,
   PlayCircleOutlined, ArrowRightOutlined, FolderOpenOutlined,
-  ThunderboltOutlined, InfoCircleOutlined
+  ThunderboltOutlined, InfoCircleOutlined, DeleteOutlined
 } from '@ant-design/icons';
 import { AVAILABLE_EPISODES } from './mockData';
 
@@ -17,6 +17,7 @@ export default function EpisodeSelectModal({
   currentEpisode,
   onSelectEpisode,
   onUploadLocalVideo,
+  onResetWorkspace,
   fileInputRef,
 }) {
   return (
@@ -55,7 +56,7 @@ export default function EpisodeSelectModal({
       <input
         type="file"
         ref={fileInputRef}
-        accept="video/mp4,video/webm"
+        accept="video/mp4,video/webm,video/quicktime,.mov"
         style={{ display: 'none' }}
         onChange={onUploadLocalVideo}
       />
@@ -64,9 +65,25 @@ export default function EpisodeSelectModal({
         type="info"
         showIcon
         message={
-          <span style={{ fontSize: 13 }}>
-            💡 <b>验证提示：</b>切换或载入新视频后，系统将重置为初始待标注状态（时间轴归零、清除旧候选），您可以点击向导中的 <b>「① 启动 AI 推理流程」</b> 完整体验 AI 原生视觉理解的逐帧分窗扫描与动作区间生成！
-          </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <span style={{ fontSize: 13, flex: 1, minWidth: 260 }}>
+              💡 <b>验证提示：</b>您可以选取平台内置真实录像，或在下方<b>选择电脑本地 MP4 视频</b>进行测试。若需清空已有视频与全部工步，可直接点击右侧清空按钮。
+            </span>
+            {currentEpisode && (
+              <Button
+                size="middle"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => {
+                  onResetWorkspace?.();
+                  onClose();
+                }}
+                style={{ borderRadius: 6, flexShrink: 0, fontWeight: 600 }}
+              >
+                清空当前视频 (恢复初始待上传)
+              </Button>
+            )}
+          </div>
         }
         style={{ marginBottom: 18, borderRadius: 8 }}
       />
@@ -127,7 +144,7 @@ export default function EpisodeSelectModal({
                       color: '#38bdf8',
                       fontFamily: 'monospace'
                     }}>
-                      {isRight ? 'EGO_CAM_RIGHT' : 'EGO_CAM_LEFT'}
+                      {ep.referenceCameraId ? ep.referenceCameraId.toUpperCase() : (isRight ? 'EGO_CAM_RIGHT' : 'EGO_CAM_LEFT')}
                     </div>
                     <div style={{
                       position: 'absolute',
@@ -193,7 +210,7 @@ export default function EpisodeSelectModal({
                     </Button>
                   )}
                   <div style={{ fontSize: 11, color: '#64748b', marginTop: 6, textAlign: 'center' }}>
-                    {isRight ? '推荐优先验证（包含积木抓取）' : '双臂遥操作协同机位'}
+                    {isRight ? '推荐优先验证（包含积木抓取）' : (ep.episodeId === 'EP-LOCAL-8293' ? '10.4分钟现场真实包装视频' : (ep.episodeId.includes('2096837') ? '真实螺丝装配产线' : '长时序装配样本'))}
                   </div>
                 </Col>
               </Row>

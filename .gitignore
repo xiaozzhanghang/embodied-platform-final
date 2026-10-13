@@ -1,7 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
+dist/
 /.pnp
 .pnp.*
 .yarn/*
@@ -44,6 +45,11 @@ public/1780382810146/
 public/assets/videos/
 scratch/
 *.mov
+*.mp4
+*.MP4
+*.safetensors
+adapters/
+data/mlx_dataset/
 mov_frames/
 mov_frames_detail/
 output/
@@ -51,3 +57,7 @@ outputs/
 fangwenjie-175-1/
 .claude/
 .playwright-cli/
+.venv*
+__pycache__/
+*.pyc
+

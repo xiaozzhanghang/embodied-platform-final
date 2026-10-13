@@ -1,0 +1,42 @@
+{
+  "model": "mlx-community/Qwen2.5-VL-3B-Instruct-4bit",
+  "adapter": "adapters",
+  "sample_count": 1,
+  "valid_json_rate": "100.0%",
+  "skill_accuracy": "0.0%",
+  "object_accuracy": "0.0%",
+  "mean_time_iou": "86.7%",
+  "results": [
+    {
+      "sample_index": 0,
+      "ground_truth": {
+        "step_no": 9,
+        "time_range": [
+          0.0,
+          15.0
+        ],
+        "skill": "换位紧固",
+        "object": "装配螺栓 (第3颗)",
+        "arm": "双臂协同 (Dual Arms)"
+      },
+      "prediction_raw": "```json\n[\n  {\n    \"step_no\": 1,\n    \"time_range\": [\n      0.0,\n      13.0\n    ],\n    \"skill\": \"工具归位\",\n    \"object\": \"装配工具归位\",\n    \"arm\": \"右手 (Right Arm)\"\n  }\n]\n```",
+      "predicted_step": {
+        "step_no": 1,
+        "time_range": [
+          0.0,
+          13.0
+        ],
+        "skill": "工具归位",
+        "object": "装配工具归位",
+        "arm": "右手 (Right Arm)"
+      },
+      "is_valid_json": true,
+      "skill_match": false,
+      "object_match": false,
+      "time_iou": 0.867,
+      "inference_time_sec": 4.57,
+      "peak_memory_gb": 4.29,
+      "tps": 33.1
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import {
   SwapOutlined, DiffOutlined, PlusCircleOutlined,
   SafetyCertificateOutlined, CloseCircleOutlined
 } from '@ant-design/icons';
+import { validateCandidateForImport } from './aiModelService';
 
 const { Text, Title } = Typography;
 
@@ -19,6 +20,7 @@ export default function ImportPreviewModal({
   existingSteps,
   candidatesToImport,
   baseRevisionId,
+  totalFrames = 1829,
   onConfirmImport,
 }) {
   // 对每条发生冲突的候选，用户可以选择裁决策略:
@@ -27,16 +29,28 @@ export default function ImportPreviewModal({
   // 'parallel': 并存追加 (作为并行动作)
   const [conflictResolutions, setConflictResolutions] = useState({});
 
-  // 冲突检测算法: 检查候选的 [startFrame, endFrame) 是否与现有步骤重叠
+  // 严格合规校验与冲突检测算法: 先通过 validateCandidateForImport 过滤非法与重复项，再检测重叠
   const analysis = useMemo(() => {
     if (!candidatesToImport || candidatesToImport.length === 0) {
-      return { conflicts: [], nonConflicts: [], summary: { add: 0, conflict: 0 } };
+      return { conflicts: [], nonConflicts: [], blocked: [], duplicates: [], summary: { total: 0, add: 0, conflict: 0, blocked: 0, duplicate: 0 } };
     }
 
     const conflicts = [];
     const nonConflicts = [];
+    const blocked = [];
+    const duplicates = [];
 
     candidatesToImport.forEach(cand => {
+      const valRes = validateCandidateForImport(cand, existingSteps, totalFrames);
+      if (!valRes.ok) {
+        if (valRes.isDuplicate) {
+          duplicates.push({ candidate: cand, reason: valRes.reason });
+        } else {
+          blocked.push({ candidate: cand, reason: valRes.reason });
+        }
+        return;
+      }
+
       // 寻找重叠的现有步骤: 两个区间 [A_start, A_end) 和 [B_start, B_end) 重叠条件为 A_start < B_end && B_start < A_end
       const overlappingExisting = existingSteps.filter(step => 
         cand.startFrame < step.endFrame && step.startFrame < cand.endFrame
@@ -56,13 +70,17 @@ export default function ImportPreviewModal({
     return {
       conflicts,
       nonConflicts,
+      blocked,
+      duplicates,
       summary: {
         total: candidatesToImport.length,
         add: nonConflicts.length,
         conflict: conflicts.length,
+        blocked: blocked.length,
+        duplicate: duplicates.length,
       }
     };
-  }, [candidatesToImport, existingSteps]);
+  }, [candidatesToImport, existingSteps, totalFrames]);
 
   // 初始化或切换策略
   const handleSetResolution = (candId, resolution) => {
@@ -73,7 +91,7 @@ export default function ImportPreviewModal({
   };
 
   const handleConfirm = () => {
-    // 构造最终导入决策
+    // 构造最终导入决策 (严禁包含被拦截的非法项)
     const importDecisions = {
       baseRevisionId,
       importBatchId: `batch-${Date.now().toString().slice(-6)}`,
@@ -83,6 +101,10 @@ export default function ImportPreviewModal({
         conflictedWith: c.conflictedWith,
         resolution: conflictResolutions[c.candidate.candidateId] || 'replace', // 默认替换
       })),
+      blockedCount: analysis.blocked.length,
+      duplicateCount: analysis.duplicates.length,
+      blocked: analysis.blocked,
+      duplicates: analysis.duplicates,
     };
     onConfirmImport(importDecisions);
   };
@@ -201,7 +223,8 @@ export default function ImportPreviewModal({
           type="primary"
           icon={<CheckCircleOutlined />}
           onClick={handleConfirm}
-          style={{ background: '#1677ff' }}
+          disabled={analysis.summary.add + analysis.summary.conflict === 0}
+          style={{ background: (analysis.summary.add + analysis.summary.conflict > 0) ? '#1677ff' : undefined }}
         >
           确认事务导入 (生成新修订)
         </Button>
@@ -226,14 +249,64 @@ export default function ImportPreviewModal({
               <Text strong style={{ color: '#52c41a' }}> {analysis.summary.add} </Text>条无冲突区间，
               <Text strong style={{ color: analysis.summary.conflict > 0 ? '#fa8c16' : '#52c41a' }}>
                 {analysis.summary.conflict}
-              </Text> 条与现有时间轴重叠冲突。
+              </Text> 条与现有时间轴重叠冲突；
+              {analysis.summary.duplicate > 0 && (
+                <Text style={{ color: '#d97706' }}> 已自动跳过重复 {analysis.summary.duplicate} 条；</Text>
+              )}
+              {analysis.summary.blocked > 0 && (
+                <Text strong style={{ color: '#dc2626' }}> 已拦截不合规 {analysis.summary.blocked} 条。</Text>
+              )}
             </Text>
           </div>
           <Space>
-            <Tag color="blue">半开区间校验通过</Tag>
+            {analysis.summary.blocked > 0 ? (
+              <Tag color="error">发现不合规项已被拦截</Tag>
+            ) : (
+              <Tag color="blue">区间契约校验通过</Tag>
+            )}
             <Tag color="cyan">动作字典匹配通过</Tag>
           </Space>
         </div>
+
+        {/* 不合规候选拦截提示 */}
+        {analysis.blocked.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <Alert
+              type="error"
+              showIcon
+              message={`已安全拦截 ${analysis.blocked.length} 项不合规候选（严禁写入正式标注）`}
+              description={
+                <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {analysis.blocked.map((b, idx) => (
+                    <div key={b.candidate.candidateId || idx} style={{ fontSize: 12, color: '#991b1b' }}>
+                      ❌ <b>{b.candidate.candidateId || `候选 #${idx + 1}`}</b> ({b.candidate.skill || '未知动作'}): {b.reason}
+                    </div>
+                  ))}
+                </div>
+              }
+            />
+          </div>
+        )}
+
+        {/* 重复候选跳过提示 */}
+        {analysis.duplicates.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <Alert
+              type="warning"
+              showIcon
+              message={`已自动过滤 ${analysis.duplicates.length} 项重复候选（避免重复导入）`}
+              description={
+                <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {analysis.duplicates.map((d, idx) => (
+                    <div key={d.candidate.candidateId || idx} style={{ fontSize: 12, color: '#92400e' }}>
+                      ⚠️ <b>{d.candidate.candidateId || `候选 #${idx + 1}`}</b> ({d.candidate.skill}): {d.reason}
+                    </div>
+                  ))}
+                </div>
+              }
+            />
+          </div>
+        )}
 
         {/* 冲突项裁决区域 */}
         {analysis.conflicts.length > 0 ? (

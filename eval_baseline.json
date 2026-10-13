@@ -1,0 +1,41 @@
+{
+  "model": "mlx-community/Qwen2.5-VL-3B-Instruct-4bit",
+  "adapter": null,
+  "sample_count": 1,
+  "valid_json_rate": "100.0%",
+  "skill_accuracy": "0.0%",
+  "object_accuracy": "0.0%",
+  "mean_time_iou": "74.0%",
+  "results": [
+    {
+      "sample_index": 0,
+      "ground_truth": {
+        "step_no": 9,
+        "time_range": [
+          0.0,
+          15.0
+        ],
+        "skill": "换位紧固",
+        "object": "装配螺栓 (第3颗)",
+        "arm": "双臂协同 (Dual Arms)"
+      },
+      "prediction_raw": "```json\n[\n\t{\"time_range\": [0.0, 11.1], \"skill\": \"铺纸\", \"object\": \"纸板\", \"arm\": \"双手\"}\n]\n```",
+      "predicted_step": {
+        "time_range": [
+          0.0,
+          11.1
+        ],
+        "skill": "铺纸",
+        "object": "纸板",
+        "arm": "双手"
+      },
+      "is_valid_json": true,
+      "skill_match": false,
+      "object_match": false,
+      "time_iou": 0.74,
+      "inference_time_sec": 9.82,
+      "peak_memory_gb": 4.07,
+      "tps": 46.5
+    }
+  ]
+}

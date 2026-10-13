@@ -14,7 +14,8 @@ import {
   Modal,
   Form,
   Select,
-  Tabs
+  Tabs,
+  Segmented
 } from 'antd';
 import {
   EditOutlined,
@@ -23,7 +24,10 @@ import {
   UserOutlined,
   PlusOutlined,
   DeleteOutlined,
-  ThunderboltOutlined
+  ThunderboltOutlined,
+  AimOutlined,
+  SlidersOutlined,
+  AppstoreOutlined
 } from '@ant-design/icons';
 import { ProFormSelect, ProFormText } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
@@ -33,28 +37,78 @@ import { STATIC_ROUTES, buildStaticHref } from '@/lib/staticRoutes';
 const { Text } = Typography;
 const { Option } = Select;
 
-const ANNO_TYPES = ['框标注', '点标注', '范围标注', '范围&框标注'];
+export const ANNO_TYPES = ['范围标注', '手势标注', '语义标注'];
 const TASK_STATUSES = ['进行中', '已完成', '暂停'];
 
-const projectNames = [
-  'SimulatedCollection(模拟采集) sin',
-  '天奇-餐盘整理任务',
-  '垃圾分类抓取项目',
-  'Galbot-厨房场景',
-];
-const taskbooks = ['TB-抓取红色方块', 'TB-餐盘整理', 'TB-垃圾分类', 'TB-物品摆放'];
-const taskTypes = ['垃圾清理', '餐盘整理', '物品搬运', '工具使用'];
-const people = ['张三', '李四', '王五', '赵六', '钱七', '孙八'];
+const typeTaskDefinitions = {
+  '范围标注': {
+    projects: ['天奇-新动力工位螺丝装配', 'TB-螺丝预装配', '天奇-电池模组紧固装配', '银河-双臂零件整理'],
+    taskbooks: ['TB-螺丝预装配', 'TB-电池模组紧固', 'TB-工件定点整理', 'TB-充电口装配'],
+    taskNames: [
+      '打螺丝工步时序范围切分',
+      '电池模组紧固时序范围标注',
+      '扫码与时钟对齐时序区间标注',
+      '充电口盖板扣合时序切分',
+      '电动螺栓枪回位动作切分',
+      '托盘抓取装配时序范围标注',
+      '零件工步动作时序范围切分'
+    ],
+    taskDesc: 'Ego第一视角动作时序范围切分、工步起止点判定与100%全视频覆盖',
+    deviceType: '天奇新动力 (Ego-Cam1)',
+    collectionMode: 'UMI工业',
+    subSceneCategory: 'UMI工业',
+  },
+  '手势标注': {
+    projects: ['Galbot-双手灵巧手姿态采集', 'TB-手势位姿采集', '天奇-第一视角手势标定', '双手21关节高精定位'],
+    taskbooks: ['TB-手势位姿采集', 'TB-双手抓握标定', 'TB-触觉接触点采集', 'TB-灵巧手协同标定'],
+    taskNames: [
+      '双手21关节手势关键点标定',
+      '工装模块电动拧紧双手手势标定',
+      '螺栓拾取双手抓握位姿标定',
+      '电池包稳固双手接触点标定',
+      '电批扳机按压食指关节点标定',
+      '双目第一视角双手骨骼点标定',
+      '精细捏合手势姿态分类标定'
+    ],
+    taskDesc: 'Ego第一视角双手21关节点解剖级定位、抓握手势分类与接触状态判定',
+    deviceType: 'Ego第一视角头戴相机 (GoPro)',
+    collectionMode: 'galbot',
+    subSceneCategory: 'UMI工业',
+  },
+  '语义标注': {
+    projects: ['天奇-工业装配语义对齐', 'TB-装配操作语义理解', 'Galbot-原子动作语义库', '具身智能VLA动作语义对齐'],
+    taskbooks: ['TB-装配操作语义理解', 'TB-原子动作语义解析', 'TB-指令-动作映射对齐', 'TB-多视角语义理解'],
+    taskNames: [
+      '细粒度动作语义四元组标定',
+      '抓取猕猴桃放置果盘语义解析',
+      '移动高脚杯至清洗区原子动作语义',
+      '旋转微调液压阀门动作语义四元组',
+      '装配工具盒开盖取螺丝刀操作语义',
+      '机器人双臂协同操控语义对齐',
+      '工位清洁与物料归位语义解析'
+    ],
+    taskDesc: '细粒度动作四元组 (Agent-Skill-Object-Goal) 结构化语义理解与对齐',
+    deviceType: '双臂手眼协同设备 (Galbot-1.16)',
+    collectionMode: '标准采集',
+    subSceneCategory: 'UMI家居',
+  }
+};
 
-const DEVICE_TYPES = ['galbot', '鹿鸣', '真机', '仿真机'];
-const COLLECTION_MODES = ['UMI', 'galbot', '标准采集'];
+const projectNames = [
+  '天奇-新动力工位螺丝装配',
+  'Galbot-双手灵巧手姿态采集',
+  '天奇-工业装配语义对齐',
+  'TB-螺丝预装配',
+  'TB-手势位姿采集',
+];
+const taskbooks = ['TB-螺丝预装配', 'TB-手势位姿采集', 'TB-装配操作语义理解', 'TB-电池模组紧固'];
+const people = ['张三', '李四', '王五', '赵六', '钱七', '孙八'];
 const REMOTE_CONTROL_TYPES = ['双设备', '单设备', '遥操'];
 
-const annoTypeColors = {
-  '框标注': 'green',
-  '点标注': 'blue',
-  '范围标注': 'purple',
-  '范围&框标注': 'magenta',
+export const annoTypeColors = {
+  '范围标注': 'blue',
+  '手势标注': 'green',
+  '语义标注': 'purple',
 };
 
 function makeProgress(total, type) {
@@ -64,27 +118,35 @@ function makeProgress(total, type) {
   return Math.floor(Math.random() * total);
 }
 
-const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
+export const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
   const dataCount = [186, 240, 312, 156, 420, 198, 88, 520, 164, 276][i % 10];
-  const annoType = ANNO_TYPES[i % 4];
+  // 按照三种具身智能核心类型轮询生成：范围标注(i=0为19884), 手势标注(i=1为19883), 语义标注(i=2为19882)
+  const annoType = ANNO_TYPES[i % 3];
+  const def = typeTaskDefinitions[annoType];
+  const typeIndex = Math.floor(i / 3);
+
   const annoTotal = dataCount;
   const annoDone = makeProgress(annoTotal, i < 5 ? 'full' : i < 12 ? 'partial' : 'zero');
   const auditDone = makeProgress(annoDone, i < 3 ? 'partial' : 'zero');
   const taskStatus = i < 4 ? '已完成' : i < 16 ? '进行中' : '暂停';
-  const deviceType = DEVICE_TYPES[i % DEVICE_TYPES.length];
-  const collectionMode = COLLECTION_MODES[i % COLLECTION_MODES.length];
+  const taskName = def.taskNames[typeIndex % def.taskNames.length];
+  const project = def.projects[typeIndex % def.projects.length];
+  const taskbook = def.taskbooks[typeIndex % def.taskbooks.length];
+  const deviceType = def.deviceType;
+  const collectionMode = def.collectionMode;
+  const subSceneCategory = def.subSceneCategory;
   const remoteControlType = REMOTE_CONTROL_TYPES[i % REMOTE_CONTROL_TYPES.length];
 
   return {
     key: String(i),
-    project: projectNames[i % projectNames.length],
-    taskbook: taskbooks[i % taskbooks.length],
+    project,
+    taskbook,
     annoId: 16822 - i,
     taskId: 21795 - Math.floor(i / 2),
     instanceId: 19884 - i,
-    taskName: `${taskTypes[i % taskTypes.length]}_任务_${String(i + 1).padStart(3, '0')}`,
-    taskNameEn: `Task_${taskTypes[i % taskTypes.length]}_${String(i + 1).padStart(3, '0')}`,
-    annoTaskName: `${taskTypes[i % taskTypes.length]}_标注_${people[i % people.length]}`,
+    taskName,
+    taskNameEn: `Task_${annoType}_${String(i + 1).padStart(3, '0')}`,
+    annoTaskName: `${taskName.substring(0, 8)}_${people[i % people.length]}`,
     dataCount,
     dataMinutes: (dataCount * 0.5 / 60).toFixed(1),
     taskStatus,
@@ -96,7 +158,7 @@ const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
     remoteControlType,
     taskUsage: i % 2 === 0 ? 'OfficialCollection(正式采集)' : 'TrialCollection(试用采集)',
     sceneCategory: i % 2 === 0 ? '真实数据' : '模拟数据',
-    subSceneCategory: ['UMI工业', 'UMI家居', 'UMI物流', 'UMI医疗'][i % 4],
+    subSceneCategory,
     qaer: people[(i + 1) % people.length],
     annotator: people[i % people.length],
     auditor: people[(i + 2) % people.length],
@@ -107,7 +169,7 @@ const instanceMockData = Array.from({ length: 20 }).map((_, i) => {
     auditProgress: auditDone,
     auditTotal: annoDone,
     annoType,
-    taskDesc: `${taskTypes[i % taskTypes.length]}场景数据标注`,
+    taskDesc: def.taskDesc,
     creator: people[(i + 4) % people.length],
     createTime: `2026-0${3 + (i % 4)}-${String(10 + (i % 20)).padStart(2, '0')} ${String(8 + (i % 12)).padStart(2, '0')}:${String(i * 3 % 60).padStart(2, '0')}:00`,
   };
@@ -117,7 +179,8 @@ export default function AnnotationAuditPage() {
   const router = useRouter();
   const { message } = App.useApp();
 
-  // Tab & Filters
+  // 标注类型 Tab & 任务状态过滤
+  const [activeAnnoTypeTab, setActiveAnnoTypeTab] = useState('all');
   const [activeStatusTab, setActiveStatusTab] = useState('all');
   const [appliedFilters, setAppliedFilters] = useState({});
 
@@ -134,24 +197,33 @@ export default function AnnotationAuditPage() {
   const [assignForm] = Form.useForm();
 
   useEffect(() => {
-    const saved = localStorage.getItem('embodied_anno_tasks');
+    const saved = localStorage.getItem('embodied_anno_tasks_v2');
     if (saved) {
       try {
-        setTableData(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0 && ANNO_TYPES.includes(parsed[0].annoType)) {
+          setTableData(parsed);
+          return;
+        }
       } catch (e) {
         console.error(e);
       }
     }
+    setTableData(instanceMockData);
+    localStorage.setItem('embodied_anno_tasks_v2', JSON.stringify(instanceMockData));
   }, []);
 
   const persistData = (data) => {
     setTableData(data);
-    localStorage.setItem('embodied_anno_tasks', JSON.stringify(data));
+    localStorage.setItem('embodied_anno_tasks_v2', JSON.stringify(data));
   };
 
   // Filtered List
   const filteredData = useMemo(() => {
     return tableData.filter(item => {
+      // 标注类型分类 Tab 过滤
+      if (activeAnnoTypeTab !== 'all' && item.annoType !== activeAnnoTypeTab) return false;
+
       // Status Tab filter
       if (activeStatusTab === 'running' && item.taskStatus !== '进行中') return false;
       if (activeStatusTab === 'completed' && item.taskStatus !== '已完成') return false;
@@ -170,17 +242,30 @@ export default function AnnotationAuditPage() {
 
       return true;
     });
-  }, [tableData, activeStatusTab, appliedFilters]);
+  }, [tableData, activeAnnoTypeTab, activeStatusTab, appliedFilters]);
 
-  // Counts for Tabs
-  const statusCounts = useMemo(() => {
+  // Counts for Anno Types
+  const typeCounts = useMemo(() => {
     return {
       all: tableData.length,
-      running: tableData.filter(t => t.taskStatus === '进行中').length,
-      completed: tableData.filter(t => t.taskStatus === '已完成').length,
-      paused: tableData.filter(t => t.taskStatus === '暂停').length,
+      '范围标注': tableData.filter(t => t.annoType === '范围标注').length,
+      '手势标注': tableData.filter(t => t.annoType === '手势标注').length,
+      '语义标注': tableData.filter(t => t.annoType === '语义标注').length,
     };
   }, [tableData]);
+
+  // Counts for Status Tabs (联动当前选中的标注类型)
+  const statusCounts = useMemo(() => {
+    const list = activeAnnoTypeTab === 'all' 
+      ? tableData 
+      : tableData.filter(t => t.annoType === activeAnnoTypeTab);
+    return {
+      all: list.length,
+      running: list.filter(t => t.taskStatus === '进行中').length,
+      completed: list.filter(t => t.taskStatus === '已完成').length,
+      paused: list.filter(t => t.taskStatus === '暂停').length,
+    };
+  }, [tableData, activeAnnoTypeTab]);
 
   // Single Reassign
   const handleReassign = (record) => {
@@ -280,14 +365,31 @@ export default function AnnotationAuditPage() {
       key: 'instanceId',
       width: 80,
       align: 'center',
-      render: (t) => <Text style={{ color: '#1677ff', fontFamily: 'monospace' }}>{t}</Text>,
+      render: (t, r) => (
+        <Button
+          type="link"
+          style={{ padding: 0, color: '#1677ff', fontFamily: 'monospace' }}
+          onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditDetail, { id: r.instanceId, type: r.annoType }))}
+        >
+          {t}
+        </Button>
+      ),
     },
     {
       title: '任务名称',
       dataIndex: 'taskName',
       key: 'taskName',
-      width: 180,
+      width: 200,
       ellipsis: true,
+      render: (t, r) => (
+        <Button
+          type="link"
+          style={{ padding: 0, fontWeight: 600, color: '#1e293b', textAlign: 'left', height: 'auto', whiteSpace: 'normal', lineHeight: 1.4 }}
+          onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditDetail, { id: r.instanceId, type: r.annoType }))}
+        >
+          {t}
+        </Button>
+      ),
     },
     {
       title: '标注任务名称',
@@ -410,7 +512,7 @@ export default function AnnotationAuditPage() {
       key: 'annoType',
       width: 110,
       align: 'center',
-      render: (t) => <Tag color={annoTypeColors[t]} style={{ margin: 0 }}>{t}</Tag>,
+      render: (t) => <Tag color={annoTypeColors[t] || 'blue'} style={{ margin: 0, fontWeight: 600 }}>{t}</Tag>,
     },
     {
       title: '任务描述',
@@ -455,7 +557,7 @@ export default function AnnotationAuditPage() {
             size="small"
             icon={<LoginOutlined />}
             style={{ padding: 0, fontWeight: 600 }}
-            onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditDetail, { id: r.instanceId }))}
+            onClick={() => router.push(buildStaticHref(STATIC_ROUTES.auditDetail, { id: r.instanceId, type: r.annoType }))}
           >
             进入
           </Button>
@@ -511,18 +613,67 @@ export default function AnnotationAuditPage() {
 
         {/* 标注列表 */}
         <Card className="ui-table-card" styles={{ body: { padding: 0 } }}>
-          {/* Tab 栏 */}
-          <Tabs
-            activeKey={activeStatusTab}
-            onChange={setActiveStatusTab}
-            style={{ padding: '0 16px' }}
-            items={[
-              { key: 'all', label: `全部 (${statusCounts.all})` },
-              { key: 'running', label: `进行中 (${statusCounts.running})` },
-              { key: 'completed', label: `已完成 (${statusCounts.completed})` },
-              { key: 'paused', label: `暂停 (${statusCounts.paused})` },
-            ]}
-          />
+          {/* 顶部标注类型大分类 Tab 与状态快捷筛选 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 16px', borderBottom: '1px solid #f0f0f0', flexWrap: 'wrap', gap: 12 }}>
+            <Tabs
+              activeKey={activeAnnoTypeTab}
+              onChange={setActiveAnnoTypeTab}
+              style={{ flex: 1, margin: 0, minWidth: 460 }}
+              items={[
+                {
+                  key: 'all',
+                  label: (
+                    <span style={{ fontWeight: 600 }}>
+                      全部标注任务 <Tag style={{ borderRadius: 10, marginInlineStart: 4 }}>{typeCounts.all}</Tag>
+                    </span>
+                  )
+                },
+                {
+                  key: '范围标注',
+                  label: (
+                    <span>
+                      <Tag color="blue" style={{ marginRight: 4, fontWeight: 600 }}>范围标注</Tag>
+                      动作时序切分 <Tag color="blue" style={{ borderRadius: 10, marginInlineStart: 4 }}>{typeCounts['范围标注']}</Tag>
+                    </span>
+                  )
+                },
+                {
+                  key: '手势标注',
+                  label: (
+                    <span>
+                      <Tag color="green" style={{ marginRight: 4, fontWeight: 600 }}>手势标注</Tag>
+                      双手21关节关键点 <Tag color="green" style={{ borderRadius: 10, marginInlineStart: 4 }}>{typeCounts['手势标注']}</Tag>
+                    </span>
+                  )
+                },
+                {
+                  key: '语义标注',
+                  label: (
+                    <span>
+                      <Tag color="purple" style={{ marginRight: 4, fontWeight: 600 }}>语义标注</Tag>
+                      动作语义四元组 <Tag color="purple" style={{ borderRadius: 10, marginInlineStart: 4 }}>{typeCounts['语义标注']}</Tag>
+                    </span>
+                  )
+                },
+              ]}
+            />
+
+            {/* 状态快捷过滤 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 6 }}>
+              <span style={{ fontSize: 12, color: '#64748b' }}>任务状态：</span>
+              <Segmented
+                size="middle"
+                value={activeStatusTab}
+                onChange={setActiveStatusTab}
+                options={[
+                  { label: `全部 (${statusCounts.all})`, value: 'all' },
+                  { label: `进行中 (${statusCounts.running})`, value: 'running' },
+                  { label: `已完成 (${statusCounts.completed})`, value: 'completed' },
+                  { label: `暂停 (${statusCounts.paused})`, value: 'paused' },
+                ]}
+              />
+            </div>
+          </div>
 
           <TableToolbar
             title="标注列表"
