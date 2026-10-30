@@ -50,11 +50,26 @@ export const SCENE_OBJECTS: Record<string, SelectableObject[]> = {
       weight: '0.45 kg',
       material: '实木餐架 + 强化陶瓷餐盘',
       isPlaceholder: false,
+      modelSource: 'NVIDIA SimReady Central (OpenUSD)',
       description: 'BiGym 2.0 经典基准任务（Move Plate）：Unitree G1 人形机器人双臂协同从沥水架取盘并插放至相邻排位。',
       telemetry: {
         jointState: '双架位标定就绪',
         confidence: 0.996,
         lastUpdate: '视觉伺服就绪'
+      },
+      simReady: {
+        usdAssetId: 'nvidia/simready:kitchen_ceramic_dinner_plate_02',
+        foundationCertified: true,
+        category: 'Kitchenware / Tableware',
+        massKg: 0.45,
+        centerOfMass: [0, 0, 0.005],
+        friction: { static: 0.58, dynamic: 0.42 },
+        collisionType: 'ConvexHull',
+        restitution: 0.03,
+        hfHubUrl: 'https://huggingface.co/datasets/nvidia/simready-assets',
+        sourceImageMatchScore: 0.982,
+        usdFormat: 'OpenUSD (.usdc)',
+        author: 'NVIDIA Omniverse SimReady Central'
       }
     },
     {
@@ -67,11 +82,26 @@ export const SCENE_OBJECTS: Record<string, SelectableObject[]> = {
       weight: '0.32 kg',
       material: '光滑釉面陶瓷',
       isPlaceholder: false,
+      modelSource: 'NVIDIA SimReady Central (OpenUSD)',
       description: 'BiGym 2.0 翻转水杯基准（Flip Cup）：将倒放的杯子翻正到直立状态，验证灵巧手侧向夹持与受力反馈。',
       telemetry: {
         jointState: '倒置待翻正',
         confidence: 0.985,
         lastUpdate: '视觉位姿跟踪'
+      },
+      simReady: {
+        usdAssetId: 'nvidia/simready:household_coffee_mug_ceramic_v1',
+        foundationCertified: true,
+        category: 'Household / Drinkware',
+        massKg: 0.32,
+        centerOfMass: [0, -0.015, 0],
+        friction: { static: 0.65, dynamic: 0.50 },
+        collisionType: 'CompoundBox',
+        restitution: 0.04,
+        hfHubUrl: 'https://huggingface.co/datasets/nvidia/simready-assets',
+        sourceImageMatchScore: 0.991,
+        usdFormat: 'OpenUSD (.usdc)',
+        author: 'NVIDIA Omniverse SimReady Central'
       }
     },
     {
@@ -84,11 +114,26 @@ export const SCENE_OBJECTS: Record<string, SelectableObject[]> = {
       weight: '0.45 kg',
       material: '强化瓦楞纸板 / 封箱胶带',
       isPlaceholder: false,
+      modelSource: 'NVIDIA SimReady Central (OpenUSD)',
       description: 'BiGym 2.0 经典基准（Pick Box）：双臂紧密贴合抱取瓦楞纸箱，腰部回旋平移放置到主柜台目标托盘。',
       telemetry: {
         jointState: '台面就绪待抓取',
         confidence: 0.998,
         lastUpdate: '双目空间定位'
+      },
+      simReady: {
+        usdAssetId: 'nvidia/simready:warehouse_carton_box_medium_01',
+        foundationCertified: true,
+        category: 'Warehouse / Packaging',
+        massKg: 0.45,
+        centerOfMass: [0, 0, 0.01],
+        friction: { static: 0.72, dynamic: 0.55 },
+        collisionType: 'ConvexHull',
+        restitution: 0.02,
+        hfHubUrl: 'https://huggingface.co/datasets/nvidia/simready-assets',
+        sourceImageMatchScore: 0.996,
+        usdFormat: 'OpenUSD (.usdc)',
+        author: 'NVIDIA Omniverse SimReady Central'
       }
     },
     {
@@ -101,10 +146,25 @@ export const SCENE_OBJECTS: Record<string, SelectableObject[]> = {
       weight: '0.8 kg',
       material: '高对比度磨砂亚克力',
       isPlaceholder: false,
+      modelSource: 'NVIDIA SimReady Central (OpenUSD)',
       description: '任务目标放置终点（Goal Region），搭载红绿激光位姿视觉标记，校验放置精度与稳定性。',
       telemetry: {
         jointState: '待接收物体',
         lastUpdate: '传感器锁相'
+      },
+      simReady: {
+        usdAssetId: 'nvidia/simready:industrial_steel_tray_square_01',
+        foundationCertified: true,
+        category: 'Industrial / Tray & Pallet',
+        massKg: 0.80,
+        centerOfMass: [0, 0, 0],
+        friction: { static: 0.45, dynamic: 0.35 },
+        collisionType: 'ConvexHull',
+        restitution: 0.06,
+        hfHubUrl: 'https://huggingface.co/datasets/nvidia/simready-assets',
+        sourceImageMatchScore: 0.978,
+        usdFormat: 'OpenUSD (.usdc)',
+        author: 'NVIDIA Omniverse SimReady Central'
       }
     },
     {

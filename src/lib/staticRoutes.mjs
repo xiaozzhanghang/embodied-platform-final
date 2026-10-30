@@ -18,6 +18,8 @@ export const STATIC_ROUTES = Object.freeze({
   taskbookDetail: '/collection/taskbooks/detail',
   taskDetail: '/collection/tasks/detail',
   templateDetail: '/collection/templates/detail',
+  workbenchV2: '/annotation/workbench-v2',
+  workbenchProto: '/annotation/workbench-proto',
 });
 
 export function buildStaticHref(path, params = {}) {

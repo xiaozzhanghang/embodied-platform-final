@@ -1,4 +1,11 @@
-export type SceneId = 'kitchen_bigym' | 'industrial_bench' | 'standard_arena';
+export type SceneId =
+  | 'bigym_tabletop'
+  | 'bigym_dishwasher'
+  | 'bigym_kitchen_counter'
+  | 'bigym_reaching'
+  | 'industrial_bench'
+  | 'standard_arena'
+  | 'kitchen_bigym'; // alias for bigym_kitchen_counter
 
 export type RobotModelType = 'spline_robot' | 'unitree_g1' | 'robot_expressive' | 'placeholder_geom';
 
@@ -60,6 +67,22 @@ export interface ObjectTelemetry {
   lastUpdate?: string;
 }
 
+export interface SimReadyMeta {
+  usdAssetId: string;
+  foundationCertified: boolean;
+  category: string;
+  massKg: number;
+  centerOfMass: [number, number, number];
+  friction: { static: number; dynamic: number };
+  collisionType: 'ConvexHull' | 'CompoundBox' | 'ExactMesh' | 'Cylinder';
+  restitution: number;
+  hfHubUrl: string;
+  sourceImageMatchScore?: number;
+  usdFormat: 'OpenUSD (.usdc)' | 'OpenUSD (.usda)' | 'OpenUSD (.usd)';
+  author?: string;
+  matchedFromImage?: string;
+}
+
 export interface SelectableObject {
   id: string;
   name: string;
@@ -74,6 +97,7 @@ export interface SelectableObject {
   modelSource?: string;
   description: string;
   telemetry?: ObjectTelemetry;
+  simReady?: SimReadyMeta;
 }
 
 export interface CameraPreset {

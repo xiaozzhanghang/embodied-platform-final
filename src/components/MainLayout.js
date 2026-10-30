@@ -204,6 +204,7 @@ function MainLayoutContent({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [userRole, setUserRole] = useState(ROLES.ADMIN_ZHOU);
   const [isMobile, setIsMobile] = useState(false);
+  const [sidebarRobotMode, setSidebarRobotMode] = useState('video_webm'); // 默认启用方案 C：透明视频 (WebM / ProRes)
   const router = useRouter();
   const pathname = usePathname();
   const { message } = App.useApp();
@@ -394,7 +395,7 @@ function MainLayoutContent({ children }) {
           borderRight: 'none',
         }}
       >
-        <div className="sidebar-logo">
+        <div className="sidebar-logo" style={{ flexShrink: 0 }}>
           <div className="logo-square">
             <img src={logoImg?.src || logoImg} alt="logo" style={{ width: 28, height: 28, objectFit: 'contain' }} />
           </div>
@@ -404,29 +405,205 @@ function MainLayoutContent({ children }) {
             </span>
           )}
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[
-            pathname === '/collection/collect-home' ? '/collection/collect-home' :
-            pathname.includes('/collection/collection-tasks') ? '/collection/collection-tasks' : 
-            pathname.includes('/collection/qa') ? '/collection/qa' : 
-            pathname.includes('/collection/annotation-tasks') ? '/collection/annotation-tasks' : 
-            pathname.includes('/annotation/review') ? '/annotation/review' : 
-            pathname.includes('/annotation/audit') ? '/annotation/audit' : 
-            pathname.includes('/collection/collect') ? '/collection/collect' : 
-            pathname.includes('/collection/tasks') ? '/collection/tasks' : 
-            pathname
-          ]}
-          defaultOpenKeys={getOpenKeys()}
-          items={getMenuItems()}
-          onClick={({ key }) => {
-            if (key.startsWith('/')) {
-              router.push(key);
-            }
-          }}
-          style={{ borderRight: 0 }}
-        />
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          <Menu
+            theme="dark"
+            mode="inline"
+            selectedKeys={[
+              pathname === '/collection/collect-home' ? '/collection/collect-home' :
+              pathname.includes('/collection/collection-tasks') ? '/collection/collection-tasks' : 
+              pathname.includes('/collection/qa') ? '/collection/qa' : 
+              pathname.includes('/collection/annotation-tasks') ? '/collection/annotation-tasks' : 
+              pathname.includes('/annotation/review') ? '/annotation/review' : 
+              pathname.includes('/annotation/audit') ? '/annotation/audit' : 
+              pathname.includes('/collection/collect') ? '/collection/collect' : 
+              pathname.includes('/collection/tasks') ? '/collection/tasks' : 
+              pathname
+            ]}
+            defaultOpenKeys={getOpenKeys()}
+            items={getMenuItems()}
+            onClick={({ key }) => {
+              if (key.startsWith('/')) {
+                router.push(key);
+              }
+            }}
+            style={{ borderRight: 0 }}
+          />
+        </div>
+
+        {/* 左下角：方案 B 动态透明 WebP 机器人挂件 (红框位置) */}
+        {/* 左下角：方案 C 透明视频 (WebM / ProRes) 挂件 (红框位置) */}
+        {!effectiveCollapsed ? (
+          <div
+            className="sidebar-robot-widget"
+            style={{
+              flexShrink: 0,
+              padding: '10px 14px 14px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'transparent',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              position: 'relative'
+            }}
+          >
+            {/* 模式状态徽章与快捷切换器 */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                marginBottom: '6px'
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.14)',
+                  fontSize: '11px',
+                  color: '#e2e8f0'
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#10b981',
+                    boxShadow: '0 0 6px #10b981'
+                  }}
+                />
+                <span>{sidebarRobotMode === 'video_webm' ? '方案 C · 透明视频' : '方案 B · 动态WebP'}</span>
+              </div>
+
+              {/* 快捷对比切换小胶囊 */}
+              <button
+                type="button"
+                onClick={() => setSidebarRobotMode(m => m === 'video_webm' ? 'animated_webp' : 'video_webm')}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '10px',
+                  color: '#cbd5e1',
+                  fontSize: '10px',
+                  padding: '2px 8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                title="点击在方案 C(透明视频) 与方案 B(动态WebP) 之间切换"
+              >
+                切到{sidebarRobotMode === 'video_webm' ? 'WebP' : '视频'}
+              </button>
+            </div>
+
+            {/* 角色播放容器 */}
+            <div
+              style={{
+                width: '190px',
+                height: '170px',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                overflow: 'hidden'
+              }}
+              onClick={() => router.push('/demo/spline-character')}
+              title={sidebarRobotMode === 'video_webm' ? '方案 C：16.9秒全长度透明视频（点击查看详情）' : '方案 B：动态透明 WebP（点击查看详情）'}
+            >
+              {/* 纯净无光模式，完全去除任何背景光晕 */}
+
+              {sidebarRobotMode === 'video_webm' ? (
+                /* 方案 C：纯净透明背景视频 (无任何背后杂光/紫光) */
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    filter: 'none',
+                    transition: 'transform 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.06)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                  <source src="/robot-character/spline_robot_transparent.mp4" type='video/mp4; codecs="hvc1"' />
+                  <source src="/robot-character/spline_robot_transparent.webm" type="video/webm" />
+                </video>
+              ) : (
+                /* 方案 B：动态透明 WebP */
+                <img
+                  src="/robot-character/spline_robot_animated.webp"
+                  alt="Embodied Robot Assistant"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    filter: 'none',
+                    transition: 'transform 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.06)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                />
+              )}
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              flexShrink: 0,
+              padding: '12px 0',
+              display: 'flex',
+              justifyContent: 'center',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+            }}
+          >
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                cursor: 'pointer'
+              }}
+              onClick={() => router.push('/demo/spline-character')}
+              title="具身智能助理"
+            >
+              {sidebarRobotMode === 'video_webm' ? (
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{ width: '56px', height: '56px', objectFit: 'contain' }}
+                >
+                  <source src="/robot-character/spline_robot_transparent.mp4" type='video/mp4; codecs="hvc1"' />
+                  <source src="/robot-character/spline_robot_transparent.webm" type="video/webm" />
+                </video>
+              ) : (
+                <img
+                  src="/robot-character/spline_robot_animated.webp"
+                  alt="Assistant"
+                  style={{ width: '52px', height: '52px', objectFit: 'contain' }}
+                />
+              )}
+            </div>
+          </div>
+        )}
       </Sider>
       <Layout style={{ marginLeft: effectiveCollapsed ? collapsedWidth : siderWidth, transition: 'margin-left 0.2s' }}>
         <Header className="header-bar" style={{ position: 'sticky', top: 0 }}>

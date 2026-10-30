@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Table, Button, Tag, Space, Input, Card, Typography, App, Badge, Select, Row, Col, Form, Tooltip, Statistic, Divider, Modal, Radio, Progress, List, Upload, InputNumber, Alert, Checkbox, Slider } from 'antd';
-import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined, ThunderboltOutlined, RobotOutlined, VideoCameraOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { CloseOutlined, SearchOutlined, ReloadOutlined, LeftOutlined, EyeOutlined, EditOutlined, UndoOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MinusCircleOutlined, CopyOutlined, LoadingOutlined, UploadOutlined, InboxOutlined, ThunderboltOutlined, RobotOutlined, VideoCameraOutlined, SafetyCertificateOutlined, CompressOutlined, ArrowsAltOutlined, MinusOutlined, DownOutlined, UpOutlined, SyncOutlined, CheckCircleFilled, FullscreenOutlined } from '@ant-design/icons';
 import { QueryFilter, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import MainLayout from '@/components/MainLayout';
 import { PageHeader, StatusTag, TableToolbarActions } from '@/components/ui';
@@ -240,17 +240,24 @@ export default function AnnotationAuditEpisodeListPage() {
 
   // Batch Annotation Configurations
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [isBatchModalMinimized, setIsBatchModalMinimized] = useState(false);
   const [batchTemplateId, setBatchTemplateId] = useState(null);
   const [batchStrategy, setBatchStrategy] = useState('proportional');
   const [batchTargetScope, setBatchTargetScope] = useState('unannotated'); // 'selected' | 'unannotated' | 'all'
   const [isCopying, setIsCopying] = useState(false);
   const [copyProgress, setCopyProgress] = useState(0);
 
-  // AI Annotation States (与工作台保持一致的交互架构)
+  // AI Annotation States (支持后台小窗口非阻塞流式处理)
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [aiInferenceStep, setAiInferenceStep] = useState('config'); // 'config' | 'inferring' | 'review'
+  const [isAiModalMinimized, setIsAiModalMinimized] = useState(false);
+  const [isFloatingWidgetCollapsed, setIsFloatingWidgetCollapsed] = useState(false);
+  const [aiInferenceStep, setAiInferenceStep] = useState('config'); // 'config' | 'inferring' | 'review' | 'applying' | 'completed'
   const [aiProgress, setAiProgress] = useState(0);
   const [aiProgressStage, setAiProgressStage] = useState('');
+  const [aiApplyProgress, setAiApplyProgress] = useState(0);
+  const [aiApplyCurrentIndex, setAiApplyCurrentIndex] = useState(0);
+  const [aiApplyTotal, setAiApplyTotal] = useState(0);
+  const [aiApplyCurrentEpisode, setAiApplyCurrentEpisode] = useState('');
   const [aiModel, setAiModel] = useState('local_qwen');
   const [aiMode, setAiMode] = useState('full_segmentation'); // 'full_segmentation' | 'window_sliding' | 'template_align'
   const [aiFramesPerWindow, setAiFramesPerWindow] = useState(6);
@@ -264,6 +271,16 @@ export default function AnnotationAuditEpisodeListPage() {
     traceId: 'qwen_06ffd6466ef0',
     endpoint: 'qwen2.5-vl-7b (HTTP 200 OK)'
   });
+
+  const aiApplyIntervalRef = useRef(null);
+  const aiInferenceTimersRef = useRef([]);
+
+  useEffect(() => {
+    return () => {
+      if (aiApplyIntervalRef.current) clearInterval(aiApplyIntervalRef.current);
+      aiInferenceTimersRef.current.forEach(t => clearTimeout(t));
+    };
+  }, []);
 
   // Template Search & Category Filter State
   const [templateSearchKeyword, setTemplateSearchKeyword] = useState('');
@@ -393,19 +410,46 @@ export default function AnnotationAuditEpisodeListPage() {
   };
 
   const handleOpenAiModal = () => {
+    if (isAiModalMinimized) {
+      setIsAiModalMinimized(false);
+      setIsAiModalOpen(true);
+      return;
+    }
     setAiInferenceStep('config');
     setAiProgress(0);
     setAiProgressStage('');
     setIsAiModalOpen(true);
   };
 
-  // AI 自动标注处理函数 (与工作台保持 100% 一致)
-  const handleStartAiInference = () => {
+  const handleCancelAiProcess = () => {
+    if (aiApplyIntervalRef.current) {
+      clearInterval(aiApplyIntervalRef.current);
+      aiApplyIntervalRef.current = null;
+    }
+    aiInferenceTimersRef.current.forEach(t => clearTimeout(t));
+    aiInferenceTimersRef.current = [];
+    setIsAiModalOpen(false);
+    setIsAiModalMinimized(false);
+    setAiInferenceStep('config');
+    setAiProgress(0);
+    setAiApplyProgress(0);
+  };
+
+  // AI 自动标注处理函数 (与工作台保持 100% 一致，支持后台小窗口非阻塞流式处理)
+  const handleStartAiInference = (runInBackground = false) => {
     setAiInferenceStep('inferring');
     setAiProgress(15);
     setAiProgressStage('阶段 1/5: 视频时序密集采样 (覆盖 3454 帧全视频 00:00~01:55 全程，提取动作关键切片)...');
 
-    setTimeout(() => {
+    if (runInBackground) {
+      setIsAiModalMinimized(true);
+      message.info('通义千问 Qwen2.5-VL 时序推理已转入后台小窗口运行，您可以继续在页面中进行其他操作');
+    }
+
+    aiInferenceTimersRef.current.forEach(t => clearTimeout(t));
+    aiInferenceTimersRef.current = [];
+
+    const t1 = setTimeout(() => {
       setAiAudit({
         latencyMs: 1180,
         tokens: 2420,
@@ -414,22 +458,22 @@ export default function AnnotationAuditEpisodeListPage() {
       });
     }, 1100);
 
-    setTimeout(() => {
+    const t2 = setTimeout(() => {
       setAiProgress(38);
       setAiProgressStage('阶段 2/5: 连接通义千问 Qwen2.5-VL 视觉内核，执行多模态时序切分...');
     }, 600);
 
-    setTimeout(() => {
+    const t3 = setTimeout(() => {
       setAiProgress(68);
       setAiProgressStage(`阶段 3/5: Qwen2.5-VL 云端推理响应成功 (HTTP 200 OK · 耗时 1180ms) · 提取机械臂姿态与接触临界点...`);
     }, 1200);
 
-    setTimeout(() => {
+    const t4 = setTimeout(() => {
       setAiProgress(88);
       setAiProgressStage('阶段 4/5: 工业动作语义四元组解析与受控词表匹配 (12 组工步首尾相连，0 时序空隙)...');
     }, 1800);
 
-    setTimeout(() => {
+    const t5 = setTimeout(() => {
       setAiProgress(100);
       setAiProgressStage('阶段 5/5: 🎉 通义千问 Qwen2.5-VL 动作切分完成！全视频 3454 帧 100% 满铺覆盖，共生成 12 个连贯工步！');
 
@@ -644,10 +688,12 @@ export default function AnnotationAuditEpisodeListPage() {
       setAiSelectedCandidateIds(candidates.map(c => c.id));
       setAiInferenceStep('review');
     }, 2400);
+
+    aiInferenceTimersRef.current = [t1, t2, t3, t4, t5];
   };
 
-  // 确认导入并应用 AI 识别动作步骤至实例列表
-  const handleApplyAiSteps = () => {
+  // 确认导入并应用 AI 识别动作步骤至实例列表 (支持后台小窗口非阻塞流式批处理)
+  const handleApplyAiSteps = (runInBackground = false) => {
     let selected = aiCandidateSteps.filter(s => aiSelectedCandidateIds.includes(s.id));
     if (selected.length === 0) {
       selected = aiCandidateSteps;
@@ -668,29 +714,62 @@ export default function AnnotationAuditEpisodeListPage() {
       ? episodes.filter(e => selectedRowKeys.includes(e.key))
       : episodes.filter(e => e.annoStatus !== '已标注');
 
-    const targetKeys = targetEpisodes.length > 0 
-      ? targetEpisodes.map(e => e.key)
-      : [episodes[0].key];
+    const actualTargets = targetEpisodes.length > 0 ? targetEpisodes : [episodes[0]];
+    const totalCount = actualTargets.length;
 
+    // 进入批量导入应用流程
+    setAiInferenceStep('applying');
+    setAiApplyTotal(totalCount);
+    setAiApplyCurrentIndex(0);
+    setAiApplyProgress(0);
+    setAiApplyCurrentEpisode(actualTargets[0]?.instance || '实例_19884_001');
+
+    if (runInBackground) {
+      setIsAiModalMinimized(true);
+      message.info(`已开启后台小窗口批量导入并应用，共 ${totalCount} 个视频序列，不影响页面其他操作。`);
+    }
+
+    let currentIdx = 0;
     const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
-    setEpisodes(prev => prev.map(ep => {
-      if (targetKeys.includes(ep.key)) {
-        return {
-          ...ep,
-          annoStatus: '待校验',
-          modelTime: nowStr,
-          segments: segmentsFromAi
-        };
-      }
-      return ep;
-    }));
+    if (aiApplyIntervalRef.current) clearInterval(aiApplyIntervalRef.current);
 
-    setIsAiModalOpen(false);
-    setSelectedRowKeys([]);
-    setSelectedRows([]);
-    setActiveAnnoTab('to_verify');
-    message.success(`🎉 AI 智能标注完成！已成功将通义千问 Qwen2.5-VL 推理的 ${selected.length} 项动作工步导入实例数据（自动切换至【待校验】页签）。`);
+    aiApplyIntervalRef.current = setInterval(() => {
+      currentIdx++;
+      const percent = Math.min(100, Math.round((currentIdx / totalCount) * 100));
+      const targetEp = actualTargets[currentIdx - 1];
+
+      setAiApplyCurrentIndex(currentIdx);
+      setAiApplyProgress(percent);
+      if (targetEp) {
+        setAiApplyCurrentEpisode(targetEp.instance);
+      }
+
+      // 增量更新 episode 状态
+      if (targetEp) {
+        setEpisodes(prev => prev.map(ep => {
+          if (ep.key === targetEp.key) {
+            return {
+              ...ep,
+              annoStatus: '待校验',
+              modelTime: nowStr,
+              segments: segmentsFromAi
+            };
+          }
+          return ep;
+        }));
+      }
+
+      if (currentIdx >= totalCount) {
+        clearInterval(aiApplyIntervalRef.current);
+        aiApplyIntervalRef.current = null;
+        setAiInferenceStep('completed');
+        setSelectedRowKeys([]);
+        setSelectedRows([]);
+        setActiveAnnoTab('to_verify');
+        message.success(`🎉 AI 智能标注完成！已成功将通义千问 Qwen2.5-VL 推理的 ${selected.length} 项动作工步批量导入 ${totalCount} 个视频实例（已自动切换至【待校验】页签）。`);
+      }
+    }, Math.max(120, Math.min(260, 2400 / totalCount)));
   };
 
   const handleOpenBatchModal = () => {
@@ -1327,7 +1406,7 @@ export default function AnnotationAuditEpisodeListPage() {
           ---------------------------------------------------- */}
       <Modal
         title={(
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 32 }}>
             <Space size={10}>
               <div style={{
                 width: 32,
@@ -1342,115 +1421,86 @@ export default function AnnotationAuditEpisodeListPage() {
               }}>
                 <RobotOutlined />
               </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>
-                  通义千问 Qwen2.5-VL 动作时序切分与预标注
-                </div>
-                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 400 }}>
-                  阿里千问多模态模型架构 · 工业细粒度动作四元组直解
-                </div>
-              </div>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
+                动作时序切分与预标注
+              </span>
             </Space>
-            <Tag color="blue" style={{ fontWeight: 700, margin: 0, padding: '2px 10px' }}>通义千问 Qwen2.5-VL 就绪</Tag>
+
+            {/* 放置在关闭 [✕] 正前面的显式“缩小为小窗”按钮 */}
+            <Tooltip title="缩小为后台悬浮小窗，在后台非阻塞运行">
+              <Button
+                size="small"
+                icon={
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-1px' }}>
+                    <rect x="2" y="3" width="20" height="15" rx="2" ry="2" />
+                    <rect x="12" y="10" width="8" height="6" rx="1" fill="#2563eb" fillOpacity="0.25" />
+                  </svg>
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsAiModalMinimized(true);
+                  message.info('已缩小为后台悬浮小窗运行，您可继续在页面中进行其他操作');
+                }}
+                style={{
+                  height: 26,
+                  padding: '0 10px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: '#2563eb',
+                  background: '#eff6ff',
+                  borderColor: '#bfdbfe',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  cursor: 'pointer'
+                }}
+              >
+                缩小为小窗
+              </Button>
+            </Tooltip>
           </div>
         )}
-        open={isAiModalOpen}
+        closeIcon={<CloseOutlined style={{ fontSize: 14 }} />}
+        open={isAiModalOpen && !isAiModalMinimized}
         onCancel={() => {
           setIsAiModalOpen(false);
+          setIsAiModalMinimized(false);
           setAiInferenceStep('config');
         }}
-        width={780}
+        width={760}
         footer={null}
         destroyOnClose={false}
       >
-        <div style={{ marginTop: 10 }}>
+        <div style={{ marginTop: 8 }}>
           {/* STAGE 1: 算法与策略配置 */}
           {aiInferenceStep === 'config' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {/* 顶部视频元数据卡片 */}
-              <Card
-                size="small"
-                style={{
-                  borderRadius: 8,
-                  backgroundColor: '#f8fafc',
-                  borderColor: '#e2e8f0'
-                }}
-                styles={{ body: { padding: '10px 14px' } }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-                  <Space size={6} wrap>
-                    <Tag color="blue" icon={<VideoCameraOutlined />}>
-                      当前目标: {selectedRows[0]?.taskName || '螺丝预装配示教录像 (ego_cam1)'}
-                    </Tag>
-                    <Tag color="purple">30 FPS · {selectedRows[0]?.totalFrames || 3454} 帧 (全长录像)</Tag>
-                    <Tag color="cyan">工位: 天奇新动力·打螺丝工位</Tag>
-                    <Tag color="geekblue">
-                      {selectedRowKeys.length > 0 ? `已选 ${selectedRowKeys.length} 个实例待标注` : '覆盖本任务未标注实例'}
-                    </Tag>
-                  </Space>
-                  <Space size={4}>
-                    <SafetyCertificateOutlined style={{ color: '#16a34a' }} />
-                    <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>全视频覆盖率 100% · 0空白</span>
-                  </Space>
-                </div>
-              </Card>
-
-              {/* 通义千问多模态模型 */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 16px',
-                background: '#eff6ff',
-                border: '1.5px solid #bfdbfe',
-                borderRadius: 8,
-                gap: 12
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 8,
-                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: 18,
-                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.25)'
-                  }}>
-                    <RobotOutlined />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <strong style={{ fontSize: 13, color: '#0f172a' }}>大模型引擎：通义千问 Qwen2.5-VL-7B</strong>
-                      <Tag color="blue" style={{ fontSize: 10, margin: 0, padding: '0 5px' }}>通义千问多模态</Tag>
-                      <Tag color="green" style={{ fontSize: 10, margin: 0, padding: '0 5px' }}>100% 满铺切分</Tag>
-                    </div>
-                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>
-                      基于阿里通义千问视觉大模型时序解析架构，对视频全片 3454 帧进行密集动作切分与姿态解析，100% 满铺覆盖无任何时序空隙。
-                    </div>
-                  </div>
-                </div>
-                <Tag color="geekblue" style={{ fontWeight: 600, fontSize: 11, margin: 0 }}>模型服务就绪 · 延迟 &lt;150ms</Tag>
-              </div>
-
-              {/* 1. 标注任务执行模式 */}
-              <Card size="small" title="1. 标注任务执行模式与时序范围" style={{ borderRadius: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* 1. 动作时序切分模式 */}
+              <Card size="small" title="1. 动作时序切分模式" style={{ borderRadius: 8 }}>
                 <Radio.Group
                   value={aiMode}
                   onChange={e => setAiMode(e.target.value)}
                   style={{ width: '100%' }}
                 >
-                  <Space direction="vertical" style={{ width: '100%' }}>
+                  <Space direction="vertical" style={{ width: '100%', gap: 8 }}>
                     <Radio value="full_segmentation">
-                      <span><strong>全视频端到端时序切分 (Full Video Scope)</strong>：覆盖 00:00 至 01:55 全程 3454 帧，密集切分且 12 个工步紧密相接，100% 满铺无任何空白</span>
+                      <strong>全视频端到端时序切分</strong>
+                      <span style={{ fontSize: 12, color: '#64748b', marginLeft: 8 }}>
+                        (覆盖全程 3454 帧，12 个连贯工步紧密衔接，100% 满铺无空白)
+                      </span>
                     </Radio>
                     <Radio value="window_sliding">
-                      <span><strong>局部短窗口精准采样分析 (Sliding Window)</strong>：硬件级均匀截帧切片，防止长视频特征稀释，毫秒级定位物理接触临界跳变点</span>
+                      <strong>局部短窗口精准采样分析</strong>
+                      <span style={{ fontSize: 12, color: '#64748b', marginLeft: 8 }}>
+                        (硬件级截帧切片，毫秒级定位物理接触跳变点)
+                      </span>
                     </Radio>
                     <Radio value="template_align">
-                      <span><strong>工业装配 SOP 动作模板对齐 (Template Alignment)</strong>：依据天奇新动力工序标准（扫码/提电钻/打螺丝/扣帽/螺母分拣），AI 自动对齐区间</span>
+                      <strong>工业装配 SOP 动作模板对齐</strong>
+                      <span style={{ fontSize: 12, color: '#64748b', marginLeft: 8 }}>
+                        (依据天奇新动力工序标准，AI 自动对齐区间)
+                      </span>
                     </Radio>
                   </Space>
                 </Radio.Group>
@@ -1461,7 +1511,7 @@ export default function AnnotationAuditEpisodeListPage() {
                 <Row gutter={[16, 12]} align="middle">
                   <Col span={8}>
                     <div style={{ fontSize: 12, color: '#334155', marginBottom: 4, fontWeight: 600 }}>
-                       抽帧切片密度：
+                      抽帧切片密度：
                     </div>
                     <Radio.Group
                       value={aiFramesPerWindow}
@@ -1512,7 +1562,7 @@ export default function AnnotationAuditEpisodeListPage() {
                 <Button
                   type="primary"
                   icon={<RobotOutlined />}
-                  onClick={handleStartAiInference}
+                  onClick={() => handleStartAiInference(false)}
                   style={{
                     background: 'linear-gradient(135deg, #1677ff 0%, #2563eb 100%)',
                     border: 'none',
@@ -1521,7 +1571,7 @@ export default function AnnotationAuditEpisodeListPage() {
                     color: '#fff'
                   }}
                 >
-                  启动千问 Qwen2.5-VL 动作切分推理
+                  启动动作切分推理
                 </Button>
               </div>
             </div>
@@ -1584,38 +1634,6 @@ export default function AnnotationAuditEpisodeListPage() {
           {/* STAGE 3: 人机协同审核与导入确认 */}
           {aiInferenceStep === 'review' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <Alert
-                type="success"
-                showIcon
-                message="🎉 通义千问 Qwen2.5-VL 推理完成！全视频 3454 帧 100% 满铺覆盖"
-                description="基于通义千问 Qwen2.5-VL 多模态时序推理，已识别出 12 个首尾相连的标准动作工步，全时段覆盖率 100%，无任何时序空白。"
-                style={{ borderRadius: 8 }}
-              />
-
-              {/* 大模型推理审计横幅 */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                background: '#f0fdf4',
-                border: '1px solid #bbf7d0',
-                borderRadius: 6,
-                fontSize: 12,
-                color: '#166534',
-                flexWrap: 'wrap',
-                gap: 6
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <Tag color="success" style={{ fontWeight: 600 }}>Qwen2.5-VL 视觉内核</Tag>
-                  <span>推理端点：<strong style={{ fontFamily: 'monospace' }}>qwen2.5-vl-7b</strong> (HTTP 200 OK)</span>
-                  <Tag color="cyan">时序覆盖率: 100% (3454/3454 帧)</Tag>
-                </div>
-                <div style={{ fontSize: 11, color: '#15803d', fontFamily: 'monospace' }}>
-                  耗时: {aiAudit.latencyMs}ms | Token: {aiAudit.tokens} | 审计ID: {aiAudit.traceId.slice(0, 18)}
-                </div>
-              </div>
-
               {/* 候选列表工具栏 */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Space size={8}>
@@ -1742,9 +1760,10 @@ export default function AnnotationAuditEpisodeListPage() {
                   <Button onClick={() => setIsAiModalOpen(false)}>
                     取消
                   </Button>
+
                   <Button
                     type="primary"
-                    onClick={handleApplyAiSteps}
+                    onClick={() => handleApplyAiSteps(false)}
                     style={{
                       background: 'linear-gradient(135deg, #1677ff 0%, #2563eb 100%)',
                       border: 'none',
@@ -1759,6 +1778,105 @@ export default function AnnotationAuditEpisodeListPage() {
               </div>
             </div>
           )}
+
+          {/* STAGE 4: 批量导入并应用至多个视频实例 */}
+          {aiInferenceStep === 'applying' && (
+            <div style={{ padding: '36px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+              <div style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#1677ff',
+                fontSize: 28,
+                boxShadow: '0 0 24px rgba(22, 119, 255, 0.25)'
+              }}>
+                <SyncOutlined spin />
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
+                  正在批量导入并应用 AI 动作工步至视频序列...
+                </div>
+                <div style={{ fontSize: 13, color: '#64748b' }}>
+                  当前处理：<strong style={{ color: '#2563eb' }}>{aiApplyCurrentEpisode}</strong> ({aiApplyCurrentIndex}/{aiApplyTotal})
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                  已写入 {aiCandidateSteps.length} 项动作工步 · 满铺 100% 时序覆盖 · 状态自动转为「待校验」
+                </div>
+              </div>
+
+              <div style={{ width: '85%' }}>
+                <Progress
+                  percent={aiApplyProgress}
+                  status="active"
+                  strokeColor={{ '0%': '#1677ff', '100%': '#22c55e' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                <Button
+                  type="primary"
+                  icon={<CompressOutlined />}
+                  onClick={() => {
+                    setIsAiModalMinimized(true);
+                    message.info('已转入后台小窗口运行，您可以继续在页面中浏览和审核其他数据');
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #1677ff 0%, #2563eb 100%)',
+                    border: 'none',
+                    boxShadow: '0 2px 8px rgba(22, 119, 255, 0.25)'
+                  }}
+                >
+                  ⚡ 缩小为小窗口在后台运行 (不卡顿)
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STAGE 5: 批量导入并应用完成 */}
+          {aiInferenceStep === 'completed' && (
+            <div style={{ padding: '36px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
+              <div style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: '#dcfce7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#16a34a',
+                fontSize: 32
+              }}>
+                <CheckCircleOutlined />
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#0f172a' }}>
+                🎉 批量导入并应用完成！
+              </div>
+              <div style={{ fontSize: 13, color: '#64748b', maxWidth: 460 }}>
+                已成功为 {aiApplyTotal} 个视频序列注入通义千问 Qwen2.5-VL 识别的 {aiCandidateSteps.length} 项标准化动作工步。全部实例已就绪并归入【待校验】页签。
+              </div>
+              <Space size={12} style={{ marginTop: 12 }}>
+                <Button onClick={() => { setIsAiModalOpen(false); setAiInferenceStep('config'); }}>
+                  关闭窗口
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    setIsAiModalOpen(false);
+                    setAiInferenceStep('config');
+                    setActiveAnnoTab('to_verify');
+                  }}
+                  style={{ background: '#16a34a', borderColor: '#16a34a' }}
+                >
+                  立即前往【待校验】审核实例 ➔
+                </Button>
+              </Space>
+            </div>
+          )}
         </div>
       </Modal>
 
@@ -1766,12 +1884,49 @@ export default function AnnotationAuditEpisodeListPage() {
           POPUP MODAL: 批量时序适配标注配置 
           ---------------------------------------------------- */}
       <Modal
-        title={
-          <span style={{ fontSize: '15px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <CopyOutlined style={{ color: '#1677ff' }} /> 批量时序适配标注
-          </span>
-        }
-        open={isBatchModalOpen}
+        title={(
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: 32 }}>
+            <span style={{ fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CopyOutlined style={{ color: '#1677ff' }} /> 批量时序适配标注
+            </span>
+
+            {/* 放置在关闭 [✕] 正前面的显式“缩小为小窗”按钮 */}
+            <Tooltip title="缩小为后台悬浮小窗，在后台非阻塞运行">
+              <Button
+                size="small"
+                icon={
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: '-1px' }}>
+                    <rect x="2" y="3" width="20" height="15" rx="2" ry="2" />
+                    <rect x="12" y="10" width="8" height="6" rx="1" fill="#2563eb" fillOpacity="0.25" />
+                  </svg>
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsBatchModalMinimized(true);
+                  message.info('批量时序适配任务已转入后台小窗口运行，您可继续在页面中操作');
+                }}
+                style={{
+                  height: 26,
+                  padding: '0 10px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: '#2563eb',
+                  background: '#eff6ff',
+                  borderColor: '#bfdbfe',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  cursor: 'pointer'
+                }}
+              >
+                缩小为小窗
+              </Button>
+            </Tooltip>
+          </div>
+        )}
+        closeIcon={<CloseOutlined style={{ fontSize: 14 }} />}
+        open={isBatchModalOpen && !isBatchModalMinimized}
         onCancel={() => !isCopying && setIsBatchModalOpen(false)}
         footer={null}
         width={750}
@@ -1785,6 +1940,9 @@ export default function AnnotationAuditEpisodeListPage() {
               正在批量适配复制中，请稍候... ({copyProgress}%)
             </div>
             <Progress percent={copyProgress} strokeColor="#1677ff" status="active" style={{ maxWidth: 400, margin: '0 auto' }} />
+            <div style={{ marginTop: 12, fontSize: 12, color: '#64748b' }}>
+              💡 如需继续浏览或操作其他实例，可点击右上角【—】最小化至后台小窗运行
+            </div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -2393,6 +2551,368 @@ export default function AnnotationAuditEpisodeListPage() {
           </Row>
         </div>
       </Modal>
+
+      {/* ----------------------------------------------------
+          GLOBAL FLOATING WINDOW: 后台小窗口 (AI 导入并应用 / 批量标注)
+          ---------------------------------------------------- */}
+      <style>{`
+        @keyframes pulseGlowBlue {
+          0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+          70% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+        @keyframes pulseGlowGreen {
+          0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+          70% { box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+        }
+        @keyframes slideInUpDock {
+          from { transform: translateY(40px) scale(0.96); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .ai-floating-dock {
+          animation: slideInUpDock 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+      `}</style>
+
+      {/* AI 导入并应用后台悬浮小窗口 */}
+      {isAiModalMinimized && (
+        <div
+          className="ai-floating-dock"
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 1050,
+            width: isFloatingWidgetCollapsed ? 260 : 400,
+            background: 'rgba(255, 255, 255, 0.96)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: 14,
+            border: '1px solid #bfdbfe',
+            boxShadow: '0 16px 36px -4px rgba(15, 23, 42, 0.2), 0 4px 14px rgba(22, 119, 255, 0.12)',
+            transition: 'width 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: '10px 14px',
+              background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)',
+              borderBottom: isFloatingWidgetCollapsed ? 'none' : '1px solid #e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: isFloatingWidgetCollapsed ? 'pointer' : 'default',
+              userSelect: 'none'
+            }}
+            onClick={() => isFloatingWidgetCollapsed && setIsFloatingWidgetCollapsed(false)}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Pulsing Dot */}
+              <div
+                style={{
+                  width: 9,
+                  height: 9,
+                  borderRadius: '50%',
+                  backgroundColor: aiInferenceStep === 'completed' ? '#16a34a' : '#2563eb',
+                  animation: aiInferenceStep === 'completed'
+                    ? 'pulseGlowGreen 2s infinite'
+                    : 'pulseGlowBlue 1.6s infinite'
+                }}
+              />
+              <RobotOutlined style={{ color: '#2563eb', fontSize: 16 }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                AI 动作切分与导入
+              </span>
+              {aiInferenceStep === 'applying' && (
+                <Tag color="processing" style={{ fontSize: 10, margin: 0, padding: '0 6px', borderRadius: 4 }}>
+                  导入中
+                </Tag>
+              )}
+              {aiInferenceStep === 'inferring' && (
+                <Tag color="blue" style={{ fontSize: 10, margin: 0, padding: '0 6px', borderRadius: 4 }}>
+                  推理中
+                </Tag>
+              )}
+              {aiInferenceStep === 'completed' && (
+                <Tag color="success" style={{ fontSize: 10, margin: 0, padding: '0 6px', borderRadius: 4 }}>
+                  已完成
+                </Tag>
+              )}
+            </div>
+
+            <Space size={2} onClick={(e) => e.stopPropagation()}>
+              <Tooltip title={isFloatingWidgetCollapsed ? "展开小窗口" : "折叠为迷你条"}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={isFloatingWidgetCollapsed ? <UpOutlined /> : <DownOutlined />}
+                  onClick={() => setIsFloatingWidgetCollapsed(!isFloatingWidgetCollapsed)}
+                  style={{ color: '#64748b', width: 26, height: 26 }}
+                />
+              </Tooltip>
+              <Tooltip title="还原大窗口">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<FullscreenOutlined />}
+                  onClick={() => {
+                    setIsAiModalMinimized(false);
+                    setIsAiModalOpen(true);
+                  }}
+                  style={{ color: '#2563eb', width: 26, height: 26 }}
+                />
+              </Tooltip>
+              <Tooltip title="终止任务并关闭">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<CloseOutlined />}
+                  onClick={handleCancelAiProcess}
+                  style={{ color: '#94a3b8', width: 26, height: 26 }}
+                />
+              </Tooltip>
+            </Space>
+          </div>
+
+          {/* Expanded Body */}
+          {!isFloatingWidgetCollapsed && (
+            <div style={{ padding: '12px 14px' }}>
+              {/* STAGE 1: Config (挂起状态) */}
+              {aiInferenceStep === 'config' && (
+                <div>
+                  <div style={{ fontSize: 12, color: '#334155', marginBottom: 8 }}>
+                    ⚙️ 通义千问 Qwen2.5-VL 配置已挂起
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <Button size="small" onClick={handleCancelAiProcess}>关闭</Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      icon={<FullscreenOutlined />}
+                      onClick={() => {
+                        setIsAiModalMinimized(false);
+                        setIsAiModalOpen(true);
+                      }}
+                    >
+                      还原配置窗口
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* STAGE 2: Inferring (后台推理中) */}
+              {aiInferenceStep === 'inferring' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#1e293b' }}>
+                      Qwen2.5-VL 视觉内核时序切分
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#2563eb', fontFamily: 'monospace' }}>
+                      {aiProgress}%
+                    </span>
+                  </div>
+                  <Progress
+                    percent={aiProgress}
+                    size="small"
+                    status="active"
+                    showInfo={false}
+                    strokeColor={{ '0%': '#2563eb', '100%': '#38bdf8' }}
+                  />
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {aiProgressStage || '正在抽取时序动作临界点...'}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 8, borderTop: '1px dashed #e2e8f0' }}>
+                    <span style={{ fontSize: 10, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <CheckCircleOutlined /> 后台非阻塞运行中
+                    </span>
+                    <Button
+                      size="small"
+                      type="link"
+                      onClick={() => {
+                        setIsAiModalMinimized(false);
+                        setIsAiModalOpen(true);
+                      }}
+                      style={{ padding: 0, fontSize: 11 }}
+                    >
+                      查看大图与切片 ➔
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* STAGE 3: Review (推理完成，等待导入) */}
+              {aiInferenceStep === 'review' && (
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#15803d', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <CheckCircleOutlined /> 已生成 12 个工步 (100% 满铺覆盖)
+                  </div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10 }}>
+                    基于通义千问 Qwen2.5-VL 多模态推理，时序无缝衔接。
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setIsAiModalMinimized(false);
+                        setIsAiModalOpen(true);
+                      }}
+                    >
+                      展开人工审核
+                    </Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => handleApplyAiSteps(true)}
+                      style={{
+                        background: 'linear-gradient(135deg, #1677ff 0%, #2563eb 100%)',
+                        border: 'none'
+                      }}
+                    >
+                      后台直接导入并应用 ➔
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* STAGE 4: Applying (后台批量导入并应用至多个视频实例) */}
+              {aiInferenceStep === 'applying' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: '#1e293b' }}>
+                      批量导入并应用中 ({aiApplyCurrentIndex}/{aiApplyTotal})
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#16a34a', fontFamily: 'monospace' }}>
+                      {aiApplyProgress}%
+                    </span>
+                  </div>
+                  <Progress
+                    percent={aiApplyProgress}
+                    size="small"
+                    status="active"
+                    showInfo={false}
+                    strokeColor={{ '0%': '#2563eb', '100%': '#16a34a' }}
+                  />
+                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      写入: <strong style={{ color: '#2563eb' }}>{aiApplyCurrentEpisode}</strong>
+                    </span>
+                    <span style={{ fontSize: 10, color: '#94a3b8' }}>12 工步/实例</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 8, borderTop: '1px dashed #e2e8f0' }}>
+                    <span style={{ fontSize: 10, color: '#64748b' }}>
+                      💡 视频较多时后台流畅跑批
+                    </span>
+                    <Button
+                      size="small"
+                      type="link"
+                      onClick={() => {
+                        setIsAiModalMinimized(false);
+                        setIsAiModalOpen(true);
+                      }}
+                      style={{ padding: 0, fontSize: 11 }}
+                    >
+                      还原主视窗 ↗
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* STAGE 5: Completed (完成) */}
+              {aiInferenceStep === 'completed' && (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#15803d', fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
+                    <CheckCircleFilled style={{ color: '#16a34a' }} />
+                    已成功批量应用至 {aiApplyTotal} 个视频实例！
+                  </div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10 }}>
+                    已写入 12 项连贯动作工步，实例状态已全部转入【待校验】。
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <Button size="small" onClick={handleCancelAiProcess}>
+                      关闭
+                    </Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => {
+                        setIsAiModalMinimized(false);
+                        setActiveAnnoTab('to_verify');
+                      }}
+                      style={{ background: '#16a34a', borderColor: '#16a34a' }}
+                    >
+                      前往【待校验】查看 ➔
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 批量时序适配后台悬浮小窗 */}
+      {isBatchModalMinimized && (
+        <div
+          className="ai-floating-dock"
+          style={{
+            position: 'fixed',
+            bottom: isAiModalMinimized ? 210 : 24,
+            right: 24,
+            zIndex: 1050,
+            width: 360,
+            background: 'rgba(255, 255, 255, 0.96)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: 14,
+            border: '1px solid #bfdbfe',
+            boxShadow: '0 16px 36px -4px rgba(15, 23, 42, 0.2)',
+            padding: '12px 14px'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CopyOutlined style={{ color: '#1677ff' }} /> 批量时序适配进行中 ({copyProgress}%)
+            </span>
+            <Space size={2}>
+              <Button
+                type="text"
+                size="small"
+                icon={<FullscreenOutlined />}
+                onClick={() => {
+                  setIsBatchModalMinimized(false);
+                  setIsBatchModalOpen(true);
+                }}
+              />
+              <Button
+                type="text"
+                size="small"
+                icon={<CloseOutlined />}
+                onClick={() => {
+                  setIsBatchModalMinimized(false);
+                  setIsCopying(false);
+                }}
+              />
+            </Space>
+          </div>
+          <Progress percent={copyProgress} size="small" status="active" />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+            <span style={{ fontSize: 10, color: '#64748b' }}>后台适配未标注实例中...</span>
+            <Button
+              size="small"
+              type="link"
+              onClick={() => {
+                setIsBatchModalMinimized(false);
+                setIsBatchModalOpen(true);
+              }}
+              style={{ padding: 0, fontSize: 11 }}
+            >
+              展开窗口 ➔
+            </Button>
+          </div>
+        </div>
+      )}
 
     </MainLayout>
   );

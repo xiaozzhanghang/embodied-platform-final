@@ -10,6 +10,8 @@ import { SplineRobotViewer } from './components/robot/SplineRobotViewer';
 import { ActionAccuracyHUD } from './components/ui/ActionAccuracyHUD';
 import { TaskListSidebar } from './components/ui/TaskListSidebar';
 import { TaskDetailSidebar } from './components/ui/TaskDetailSidebar';
+import { ImageToSimReadyModal, SimReadyCandidate } from './components/ui/ImageToSimReadyModal';
+import { OpenUSDViewerModal } from './components/ui/OpenUSDViewerModal';
 import { useMujocoSim } from './hooks/useMujocoSim';
 
 export const App: React.FC = () => {
@@ -24,6 +26,12 @@ export const App: React.FC = () => {
   const [sceneId, setSceneId] = useState<SceneId>('kitchen_bigym');
   const [robotModelType, setRobotModelType] = useState<RobotModelType>('unitree_g1');
   const [action, setAction] = useState<ActionType>('pick_box');
+
+  // Dynamic Scene Objects Map (supports SimReady asset injection)
+  const [sceneObjectsMap, setSceneObjectsMap] = useState<Record<string, SelectableObject[]>>(SCENE_OBJECTS);
+  const [isSimReadyModalOpen, setIsSimReadyModalOpen] = useState<boolean>(false);
+  const [isOpenUSDModalOpen, setIsOpenUSDModalOpen] = useState<boolean>(false);
+  const [selectedUSDAssetId, setSelectedUSDAssetId] = useState<string>('nvidia/simready:warehouse_carton_box_medium_01');
 
   // Motion Timeline State
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
@@ -51,11 +59,36 @@ export const App: React.FC = () => {
   const currentBiGymTask = BIGYM_TASKS.find((t) => t.id === activeTaskId) || BIGYM_TASKS[0];
 
   // Derive currently selected object
-  const currentObjects = SCENE_OBJECTS[sceneId] || [];
+  const currentObjects = sceneObjectsMap[sceneId] || [];
   const selectedObject =
     (robotModelType === 'spline_robot' && selectedObjectId === 'spline_robot')
       ? customSelectedObject
       : currentObjects.find((o) => o.id === selectedObjectId) || null;
+
+  // Handle SimReady Asset Injection from Image-to-3D modal
+  const handleInjectSimReadyAsset = (candidate: SimReadyCandidate) => {
+    setSceneObjectsMap((prev) => {
+      const list = prev[sceneId] || [];
+      const updated = list.map((obj) => {
+        if (obj.id === candidate.targetObjectId) {
+          return {
+            ...obj,
+            name: candidate.name,
+            weight: candidate.weight,
+            material: candidate.material,
+            description: candidate.description,
+            simReady: candidate.simReady,
+            modelSource: 'NVIDIA SimReady Central (OpenUSD)'
+          };
+        }
+        return obj;
+      });
+      return { ...prev, [sceneId]: updated };
+    });
+
+    // Automatically select the newly configured SimReady object
+    setSelectedObjectId(candidate.targetObjectId);
+  };
 
   // Animation frame loop for action timeline
   const lastTimeRef = useRef<number>(performance.now());
@@ -171,6 +204,7 @@ export const App: React.FC = () => {
             setSelectedObjectId('robot_g1');
           }
         }}
+        onOpenSimReadyModal={() => setIsSimReadyModalOpen(true)}
       />
 
       {/* Main Workspace (Left Tasks Sidebar + Center 3D Scene + Right Telemetry Sidebar) */}
@@ -248,6 +282,7 @@ export const App: React.FC = () => {
                 setCameraTargetLookAt(null);
               }}
               onHoverObject={setHoveredObjectName}
+              objects={currentObjects}
             />
           )}
         </div>
@@ -262,6 +297,10 @@ export const App: React.FC = () => {
           onReconnectSim={reconnect}
           selectedObject={selectedObject}
           onDeselectObject={() => setSelectedObjectId(null)}
+          onOpenUSDViewer={(assetId) => {
+            setSelectedUSDAssetId(assetId);
+            setIsOpenUSDModalOpen(true);
+          }}
         />
       </div>
 
@@ -289,6 +328,25 @@ export const App: React.FC = () => {
       <LoadingOverlay
         error={loadError}
         onRetry={() => setLoadError(null)}
+      />
+
+      {/* Image-to-SimReady 3D Asset Matching Modal */}
+      <ImageToSimReadyModal
+        isOpen={isSimReadyModalOpen}
+        onClose={() => setIsSimReadyModalOpen(false)}
+        onInjectAsset={handleInjectSimReadyAsset}
+        onOpenUSDViewer={(assetId) => {
+          setSelectedUSDAssetId(assetId);
+          setIsOpenUSDModalOpen(true);
+        }}
+      />
+
+      {/* Hugging Face OpenUSD Native 3D Inspector Modal (Caleb Fahlgren Spec) */}
+      <OpenUSDViewerModal
+        isOpen={isOpenUSDModalOpen}
+        onClose={() => setIsOpenUSDModalOpen(false)}
+        assetId={selectedUSDAssetId}
+        simReadyMeta={selectedObject?.simReady}
       />
     </div>
   );

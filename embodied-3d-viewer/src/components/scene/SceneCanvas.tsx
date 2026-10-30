@@ -30,6 +30,7 @@ interface SceneCanvasProps {
   cameraTargetLookAt: [number, number, number] | null;
   onCameraTransitionComplete: () => void;
   onHoverObject?: (name: string | null) => void;
+  objects?: SelectableObject[];
 }
 
 export const SceneCanvas: React.FC<SceneCanvasProps> = ({
@@ -42,9 +43,10 @@ export const SceneCanvas: React.FC<SceneCanvasProps> = ({
   cameraTargetPos,
   cameraTargetLookAt,
   onCameraTransitionComplete,
-  onHoverObject
+  onHoverObject,
+  objects
 }) => {
-  const currentObjects = SCENE_OBJECTS[sceneId] || [];
+  const currentObjects = objects || SCENE_OBJECTS[sceneId] || [];
   const robotObj = currentObjects.find((o) => o.category === 'robot') || {
     id: 'robot_g1',
     name: 'Unitree G1 具身机器人',

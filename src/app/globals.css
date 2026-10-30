@@ -560,6 +560,12 @@ body {
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
 }
 
+.main-layout .ant-layout-sider-children {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
 /* --- Sidebar Logo --- */
 .sidebar-logo {
   height: 56px;

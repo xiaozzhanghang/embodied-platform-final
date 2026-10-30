@@ -1,19 +1,21 @@
 import React from 'react';
 import { SceneId, RobotModelType } from '../../types';
-import { Cpu, Box, Radio, ExternalLink, Activity } from 'lucide-react';
+import { Cpu, Box, Radio, ExternalLink, Activity, Scan, Sparkles } from 'lucide-react';
 
 interface HeaderBarProps {
   sceneId: SceneId;
   onSceneChange: (scene: SceneId) => void;
   robotModelType: RobotModelType;
   onModelTypeChange: (model: RobotModelType) => void;
+  onOpenSimReadyModal: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   sceneId,
   onSceneChange,
   robotModelType,
-  onModelTypeChange
+  onModelTypeChange,
+  onOpenSimReadyModal
 }) => {
   return (
     <header style={{
@@ -106,7 +108,31 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       </div>
 
       {/* Right: Model Driver & Status Indicator */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Image to SimReady 3D Matcher Trigger */}
+        <button
+          onClick={onOpenSimReadyModal}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(0, 242, 254, 0.2) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.55)',
+            padding: '5px 12px',
+            borderRadius: '6px',
+            fontSize: '11px',
+            color: '#6ee7b7',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 0 14px rgba(16, 185, 129, 0.25)',
+            transition: 'all 0.2s ease'
+          }}
+          title="上传真实图片或选择数采实拍，基于 Hugging Face & NVIDIA SimReady 库匹配带物理刚体与碰撞体的 3D 资产"
+        >
+          <Scan size={14} color="#10b981" />
+          <span>实景图 ➔ SimReady 3D 资产</span>
+        </button>
+
         {/* Robot Model Asset Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#94a3b8' }}>
           <Box size={14} style={{ color: '#00f2fe' }} />

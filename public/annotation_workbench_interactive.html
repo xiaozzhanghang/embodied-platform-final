@@ -1,0 +1,1673 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>标注工作台 · 交互优化原型</title>
+<style>
+:root{--blue:#1677ff;--orange:#fa8c16;--red:#f5222d;--green:#2db84d;--bd:#e5e7eb;--tx:#1f2329;--tx2:#6b7280;--bg:#f0f2f5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+button{font:inherit;cursor:pointer}
+/* 原型工具条 */
+.proto-bar{position:sticky;top:0;z-index:50;background:#1f2433;color:#fff;display:flex;align-items:center;gap:16px;padding:8px 16px;flex-wrap:wrap}
+.proto-bar b{font-size:15px}
+.proto-bar .sp{flex:1}
+.seg{display:inline-flex;background:#3a4157;border-radius:6px;padding:2px}
+.seg button{border:0;background:transparent;color:#cbd2e4;padding:4px 12px;border-radius:5px}
+.seg button.on{background:#fff;color:#1f2433;font-weight:600}
+.pbtn{border:1px solid #5a6384;background:transparent;color:#fff;border-radius:6px;padding:4px 12px}
+.pbtn:hover{background:#3a4157}
+.sw{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.sw input{accent-color:#ff4d4f}
+.hint{color:#9aa3bd;font-size:12px}
+/* 工作台 */
+.wb{margin:12px;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.wb-head{padding:12px 20px 10px;border-bottom:1px solid var(--bd);position:relative}
+.wb-head h1{display:inline;font-size:18px;margin:0 8px 0 0}
+.chip{display:inline-block;padding:1px 10px;border-radius:4px;color:#fff;font-size:13px;font-weight:600;vertical-align:2px;margin-right:6px}
+.chip.blue{background:var(--blue)}.chip.orange{background:var(--orange)}.chip.red{background:#e5484d}.chip.green{background:#2db84d}
+.meta{color:var(--tx2);font-size:13px;margin-top:2px}.meta b{color:var(--tx)}.meta i{margin:0 8px;color:#d0d4db;font-style:normal}
+.xbtn{position:absolute;right:18px;top:14px;font-size:22px;color:#9aa0aa;border:0;background:none}
+.wb-body{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:14px;padding:14px}
+.video{position:relative;height:400px;background:#0e0e10;border-radius:8px}
+.video svg{width:100%;height:100%;display:block;border-radius:8px}
+.cam{position:absolute;left:12px;top:12px;background:rgba(255,255,255,.85);border-radius:4px;padding:1px 10px;font:13px monospace}
+.vstep{position:absolute;left:12px;bottom:12px;background:rgba(0,0,0,.65);color:#fff;border-radius:6px;padding:4px 12px;font-size:13px}
+.vstep.none{background:rgba(250,140,22,.9)}
+.vframe{position:absolute;right:14px;bottom:10px;color:rgba(255,255,255,.55);font:12px monospace}
+.tlwrap{margin-top:10px}
+.tl-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0;font-size:13px;position:relative}
+.tl-tools .grp{display:flex;align-items:center;gap:4px}
+.mini-btn{border:1px solid var(--bd);background:#fff;border-radius:5px;padding:2px 9px;color:var(--tx)}
+.mini-btn:hover{border-color:var(--blue);color:var(--blue)}
+.mini-btn.on{background:#e6f0ff;border-color:var(--blue);color:var(--blue)}
+.tl-tools input[type=range]{width:130px;accent-color:var(--blue)}
+.vinfo{color:var(--tx2);margin-left:auto;font-size:12px}
+.timeline{position:relative;border:1px solid var(--bd);border-radius:6px;background:#fff}
+.tlclip{position:relative;overflow:hidden;border-radius:6px;user-select:none}
+.ruler-wrap{position:relative;border-bottom:1px solid var(--bd);background:#fafbfc;cursor:pointer}
+.ruler{position:relative;height:30px}
+.ruler.opt{height:44px}
+.tk{position:absolute;top:0;font-size:12px;color:#444;white-space:nowrap}
+.tk::after{content:"";position:absolute;left:0;top:18px;width:1px;height:10px;background:#9ca3af}
+.tk span{position:absolute;left:-18px;top:0;width:36px;text-align:center}
+.tk.first span{left:0;text-align:left}
+.tk.mn::after{height:5px;top:23px;background:#d1d5db}
+.fk{position:absolute;top:30px;font-size:10px;color:#9ca3af}
+.fk::before{content:"";position:absolute;left:0;top:-4px;height:4px;width:1px;background:#d1d5db}
+.fk span{position:absolute;left:-14px;width:28px;text-align:center;top:2px}
+.lanes-wrap{position:relative}
+.lanes{position:relative}
+.lane{position:relative;height:46px;border-bottom:1px dashed #e5e7eb;background:#fff}
+.lane:last-child{border-bottom:0}
+.lane-lb{position:absolute;left:6px;top:2px;font-size:11px;color:#9ca3af;pointer-events:none}
+.blk{position:absolute;top:6px;bottom:6px;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 10%,#fff);border-radius:7px;display:flex;align-items:center;gap:6px;padding:0 10px;cursor:grab;overflow:hidden;z-index:3}
+.blk.sel{box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 30%,transparent);background:color-mix(in srgb,var(--c) 18%,#fff)}
+.blk .num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--c);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.blk .bt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;font-size:13px}
+.blk .bf{flex:none;background:rgba(0,0,0,.06);border-radius:4px;padding:0 6px;font-size:12px}
+.blk.narrow .bt,.blk.narrow .bf{display:none}
+.hchip{flex:none;font-size:11px;font-weight:700;color:#fff;border-radius:4px;padding:0 5px;line-height:16px}
+.hchip.L{background:#2f6df6}.hchip.R{background:#e8590c}
+.blk .h{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;background:var(--c);opacity:.55}
+.blk.sel .h{opacity:1}
+.blk .h-l{left:0}.blk .h-r{right:0}
+.gaps{position:absolute;inset:0;pointer-events:none;z-index:4}
+.gap{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(250,140,22,.14) 0 6px,rgba(250,140,22,.04) 6px 12px);border-left:1px dashed rgba(250,140,22,.6);border-right:1px dashed rgba(250,140,22,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;color:#b45309}
+.gap button{pointer-events:auto;border:1px dashed var(--orange);background:#fff;color:#b45309;border-radius:5px;padding:1px 10px}
+.playhead{position:absolute;top:0;bottom:0;width:0;z-index:6;pointer-events:none}
+.playhead::before{content:"";position:absolute;left:-1px;top:0;bottom:0;width:2px;background:var(--red)}
+.playhead::after{content:"";position:absolute;left:-6px;top:0;border:6px solid transparent;border-top:9px solid var(--red)}
+.mm{position:relative;margin-top:8px;height:30px;background:#f3f4f6;border-radius:6px;cursor:pointer}
+.mm-in{position:absolute;inset:0;border-radius:6px;overflow:hidden}
+.mm-seg{position:absolute;height:8px;border-radius:3px;background:var(--c)}
+.mm-gap{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(250,140,22,.22) 0 4px,transparent 4px 8px)}
+.mm-win{position:absolute;top:0;bottom:0;border:2px solid var(--blue);background:rgba(22,119,255,.12);border-radius:5px;cursor:grab;min-width:8px}
+.mm-ph{position:absolute;top:0;bottom:0;width:2px;background:var(--red)}
+.ctrl{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;flex-wrap:wrap}
+.cchip{display:inline-flex;align-items:center;gap:6px;border:1px solid #d9e2f3;border-radius:6px;padding:3px 10px;background:#fff;position:relative}
+.cchip .tag{background:#eef1f6;border-radius:4px;padding:0 6px;font-size:13px}
+.cchip .tag.b{background:var(--blue);color:#fff;font-weight:700}
+.cchip .v{font:600 17px/1 monospace;color:var(--blue)}
+.cchip input{width:62px;border:0;font:600 17px monospace;color:var(--blue);text-align:right;outline:none;background:transparent}
+.tr{display:flex;align-items:center;gap:8px;margin:0 6px}
+.tr button{border:0;background:none;color:#6b7280;font-size:18px;padding:2px 6px}
+.tr .play{width:42px;height:42px;border-radius:50%;background:var(--blue);color:#fff;font-size:16px}
+select,input[type=text],input[type=number]{font:inherit}
+.sel-w select{border:1px solid var(--bd);border-radius:6px;padding:4px 8px;background:#fff}
+/* 右侧 */
+.right{display:flex;flex-direction:column;border:1px solid var(--bd);border-radius:8px;min-height:640px;max-height:calc(100vh - 90px);position:sticky;top:56px}
+.rtab{padding:10px 16px;border-bottom:1px solid var(--bd);color:var(--blue);font-weight:600}
+.rbody{padding:14px 14px;overflow:auto;flex:1}
+.lbl{color:var(--tx2);margin-bottom:6px}
+.big2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bigbtn{border:0;color:#fff;border-radius:6px;padding:12px 6px;font-weight:700;font-size:15px;position:relative}
+.bigbtn.b{background:var(--blue)}.bigbtn.o{background:#fa8c16}
+.bigbtn small{display:block;font-weight:400;font-size:11px;opacity:.9}
+.shead{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px;font-weight:700;position:relative}
+.shead .acts{display:flex;gap:8px}
+.obtn{border:1px solid var(--blue);color:var(--blue);background:#fff;border-radius:5px;padding:2px 10px;font-size:13px}
+.sbtn{border:0;color:#fff;background:var(--blue);border-radius:5px;padding:3px 12px;font-size:13px;position:relative}
+.card{border:1px solid var(--bd);border-radius:8px;margin-bottom:10px;background:#fff;position:relative}
+.card.sel{border:2px solid var(--blue)}
+.chd{display:flex;align-items:center;gap:8px;padding:9px 10px;position:relative;cursor:pointer}
+.chd .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--c);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+.chd .ttl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.chd .rng{flex:none;position:relative;background:#eef3ff;color:#3b5bdb;border-radius:12px;padding:0 10px;font-size:12px;border:1px solid #cfdcff}
+.chd .ic{flex:none;border:0;background:none;color:#9ca3af;padding:2px 3px;font-size:15px;position:relative}
+.chd .ic:hover{color:var(--blue)}.chd .ic.del:hover{color:var(--red)}
+.sum{padding:0 12px 9px 46px;color:var(--tx2);font-size:12px;margin-top:-4px}
+.cbody{padding:4px 14px 14px;border-top:1px solid var(--bd)}
+.fld{margin-top:10px}
+.fld label{display:block;color:var(--tx2);font-size:13px;margin-bottom:4px}
+.fld select,.fld input[type=text],.fld input[type=number]{width:100%;border:1px solid var(--bd);border-radius:6px;padding:7px 10px;background:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.frm{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.frames{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative}
+.f{position:relative}
+.mini{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.mini button{border:1px solid var(--bd);background:#fff;border-radius:4px;font-size:12px;padding:0 6px;color:var(--tx)}
+.mini button:hover{border-color:var(--blue);color:var(--blue)}
+.rfoot{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 14px;border-top:1px solid var(--bd)}
+.fbtn{border-radius:6px;padding:10px;font-weight:600;position:relative}
+.fbtn.ghost{background:#fff;border:1px solid #8b5cf6;color:#7c3aed}
+.fbtn.main{background:var(--blue);color:#fff;border:0}
+body.mode-opt .fbtn.ghost{border-color:var(--bd);color:var(--tx2);font-weight:400}
+/* 模式显示 */
+body.mode-old .opt-only{display:none!important}
+body.mode-opt .old-only{display:none!important}
+/* 标注徽标 */
+.abadge{position:absolute;z-index:40;min-width:20px;height:20px;border-radius:10px;padding:0 5px;color:#fff;font:700 12px/20px sans-serif;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.35);border:2px solid #fff;box-sizing:content-box;display:block}
+.abadge.pP0{background:#e5484d}.abadge.pP1{background:#f08a00}.abadge.pP2{background:#6b7fb0}
+.abadge.pulse{animation:pl .7s 3}
+@keyframes pl{50%{transform:scale(1.6)}}
+body.ann-off .abadge{display:none!important}
+.pop{position:fixed;z-index:100;width:330px;background:#fff;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.28);border:1px solid #e5e7eb;padding:12px 14px;display:none;font-size:13px}
+.pop h4{margin:0 0 6px;font-size:14px;display:flex;align-items:center;gap:8px}
+.pop .row{margin-top:6px}.pop .row b{display:block;color:var(--tx2);font-weight:600;font-size:12px}
+.tagp{font-size:11px;font-weight:700;color:#fff;border-radius:4px;padding:0 6px}
+.tagp.P0{background:#e5484d}.tagp.P1{background:#f08a00}.tagp.P2{background:#6b7fb0}
+.drawer{position:fixed;right:0;top:46px;bottom:0;width:400px;z-index:60;background:#fff;box-shadow:-6px 0 24px rgba(0,0,0,.2);display:none;flex-direction:column}
+.drawer.open{display:flex}
+.drawer header{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px}
+.drawer header b{flex:1}
+.flt{display:flex;gap:6px;padding:8px 16px;border-bottom:1px solid var(--bd)}
+.dlist{overflow:auto;flex:1;padding:8px 12px 20px}
+.ditem{display:flex;gap:10px;padding:10px 6px;border-bottom:1px solid #f0f1f3;cursor:pointer}
+.ditem:hover{background:#f7f9fc}
+.ditem .dn{flex:none;width:24px;height:24px;border-radius:50%;color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+.dn.P0{background:#e5484d}.dn.P1{background:#f08a00}.dn.P2{background:#6b7fb0}
+.ditem h5{margin:0;font-size:13.5px;display:flex;gap:6px;align-items:center}
+.ditem p{margin:3px 0 0;font-size:12px;color:var(--tx2)}
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#1f2433;color:#fff;padding:8px 16px;border-radius:8px;z-index:200;display:none;font-size:13px}
+.toast a{color:#7cb4ff;margin-left:10px;cursor:pointer}
+.tip{position:fixed;z-index:150;background:#1f2433;color:#fff;border-radius:5px;padding:2px 8px;font-size:12px;display:none;pointer-events:none}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:10px;width:min(520px,92vw);max-height:80vh;overflow:auto;padding:18px 22px}
+.modal h3{margin:0 0 10px}
+.modal table{width:100%;border-collapse:collapse;font-size:13px}
+.modal td{padding:5px 4px;border-bottom:1px solid #f0f1f3}
+.modal kbd{background:#f3f4f6;border:1px solid #d1d5db;border-radius:4px;padding:0 6px;font:12px monospace}
+.ok{color:#2db84d}.bad{color:#e5484d}
+.link{color:var(--blue);cursor:pointer;text-decoration:underline}
+/* ===== 第二轮新增样式 ===== */
+body.mode-old .abadge.optonly{display:none!important}
+.hd-r{position:absolute;right:56px;top:12px;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--tx2)}
+.hd-r .pill{border:1px solid var(--bd);border-radius:12px;padding:1px 18px 1px 12px;background:#fff;position:relative;white-space:nowrap;font:inherit;font-size:12px;color:var(--tx2)}
+.hd-r .pill.ok{color:#237804;border-color:#b7ebc6;background:#f0fff4}
+.hd-r button.pill{cursor:pointer;color:var(--tx)}
+.hd-r button.pill:hover{border-color:var(--blue);color:var(--blue)}
+.camtabs{position:absolute;right:12px;top:12px;display:flex;gap:4px;z-index:5}
+.camtabs button{border:0;background:rgba(255,255,255,.82);border-radius:4px;padding:1px 10px;font:12px monospace}
+.camtabs button.on{background:var(--blue);color:#fff}
+.pip{position:absolute;right:12px;top:48px;display:none;flex-direction:column;gap:8px;z-index:4}
+.pip.show{display:flex}
+.pip div{width:170px;height:96px;border-radius:6px;border:2px solid #fff;color:#fff;font:11px monospace;padding:2px 6px;background:linear-gradient(135deg,#59627a,#2b2f3a)}
+.hot{fill:rgba(22,119,255,0);stroke:transparent;stroke-width:3;cursor:pointer}
+.hot:hover{fill:rgba(22,119,255,.25);stroke:#4da3ff}
+.cmt{position:absolute;top:12px;z-index:5;cursor:pointer;font-size:12px;line-height:1}
+.ctx{position:fixed;z-index:250;background:#fff;border:1px solid var(--bd);border-radius:8px;box-shadow:0 6px 22px rgba(0,0,0,.22);padding:4px;display:none;min-width:210px}
+.ctx button{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 12px;border-radius:5px;font-size:13px}
+.ctx button:hover{background:#eef3ff;color:var(--blue)}
+.ctx button.dis{color:#b0b5bf;pointer-events:none}
+.ctx hr{border:0;border-top:1px solid var(--bd);margin:4px 0}
+.rowx span{white-space:nowrap}
+.rowx{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;position:relative;font-size:13px}
+.rowx select,.rowx input{border:1px solid var(--bd);border-radius:6px;padding:3px 8px;background:#fff;font:inherit;font-size:13px}
+.rowx input{flex:1;min-width:90px}
+.warnrow{padding:0 12px 8px 46px;color:#ad4e00;font-size:12px}
+.card.locked{background:#fafafa}
+.card.locked .cbody{pointer-events:none;opacity:.55}
+.tplrow{display:flex;gap:8px;margin:0 0 10px;position:relative}
+.tplrow select{flex:1;border:1px solid var(--bd);border-radius:6px;padding:4px 8px;background:#fff;min-width:0}
+.rep{display:flex;gap:6px;align-items:center;margin-top:12px;font-size:12px;color:var(--tx2);position:relative;flex-wrap:wrap}
+.flow{grid-column:1/-1;display:flex;gap:8px;align-items:center;font-size:12px;color:var(--tx2);position:relative;flex-wrap:wrap}
+.blk.locked{background:repeating-linear-gradient(135deg,#f3f4f6 0 6px,#fff 6px 12px);cursor:not-allowed}
+.tagnew{font-size:11px;color:#0958d9;background:#e6f4ff;border-radius:4px;padding:0 6px}
+.pop .demo{background:#f6ffed;border-radius:6px;padding:4px 8px;color:#237804}
+body.mode-opt.focus-video .wb-body{grid-template-columns:minmax(0,1fr) 0}
+body.mode-opt.focus-video .right{display:none}
+body.mode-opt.big-video .video{height:520px}
+
+/* 模板适配 / 待确认 / 超范围 */
+.blk.pending{border-style:dashed;background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--c) 14%,#fff) 0 7px,#fff 7px 14px);opacity:.8}
+.tlbar{display:flex;flex-direction:column;gap:6px;margin:0 0 8px}
+.tlbar:empty{display:none}
+.tlbar .bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-radius:6px;padding:6px 10px;font-size:13px}
+.tlbar .bar.red{background:#fff1f0;border:1px solid #ffa39e;color:#a8071a}
+.tlbar .bar.orange{background:#fff7e6;border:1px solid #ffd591;color:#ad4e00}
+.tlbar .bar b{font-weight:600}
+.tlbar .bar .sp{flex:1}
+.tlbar .bar button{border:1px solid currentColor;background:#fff;color:inherit;border-radius:5px;padding:1px 9px;font-size:12px}
+.tlbar .bar a{color:inherit;text-decoration:underline;cursor:pointer}
+.ptag{flex:none;font-size:11px;border-radius:4px;padding:0 6px;margin-left:4px;border:1px dashed #fa8c16;color:#ad4e00;background:#fff7e6;white-space:nowrap}
+.ptag.red{border:1px solid #ffa39e;color:#a8071a;background:#fff1f0}
+button.ptag{cursor:pointer}
+.rng.oor{color:#cf1322;font-weight:600}
+.oornote{background:#fff1f0;border:1px solid #ffa39e;color:#a8071a;border-radius:6px;padding:6px 10px;margin:0 0 8px;font-size:12px}
+.strat{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.strat label{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--bd);border-radius:8px;padding:8px 10px;cursor:pointer}
+.strat label.on{border-color:var(--blue);background:#f0f7ff}
+.strat label.dis{opacity:.55;cursor:not-allowed;background:#fafafa}
+.strat b{display:block;font-size:13px}
+.strat small{display:block;color:var(--tx2);font-size:12px;line-height:1.45}
+.strat .why{color:#cf1322}
+.tplprev{max-height:190px;overflow:auto;border:1px solid var(--bd);border-radius:6px;margin:6px 0}
+.tplprev table{font-size:12px}
+.tplprev td,.tplprev th{padding:3px 8px;border-bottom:1px solid #f0f1f3;text-align:left}
+.tplprev th{position:sticky;top:0;background:#fafafa;font-weight:600}
+.lv{font-size:11px;border-radius:4px;padding:0 6px}
+.lv.blk2{background:#fff1f0;color:#a8071a}.lv.wn{background:#fff7e6;color:#ad4e00}
+/* 框选与调整顺序 */
+.blk .grip{position:absolute;top:0;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;line-height:12px;cursor:grab;color:var(--c);opacity:.7;background:#fff;border:1px solid var(--c);border-top:0;border-radius:0 0 5px 5px;padding:0 7px;z-index:4;white-space:nowrap}
+.blk:hover .grip,.blk.sel .grip,.blk.msel .grip{opacity:1}
+.blk.msel{outline:2px dashed var(--blue);outline-offset:1px}
+.card.msel{outline:2px dashed var(--blue);outline-offset:1px;background:#f0f7ff}
+.card.msel .del{color:#cf1322}
+.selhint .red-btn:hover{background:#ffccc7!important;border-color:#ff4d4f!important}
+.blk.dragging{opacity:.4}
+.marq{position:absolute;border:1px dashed var(--blue);background:rgba(22,119,255,.12);pointer-events:none;z-index:20}
+.ins{position:absolute;border:2px dashed var(--blue);background:rgba(22,119,255,.10);border-radius:6px;pointer-events:none;z-index:25}
+.selhint{background:#e6f4ff;border:1px solid #91caff;color:#0958d9;border-radius:6px;padding:5px 10px;font-size:13px;display:flex;gap:10px;align-items:center}
+.selhint .sp{flex:1}.selhint a{cursor:pointer;text-decoration:underline}
+.hint2{color:#0958d9;background:#e6f4ff;border-radius:4px;padding:0 8px;font-size:12px;margin-left:10px;white-space:nowrap}
+/* 关键业务原则：结构化步骤与自然语义步骤严格互斥，任一时刻只能展示并采集其中一种形态 */
+body.style-structured .natural-only{display:none!important}
+body.style-natural .structured-only{display:none!important}
+
+/* 模式切换器分段按钮 (Segmented Switch) */
+.rtab-bar{padding:6px 10px;border-bottom:1px solid var(--bd);background:#f8fafc;display:flex;align-items:center;justify-content:center}
+.style-seg{display:inline-flex;background:#e2e8f0;padding:2px;border-radius:6px;gap:2px;width:100%}
+.style-seg-btn{flex:1;border:0;background:transparent;color:#64748b;font-size:12px;font-weight:600;padding:5px 8px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;transition:all .15s ease}
+.style-seg-btn:hover{color:#0f172a}
+.style-seg-btn.on{background:#fff;color:#1677ff;box-shadow:0 1px 3px rgba(0,0,0,.08);font-weight:700}
+
+/* 自然语义动作标注样式 */
+.task-nl-bar{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px;background:#f0f5ff;border:1px solid #adc6ff;border-radius:6px;padding:4px 10px}
+.task-nl-bar .nl-lbl{font-weight:700;color:#1d39c4;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.task-nl-bar .nl-txt{color:#1f2329;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.f-nl{margin-top:12px;padding:9px 10px;background:#f8faff;border:1px solid #d6e4ff;border-radius:6px}
+.f-nl .fld-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.f-nl .fld-head label{margin:0;font-weight:600;color:#1d39c4;font-size:12px;display:flex;align-items:center;gap:4px}
+.f-nl textarea{width:100%;border:1px solid #d9d9d9;border-radius:4px;padding:6px 8px;font-size:12px;line-height:1.45;resize:vertical;font-family:inherit;background:#fff;transition:border-color .2s}
+.f-nl textarea:focus{border-color:#1677ff;outline:none;box-shadow:0 0 0 2px rgba(22,119,255,.1)}
+.nl-quick{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;align-items:center}
+.nl-quick .nl-hint{font-size:11px;color:#8c8c8c}
+.nl-chip{font-size:11px;background:#fff;border:1px solid #d9d9d9;border-radius:3px;padding:1px 6px;cursor:pointer;color:#595959;transition:all .15s}
+.nl-chip:hover{color:#1677ff;border-color:#91caff;background:#e6f4ff}
+.nl-sum{padding:0 12px 7px 46px;font-size:12px;color:#2f54eb;display:flex;align-items:center;gap:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nl-badge{background:#f0f5ff;border:1px solid #adc6ff;color:#1d39c4;border-radius:3px;padding:0 4px;font-size:11px;font-weight:600;flex-shrink:0}
+.vstep .vstep-nl{font-size:12px;color:#91caff;margin-top:2px;font-weight:500;font-style:italic;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.mode-opt .lane{height:66px}
+body.mode-opt .blk{top:18px;bottom:10px}
+.lane-tip{font-size:12px;color:#0958d9}
+/* 拖动调整顺序：明显的视觉反馈 */
+.blk.dragging{opacity:.35;filter:grayscale(.4);background:repeating-linear-gradient(135deg,rgba(22,119,255,.14) 0 6px,#fff 6px 12px)!important;border-style:dashed}
+.insline{position:absolute;width:6px;margin-left:-3px;background:#1677ff;border-radius:2px;z-index:40;pointer-events:none;box-shadow:0 0 0 3px rgba(22,119,255,.25),0 0 14px rgba(22,119,255,.9)}
+.insline::before,.insline::after{content:"";position:absolute;left:50%;margin-left:-9px;border:9px solid transparent}
+.insline .pin{position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:#1677ff;color:#fff;border-radius:4px;padding:0 8px;font-size:12px;line-height:20px;white-space:nowrap;box-shadow:0 2px 8px rgba(22,119,255,.5)}
+.insline::before{display:none}
+.insline::after{bottom:-6px;border-bottom:12px solid #1677ff;border-top:0}
+.blk.near{box-shadow:0 0 0 3px rgba(22,119,255,.55);z-index:5}
+.ghost{position:fixed;z-index:400;pointer-events:none;background:#fff;border:2px solid #1677ff;border-radius:10px;box-shadow:0 10px 30px rgba(22,119,255,.35);padding:8px 12px;max-width:560px;font-size:13px}
+.ghost .gh-t b{color:#1677ff}
+.ghost .gh-l{font-size:12px;color:#6b7280;margin:6px 0 4px}
+.ghost .gh-row{display:flex;gap:3px;flex-wrap:wrap;align-items:center}
+.ghost .gc{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;border-radius:12px;font-size:12px;font-weight:700;color:#fff;padding:0 4px}
+.ghost .gc.out{opacity:.4}
+.ghost .gc.in{outline:3px solid #1677ff;outline-offset:1px;transform:translateY(-2px)}
+.ghost .gsep{width:2px;height:20px;background:#1677ff;border-radius:1px;margin:0 3px}
+.blk.moved{animation:movedflash 1.4s ease-out}
+@keyframes movedflash{0%{box-shadow:0 0 0 5px rgba(22,119,255,.8),0 0 18px rgba(22,119,255,.8)}100%{box-shadow:0 0 0 0 rgba(22,119,255,0)}}
+body.reordering,body.reordering *{cursor:grabbing!important}
+.blk.msel{cursor:grab}
+.blk.msel:active{cursor:grabbing}
+.gap{pointer-events:auto;cursor:copy}
+.gap:hover{background:repeating-linear-gradient(135deg,rgba(22,119,255,.20) 0 6px,rgba(22,119,255,.07) 6px 12px);border-color:#1677ff;z-index:6}
+.gap.tiny{cursor:pointer}
+.gap .plus{display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:13px;background:#1677ff;color:#fff;font-size:16px;line-height:26px;text-align:center;box-shadow:0 2px 8px rgba(22,119,255,.5);font-style:normal}
+.gap .plus em{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);background:#1f2433;color:#fff;border-radius:5px;padding:0 8px;font-size:12px;line-height:20px;white-space:nowrap;font-style:normal}
+.gap:hover .plus{display:block}
+.gap.tiny .plus{background:#fa8c16}
+</style>
+</head>
+<body class="mode-opt">
+
+<div class="proto-bar">
+  <b>标注工作台 · 交互优化原型</b>
+  <span class="seg" id="modeSeg"><button data-m="old">现状版本</button><button data-m="opt" class="on">优化版本</button></span>
+  <label class="sw"><input type="checkbox" id="annToggle" checked>显示优化标注</label>
+  <button class="pbtn" id="btnList">优化清单（46）</button><span class="hint">演示场景：</span><button class="pbtn" id="scBlank">空白数据</button><button class="pbtn" id="scOor">历史数据（含超范围步骤）</button><button class="pbtn" id="scReset">恢复默认</button>
+  <span class="sp"></span>
+  <span class="hint">红=P0 橙=P1 灰蓝=P2 · 点击编号看说明 · 优化版本里的功能都可以实际操作</span>
+</div>
+
+<div class="wb">
+  <div class="wb-head">
+    <h1>聆动货架抓取 (真机示范视频标注)</h1><span class="chip green" style="margin-left:6px">8925c733f9d6b464...</span>
+    <span class="chip blue">Ego 视角</span><span class="chip orange" id="stChip" style="position:relative"><span id="stTxt">未标注</span></span>
+    <div class="meta">任务ID <b>2110268909463343105</b><i>|</i>实例ID <b>8925c733f9d6b464d49675015e4118e7</b><i>|</i>场景 <b>真实货架理货示范</b><i>|</i>视频源 <b>8925c733f9d6b464d49675015e4118e7.mov</b><i>|</i>总帧数 <b id="totalFrameMeta">23666 (13:08)</b><i>|</i>设备类型 <b>聆动具身机器人</b></div>
+    <div class="task-nl-bar opt-only natural-only">
+      <span class="nl-lbl">🎯 任务总目标指令 (Task Instruction):</span>
+      <span class="nl-txt" id="taskGoalTxt">从货架上层取下乐事薯片(原味/红罐)并平稳放置于购物车中</span>
+      <button class="mini-btn text-btn" id="btnEditGoal" style="font-size:11px;padding:1px 8px;color:#1677ff;border-color:#adc6ff;background:#fff">编辑总目标</button>
+    </div>
+    <div class="hd-r opt-only">
+      <span class="pill ok" id="preload"><span id="preTxt">下一条 4/20 已预加载 ✓</span></span>
+    </div>
+    <button class="xbtn">×</button>
+  </div>
+
+  <div class="wb-body">
+    <section>
+      <div class="video" id="video">
+        <video id="videoPlayer" src="/8925c733f9d6b464d49675015e4118e7.mov" preload="auto" playsinline style="width:100%;height:100%;object-fit:contain;background:#000;display:block;border-radius:8px;"></video>
+        <svg id="mockSvg" style="display:none" viewBox="0 0 800 450" preserveAspectRatio="xMidYMid meet">
+          <defs><linearGradient id="bgg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b3f4a"/><stop offset="1" stop-color="#1c1e24"/></linearGradient></defs>
+          <rect width="800" height="450" fill="url(#bgg)"/>
+          <rect x="30" y="170" width="740" height="26" rx="4" fill="#b8282d"/>
+          <rect x="30" y="330" width="740" height="26" rx="4" fill="#b8282d"/>
+          <g>
+            <rect x="60" y="70" width="70" height="100" rx="8" fill="#6bbf4a"/><rect x="150" y="60" width="70" height="110" rx="8" fill="#e5b520"/><rect x="240" y="100" width="130" height="70" rx="4" fill="#e8d878"/>
+            <rect x="420" y="55" width="70" height="115" rx="8" fill="#d8402f"/><rect x="520" y="80" width="90" height="90" rx="4" fill="#c9382c"/><rect x="630" y="90" width="110" height="80" rx="4" fill="#d44b3a"/>
+            <rect x="70" y="240" width="36" height="90" rx="10" fill="#2c3036"/><rect x="130" y="250" width="34" height="80" rx="10" fill="#8fb8d6"/><rect x="200" y="245" width="34" height="85" rx="10" fill="#8fb8d6"/>
+            <rect x="330" y="240" width="36" height="90" rx="10" fill="#2c3036"/><rect x="400" y="250" width="34" height="80" rx="10" fill="#8fb8d6"/><rect x="470" y="240" width="36" height="90" rx="10" fill="#2c3036"/><rect x="560" y="250" width="34" height="80" rx="10" fill="#8fb8d6"/>
+          </g>
+          <g id="gL"><rect x="40" y="380" width="120" height="70" rx="14" fill="#cfd3da"/><rect x="150" y="395" width="70" height="16" rx="6" fill="#d0342c"/></g>
+          <g id="gR"><rect x="640" y="380" width="120" height="70" rx="14" fill="#cfd3da"/><rect x="580" y="395" width="70" height="16" rx="6" fill="#d0342c"/></g>
+          <g class="opt-only" id="hots">
+            <rect class="hot" data-o="薯片" x="60" y="70" width="70" height="100"><title>点击设为操作对象：薯片</title></rect>
+            <rect class="hot" data-o="薯片" x="150" y="60" width="70" height="110"><title>点击设为操作对象：薯片</title></rect>
+            <rect class="hot" data-o="盒装零食" x="240" y="100" width="130" height="70"><title>点击设为操作对象：盒装零食</title></rect>
+            <rect class="hot" data-o="可乐" x="420" y="55" width="70" height="115"><title>点击设为操作对象：可乐</title></rect>
+            <rect class="hot" data-o="安慕希" x="520" y="80" width="90" height="90"><title>点击设为操作对象：安慕希</title></rect>
+            <rect class="hot" data-o="盒装零食" x="630" y="90" width="110" height="80"><title>点击设为操作对象：盒装零食</title></rect>
+            <rect class="hot" data-o="可乐" x="70" y="240" width="36" height="90"><title>点击设为操作对象：可乐</title></rect>
+            <rect class="hot" data-o="矿泉水" x="130" y="250" width="34" height="80"><title>点击设为操作对象：矿泉水</title></rect>
+            <rect class="hot" data-o="矿泉水" x="200" y="245" width="34" height="85"><title>点击设为操作对象：矿泉水</title></rect>
+            <rect class="hot" data-o="可乐" x="330" y="240" width="36" height="90"><title>点击设为操作对象：可乐</title></rect>
+            <rect class="hot" data-o="矿泉水" x="400" y="250" width="34" height="80"><title>点击设为操作对象：矿泉水</title></rect>
+            <rect class="hot" data-o="可乐" x="470" y="240" width="36" height="90"><title>点击设为操作对象：可乐</title></rect>
+            <rect class="hot" data-o="矿泉水" x="560" y="250" width="34" height="80"><title>点击设为操作对象：矿泉水</title></rect>
+          </g>
+        </svg>
+        <div class="cam" id="camLbl">Ego 真机示范 (8925c733f9d6...)</div>
+        <div class="camtabs opt-only" id="camTabs"><button data-c="real" class="on">🎬 真实示范视频</button><button data-c="ego_cam1">3D 模拟图</button><button data-c="wrist_L">左腕</button><button data-c="wrist_R">右腕</button><button data-c="grid">并排</button></div>
+        <div class="pip" id="pip"><div>wrist_cam_left</div><div>wrist_cam_right</div></div>
+        <div class="vstep opt-only" id="vStep"><span id="vStepTxt"></span><span id="vStepNl" class="vstep-nl" style="display:none"></span></div>
+        <div class="vframe" id="vFrame"></div>
+      </div>
+
+      <div class="tlwrap">
+        <div class="tl-tools opt-only" id="zoomTools">
+          <div class="grp">
+            <button class="mini-btn" id="zOut" title="缩小（-）">－</button>
+            <input type="range" id="zRange" min="0" max="100" step="1" value="0">
+            <button class="mini-btn" id="zIn" title="放大（+）">＋</button>
+            <span id="zLabel" style="min-width:48px">1.0×</span>
+          </div>
+          <div class="grp">
+            <button class="mini-btn" id="zFit">适配全部</button>
+            <button class="mini-btn" id="zSel">聚焦所选</button>
+            <button class="mini-btn" id="zGap">跳到未标注</button>
+          </div>
+          <span class="hint2 opt-only">⠿ 在时间轴空白处拖框，可选中多个步骤；拖动“⠿ 顺序”调整顺序</span><span class="vinfo" id="vInfo"></span>
+        </div>
+
+        <div class="tlbar opt-only" id="tlBar"></div>
+        <div class="timeline" id="timeline">
+          <div class="tlclip" id="tlclip">
+            <div class="ruler-wrap" id="rulerWrap"><div class="ruler" id="ruler"></div></div>
+            <div class="lanes-wrap" id="lanesWrap">
+              <div class="lanes" id="lanes"></div>
+              <div class="gaps opt-only" id="gaps"></div>
+            </div>
+            <div class="playhead" id="playhead"></div>
+          </div>
+        </div>
+
+
+        <div class="ctrl">
+          <span class="cchip" id="chipDur"><span class="tag">时长</span><span class="v old-only" id="durTxt">01:01</span><input class="opt-only" id="timeIn" value="00:00" style="width:64px" title="输入 mm:ss 后回车，跳到该时间"><span class="v opt-only" id="durTot" style="color:#9ca3af;font-weight:400">/ 01:01</span></span>
+          <span class="cchip" id="chipFrame"><span class="tag b">帧</span><input type="number" id="frameIn" value="0" min="0"><span class="v" style="color:#9ca3af;font-weight:400" id="frameTot">/ 1791</span><span class="tag opt-only" style="background:#e6fffb;color:#08979c">帧精确</span></span>
+          <span class="cchip" id="chipS"><button class="mini-btn opt-only" id="sPrev" title="上一个步骤（[）">‹</button><span class="tag b" id="s1Tag">S1</span><span class="v" id="s1Txt" style="font-size:15px">0 → 300 (300f)</span><button class="mini-btn opt-only" id="sNext" title="下一个步骤（]）">›</button><button class="mini-btn opt-only" id="sStart" title="跳到该步骤起点">起点</button><button class="mini-btn opt-only" id="sEnd" title="跳到该步骤终点">终点</button></span>
+          <span class="tr">
+            <button id="bFirst">⏮</button><button id="bPrev">‹</button>
+            <button class="play" id="bPlay">▶</button>
+            <button id="bNext">›</button><button id="bLast">⏭</button>
+          </span>
+          <span class="sel-w" id="speedWrap" style="position:relative"><select id="speed"></select></span>
+          <button class="mini-btn opt-only" id="btnLoop" style="position:relative" title="L">⟲ 循环所选</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="right">
+      <div class="rtab old-only">标注</div>
+      <div class="rtab-bar opt-only">
+        <div class="style-seg" id="styleSeg" role="tablist">
+          <button class="style-seg-btn on" data-s="structured" role="tab" aria-selected="true" title="结构化步骤模式：末端类型/原子技能/操作对象/起止目标 4槽位采集">🧩 结构化步骤</button>
+          <button class="style-seg-btn" data-s="natural" role="tab" aria-selected="false" title="自然语义动作模式：单行自然语言动作指令采集（面向具身大模型）">💬 自然语义动作</button>
+        </div>
+      </div>
+      <div class="rbody">
+        <div class="lbl">步骤帧区间调整：</div>
+        <div class="big2">
+          <button class="bigbtn b" id="btnStart"><span id="bsTxt">开始</span></button>
+          <button class="bigbtn o" id="btnEnd"><span id="beTxt">标记</span></button>
+        </div>
+        <div class="shead"><span><span class="structured-only">动作结构化步骤</span><span class="natural-only">自然语义动作步骤</span>（<span id="stepCount">2</span>）</span>
+          <span class="acts"><button class="obtn">☑ 批量复制</button><button class="sbtn" id="btnAdd">＋ 增加步骤</button></span></div>
+        <div class="tplrow opt-only structured-only" id="tplRow"><select id="tplSel"><option value="shelf">模板：货架抓取（抓取→放置→复位）</option><option value="pick">模板：单手抓取放置（右手）</option><option value="dual">模板：双臂协同货架双商品取放（10 步）</option></select><button class="obtn" id="btnTplApply">套用模板…</button></div>
+        <div id="cards"></div>
+        <datalist id="objList"><option>安慕希</option><option>可乐</option><option>矿泉水</option><option>薯片</option><option>盒装零食</option></datalist>
+      </div>
+      <div class="rfoot">
+        <div class="flow opt-only" id="flowRow"><span id="qInfo">队列 3 / 20</span><button class="mini-btn" id="btnPrevT">‹ 上一条</button><button class="mini-btn" id="btnNextUn">跳到下一条未标注</button><button class="mini-btn on" id="btnNextT">保存并下一条 ›</button></div>
+        <button class="fbtn ghost" id="btnTpl">生成标注模版</button>
+        <button class="fbtn main" id="btnDone">完成标注</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<aside class="drawer" id="drawer">
+  <header><b>优化清单</b><button class="mini-btn" id="dClose">关闭</button></header>
+  <div class="flt" id="flt"><button class="mini-btn on" data-f="all">全部</button><button class="mini-btn" data-f="P0">P0</button><button class="mini-btn" data-f="P1">P1</button><button class="mini-btn" data-f="P2">P2</button><button class="mini-btn" data-f="new">本轮新增 1</button></div>
+  <div class="dlist" id="dlist"></div>
+</aside>
+<div class="pop" id="pop"></div>
+<div class="toast" id="toast"></div>
+<div class="tip" id="tip"></div>
+<div class="ctx" id="ctx"></div>
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+
+<script>
+let FPS=30.0, TOTAL=23666;
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const pad=n=>String(n).padStart(2,'0');
+const fmtT=t=>{t=Math.floor(t+1e-6);return pad(Math.floor(t/60))+':'+pad(t%60)};
+const fmt=f=>fmtT(f/FPS);
+const HAND={L:'LeftHand(左手)',R:'RightHand(右手)'}, HS={L:'左手',R:'右手'};
+const PAL=['#5b4bff','#2db84d','#fa8c16','#13c2c2','#eb2f96','#8c6d1f'];
+const SKILLS=['Grasp(抓取)','Place(放置)','Reset(复位)','Push(推)','Pull(拉)'];
+const TARGETS=['货架上层','货架中层','货架下层','购物车','操作台面'];
+const OBJS=['乐事薯片(原味/红罐)','乐事薯片(青柠/绿罐)','乐事薯片(樱花/粉罐)','乐事薯片(黑松露/蓝罐)','合味道泡面','黄油面包','可乐','矿泉水'];
+const short=s=>(/\((.+)\)/.exec(s)||[0,s])[1];
+
+let steps=[
+ {id:1,hand:'L',skill:'Grasp(抓取)',obj:'乐事薯片(原味/红罐)',from:'货架上层',to:'操作台面',s:0,e:450,nl:'用左手从货架上层抓取乐事薯片(原味/红罐)并移至操作台面'},
+ {id:2,hand:'R',skill:'Place(放置)',obj:'乐事薯片(原味/红罐)',from:'操作台面',to:'购物车',s:451,e:900,nl:'用右手将乐事薯片平稳放置到购物车内'},
+ {id:3,hand:'R',skill:'Reset(复位)',obj:'乐事薯片(原味/红罐)',from:'购物车',to:'操作台面',s:901,e:1350,nl:'右手机械臂从购物车复位返回操作台面待命'}];
+let nextId=3, sel=1, cur=0, playing=false, speed=1, loop=false, mode='opt';
+let annoStyle='structured'; // 'structured' | 'natural' 关键业务原则：结构化步骤与自然语言步骤严格互斥，任一时刻只展示一种样式
+let vs=0, vw=TOTAL, W=1000, undo=[], saveState='none', saveTimer=null, savedAt='';
+let msel=new Set(),movedSet=new Set();
+let cmts=[{id:1,f:120,txt:'起点偏晚，建议提前约 10 帧',done:false},{id:2,f:450,txt:'操作对象应为「可乐」',done:false}];
+let nextCmt=3, qIdx=3, taskStart=Date.now(), stats={drag:0,input:0,undo:0,play:0};
+
+/* ---------- 标注数据 ---------- */
+const ANN=[
+ {id:1,pri:'P0',t:'帧数口径不一致',now:'步骤1为 0–300 帧显示 300f，步骤2为 301–600 帧却显示 299f，相同跨度算出不同帧数。',fix:'统一为“起止均包含”（结束−起始+1），并在界面注明口径。切到“优化版本”可见 301f / 300f。',sel:['.card.sel .rng'],pos:'tr',region:'cards'},
+ {id:2,pri:'P0',t:'步骤之间的衔接规则不明',now:'步骤1结束于 300、步骤2起始于 301，是否允许空档/重叠没有任何提示，全靠人眼核对。',fix:'新增步骤起点默认＝上一步终点+1；输入、拖拽时校验重叠并就地提示；相邻边界自动吸附。',sel:['.card.sel .f-s'],pos:'tl',region:'cards'},
+ {id:3,pri:'P1',t:'步骤标题被截断',now:'卡片与时间轴块标题都被截成“LeftHand(左手) Gra…”，看不到操作对象和目标。',fix:'精简为“左手·抓取·安慕希”，完整信息悬浮显示。',sel:['.card.sel .chd','.card .chd'],pos:'tl',region:'cards'},
+ {id:4,pri:'P1',t:'时间刻度不规整',now:'刻度按 7.5 秒一格（00:07、00:15、00:22…），末尾标 01:00 而总时长是 01:01，没有帧刻度。',fix:'按整数秒自适应刻度；放大后出现帧号刻度；末端对齐总时长。',sel:['#rulerWrap'],at:{ref:'#rulerWrap',side:'l',dy:4},region:'static'},
+ {id:5,pri:'P1',t:'看不到当前播放时间',now:'底部只显示总“时长 01:01”，不知道当前播到第几秒。',fix:'改为“当前 00:12 / 总 01:01”，帧号框可直接输入并跳转。',sel:['#chipDur'],pos:'tl',region:'static'},
+ {id:6,pri:'P0',t:'“开始 / 标记”按钮含义不清',now:'两个大按钮没有说明，标注员要试过才知道点哪个，也不知道对应哪个帧。',fix:'改为“以当前帧为起点 [I]”“以当前帧为终点 [O]”，打点后自动选中并校验。',sel:['#btnStart'],pos:'tl',region:'static'},
+ {id:7,pri:'P0',t:'起止帧只能手敲数字',now:'只有数字输入框；要先找到帧再记数字手输，输入后视频也不会跳转预览。',fix:'增加“设为当前帧”、±1 帧微调；输入后视频自动跳到该帧；越界/重叠就地校验。',sel:['.card.sel .frames'],pos:'tr',region:'cards'},
+ {id:8,pri:'P0',t:'时间轴不能缩放',now:'固定显示整段约 61 秒，1 帧不到 1 像素，精修起止点几乎无法做到。',fix:'支持缩放（Ctrl+滚轮、＋/－、滑块）、适配全部、聚焦所选；放大后显示帧刻度并可平移。',sel:['#zoomTools'],pos:'tl',region:'static'},
+ {id:9,pri:'P0',t:'视频过长，定位成本高',now:'整段 1791 帧（约 61 秒），实际只标了前 600 帧，每次都要在整条里找位置。',fix:'默认聚焦“未标注区间”；超长视频自动切成 15–20 秒小段并提供上/下一段；空白段可 2–4 倍速跳过。',sel:['#video'],pos:'tr',region:'static'},
+ {id:10,pri:'P1',t:'拖拽没有吸附和提示',now:'拖拽手柄没有对齐辅助，容易出现缝隙或重叠，拖动时也看不到帧号。',fix:'吸附到播放头和相邻边界；拖动时实时显示帧号与时长；同一手内禁止重叠。',sel:['#lanesWrap'],at:{ref:'#lanes',side:'r',dy:-8},region:'static'},
+ {id:11,pri:'P1',t:'缺少区间循环播放',now:'没有只播选中区间的功能，核对起止点要手动来回拖。',fix:"增加“循环所选”开关（L）：只循环当前步骤，便于检查边界。",sel:['#btnLoop'],pos:'tr',region:'static'},
+ {id:12,pri:'P0',t:'没有快捷键',now:'全部操作依赖鼠标，也没有任何提示。',fix:'空格播放、←→ 逐帧、Shift+←→ 跳10帧、I/O 打点、[ ] 切步骤、Ctrl+Z 撤销，按 ? 查看。',sel:['#btnKeys'],pos:'tr',region:'static'},
+ {id:13,pri:'P1',t:'左右手共用一条轴，需一眼分清手别',now:'左右手步骤只靠标题文字区分，扫一眼分不清是哪只手，也看不出相邻步骤是否换手。',fix:'保持单条时间轴；步骤块上加“左/右”手别标记（蓝/橙），全轴任意两步不允许重叠，换手处自动高亮。',sel:['#lanesWrap'],at:{ref:'#lanes',side:'l',dy:-4},region:'static'},
+ {id:14,pri:'P0',t:'未标注区间没有提示',now:'600 帧之后约 1190 帧没有任何提示，容易漏标。',fix:'未覆盖区间用斜线高亮并显示帧数，一键“新增步骤”；提交前汇总空白段。',sel:['#lanesWrap'],at:{ref:'#gaps',side:'r',dy:32},region:'static'},
+ {id:15,pri:'P1',t:'卡片与视频、时间轴不联动',now:'点击右侧卡片不会带动视频和时间轴，需要自己去找位置。',fix:'点击卡片：选中并跳到该步骤起点；点击时间轴块反向定位卡片。',sel:['.card:not(.sel) .chd'],pos:'tl',region:'cards'},
+ {id:16,pri:'P2',t:'画面上没有当前步骤信息',now:'视频画面上看不出当前处于哪一步。',fix:'画面左下角叠加“当前步骤：01 左手抓取”，不在任何步骤内时提示“未标注”。',sel:['#vStep'],pos:'tl',region:'static'},
+ {id:17,pri:'P1',t:'下拉选项不能搜索',now:'操作对象 / 目标是普通下拉，商品多时只能滚动查找。',fix:'支持输入搜索、最近使用置顶（原型中操作对象已支持输入筛选）。',sel:['.card.sel .f-obj'],pos:'tr',region:'cards'},
+ {id:18,pri:'P1',t:'新增步骤要重填所有字段',now:'新增步骤是空白表单，起止帧也要手填。',fix:'自动从第一个空白段起始，继承上一步的末端、技能、对象，只改差异项。',sel:['#btnAdd'],pos:'tr',region:'static'},
+ {id:19,pri:'P2',t:'折叠卡片信息量太少',now:'折叠卡片只显示被截断的标题，右侧下半部分大片空白。',fix:'折叠态显示摘要（技能·对象·路径·帧数），一屏看全所有步骤。',sel:['.card:not(.sel) .rng'],pos:'tr',region:'cards'},
+ {id:20,pri:'P2',t:'删除无反馈、无法撤销',now:'垃圾桶紧挨复制/拖拽图标，一点就删，没有任何反馈。',fix:'不弹确认框，改为支持 Ctrl+Z 撤销，并提示“已删除 · 撤销”。',sel:['.card.sel .del'],pos:'tr',region:'cards'},
+ {id:21,pri:'P0',t:'提交前没有校验',now:'“生成标注模版”与“完成标注”并排且样式接近，点提交前不做检查。',fix:'提交前弹出校验汇总（步骤数、覆盖率、空白段、缺失字段），可点击跳转；次要按钮降级。点“完成标注”试试。',sel:['#btnDone'],pos:'tr',region:'static'},
+ {id:22,pri:'P1',t:'保存状态不可见',now:'状态标签只有“未标注”，不知道有没有保存，关闭页面可能丢数据。',fix:'实时显示“未保存 / 已自动保存 10:30”，离开页面时提示未保存内容。',sel:['#stChip'],pos:'tr',region:'static'},
+ {id:23,pri:'P2',t:'倍速档位偏少',now:'精修边界时常规倍速太快。',fix:'增加 0.25×、0.5×，支持快捷键切换。',sel:['#speedWrap'],pos:'tr',region:'static'},
+ /* ===== 第二轮新增（25–43）===== */
+ {id:24,pri:'P2',optOnly:1,t:'画面里点选操作对象',now:'“操作对象”要在下拉里翻找，商品种类多时很慢。',fix:'直接点击画面中的商品自动填入对象；后续可接入检测框/分割结果，按离手部最近的物体推荐。',demo:'鼠标移到视频里的商品上会高亮，点击即把所选步骤的“操作对象”设为该商品（热区为示意）。',sel:['#video'],pos:'br',region:'static'},
+ {id:25,pri:'P0',optOnly:1,t:'步骤模板一键套用',now:'货架抓取流程基本固定（抓取→放置→复位），却要逐个“增加步骤”并重填字段；“生成标注模版”的含义也不清。',fix:'按任务类型预置步骤模板，一键生成骨架（手别、技能已预填），标注员只需对齐起止帧；“生成标注模版”可改为“保存为我的模板”。',demo:'选择模板后点“套用到空白段”，会在第一个放得下的空白段生成步骤骨架。',sel:['#tplRow'],pos:'tr',region:'static'},
+ {id:26,pri:'P1',optOnly:1,t:'重复动作批量生成',now:'连续抓取多件商品时，同样的步骤要反复复制、改帧号。',fix:'“复制并顺延 ×N”：按当前步骤长度向后排布 N 个副本，遇到已有步骤/视频末尾自动停止，之后只需微调。',demo:'展开所选步骤卡片底部，点“×2 / ×3 / ×5”。',sel:['.card.sel .rep','.card .rep'],pos:'tr',region:'cards'},
+ {id:27,pri:'P0',optOnly:1,t:'时间轴右键菜单',now:'拆分、合并、删除只能靠新增步骤再手改帧号，没有就地操作。',fix:'步骤块右键：在播放头处拆分、与下一步合并、循环播放、删除；已锁定步骤置灰。',demo:'在时间轴的步骤块上点鼠标右键。',sel:['#lanes'],at:{ref:'#lanes',side:'r',dy:12},region:'static'},
+ {id:28,pri:'P1',optOnly:1,t:'技能与对象/路径联动',now:'每个字段独立选择，选“复位”还要重新选对象和路径。',fix:'选技能后自动带出相关选项：复位＝上一步对象＋反向路径；对象列表按技能过滤（如抓取只列可抓取物）。',demo:'把所选步骤的“原子技能”改成别的，再改成“Reset(复位)”，对象和路径会自动带出。',sel:['.card.sel .two .fld:last-child'],pos:'tr',region:'cards'},
+ {id:29,pri:'P0',optOnly:1,t:'标注规则实时校验',now:'“抓取后没有放置”“复位前没有抓取”这类逻辑问题要到审核时才被发现。',fix:'按规则在步骤卡片和时间轴上实时提示（⚠）并在提交前汇总；规则可配置，提交前必须处理或写明原因。',demo:'示例数据已触发 2 条提示（步骤卡片与时间轴块上的 ⚠）；补齐对应步骤后提示消失。',sel:['.card .warnrow'],pos:'tr',region:'cards'},
+ {id:30,pri:'P1',optOnly:1,t:'审核批注到具体帧',now:'驳回只能写文字意见，标注员不知道问题出在哪个位置。',fix:'审核人在时间轴具体帧上留批注（🚩），标注员逐条定位修改后标记“已处理”（✅）；可对比修改前后版本。',demo:'点标尺上的 🚩 查看并标记已处理；点“批注当前帧”新增一条。',sel:['#btnComment'],pos:'tr',region:'static'},
+ {id:31,pri:'P0',optOnly:1,t:'帧级精确的技术保障（需先验证）',now:'浏览器 video 默认不能精确到帧，“设为当前帧、逐帧步进”可能有几帧偏差，标注结果不可复现。',fix:'开发前先验证：用 WebCodecs 或后端抽帧缓存实现帧精确定位，并显示当前帧号；若做不到，需在需求里明确容差。',demo:'此项是技术前提，原型仅用“帧精确”标签示意。',sel:['#chipFrame'],pos:'tr',region:'static'},
+ {id:32,pri:'P2',optOnly:1,t:'下一条预加载',now:'切换任务时才开始加载视频，等待时间长。',fix:'当前任务后台预加载下一条的视频与标注数据，并显示预加载状态；拖动时按需加载分段。',sel:['#preload'],pos:'tr',region:'static'},
+ {id:33,pri:'P2',optOnly:1,t:'多视角同步',now:'只有一个相机画面，看不清手与物体的接触细节。',fix:'支持切换 ego/左腕/右腕相机，或并排/画中画显示，播放与拖动保持同步。',demo:'点视频右上角的相机标签（画面为示意）。',sel:['#camTabs'],pos:'bl',region:'static'},
+ {id:34,pri:'P1',optOnly:1,t:'任务流转',now:'完成一条后要回到列表再选下一条。',fix:'显示队列进度，支持“上一条 / 保存并下一条 / 跳到下一条未标注”，切换前自动保存。',demo:'点底部“保存并下一条”。',sel:['#flowRow'],pos:'tr',region:'static'},
+ {id:35,pri:'P2',optOnly:1,t:'效率埋点',now:'不知道每条花了多久、时间耗在哪个操作上。',fix:'记录每条耗时，以及拖拽/手输/撤销/播放次数，用数据定位最耗时的环节，指导下一轮优化。',demo:'点顶部“本条”计时查看操作统计。',sel:['#telem'],pos:'tr',region:'static'},
+ {id:36,pri:'P2',optOnly:1,t:'步骤锁定与并发提示',now:'已审核通过的步骤仍可被改动；多人同时打开同一条数据没有任何提示。',fix:'审核通过的步骤自动锁定（不可拖拽/编辑，需先解锁）；顶部显示正在查看的其他人，避免相互覆盖。',demo:'点步骤卡片上的 🔓 锁定，再尝试拖动或编辑。',sel:['.card.sel .lockbtn','.card .lockbtn'],pos:'br',region:'cards'},
+ {id:37,pri:'P2',optOnly:1,t:'布局自适应与记忆',now:'视频区尺寸固定，小屏幕上右侧面板占用空间大。',fix:'视频可放大、右侧面板可折叠，并记住个人布局设置。',demo:'点顶部“放大视频 / 折叠面板”（刷新后保持）。',sel:['#layoutBtns'],pos:'tr',region:'static'},
+ {id:38,pri:'P1',optOnly:1,t:'底部状态条可直接操作',now:'“时长”和“S2 301→600”只是显示，点了没反应；要定位只能拖播放头或手输帧号。',fix:'时间可直接输入 mm:ss 跳转；步骤区间条增加上一步/下一步、跳到起点/终点，配合帧号输入、倍速、循环等控件，在底部一处完成定位。',demo:'在“时长”里输入 00:20 回车；点步骤条的 ‹ › 或“起点 / 终点”。',sel:['#chipS'],pos:'tr',region:'static'},
+ {id:39,pri:'P0',optOnly:1,t:'套用模板：必须选“时间段适配策略”，默认按比例',now:'模板里的帧区间是固定值（每步 300 帧，10 步共 3000 帧），套到 1791/1847 帧的视频上，第 8–10 步落在 2101–3000 帧，超出视频，时间轴画不出来，只剩右侧列表有红字。视频时长不固定，“固定帧数适配”本身就不适合这类场景。',fix:'套用模板弹出对话框：①按比例适配（默认选中）：新帧 = 模板帧 ÷ 模板总帧数 × 目标总帧数，四舍五入，末步结束帧＝目标末帧，相邻步骤首尾相接；②全程适配：按步骤数均分整个视频；③固定帧数适配：只有模板最大帧不超过目标视频末帧时才可选，否则置灰并写明原因（也可直接去掉该选项，推荐）。每步不足 20 帧则不生成，提示“视频太短，放不下 N 个步骤”。模板需保存“原视频总帧数”。',demo:'点右侧“套用模板…”，选“双臂协同 10 步”，切换三种策略，看右侧预览表。',sel:['#tplRow'],pos:'tr',region:'static'},
+ {id:40,pri:'P0',optOnly:1,t:'自动生成的步骤标“待确认”',now:'模板生成的帧区间是机器算的，不是标注员标的，却和手标的步骤看起来完全一样，容易漏核对就提交。',fix:'新生成步骤在时间轴上用虚线+斜纹显示，卡片上有“待确认”标签；拖动过起止帧，或点卡片上的“确认”，才变为正常。时间轴上方提示“N 个步骤待确认”，可一键定位下一个。',demo:'套用模板后看时间轴的虚线块；点卡片“待确认”标签即确认。',sel:['#tlBar'],at:{ref:'#timeline',side:'l',dy:-26},region:'static'},
+ {id:41,pri:'P0',optOnly:1,t:'步骤超出视频范围：时间轴顶部红色提示条',now:'历史数据或手输帧号造成步骤超出视频总帧数时，时间轴上直接不画，标注员看不出少了几个步骤，只能自己对右侧列表数。',fix:'时间轴上方显示红色提示条“N 个步骤超出视频范围（步骤 8、9、10）”，右侧列表顶部同步提示；提示条提供“定位”“重新分配到视频范围”（把这些步骤均分到最后一个有效步骤之后的空白帧，每步不足 20 帧则只能删除）“删除这些步骤”（二次确认，可撤销）。超出的步骤不能直接丢掉。',demo:'点顶部“演示场景：历史数据（含超范围步骤）”，对比“现状版本”和“优化版本”。',sel:['#tlBar'],at:{ref:'#timeline',side:'r',dy:-26},region:'static'},
+ {id:42,pri:'P0',optOnly:1,t:'“完成标注”提交拦截规则',now:'超范围、重叠、未确认的步骤都能提交成功，错误数据流到下游。',fix:'点“完成标注”时分级校验：拦截（必须处理才能提交）= 步骤超出视频范围、步骤重叠、存在“待确认”步骤；提示（不拦截）= 有未标注空档、缺少操作对象。每一项可点击跳转到对应步骤。',demo:'在“历史数据”场景或套用模板后点“完成标注”。',sel:['#btnDone'],pos:'tl',region:'static'},
+ {id:43,pri:'P1',optOnly:1,t:'时间轴步骤块最小宽度',now:'步骤很短时（如 10 帧）块宽只有几像素，点不中也看不到文字。',fix:'步骤块最小显示宽度 24px；过窄时隐藏文字，悬停显示 Tooltip（手别、动作、对象、起止帧、帧数）。',demo:'放大/缩小时间轴观察短步骤，鼠标悬停。',sel:['#lanesWrap'],at:{ref:'#lanes',side:'r',dy:22},region:'static'},
+ {id:44,pri:'P1',optOnly:1,t:'框选步骤，拖动调整顺序',now:'步骤顺序不对（例如模板继承的“抓取→放置→复位”与实际视频不符）时，只能逐个改每个步骤的技能、对象、路径，一个一个重填；想换位置没有办法。',fix:'Shift+拖框（或 Shift+点击）多选步骤，拖动步骤上的“⠿ 顺序”到目标位置，也可 Alt+←/→ 微调。规则：各位置的时间区间（帧）不变，只有动作内容（手别、技能、对象、路径）随步骤换位，这样不会破坏与视频的对应关系，也不会产生重叠或空档；已锁定的步骤位置不变，若调整会影响它则拒绝；一次调整算一次撤销。',demo:'在时间轴空白处按住 Shift 拖框选中步骤，再拖动其中一个的“⠿ 顺序”；或选中一个步骤按 Alt+→。',sel:['#lanesWrap'],at:{ref:'#lanes',side:'l',dy:24},region:'static'},
+ {id:45,pri:'P1',new:1,optOnly:1,t:'步骤之间空档很窄时，也能新建步骤',now:'空档窄的时候，“＋ 新增步骤”按钮放不下（空档宽度不到 110px 就不显示），标注员无从下手，只能先把相邻步骤拖开。',fix:'整个空档区域都可点击：鼠标移上去空档变蓝，出现悬浮的“＋”和提示“新增步骤 · N 帧”，点一下就在空档里新建步骤（继承上一步设置，可再拖边界调整）；播放头在空档内时按 N 键也能新建。空档不足 10 帧（放不下最小步骤）时，点击提示“并入前一步 / 后一步”，让空档消失，不留碎缝。',demo:'点顶部“演示场景”里的“恢复默认”后，在时间轴上找橙色虚线的窄空档悬停并点击；或用“历史数据”场景。',sel:['#lanesWrap'],at:{ref:'#lanes',side:'r',dy:44},region:'static'},
+ {id:46,pri:'P0',new:1,optOnly:1,t:'自然语义与结构化标注严格互斥（单样式纯粹展示）',now:'原有标注界面未将传统结构化分类槽位（末端/技能/对象/目标）与端到端具身大模型训练必需的自然语言连续动作指令解耦，界面混杂。',fix:'落实核心规范“结构化步骤与自然语言步骤严格互斥，任一时刻只能展示并采集其中一种形态”。右侧顶部提供无缝样式切换器（🧩 结构化步骤 / 💬 自然语义动作）：结构化模式下纯粹展示4槽位下拉与结构化HUD；自然语义模式下纯粹展示单行自然语言动作指令（支持常用词快捷输入与要素一键生成）、语义动作HUD字幕与任务总目标指令，前后端 Schema 彻底解耦，界面干净直观。',demo:'点击右侧顶部的切换按钮，在“🧩 结构化步骤”与“💬 自然语义动作”之间切换，观察卡片、标题、时间轴和视频 HUD 的完全独立单样式呈现。',sel:['#styleSeg'],pos:'tl',region:'static'}
+];
+
+/* ---------- 工具 ---------- */
+const laneOf=st=>'A'; // 左右手共用一条时间轴：任意两个步骤都不能重叠
+const sorted=()=>[...steps].sort((a,b)=>a.s-b.s);
+const stNum=st=>sorted().indexOf(st)+1;
+const nOf=st=>mode==='old'?st.e-st.s:st.e-st.s+1;
+const colOf=st=>PAL[(st.id-1)%PAL.length];
+/* 自然语义动作（自然语言动作指令 / Subgoal Instruction）合成算法 */
+function genNL(st){
+  if(!st)return '';
+  const h=st.hand==='L'?'左手':'右手';
+  const sk=short(st.skill||'');
+  const obj=st.obj||'物体';
+  const from=st.from||'';
+  const to=st.to||'';
+  if(/抓取|Grasp/i.test(st.skill)){
+    if(from&&to&&from!==to)return '用'+h+'从'+from+'抓取'+obj+'并移至'+to;
+    if(from)return '用'+h+'伸向'+from+'抓取'+obj;
+    return '用'+h+'抓取'+obj;
+  }
+  if(/放置|Place/i.test(st.skill)){
+    if(from&&to&&from!==to)return '用'+h+'将'+obj+'从'+from+'平稳放置到'+to;
+    if(to)return '用'+h+'将'+obj+'放置于'+to;
+    return '用'+h+'放置'+obj;
+  }
+  if(/复位|Reset/i.test(st.skill)){
+    if(from&&to&&from!==to)return h+'机械臂从'+from+'复位返回'+to+'待命';
+    if(to)return h+'机械臂复位至'+to;
+    return h+'机械臂归位复位';
+  }
+  if(/推|Push/i.test(st.skill))return '用'+h+'在'+(from||'台面')+'将'+obj+'向前推移至'+(to||'目标位置');
+  if(/拉|Pull/i.test(st.skill))return '用'+h+'抓住'+obj+'从'+(from||'深处')+'拉出至'+(to||'外部');
+  return '用'+h+sk+obj+(to?'至'+to:'');
+}
+const titleOf=st=>{
+  if(mode==='old')return HAND[st.hand]+' '+st.skill+' ...';
+  if(annoStyle==='natural')return st.nl||genNL(st);
+  return HS[st.hand]+' · '+short(st.skill)+' · '+(st.obj||'未选对象');
+};
+const selStep=()=>steps.find(s=>s.id===sel);
+const oor=st=>st.s>TOTAL-1||st.e>TOTAL-1;   // 起止帧超出视频范围（0 ~ TOTAL-1）
+const oorList=()=>sorted().filter(oor);
+const inList=()=>sorted().filter(x=>!oor(x));
+function bounds(st){
+  const o=steps.filter(x=>x!==st&&!oor(x)&&laneOf(x)===laneOf(st));
+  const lo=Math.max(0,...o.filter(x=>x.e<st.s).map(x=>x.e+1));
+  const hi=Math.min(TOTAL-1,...o.filter(x=>x.s>st.e).map(x=>x.s-1));
+  return [lo,hi];
+}
+function gaps(){
+  const g=[];let p=0;
+  inList().forEach(s=>{if(s.s>p)g.push([p,s.s-1]);p=Math.max(p,s.e+1)});
+  if(p<=TOTAL-1)g.push([p,TOTAL-1]);
+  return g;
+}
+let toastT;
+function toast(msg,label,fn){
+  const t=$('#toast');t.innerHTML=msg;
+  if(label){const a=document.createElement('a');a.textContent=label;a.onclick=()=>{t.style.display='none';fn()};t.appendChild(a)}
+  t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',3200);
+}
+function pushUndo(){
+  if(mode==='old')return;
+  undo.push(JSON.stringify({steps,sel,msel:[...msel]}));if(undo.length>60)undo.shift();
+  markDirty();
+}
+function markDirty(){
+  if(mode==='old')return;
+  saveState='dirty';updStatus();clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{const d=new Date();savedAt=pad(d.getHours())+':'+pad(d.getMinutes());saveState='saved';updStatus()},1500);
+}
+function doUndo(){
+  const j=undo.pop();if(!j){toast('没有可撤销的操作');return}
+  const o=JSON.parse(j);steps=o.steps;sel=o.sel;msel=new Set(o.msel||[]);stats.undo++;renderAll();toast('已撤销');
+}
+function updStatus(){
+  const c=$('#stChip'),t=$('#stTxt');
+  if(mode==='old'||saveState==='none'){c.className='chip orange';t.textContent='未标注'}
+  else if(saveState==='dirty'){c.className='chip red';t.textContent='未保存'}
+  else{c.className='chip green';t.textContent='已自动保存 '+savedAt}
+}
+
+/* ---------- 视图坐标 ---------- */
+const ppf=()=>W/vw;
+const xOf=f=>(f-vs)*ppf();
+const fAt=px=>vs+px/ppf();
+function setView(a,b){vw=clamp(b,Math.min(30,TOTAL),TOTAL);vs=clamp(a,0,TOTAL-vw)}
+function zoomAt(factor,anchor){
+  const r=(anchor-vs)/vw;const nv=clamp(vw/factor,30,TOTAL);
+  setView(anchor-r*nv,nv);renderTimeline();renderMinimap();updatePlayhead();updZoomUI();
+}
+function updZoomUI(){
+  const z=TOTAL/vw;$('#zLabel').textContent=z.toFixed(1)+'×';
+  $('#zRange').value=Math.round(Math.log(z)/Math.log(TOTAL/30)*100);
+  $('#vInfo').textContent='显示 帧 '+Math.round(vs)+' – '+Math.round(vs+vw)+'（'+fmt(vs)+' – '+fmt(vs+vw)+'）';
+}
+function focusRange(a,b){const len=Math.max(40,(b-a)*1.4);setView((a+b)/2-len/2,len);renderTimeline();renderMinimap();updatePlayhead();updZoomUI()}
+
+/* ---------- 时间轴渲染 ---------- */
+function renderTimeline(){
+  const clip=$('#tlclip');W=clip.clientWidth||1000;
+  const old=mode==='old';
+  if(old){vs=0;vw=TOTAL}
+  const p=ppf();let r='';
+  const ruler=$('#ruler');ruler.className='ruler'+(old?'':' opt');
+  if(old){
+    for(let t=0;t<=TOTAL/FPS+1e-6;t+=7.5){const x=t*FPS*p;r+='<div class="tk '+(t===0?'first':'')+'" style="left:'+x+'px"><span>'+fmtT(t)+'</span></div>'}
+  }else{
+    let step=30;for(const c of [0.1,0.2,0.5,1,2,5,10,15,30]){if(c*FPS*p>=80){step=c;break}}
+    const t0=Math.floor(vs/FPS/step)*step,t1=(vs+vw)/FPS;
+    for(let t=t0;t<=t1+1e-6;t+=step){
+      const x=xOf(t*FPS);
+      if(x>-40&&x<W+40){
+        const lb=step<1?fmtT(t)+'.'+Math.round((t%1)*10):fmtT(t);
+        r+='<div class="tk '+(x<20?'first':'')+'" style="left:'+x+'px"><span>'+lb+'</span></div>';
+      }
+      for(let k=1;k<5;k++){const xm=xOf((t+step*k/5)*FPS);if(xm>0&&xm<W&&step*FPS*p/5>=10)r+='<div class="tk mn" style="left:'+xm+'px"></div>'}
+    }
+    if(p>=3){
+      let fs=500;for(const c of [1,2,5,10,20,50,100,200,500]){if(c*p>=48){fs=c;break}}
+      for(let f=Math.ceil(vs/fs)*fs;f<=vs+vw;f+=fs){const x=xOf(f);r+='<div class="fk" style="left:'+x+'px"><span>f'+f+'</span></div>'}
+    }
+  }
+  if(!old)cmts.forEach(c=>{const x=xOf(c.f);if(x>-10&&x<W+10)r+='<span class="cmt" data-cmt="'+c.id+'" style="left:'+(x-6)+'px" title="'+c.txt+'">'+(c.done?'✅':'🚩')+'</span>'});
+  ruler.innerHTML=r;
+  // 轨道
+  const ws=new Set(old?[]:warnings().map(x=>x.st));
+  const lanes=['A'];let h='';
+  lanes.forEach(l=>{
+    h+='<div class="lane">';
+    steps.forEach(st=>{
+      if(oor(st))return;   // 超出视频范围：时间轴不画，改由顶部红色提示条说明
+      const x0=xOf(st.s),w=Math.max(24,(st.e+1-st.s)*p);
+      if(x0+w<0||x0>W)return;
+      const nlStr=st.nl||genNL(st);
+      const tipStr=annoStyle==='natural'
+        ?('💬 自然语义动作: '+nlStr+' · '+st.s+'–'+st.e+' 帧 ('+nOf(st)+'f)')
+        :('🧩 结构化: '+HAND[st.hand]+' '+st.skill+' · '+(st.obj||'未选对象')+' · '+st.from+'→'+st.to+' · '+st.s+'–'+st.e+' ('+nOf(st)+'f)');
+      h+='<div class="blk '+(st.id===sel?'sel':'')+(w<100?' narrow':'')+(st.pending&&!old?' pending':'')+(!old&&msel.has(st.id)?' msel':'')+(!old&&movedSet.has(st.id)?' moved':'')+(st.locked?' locked':'')+'" data-id="'+st.id+'" title="'+tipStr+'" style="left:'+x0+'px;width:'+w+'px;--c:'+colOf(st)+'"><i class="h h-l"></i>'+(old?'':'<i class="grip" data-grip="1" title="按住拖动，调整步骤顺序（先 Shift+拖框可多选）">⠿ 顺序</i>')+'<span class="num">'+stNum(st)+'</span>'+(old?'':'<span class="hchip '+st.hand+'">'+(st.hand==='L'?'左':'右')+'</span>')+'<span class="bt">'+(ws.has(st)?'⚠ ':'')+titleOf(st)+'</span><span class="bf">'+nOf(st)+'f</span><i class="h h-r"></i></div>';
+    });
+    h+='</div>';
+  });
+  $('#lanes').innerHTML=h;
+  renderBars();
+  // 空白段
+  let gh='';
+  if(!old)gaps().forEach(g=>{
+    const x0=xOf(g[0]),w=(g[1]+1-g[0])*p;if(x0+w<0||x0>W)return;
+    const nF=g[1]-g[0]+1,okAdd=nF>=10;
+    gh+='<div class="gap'+(okAdd?'':' tiny')+'" data-gap="'+g[0]+','+g[1]+'" title="'+(okAdd?'未标注 '+nF+' 帧（'+g[0]+'–'+g[1]+'）· 点击新增步骤':'空档只有 '+nF+' 帧，不足 10 帧，放不下新步骤 · 点击可把它并入相邻步骤')+'" style="left:'+x0+'px;width:'+Math.max(w,8)+'px">'+(w>150?'<span>未标注 '+nF+' 帧</span>':'')+(w>110?'<button data-gap="'+g[0]+','+g[1]+'">'+(okAdd?'＋ 新增步骤':'并入相邻步骤')+'</button>':'<span class="plus">'+(okAdd?'＋':'↔')+'<em>'+(okAdd?'新增步骤 · '+nF+' 帧':'仅 '+nF+' 帧')+'</em></span>')+'</div>';
+  });
+  $('#gaps').innerHTML=gh;
+}
+function updatePlayhead(){
+  const x=xOf(cur),ph=$('#playhead');
+  ph.style.display=(x<-2||x>W+2)?'none':'block';ph.style.left=x+'px';
+}
+function renderMinimap(){}
+
+/* ---------- 右侧卡片 ---------- */
+const optHtml=(arr,v)=>arr.map(x=>'<option'+(x===v?' selected':'')+'>'+x+'</option>').join('');
+function renderCards(){
+  const list=sorted();$('#stepCount').textContent=steps.length;
+  const WL=warnings();
+  $('#cards').innerHTML=oorNote()+list.map((st,i)=>{
+    const open=st.id===sel;
+    const inM=msel.has(st.id);
+    const wr=WL.find(x=>x.st===st);
+    const nlText=st.nl||genNL(st);
+    let h='<div class="card '+(open?'sel':'')+(inM?' msel':'')+(st.locked?' locked':'')+'" data-id="'+st.id+'" style="--c:'+colOf(st)+'"><div class="chd"><span class="n">'+pad(i+1)+'</span><span class="ttl" title="'+HAND[st.hand]+' '+st.skill+' '+(st.obj||'')+'">'+titleOf(st)+'</span><span class="rng">'+st.s+' - '+st.e+' 帧</span>'+(mode==='opt'?(oor(st)?'<span class="ptag red">超出视频范围</span>':st.pending?'<button class="ptag" data-act="confirm" title="已按模板自动分配，核对无误后点此确认">待确认 · 点击确认</button>':''):'')+'<button class="ic lockbtn opt-only" data-act="lock" title="'+(st.locked?'已锁定：点击解锁':'点击锁定（审核通过后自动锁定）')+'">'+(st.locked?'🔒':'🔓')+'</button><button class="ic" data-act="copy" title="复制">⧉</button><button class="ic" title="拖拽排序">⋮⋮</button><button class="ic del" data-act="del" title="'+(inM&&msel.size>1?'批量删除所选的 '+msel.size+' 个步骤':'删除')+'">🗑</button></div>'+(wr?'<div class="warnrow opt-only">⚠ '+wr.msgs.join('；')+'</div>':'');
+    if(!open){
+      h+='<div class="sum opt-only structured-only">'+short(st.skill)+' · '+(st.obj||'—')+' · '+st.from+'→'+st.to+' · '+nOf(st)+'f</div>';
+      h+='<div class="nl-sum opt-only natural-only" title="'+nlText+'"><span class="nl-badge">💬 自然语义</span> '+nlText+'</div>';
+    }else{
+      h+='<div class="cbody">'+
+      '<div class="structured-only">'+
+        '<div class="two"><div class="fld"><label>执行末端类型</label><select data-k="hand"><option value="L"'+(st.hand==='L'?' selected':'')+'>LeftHand(左手)</option><option value="R"'+(st.hand==='R'?' selected':'')+'>RightHand(右手)</option></select></div><div class="fld"><label>原子技能</label><select data-k="skill">'+optHtml(SKILLS,st.skill)+'</select></div></div>'+
+        '<div class="fld f-obj"><label>操作对象'+(mode==='opt'?'（可输入搜索）':'')+'</label>'+(mode==='opt'?'<input type="text" list="objList" data-k="obj" value="'+(st.obj||'')+'" placeholder="输入或选择">':'<select data-k="obj"><option value="">请选择</option>'+optHtml(OBJS,st.obj)+'</select>')+'</div>'+
+        '<div class="fld"><label>操作目标</label><div class="frm"><span>从</span><select data-k="from">'+optHtml(TARGETS,st.from)+'</select></div><div class="frm" style="margin-top:6px"><span>至</span><select data-k="to">'+optHtml(TARGETS,st.to)+'</select></div></div>'+
+      '</div>'+
+      '<div class="fld f-nl opt-only natural-only"><div class="fld-head"><label><span>💬</span> <b>自然语义动作 (Natural Language Action)</b></label><button class="mini-btn text-btn" data-act="gennl" title="根据当前选择的末端、技能、对象与路径智能生成标准化描述">⚡️ 依据要素生成</button></div>'+
+      '<textarea data-k="nl" rows="3" placeholder="输入针对该步骤的单行自然语言动作指令（如：用左手从货架上层抓取乐事薯片(原味/红罐)并移至操作台面）">'+(st.nl||'')+'</textarea>'+
+      '<div class="nl-quick"><span class="nl-hint">快速填入:</span><span class="nl-chip" data-chip="抓取">抓取</span><span class="nl-chip" data-chip="平稳放置">平稳放置</span><span class="nl-chip" data-chip="复位归位">复位归位</span><span class="nl-chip" data-chip="移至操作台面">移至台面</span><span class="nl-chip" data-chip="放入购物车">放入购物车</span></div></div>'+
+      '<div class="frames fld"><div class="f f-s"><label>起始帧</label><input type="number" data-k="s" value="'+st.s+'"><div class="mini opt-only"><button data-act="setcur" data-k="s">设为当前帧</button><button data-act="nudge" data-k="s" data-d="-1">−1</button><button data-act="nudge" data-k="s" data-d="1">+1</button></div></div>'+
+      '<div class="f f-e"><label>结束帧</label><input type="number" data-k="e" value="'+st.e+'"><div class="mini opt-only"><button data-act="setcur" data-k="e">设为当前帧</button><button data-act="nudge" data-k="e" data-d="-1">−1</button><button data-act="nudge" data-k="e" data-d="1">+1</button></div></div></div><div class="rep opt-only">复制并顺延：<button class="mini-btn" data-act="rep" data-n="2">×2</button><button class="mini-btn" data-act="rep" data-n="3">×3</button><button class="mini-btn" data-act="rep" data-n="5">×5</button><span>（同长度，向后排）</span></div></div>';
+    }
+    return h+'</div>';
+  }).join('');
+  placeBadges('cards');
+}
+function setEdge(st,k,val){
+  if(st.locked){toast('步骤已锁定，请先解锁');return false}
+  const [lo,hi]=bounds(st);
+  let v=Math.round(val),nv=v;
+  if(k==='s')nv=clamp(v,lo,st.e-9);else nv=clamp(v,st.s+9,hi);
+  if(nv!==v)toast('已限制在不与相邻步骤重叠、且至少 10 帧的范围内');
+  if(nv===st[k])return false;
+  pushUndo();st[k]=nv;st.pending=false;return true;
+}
+function selectStep(id,jump){
+  sel=id;const st=selStep();
+  if(jump&&st&&mode==='opt'){if(oor(st)){toast('步骤 '+stNum(st)+'（帧 '+st.s+'–'+st.e+'）超出视频范围，时间轴上无法显示')}else{seek(st.s);focusRange(st.s,st.e)}}
+  renderTimeline();renderCards();renderMinimap();updCtrl();
+}
+function addStep(fromCopy){
+  const g=gaps();
+  const base=fromCopy||sorted().slice(-1)[0];
+  let s,e;
+  if(mode==='opt'){
+    if(!g.length){toast('没有可用的空白区间了');return}
+    s=g[0][0];e=Math.min(g[0][1],s+149);
+  }else{s=Math.min(TOTAL-10,(Math.max(0,...steps.map(x=>x.e))+1));e=Math.min(TOTAL-1,s+149)}
+  pushUndo();
+  const st={id:nextId++,hand:base?base.hand:'L',skill:base?base.skill:'Grasp(抓取)',obj:mode==='opt'&&base?base.obj:'',from:base?base.from:'台面上方',to:base?base.to:'桌面',s,e};
+  st.nl=genNL(st);
+  steps.push(st);sel=st.id;
+  if(mode==='opt'){seek(st.s);focusRange(st.s,st.e);toast('已从第一个空白段新增，并继承上一步的设置')}
+  renderAll();
+}
+
+/* ---------- 控制栏 / 视频 ---------- */
+function updCtrl(){
+  $('#durTxt').textContent=fmt(TOTAL);
+  {const ti=$('#timeIn');if(ti&&document.activeElement!==ti)ti.value=fmt(cur)}
+  const fi=$('#frameIn');if(document.activeElement!==fi)fi.value=Math.round(cur);
+  const st=selStep();
+  $('#s1Tag').textContent='S'+(st?stNum(st):'-');
+  $('#s1Txt').textContent=st?st.s+' → '+st.e+' ('+nOf(st)+'f)':'未选择步骤';
+  $('#vFrame').textContent='frame '+Math.round(cur)+' / '+TOTAL;
+  const at=steps.find(s=>cur>=s.s&&cur<=s.e),v=$('#vStep');
+  const nlEl=$('#vStepNl'),txtEl=$('#vStepTxt');
+  if(at){
+    v.className='vstep opt-only';
+    if(annoStyle==='natural'){
+      if(txtEl)txtEl.style.display='none';
+      if(nlEl){
+        nlEl.textContent='💬 "'+(at.nl||genNL(at))+'"';
+        nlEl.style.display='block';
+      }
+    }else{
+      if(txtEl){
+        txtEl.textContent='当前步骤：'+pad(stNum(at))+' '+HS[at.hand]+short(at.skill)+(at.obj?' · '+at.obj:'');
+        txtEl.style.display='inline';
+      }
+      if(nlEl)nlEl.style.display='none';
+    }
+  }else{
+    v.className='vstep none opt-only';
+    if(txtEl){
+      txtEl.textContent='当前帧未标注';
+      txtEl.style.display='inline';
+    }
+    if(nlEl)nlEl.style.display='none';
+  }
+  const s1=steps.find(s=>s.hand==='L'&&s.s<=cur&&cur<=s.e),s2=steps.find(s=>s.hand==='R'&&s.s<=cur&&cur<=s.e);
+  const pr=(s)=>s?(cur-s.s)/(s.e-s.s):0;
+  $('#gL').setAttribute('transform','translate('+(s1?pr(s1)*260:0)+','+(s1?-pr(s1)*150:0)+')');
+  $('#gR').setAttribute('transform','translate('+(s2?-pr(s2)*220:0)+','+(s2?-pr(s2)*130:0)+')');
+  const mp=$('#mmPh');if(mp)mp.style.left=cur/TOTAL*100+'%';
+}
+const vid=()=>$('#videoPlayer');
+function seek(f){
+  cur=clamp(f,0,TOTAL-1);
+  const v=vid();
+  if(v && Math.abs(v.currentTime - cur/FPS) > 0.033){
+    try{ v.currentTime = cur / FPS; }catch(e){}
+  }
+  if(mode==='opt'&&(cur<vs||cur>vs+vw)){setView(cur-vw/2,vw);renderTimeline();renderMinimap();updZoomUI()}
+  updatePlayhead();updCtrl();
+}
+let lastTs=0;
+function tick(ts){
+  if(!playing)return;
+  const player=vid();
+  if(player && !player.paused && !player.ended){
+    cur=clamp(Math.round(player.currentTime*FPS),0,TOTAL-1);
+  }else{
+    const dt=Math.min(0.1,(ts-lastTs)/1000);
+    cur=clamp(cur+dt*FPS*speed,0,TOTAL-1);
+  }
+  lastTs=ts;
+  const st=selStep();
+  if(loop&&mode==='opt'&&st&&(cur>st.e||cur<st.s)){
+    seek(st.s);
+  }
+  if(cur>=TOTAL-1){
+    cur=TOTAL-1;
+    setPlay(false);
+  }
+  if(mode==='opt'&&vw<TOTAL&&(cur<vs||cur>vs+vw)){
+    setView(cur-vw*0.15,vw);
+    renderTimeline();renderMinimap();updZoomUI();
+  }
+  updatePlayhead();updCtrl();
+  if(playing)requestAnimationFrame(tick);
+}
+function setPlay(v){
+  playing=v;$('#bPlay').textContent=v?'⏸':'▶';
+  const player=vid();
+  if(v){
+    if(cur>=TOTAL-1)seek(0);
+    if(player){
+      player.playbackRate=speed;
+      player.play().catch(e=>console.log('Video play caught:',e));
+    }
+    lastTs=performance.now();
+    requestAnimationFrame(tick);
+  }else{
+    if(player)player.pause();
+  }
+}
+function buildSpeed(){
+  const opts=mode==='old'?[0.5,1,1.5,2]:[0.25,0.5,1,1.5,2,4];
+  if(!opts.includes(speed))speed=1;
+  $('#speed').innerHTML=opts.map(o=>'<option value="'+o+'"'+(o===speed?' selected':'')+'>'+o+'x</option>').join('');
+}
+
+/* ---------- 标注徽标 / 弹层 ---------- */
+function placeBadges(region){
+  document.querySelectorAll('.abadge[data-region="'+region+'"]').forEach(b=>b.remove());
+  const slots=new Map();
+  ANN.filter(a=>a.region===region).forEach(a=>{
+    if(a.at){
+      const ref=document.querySelector(a.at.ref),host=$('#timeline');
+      if(!ref||ref.offsetParent===null)return;
+      const bb=document.createElement('span');bb.className='abadge p'+a.pri+(a.optOnly?' optonly':'');bb.textContent=a.id;bb.dataset.id=a.id;bb.dataset.region=region;
+      bb.style.top=(ref.getBoundingClientRect().top-host.getBoundingClientRect().top+(a.at.dy||0))+'px';
+      bb.style[a.at.side==='l'?'left':'right']='-12px';
+      host.appendChild(bb);return;
+    }
+    let el=null;for(const s of a.sel){el=document.querySelector(s);if(el)break}
+    if(!el)return;
+    if(getComputedStyle(el).position==='static')el.style.position='relative';
+    const m=slots.get(el)||{};const key=a.pos||'tr';const n=m[key]||0;m[key]=n+1;slots.set(el,m);
+    const b=document.createElement('span');b.className='abadge p'+a.pri+(a.optOnly?' optonly':'');b.textContent=a.id;b.dataset.id=a.id;b.dataset.region=region;
+    const off=(-12+n*26)+'px';
+    if(key[0]==='t')b.style.top='-12px';else b.style.bottom='-12px';
+    if(key[1]==='l')b.style.left=off;else b.style.right=off;
+    el.appendChild(b);
+  });
+}
+function showPop(id,anchor){
+  const a=ANN.find(x=>x.id===id),pop=$('#pop');
+  pop.innerHTML='<h4><span class="tagp '+a.pri+'">'+a.pri+'</span>'+a.id+'. '+a.t+(a.new?' <span class="tagnew">本轮新增</span>':'')+'</h4><div class="row"><b>现状问题</b>'+a.now+'</div><div class="row"><b>优化建议</b>'+a.fix+'</div>'+(a.demo?'<div class="row demo"><b>原型里可以试</b>'+a.demo+'</div>':'');
+  pop.style.display='block';
+  const r=anchor.getBoundingClientRect();
+  let left=clamp(r.left-20,8,innerWidth-344),top=r.bottom+10;
+  if(top+pop.offsetHeight>innerHeight-8)top=Math.max(8,r.top-pop.offsetHeight-10);
+  pop.style.left=left+'px';pop.style.top=top+'px';
+}
+function focusAnn(id){
+  const a=ANN.find(x=>x.id===id);
+  if(!a)return;
+  if(a.optOnly&&mode==='old')setMode('opt');
+  if(id===46&&annoStyle!=='natural')setAnnoStyle('natural');
+  if((id===17||id===28)&&annoStyle!=='structured')setAnnoStyle('structured');
+  const find=()=>{for(const s of a.sel){const e=document.querySelector(s);if(e&&e.offsetParent!==null)return e}return null};
+  let el=find();
+  if(!el&&mode==='old'){setMode('opt');el=find()}
+  if(!el)return;
+  $('#annToggle').checked=true;document.body.classList.remove('ann-off');
+  el.scrollIntoView({block:'center',behavior:'smooth'});
+  setTimeout(()=>{
+    const b=document.querySelector('.abadge[data-id="'+id+'"]');
+    if(b){b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse');showPop(id,b)}
+  },350);
+}
+function buildDrawer(f){
+  $('#dlist').innerHTML=ANN.filter(a=>f==='all'||(f==='new'?a.new:a.pri===f)).map(a=>'<div class="ditem" data-id="'+a.id+'"><span class="dn '+a.pri+'">'+a.id+'</span><div><h5>'+a.t+'<span class="tagp '+a.pri+'">'+a.pri+'</span>'+(a.new?'<span class="tagnew">新增</span>':'')+'</h5><p><b>现状：</b>'+a.now+'</p><p><b>建议：</b>'+a.fix+'</p>'+(a.demo?'<p style="color:#237804"><b>可试：</b>'+a.demo+'</p>':'')+'</div></div>').join('');
+}
+
+/* ---------- 模式切换 ---------- */
+function setMode(m){
+  mode=m;{const cl=document.body.classList;cl.remove('mode-old','mode-opt');cl.add(m==='old'?'mode-old':'mode-opt')}
+  if(m==='old')setCam('ego_cam1');
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  $('#bsTxt').innerHTML=m==='old'?'开始':'以当前帧为起点 <small>快捷键 I</small>';
+  $('#beTxt').innerHTML=m==='old'?'标记':'以当前帧为终点 <small>快捷键 O</small>';
+  if(m==='opt'){setView(0,TOTAL)}
+  buildSpeed();updStatus();renderAll();
+}
+
+/* ---------- 标注样式切换：结构化步骤 vs 自然语义动作（严格互斥） ---------- */
+function setAnnoStyle(style){
+  annoStyle=style;
+  const cl=document.body.classList;
+  if(style==='natural'){
+    cl.remove('style-structured');
+    cl.add('style-natural');
+  }else{
+    cl.remove('style-natural');
+    cl.add('style-structured');
+  }
+  document.querySelectorAll('#styleSeg .style-seg-btn').forEach(b=>{
+    const on=b.dataset.s===style;
+    b.classList.toggle('on',on);
+    b.setAttribute('aria-selected',on?'true':'false');
+  });
+  renderAll();
+  toast(style==='natural'?'已切换至「💬 自然语义动作标注」样式（纯单行指令采集，解耦展示）':'已切换至「🧩 结构化步骤标注」样式（末端/技能/对象/目标槽位采集）');
+}
+
+function renderAll(){renderTimeline();renderCards();renderMinimap();updatePlayhead();updCtrl();updZoomUI();placeBadges('static')}
+
+/* ---------- 事件 ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.abadge');
+  if(b){e.stopPropagation();e.preventDefault();showPop(+b.dataset.id,b);return}
+  if(!e.target.closest('#pop'))$('#pop').style.display='none';
+},true);
+$('#modeSeg').onclick=e=>{const m=e.target.dataset.m;if(m)setMode(m)};
+const _styleSeg=$('#styleSeg');
+if(_styleSeg){
+  _styleSeg.addEventListener('click',e=>{
+    const b=e.target.closest('.style-seg-btn');
+    if(b&&b.dataset.s&&b.dataset.s!==annoStyle){
+      setAnnoStyle(b.dataset.s);
+    }
+  });
+}
+$('#annToggle').onchange=e=>document.body.classList.toggle('ann-off',!e.target.checked);
+$('#btnList').onclick=()=>$('#drawer').classList.toggle('open');
+$('#dClose').onclick=()=>$('#drawer').classList.remove('open');
+$('#flt').onclick=e=>{const f=e.target.dataset.f;if(!f)return;document.querySelectorAll('#flt button').forEach(b=>b.classList.toggle('on',b===e.target));buildDrawer(f)};
+$('#dlist').onclick=e=>{const it=e.target.closest('.ditem');if(it)focusAnn(+it.dataset.id)};
+
+$('#bPlay').onclick=()=>{stats.play++;setPlay(!playing)};
+$('#bFirst').onclick=()=>seek(0);$('#bLast').onclick=()=>seek(TOTAL-1);
+$('#bPrev').onclick=()=>seek(cur-1);$('#bNext').onclick=()=>seek(cur+1);
+$('#speed').onchange=e=>speed=+e.target.value;
+$('#frameIn').onchange=e=>seek(+e.target.value||0);
+$('#btnLoop').onclick=toggleLoop;
+function toggleLoop(){loop=!loop;$('#btnLoop').classList.toggle('on',loop);toast(loop?'循环播放所选步骤：已开启':'循环播放：已关闭')}
+const _bk=$('#btnKeys');if(_bk)_bk.onclick=showKeys;
+function showKeys(){
+  const rows=[['空格','播放 / 暂停'],['← →','逐帧后退 / 前进'],['Shift + ← →','跳 10 帧'],['I / O','以当前帧为起点 / 终点'],['[ ]','上一步 / 下一步'],['+ / −','放大 / 缩小时间轴'],['L','循环播放所选步骤'],['Delete / Backspace','删除当前步骤 / 批量删除所选步骤'],['Ctrl + Z','撤销操作（支持撤销删除）'],['N','在播放头所在的未标注区间新增步骤'],['Shift + 拖框','框选多个步骤（Shift+点击可加选）'],['Alt + ← →','调整所选步骤的顺序'],['Esc','取消多选'],['Home / End','跳到开头 / 结尾'],['?','打开本说明']];
+  openModal('<h3>快捷键</h3><table>'+rows.map(r=>'<tr><td><kbd>'+r[0]+'</kbd></td><td>'+r[1]+'</td></tr>').join('')+'</table><p style="text-align:right"><button class="mini-btn" onclick="closeModal()">关闭</button></p>');
+}
+function openModal(h){$('#modal').innerHTML=h;$('#modalBg').style.display='flex'}
+function closeModal(){$('#modalBg').style.display='none'}
+$('#modalBg').onclick=e=>{if(e.target.id==='modalBg')closeModal()};
+
+function setFromCur(k){
+  if(mode==='old'){toast('现状：按钮含义不明确，标注员无法预知点击后会做什么（见标注 6）');return}
+  const st=selStep();if(!st){toast('请先选择一个步骤');return}
+  if(setEdge(st,k,cur)){renderAll();toast((k==='s'?'起点':'终点')+'已设为第 '+Math.round(cur)+' 帧')}
+}
+$('#btnStart').onclick=()=>setFromCur('s');
+$('#btnEnd').onclick=()=>setFromCur('e');
+$('#btnAdd').onclick=()=>addStep();
+$('#btnTpl').onclick=()=>toast('（原型）生成标注模版');
+$('#btnDone').onclick=()=>{
+  if(mode==='old'){toast('已提交（现状：提交前没有任何校验）');return}
+  const g=gaps(),covered=TOTAL-g.reduce((a,x)=>a+x[1]-x[0]+1,0);
+  const o=oorList(),pd=steps.filter(x=>x.pending&&!oor(x)),miss=steps.filter(x=>!x.obj&&!oor(x));
+  const v=inList(),ov=[];for(let i=1;i<v.length;i++)if(v[i].s<=v[i-1].e)ov.push(v[i]);
+  const lk=l=>l.map(x=>'<span class="link" data-sel="'+x.id+'">步骤'+stNum(x)+'</span>').join('、');
+  const row=(n,lv,list,ok)=>'<tr><td>'+n+' <span class="lv '+(lv==='拦截'?'blk2':'wn')+'">'+lv+'</span></td><td>'+(list.length?ok(list):'<span class="ok">无</span>')+'</td></tr>';
+  const block=(o.length?1:0)+(ov.length?1:0)+(pd.length?1:0),warn=(g.length?1:0)+(miss.length?1:0);
+  const msg=block?'<p class="bad">有 '+block+' 类问题必须处理后才能提交。点击蓝色条目可直接跳转。</p>':(warn?'<p class="ok">必须项已通过，可以提交；下面的提示项不影响提交。</p>':'<p class="ok">校验通过，可以提交。</p>');
+  const btn=block?'<button class="mini-btn on" onclick="closeModal()">返回修改</button>':'<button class="mini-btn" onclick="closeModal()">返回修改</button> <button class="mini-btn on" id="doSubmit">'+(warn?'仍然提交':'确认提交')+'</button>';
+  openModal('<h3>提交前校验</h3><table><tr><td>步骤数量</td><td>'+steps.length+'</td></tr><tr><td>帧覆盖率</td><td>'+(covered/TOTAL*100).toFixed(1)+'%（'+covered+' / '+TOTAL+' 帧）</td></tr>'+
+    row('步骤超出视频范围','拦截',o,lk)+row('步骤之间重叠','拦截',ov,lk)+row('有“待确认”的步骤','拦截',pd,lk)+
+    row('未标注区间','提示',g,l=>l.map(x=>'<span class="link" data-jump="'+x[0]+','+x[1]+'">'+x[0]+'–'+x[1]+'</span>').join('、'))+row('缺少操作对象','提示',miss,lk)+'</table>'+msg+'<p style="text-align:right">'+btn+'</p>');
+  const sb=$('#doSubmit');if(sb)sb.onclick=()=>{closeModal();toast('已提交')};
+};
+$('#modal').onclick=e=>{
+  const j=e.target.dataset.jump,s=e.target.dataset.sel;
+  if(j){const [a,b]=j.split(',').map(Number);closeModal();seek(a);focusRange(a,b)}
+  if(s){closeModal();selectStep(+s,true)}
+};
+const _beg=$('#btnEditGoal');
+if(_beg){
+  _beg.onclick=()=>{
+    const curVal=$('#taskGoalTxt').textContent.trim();
+    openModal('<h3>编辑任务总目标自然语言指令 (High-level Instruction)</h3><p style="font-size:12px;color:#6b7280;margin:4px 0 10px">此指令代表具身机器人执行本条示范视频的端到端总体目标（Task Goal），用于 VLA 大模型跨模态意图对齐训练。</p><input id="goalIn" style="width:100%;padding:8px 10px;border:1px solid #d9d9d9;border-radius:6px;font-size:13px" value="'+curVal+'"><p style="text-align:right;margin-top:14px"><button class="mini-btn" onclick="closeModal()">取消</button> <button class="mini-btn on" id="goalOk">保存指令</button></p>');
+    setTimeout(()=>{const el=$('#goalIn');if(el){el.focus();el.select()}},30);
+    $('#goalOk').onclick=()=>{
+      const v=$('#goalIn').value.trim();
+      if(v){$('#taskGoalTxt').textContent=v;markDirty();toast('已更新任务总目标自然语言指令')}
+      closeModal();
+    };
+  };
+}
+
+/* 删除步骤（支持单选或批量多选删除，统一校验锁定与撤销） */
+function deleteSteps(toDelete){
+  if(!toDelete||!toDelete.length)return false;
+  const locked=toDelete.filter(s=>s.locked);
+  if(locked.length){
+    toast(locked.length===1?'所选步骤已锁定，请先解锁':'所选步骤中包含 '+locked.length+' 个已锁定步骤，请先解锁');
+    return false;
+  }
+  if(steps.length-toDelete.length<1){
+    toast('至少保留一个步骤');
+    return false;
+  }
+  pushUndo();
+  const delIds=new Set(toDelete.map(s=>s.id));
+  steps=steps.filter(s=>!delIds.has(s.id));
+  toDelete.forEach(s=>msel.delete(s.id));
+  if(delIds.has(sel)){
+    sel=steps.length?steps[0].id:null;
+  }
+  renderAll();
+  const count=toDelete.length;
+  if(count>1){
+    toast('已批量删除 '+count+' 个步骤','撤销',doUndo);
+  }else{
+    if(mode==='opt')toast('已删除步骤','撤销',doUndo);
+    else toast('已删除步骤');
+  }
+  return true;
+}
+
+/* 卡片 */
+$('#cards').addEventListener('click',e=>{
+  const card=e.target.closest('.card');if(!card)return;
+  const id=+card.dataset.id,st=steps.find(s=>s.id===id);
+  const act=e.target.closest('[data-act]');
+  if(act){
+    const a=act.dataset.act;
+    if(a==='del'){
+      const toDel=(msel.size>1&&msel.has(st.id))?inList().filter(s=>msel.has(s.id)):[st];
+      deleteSteps(toDel);
+      return;
+    }else if(a==='gennl'){
+      pushUndo();
+      st.nl=genNL(st);
+      st.nlCustom=false;
+      renderCards();
+      updCtrl();
+      toast('已依据当前要素生成自然语义动作：'+st.nl);
+      return;
+    }else if(a==='confirm'){pushUndo();st.pending=false;renderAll();toast('已确认步骤 '+stNum(st))}else if(a==='copy'){addStep(st)}
+    else if(a==='rep'){repeatStep(st,+act.dataset.n)}
+    else if(a==='lock'){pushUndo();st.locked=!st.locked;renderAll();toast(st.locked?'步骤已锁定':'步骤已解锁')}
+    else if(a==='setcur'){if(setEdge(st,act.dataset.k,cur))renderAll()}
+    else if(a==='nudge'){if(setEdge(st,act.dataset.k,st[act.dataset.k]+ +act.dataset.d)){renderAll();seek(st[act.dataset.k])}}
+    return;
+  }
+  const chip=e.target.closest('[data-chip]');
+  if(chip){
+    const txt=chip.dataset.chip;
+    const card=chip.closest('.card');
+    const cid=+card.dataset.id, cst=steps.find(s=>s.id===cid);
+    if(cst){
+      pushUndo();
+      if(!cst.nl) cst.nl=txt;
+      else cst.nl=cst.nl+'，'+txt;
+      cst.nlCustom=true;
+      const ta=card.querySelector('textarea[data-k="nl"]');
+      if(ta)ta.value=cst.nl;
+      updCtrl();
+      toast('已追加常用词：'+txt);
+    }
+    return;
+  }
+  if(e.target.closest('.cbody'))return;
+  if(e.shiftKey||e.ctrlKey||e.metaKey){
+    if(msel.size===0&&sel&&sel!==id)msel.add(sel);
+    if(msel.has(id))msel.delete(id);else msel.add(id);
+    if(msel.size&&!msel.has(sel))sel=[...msel][0];
+    renderAll();
+    return;
+  }
+  if(msel.size){
+    msel.clear();
+    renderTimeline();
+  }
+  if(id!==sel)selectStep(id,true);
+});
+$('#cards').addEventListener('input',e=>{
+  const k=e.target.dataset.k;
+  if(k==='nl'){
+    const card=e.target.closest('.card');if(!card)return;
+    const st=steps.find(s=>s.id===+card.dataset.id);
+    if(st){
+      st.nl=e.target.value;
+      st.nlCustom=true;
+      updCtrl();
+      markDirty();
+    }
+  }
+});
+$('#cards').addEventListener('change',e=>{
+  const k=e.target.dataset.k;if(!k)return;stats.input++;
+  const st=steps.find(s=>s.id===+e.target.closest('.card').dataset.id);
+  if(st.locked){toast('步骤已锁定，请先解锁');renderCards();return}
+  if(k==='s'||k==='e'){
+    const had=setEdge(st,k,+e.target.value);
+    renderAll();if(mode==='opt'){seek(st[k])}
+    if(!had)renderCards();
+  }else{
+    pushUndo();st[k]=e.target.value;
+    if(k==='nl'){
+      st.nlCustom=true;
+    }else if(!st.nlCustom||!st.nl){
+      st.nl=genNL(st);
+    }
+    if(k==='skill'&&mode==='opt'&&/Reset/.test(st.skill)){
+      const pv=sorted().filter(o=>o.e<st.s).slice(-1)[0];
+      if(pv){
+        st.obj=pv.obj;st.from=pv.to;st.to=pv.from;
+        if(!st.nlCustom)st.nl=genNL(st);
+        toast('已根据上一步自动带出对象、路径与自然语义动作');
+      }
+    }
+    renderAll();
+  }
+});
+
+
+/* ===== 调整步骤顺序：时间区间（帧）固定不动，动作内容（手别/技能/对象/路径）换位 ===== */
+function reorderTo(group,k){
+  const all=inList(),rest=all.filter(x=>!group.includes(x));
+  const ord=rest.slice();ord.splice(k,0,...group);
+  if(ord.every((x,i)=>x===all[i]))return 'same';
+  if(all.some((x,i)=>x.locked&&ord[i]!==x))return 'locked';
+  const slots=all.map(x=>[x.s,x.e]);
+  pushUndo();ord.forEach((x,i)=>{x.s=slots[i][0];x.e=slots[i][1]});
+  return 'ok';
+}
+function applyReorder(group,k){
+  const before=group.map(x=>stNum(x));
+  const oldL={};document.querySelectorAll('#lanes .blk').forEach(el=>oldL[el.dataset.id]=el.getBoundingClientRect().left);
+  const r=reorderTo(group,k);
+  if(r==='same')return false;
+  if(r==='locked'){toast('范围内有已锁定的步骤，位置不能变动，请先解锁');return false}
+  movedSet=new Set(group.map(x=>x.id));setTimeout(()=>{movedSet=new Set();renderTimeline()},1500);
+  renderAll();
+  /* 落位动画：每个步骤从原来的位置滑到新位置 */
+  document.querySelectorAll('#lanes .blk').forEach(el=>{
+    const d=oldL[el.dataset.id]-el.getBoundingClientRect().left;
+    if(Math.abs(d)>1)el.animate([{transform:'translateX('+d+'px)',zIndex:30},{transform:'none',zIndex:30}],{duration:450,easing:'cubic-bezier(.2,.85,.25,1)'});
+  });
+  const after=group.map(x=>stNum(x));
+  toast('已调整顺序：步骤 '+before.join('、')+' → 第 '+after.join('、')+' 位（各位置的时间区间不变，动作内容随步骤移动）','撤销',doUndo);
+  return true;
+}
+function groupOf(st){
+  const g=(msel.size>1&&msel.has(st.id))?inList().filter(x=>msel.has(x.id)):[st];
+  return g;
+}
+function moveOrder(dir){
+  const st=selStep();if(!st||oor(st))return;
+  const g=groupOf(st);if(g.some(x=>x.locked)){toast('步骤已锁定，请先解锁');return}
+  const all=inList(),rest=all.filter(x=>!g.includes(x));
+  const k0=rest.filter(x=>x.s<g[0].s).length,k=clamp(k0+dir,0,rest.length);
+  if(k===k0){toast(dir<0?'已经是第一位':'已经是最后一位');return}
+  applyReorder(g,k);
+}
+
+/* 时间轴拖拽 */
+const tip=$('#tip');
+function showTip(x,y,t){tip.style.display='block';tip.style.left=x+12+'px';tip.style.top=y-30+'px';tip.textContent=t}
+function snap(val,st,self){
+  if(mode==='old')return val;
+  const cand=[cur,0,TOTAL-1];
+  steps.forEach(o=>{if(o!==st){cand.push(o.s,o.e,o.s-1,o.e+1)}});
+  let best=val,bd=8/ppf();
+  cand.forEach(c=>{const d=Math.abs(c-val);if(d<bd){bd=d;best=c}});
+  return Math.round(best);
+}
+$('#timeline').addEventListener('mousedown',e=>{
+  if(e.target.closest('[data-gap],[data-cand],.cmt'))return;
+  const blk=e.target.closest('.blk');
+  const rect=$('#tlclip').getBoundingClientRect();
+  /* 拖动 ⠿ 调整顺序（单个或框选后的一组） */
+  if(mode==='opt'&&blk&&(e.target.closest('[data-grip]')||(msel.size>1&&msel.has(+blk.dataset.id)&&!e.target.closest('.h')))){
+    const st=steps.find(s=>s.id===+blk.dataset.id);
+    if(st.locked){toast('步骤已锁定，请先解锁再调整顺序');e.preventDefault();return}
+    if(!msel.has(st.id))msel.clear();
+    if(sel!==st.id){sel=st.id;renderCards();updCtrl()}
+    const g=groupOf(st);
+    if(g.some(x=>x.locked)){toast('所选步骤中有已锁定的，请先解锁');e.preventDefault();return}
+    const all=inList(),rest=all.filter(x=>!g.includes(x)),n0=new Map(all.map(x=>[x,stNum(x)]));
+    const lw=$('#lanesWrap').getBoundingClientRect();
+    const line=document.createElement('div');line.className='insline';$('#tlclip').appendChild(line);
+    line.style.top=(lw.top-rect.top-8)+'px';line.style.height=(lw.height+16)+'px';line.innerHTML='<span class="pin">▼ 插入到这里</span>';
+    const ghost=document.createElement('div');ghost.className='ghost';document.body.appendChild(ghost);document.body.classList.add('reordering');
+    document.querySelectorAll('#lanes .blk').forEach(b=>{if(g.some(x=>x.id===+b.dataset.id))b.classList.add('dragging')});
+    const bf=[...all.map(x=>x.s),all[all.length-1].e+1];
+    let k=rest.filter(x=>x.s<g[0].s).length;
+    const chip=(x,inG)=>'<span class="gc '+(inG?'in':'out')+'" style="background:'+colOf(x)+'">'+n0.get(x)+'</span>';
+    const mv=ev=>{
+      const px=ev.clientX-rect.left;
+      let j=0,bd=1e9;bf.forEach((f,i)=>{const d=Math.abs(xOf(f)-px);if(d<bd){bd=d;j=i}});
+      const bfr=bf[j];k=rest.filter(x=>x.s<bfr).length;
+      line.style.left=xOf(bfr)+'px';
+      document.querySelectorAll('#lanes .blk').forEach(b=>{const id=+b.dataset.id,x=steps.find(s=>s.id===id);b.classList.toggle('near',!g.includes(x)&&(x===rest[k-1]||x===rest[k]))});
+      const L=rest[k-1],R=rest[k],ord=rest.slice();ord.splice(k,0,...g);
+      const k0=rest.filter(x=>x.s<g[0].s).length;
+      const where=k===k0?'位置不变（松开不调整）':(!L?'移到<b>最前面</b>':!R?'移到<b>最后面</b>':'插入到 <b>步骤'+n0.get(L)+'</b> 与 <b>步骤'+n0.get(R)+'</b> 之间');
+      ghost.innerHTML='<div class="gh-t">移动 <b>'+g.length+'</b> 个步骤（'+g.map(x=>n0.get(x)).join('、')+'）→ '+where+'</div><div class="gh-l">调整后的顺序（按位置）：</div><div class="gh-row">'+ord.map((x,i)=>(i===k?'<span class="gsep"></span>':'')+chip(x,g.includes(x))+(i===k+g.length-1&&i<ord.length-1?'<span class="gsep"></span>':'')).join('')+'</div>';
+      const gw=ghost.offsetWidth;ghost.style.left=clamp(ev.clientX-gw/2,8,innerWidth-gw-8)+'px';ghost.style.top=Math.max(8,ev.clientY-ghost.offsetHeight-26)+'px';
+    };
+    const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);line.remove();ghost.remove();document.body.classList.remove('reordering');
+      document.querySelectorAll('#lanes .blk').forEach(b=>b.classList.remove('dragging','near'));
+      if(!applyReorder(g,k))renderTimeline()};
+    mv(e);addEventListener('mousemove',mv);addEventListener('mouseup',up);e.preventDefault();return;
+  }
+  /* Shift + 拖框：框选多个步骤；Shift + 点击：加选/取消 */
+  if(mode==='opt'&&e.target.closest('#lanesWrap')&&(e.shiftKey||!blk)){
+    const x0=e.clientX-rect.left,startBlk=blk;let moved=false;
+    const el=document.createElement('div');el.className='marq';$('#tlclip').appendChild(el);
+    const lw=$('#lanesWrap').getBoundingClientRect();el.style.top=(lw.top-rect.top)+'px';el.style.height=lw.height+'px';
+    const base=new Set(msel);
+    const mv=ev=>{
+      const x=clamp(ev.clientX-rect.left,0,W);if(Math.abs(x-x0)>4)moved=true;if(!moved)return;
+      const a=Math.min(x0,x),b=Math.max(x0,x);el.style.left=a+'px';el.style.width=(b-a)+'px';
+      const f1=fAt(a),f2=fAt(b);msel=new Set(base);
+      inList().forEach(st=>{if(!(st.e+1<f1||st.s>f2))msel.add(st.id)});
+      renderTimeline();
+    };
+    const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);el.remove();
+      if(!moved&&startBlk){const id=+startBlk.dataset.id;if(msel.size===0&&sel&&sel!==id)msel.add(sel);if(msel.has(id))msel.delete(id);else msel.add(id)}
+      else if(!moved&&!e.shiftKey){msel.clear();seek(clamp(Math.round(fAt(x0)),0,TOTAL-1))}
+      renderTimeline();renderCards();if(msel.size>1)toast('已选 '+msel.size+' 个步骤：按 Delete 键或顶部横幅可批量删除，按住可调顺序，Esc 取消')};
+    addEventListener('mousemove',mv);addEventListener('mouseup',up);e.preventDefault();return;
+  }
+  if(blk){
+    const st=steps.find(s=>s.id===+blk.dataset.id);
+    if(msel.size&&!msel.has(st.id)){msel.clear();renderTimeline()}
+    if(sel!==st.id){sel=st.id;renderCards();updCtrl()}
+    if(st.locked){toast('该步骤已锁定，请先解锁再拖动');e.preventDefault();return}
+    stats.drag++;
+    const kind=e.target.classList.contains('h-l')?'l':e.target.classList.contains('h-r')?'r':'m';
+    pushUndoOnce(st);
+    const x0=e.clientX,s0=st.s,e0=st.e,[lo,hi]=bounds(st),len=e0-s0;
+    const mv=ev=>{
+      const df=Math.round((ev.clientX-x0)/ppf());
+      if(kind==='l'){st.s=clamp(snap(s0+df,st),lo,e0-9)}
+      else if(kind==='r'){st.e=clamp(snap(e0+df,st),s0+9,hi)}
+      else{let ns=clamp(s0+df,lo,hi-len);const sn=snap(ns,st);const sn2=snap(ns+len,st)-len;ns=Math.abs(sn-ns)<=Math.abs(sn2-ns)?sn:sn2;ns=clamp(ns,lo,hi-len);st.s=ns;st.e=ns+len}
+      renderTimeline();renderMinimap();
+      const c=document.querySelector('.card.sel');if(c){c.querySelector('.rng').firstChild.nodeValue=st.s+' - '+st.e+' 帧'}
+      showTip(ev.clientX,ev.clientY,'帧 '+st.s+' → '+st.e+' · '+nOf(st)+'f · '+fmt(st.s)+'–'+fmt(st.e));
+    };
+    const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up);tip.style.display='none';if(st.s!==s0||st.e!==e0)st.pending=false;renderAll()};
+    addEventListener('mousemove',mv);addEventListener('mouseup',up);e.preventDefault();return;
+  }
+  // 点击标尺/轨道空白：定位并拖动播放头
+  const scrub=ev=>{seek(clamp(Math.round(fAt(ev.clientX-rect.left)),0,TOTAL-1))};
+  if(msel.size){msel.clear();renderTimeline()}
+  scrub(e);
+  const up=()=>{removeEventListener('mousemove',scrub);removeEventListener('mouseup',up)};
+  addEventListener('mousemove',scrub);addEventListener('mouseup',up);e.preventDefault();
+});
+let undoTok=null;
+function pushUndoOnce(st){pushUndo()}
+function addInGap(a,b){
+  const n=b-a+1;
+  if(n<10){
+    const l=sorted().filter(x=>!oor(x)),prev=l.filter(x=>x.e<a).slice(-1)[0],next=l.filter(x=>x.s>b)[0];
+    const tgt=prev&&!prev.locked?prev:(next&&!next.locked?next:null);
+    toast('空档只有 '+n+' 帧（不足 10 帧），放不下新步骤'+(tgt?'；可把它并入'+(tgt===prev?'前':'后')+'一步':'，请拖动相邻步骤的边界'),tgt?'并入':null,()=>{pushUndo();if(tgt===prev)prev.e=b;else next.s=a;renderAll();toast('已并入相邻步骤，空档消失','撤销',doUndo)});
+    return;
+  }
+  pushUndo();const base=sorted().filter(s=>s.e<a).slice(-1)[0]||sorted()[0];
+  const st={id:nextId++,hand:base?base.hand:'L',skill:base?base.skill:'Grasp(抓取)',obj:base?base.obj:'',from:base?base.from:'台面上方',to:base?base.to:'桌面',s:a,e:Math.min(b,a+149)};
+  steps.push(st);sel=st.id;seek(a);renderAll();toast('已在空白处新增步骤（第 '+st.s+'–'+st.e+' 帧），并继承上一步设置；可拖动边界调整','撤销',doUndo);
+}
+$('#gaps').addEventListener('click',e=>{
+  const el=e.target.closest('[data-gap]');if(!el)return;
+  const [a,b]=el.dataset.gap.split(',').map(Number);addInGap(a,b);
+});
+
+$('#timeline').addEventListener('wheel',e=>{
+  if(mode!=='opt')return;
+  if(e.ctrlKey||e.metaKey){
+    e.preventDefault();
+    const x=e.clientX-$('#tlclip').getBoundingClientRect().left;
+    zoomAt(e.deltaY<0?1.25:0.8,fAt(x));
+  }else if(vw<TOTAL){
+    e.preventDefault();
+    setView(vs+(e.deltaX||e.deltaY)/ppf(),vw);renderTimeline();renderMinimap();updatePlayhead();updZoomUI();
+  }
+},{passive:false});
+
+/* 缩放工具 */
+const anchorF=()=>(cur>=vs&&cur<=vs+vw)?cur:vs+vw/2;
+$('#zIn').onclick=()=>zoomAt(1.5,anchorF());
+$('#zOut').onclick=()=>zoomAt(1/1.5,anchorF());
+$('#zRange').oninput=e=>{const z=Math.exp(e.target.value/100*Math.log(TOTAL/30));const a=anchorF(),r=(a-vs)/vw;const nv=TOTAL/z;setView(a-r*nv,nv);renderTimeline();renderMinimap();updatePlayhead();updZoomUI()};
+$('#zFit').onclick=()=>{setView(0,TOTAL);renderTimeline();renderMinimap();updatePlayhead();updZoomUI()};
+$('#zSel').onclick=()=>{const st=selStep();if(st)focusRange(st.s,st.e)};
+$('#zGap').onclick=()=>{const g=gaps();if(!g.length){toast('没有未标注区间');return}seek(g[0][0]);focusRange(g[0][0],g[0][1])};
+
+/* 键盘 */
+addEventListener('keydown',e=>{
+  const tg=e.target.tagName;if(tg==='INPUT'||tg==='SELECT'||tg==='TEXTAREA')return;
+  if(e.key==='Escape'){closeModal();$('#pop').style.display='none';if(msel.size){msel.clear();renderTimeline();renderCards()}return}
+  if(mode!=='opt')return;
+  const k=e.key;
+  if(k==='Delete'||k==='Backspace'){
+    e.preventDefault();
+    const toDel=(msel.size>1)?inList().filter(s=>msel.has(s.id)):(selStep()?[selStep()]:[]);
+    if(toDel.length)deleteSteps(toDel);
+    return;
+  }
+  if(e.altKey&&(k==='ArrowLeft'||k==='ArrowRight')){e.preventDefault();moveOrder(k==='ArrowLeft'?-1:1);return}
+  if((e.ctrlKey||e.metaKey)&&k.toLowerCase()==='z'){e.preventDefault();doUndo();return}
+  if(k===' '){e.preventDefault();stats.play++;setPlay(!playing)}
+  else if(k==='ArrowLeft'){e.preventDefault();seek(cur-(e.shiftKey?10:1))}
+  else if(k==='ArrowRight'){e.preventDefault();seek(cur+(e.shiftKey?10:1))}
+  else if(k.toLowerCase()==='i')setFromCur('s');
+  else if(k.toLowerCase()==='o')setFromCur('e');
+  else if(k.toLowerCase()==='l')toggleLoop();
+  else if(k.toLowerCase()==='n'){const g=gaps().find(x=>cur>=x[0]&&cur<=x[1]);if(g)addInGap(g[0],g[1]);else toast('当前帧已有步骤；把播放头移到未标注区间再按 N')}
+  else if(k==='['||k===']'){const l=sorted();let i=l.findIndex(s=>s.id===sel)+(k==='['?-1:1);i=clamp(i,0,l.length-1);selectStep(l[i].id,true)}
+  else if(k==='+'||k==='='){zoomAt(1.5,anchorF())}
+  else if(k==='-'){zoomAt(1/1.5,anchorF())}
+  else if(k==='Home')seek(0);else if(k==='End')seek(TOTAL-1);
+  else if(k==='?')showKeys();
+});
+addEventListener('resize',()=>renderAll());
+addEventListener('beforeunload',e=>{if(mode==='opt'&&saveState==='dirty'){e.preventDefault();e.returnValue=''}});
+
+/* ================= 第二轮新增功能 ================= */
+/* 底部状态条：时间输入 / 步骤导航 */
+$('#timeIn').addEventListener('change',e=>{
+  const p=e.target.value.trim().split(':').map(Number);
+  if(!p.length||p.some(x=>isNaN(x))){e.target.value=fmt(cur);return}
+  const sec=p.length===1?p[0]:p[0]*60+p[1];
+  seek(Math.ceil(sec*FPS-1e-6));e.target.blur();
+});
+$('#timeIn').addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur()});
+function goStep(d){
+  const l=sorted();if(!l.length)return;
+  let i=l.findIndex(s=>s.id===sel)+d;i=clamp(i,0,l.length-1);
+  selectStep(l[i].id,false);seek(l[i].s);
+}
+$('#sPrev').onclick=()=>goStep(-1);
+$('#sNext').onclick=()=>goStep(1);
+$('#sStart').onclick=()=>{const st=selStep();if(st)seek(st.s)};
+$('#sEnd').onclick=()=>{const st=selStep();if(st)seek(st.e)};
+
+/* 批注 */
+$('#ruler').addEventListener('click',e=>{
+  const id=e.target.dataset.cmt;if(!id)return;
+  const c=cmts.find(x=>x.id===+id);seek(c.f);
+  toast('批注 · 第 '+c.f+' 帧：'+c.txt,c.done?null:'标记已处理',()=>{c.done=true;renderTimeline();markDirty()});
+});
+const _bc=$('#btnComment');
+if(_bc)_bc.onclick=()=>{
+  openModal('<h3>批注当前帧（第 '+Math.round(cur)+' 帧）</h3><input id="cmtTxt" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:6px" placeholder="例如：起点偏晚约 10 帧"><p style="text-align:right"><button class="mini-btn" onclick="closeModal()">取消</button> <button class="mini-btn on" id="cmtOk">保存批注</button></p>');
+  setTimeout(()=>{const i=$('#cmtTxt');if(i)i.focus()},30);
+  $('#cmtOk').onclick=()=>{const t=$('#cmtTxt').value.trim();if(!t)return;cmts.push({id:nextCmt++,f:Math.round(cur),txt:t,done:false});closeModal();renderTimeline();markDirty();toast('已添加批注')};
+};
+
+/* 规则校验 */
+function warnings(){
+  const w=[];
+  sorted().filter(x=>!oor(x)).forEach(st=>{
+    const m=[];
+    if(nOf(st)<15)m.push('步骤过短（<15 帧）');
+    if(nOf(st)>600)m.push('步骤过长（>600 帧），请确认是否需要拆分');
+    if(/^Grasp/.test(st.skill)&&!steps.some(o=>o.hand===st.hand&&o.s>st.e&&/^(Place|Reset)/.test(o.skill)))m.push(HS[st.hand]+'抓取之后缺少放置/复位');
+    if(/^Reset/.test(st.skill)&&!steps.some(o=>o.hand===st.hand&&o.e<st.s&&/^(Grasp|Place)/.test(o.skill)))m.push(HS[st.hand]+'复位之前没有对应的抓取/放置');
+    if(m.length)w.push({st,msgs:m});
+  });
+  return w;
+}
+/* 右键菜单 */
+function splitStep(st){
+  if(st.locked){toast('步骤已锁定');return}
+  if(!(cur>st.s+4&&cur<st.e-4)){toast('请先把播放头移到该步骤内部（距两端至少 5 帧）');return}
+  pushUndo();const c=Math.round(cur);
+  const cp={...st,id:nextId++,s:c+1,e:st.e,locked:false};st.e=c;steps.push(cp);sel=cp.id;renderAll();toast('已在第 '+c+' 帧拆分为两步');
+}
+function mergeNext(st){
+  if(st.locked){toast('步骤已锁定');return}
+  const nx=sorted().filter(x=>x.s>st.e)[0];
+  if(!nx){toast('后面没有同一只手的步骤可合并');return}
+  pushUndo();st.e=nx.e;steps=steps.filter(x=>x!==nx);renderAll();toast('已与下一步合并','撤销',doUndo);
+}
+function copyOther(st){
+  const h=st.hand==='L'?'R':'L';
+  if(steps.some(o=>o.hand===h&&!(o.e<st.s||o.s>st.e))){toast('另一只手在该区间已有步骤');return}
+  pushUndo();const cp={...st,id:nextId++,hand:h,locked:false};steps.push(cp);sel=cp.id;renderAll();toast('已复制到'+HS[h]);
+}
+function repeatStep(st,n){
+  if(st.locked){toast('步骤已锁定');return}
+  pushUndo();let last=st,made=0;
+  for(let i=0;i<n;i++){
+    const len=last.e-last.s,s=last.e+1,e=s+len;
+    if(e>TOTAL-1||steps.some(o=>!(o.e<s||o.s>e)))break;
+    const cp={...st,id:nextId++,s,e,locked:false};steps.push(cp);last=cp;made++;
+  }
+  if(!made){undo.pop();toast('后面没有足够的空白区间');return}
+  sel=last.id;renderAll();seek(last.s);toast('已复制并顺延 '+made+' 次','撤销',doUndo);
+}
+$('#timeline').addEventListener('contextmenu',e=>{
+  if(mode!=='opt')return;
+  const blk=e.target.closest('.blk');if(!blk)return;
+  e.preventDefault();
+  const st=steps.find(s=>s.id===+blk.dataset.id);
+  if(!msel.has(st.id)){
+    if(msel.size){msel.clear();renderTimeline()}
+    if(sel!==st.id){sel=st.id;renderCards();renderTimeline();updCtrl()}
+  }
+  const m=$('#ctx');
+  const inside=cur>st.s+4&&cur<st.e-4,hasNext=steps.some(o=>o.s>st.e);
+  const inMsel=msel.size>1&&msel.has(st.id);
+  const delTxt=inMsel?('🗑 批量删除选中的 '+msel.size+' 个步骤'):'🗑 删除此步骤';
+  m.innerHTML='<button data-c="split" class="'+(inside?'':'dis')+'">✂ 在播放头（第 '+Math.round(cur)+' 帧）处拆分</button><button data-c="merge" class="'+(hasNext?'':'dis')+'">⤓ 与下一步合并</button><hr><button data-c="loop">⟲ 循环播放此步骤</button><button data-c="del" style="'+(inMsel?'color:#cf1322;font-weight:600':'')+'">'+delTxt+'</button>';
+  m.dataset.id=st.id;m.style.display='block';
+  m.style.left=Math.min(e.clientX,innerWidth-230)+'px';m.style.top=Math.min(e.clientY,innerHeight-200)+'px';
+});
+$('#ctx').addEventListener('click',e=>{
+  const c=e.target.dataset.c;if(!c)return;
+  const st=steps.find(s=>s.id===+$('#ctx').dataset.id);if(!st)return;
+  $('#ctx').style.display='none';
+  if(c==='split')splitStep(st);
+  else if(c==='merge')mergeNext(st);
+  else if(c==='other')copyOther(st);
+  else if(c==='loop'){loop=true;$('#btnLoop').classList.add('on');selectStep(st.id,true);if(!playing)setPlay(true)}
+  else if(c==='del'){
+    const toDel=(msel.size>1&&msel.has(st.id))?inList().filter(s=>msel.has(s.id)):[st];
+    deleteSteps(toDel);
+  }
+});
+document.addEventListener('click',()=>{$('#ctx').style.display='none'});
+
+/* 模板套用：时间段适配策略 */
+const TPLS={
+  shelf:{name:'货架抓取（抓取→放置→复位）',src:900,steps:[['L','Grasp(抓取)',300],['L','Place(放置)',300],['L','Reset(复位)',300]]},
+  pick:{name:'单手抓取放置（右手）',src:600,steps:[['R','Grasp(抓取)',300],['R','Place(放置)',300]]},
+  dual:{name:'双臂协同货架双商品取放',src:3000,steps:[['L','Grasp(抓取)',400],['R','Grasp(抓取)',300],['L','Place(放置)',300],['R','Place(放置)',200],['L','Reset(复位)',300],['R','Reset(复位)',300],['L','Grasp(抓取)',300],['R','Grasp(抓取)',300],['L','Place(放置)',300],['R','Place(放置)',300]]}
+};
+const MIN_STEP=20;
+/* 按策略计算每个步骤的 [起,止]（0 基，含首含尾，相邻首尾相接：下一步起 = 上一步止 + 1） */
+function allocTpl(key,strat,a,n){
+  const t=TPLS[key],K=t.steps.length;let ts=0;const tb=t.steps.map(x=>{const r=[ts,ts+x[2]-1];ts+=x[2];return r});
+  const res={ok:true,msg:'',rows:[]};
+  let starts;
+  if(strat==='prop'){starts=tb.map(r=>a+Math.round(r[0]/t.src*n))}
+  else if(strat==='full'){const L=Math.floor(n/K);starts=tb.map((r,i)=>a+i*L)}
+  else{ // fixed
+    const mx=Math.max(...tb.map(r=>r[1]));
+    if(mx>n-1){res.ok=false;res.msg='目标范围只有 '+n+' 帧，模板最大帧为 '+mx+'，无法使用';return res}
+    t.steps.forEach((x,i)=>res.rows.push({i,hand:x[0],skill:x[1],s:a+tb[i][0],e:a+tb[i][1]}));return res;
+  }
+  starts.forEach((st,i)=>{const e=i<K-1?starts[i+1]-1:a+n-1;res.rows.push({i,hand:t.steps[i][0],skill:t.steps[i][1],s:st,e})});
+  const mn=Math.min(...res.rows.map(r=>r.e-r.s+1));
+  if(mn<MIN_STEP){res.ok=false;res.msg='视频太短，放不下 '+K+' 个步骤（按此策略最短的步骤只有 '+mn+' 帧，要求至少 '+MIN_STEP+' 帧），请减少模板步骤'}
+  return res;
+}
+function targetRange(){
+  const g=gaps();if(!g.length)return null;
+  return g.slice().sort((x,y)=>(y[1]-y[0])-(x[1]-x[0]))[0];
+}
+let tplState={key:'dual',strat:'prop'};
+const STRATS=[['prop','按比例适配 (Proportional)','按目标帧长等比拉伸：新帧 = 模板帧 ÷ 模板总帧数 × 目标总帧数。各步骤长短比例与模板一致。（默认）'],['fixed','固定帧数适配 (Fixed Frame)','严格保持模板的帧数值。视频时长不固定时，几乎必然超出范围，只有模板最大帧不超过目标视频末帧才可选。'],['full','全程适配 (Full Duration)','平分整个视频：每步长度 = 总帧数 ÷ 步骤数（向下取整），最后一步补齐到末帧。']];
+function openTplDlg(){
+  if(mode==='old'){toast('现状：没有适配策略，模板按固定帧数直接生成（见标注 39）');return}
+  const r=targetRange();if(!r){toast('没有可用的空白区间');return}
+  tplState.key=$('#tplSel').value;
+  const a=r[0],n=r[1]-r[0]+1,t=TPLS[tplState.key];
+  const res={};STRATS.forEach(x=>res[x[0]]=allocTpl(tplState.key,x[0],a,n));
+  if(!res[tplState.strat].ok&&tplState.strat==='fixed')tplState.strat='prop';
+  const cur_=res[tplState.strat];
+  const st=STRATS.map(x=>{const dis=x[0]==='fixed'&&!res.fixed.ok;return '<label class="'+(tplState.strat===x[0]?'on':'')+(dis?' dis':'')+'"><input type="radio" name="strat" value="'+x[0]+'"'+(tplState.strat===x[0]?' checked':'')+(dis?' disabled':'')+'><span><b>'+x[1]+'</b><small>'+x[2]+'</small>'+(dis?'<small class="why">不可选：'+res.fixed.msg+'</small>':'')+'</span></label>'}).join('');
+  const prev=cur_.rows.length?'<div class="tplprev"><table><tr><th>步骤</th><th>手别 · 动作</th><th>起止帧</th><th>帧数</th></tr>'+cur_.rows.map(x=>'<tr><td>'+(x.i+1)+'</td><td>'+(x.hand==='L'?'左手':'右手')+' · '+short(x.skill)+'</td><td>'+x.s+' – '+x.e+'</td><td>'+(x.e-x.s+1)+'f</td></tr>').join('')+'</table></div>':'';
+  openModal('<h3>套用模板：选择时间段适配策略</h3><p style="margin:0 0 6px;font-size:13px;color:#6b7280">模板：<b style="color:#1f2329">'+t.name+'</b>（'+t.steps.length+' 步，原视频共 '+t.src+' 帧）<br>套用范围：第 '+r[0]+'–'+r[1]+' 帧（共 '+n+' 帧；已有步骤时，套用到最大的空白段）</p><div class="strat">'+st+'</div>'+(cur_.ok?'<p style="margin:4px 0;font-size:12px;color:#6b7280">生成结果预览（生成后步骤均为“待确认”）：</p>'+prev:'<p class="bad">'+cur_.msg+'</p>')+'<p style="text-align:right"><button class="mini-btn" onclick="closeModal()">取消</button> <button class="mini-btn on" id="tplOk"'+(cur_.ok?'':' disabled style="opacity:.5;cursor:not-allowed"')+'>套用并生成 '+t.steps.length+' 个步骤</button></p>');
+  document.querySelectorAll('input[name=strat]').forEach(i=>i.onchange=()=>{tplState.strat=i.value;openTplDlg()});
+  const ok=$('#tplOk');if(ok&&cur_.ok)ok.onclick=()=>applyTpl(cur_,r);
+}
+function applyTpl(res,r){
+  pushUndo();let first=null;
+  const base=inList().slice(-1)[0];
+  res.rows.forEach(x=>{
+    const st={id:nextId++,hand:x.hand,skill:x.skill,obj:base?base.obj:'',from:'台面上方',to:'桌面',s:x.s,e:x.e,pending:true};
+    st.nl=genNL(st);
+    steps.push(st);if(!first)first=st;
+  });
+  sel=first.id;closeModal();renderAll();seek(r[0]);setView(0,TOTAL);renderTimeline();updZoomUI();
+  toast('已生成 '+res.rows.length+' 个步骤，均为“待确认”，请逐个核对起止帧','撤销',doUndo);
+}
+$('#btnTplApply').onclick=openTplDlg;
+$('#tplSel').onchange=()=>{tplState.key=$('#tplSel').value};
+
+/* 时间轴上方提示条：超出范围 / 待确认 */
+function numList(l){return l.map(x=>stNum(x)).join('、')}
+function oorNote(){
+  if(mode!=='opt')return '';
+  const o=oorList();if(!o.length)return '';
+  return '<div class="oornote">⚠ '+o.length+' 个步骤超出视频范围（步骤 '+numList(o)+'，视频共 '+TOTAL+' 帧），时间轴上不显示。</div>';
+}
+function renderBars(){
+  const el=$('#tlBar');if(!el)return;
+  if(mode!=='opt'){el.innerHTML='';return}
+  let h='';const o=oorList(),pd=steps.filter(x=>x.pending&&!oor(x));
+  if(o.length)h+='<div class="bar red"><b>⚠ '+o.length+' 个步骤超出视频范围（步骤 '+numList(o)+'：帧 '+Math.min(...o.map(x=>x.s))+'–'+Math.max(...o.map(x=>x.e))+'，视频共 '+TOTAL+' 帧）</b><span>时间轴上无法显示</span><span class="sp"></span><a data-bar="locate">定位</a><button data-bar="realloc">重新分配到视频范围</button><button data-bar="del">删除这些步骤</button></div>';
+  if(pd.length)h+='<div class="bar orange"><b>◔ '+pd.length+' 个步骤待确认</b><span>已按模板自动分配，请逐个核对起止帧（拖动或点“确认”后恢复正常）</span><span class="sp"></span><a data-bar="next">定位到下一个</a></div>';
+  [...msel].forEach(id=>{if(!steps.find(x=>x.id===id&&!oor(x)))msel.delete(id)});
+  if(msel.size>1)h+='<div class="selhint"><b>已选 '+msel.size+' 个步骤</b><span>按住任一选中的步骤拖到目标位置整体移位；或按 Alt+←/→ 移动；按 Delete 键可删除</span><span class="sp"></span><button data-bar="batchdel" class="mini-btn red-btn" style="color:#cf1322;border:1px solid #ffa39e;background:#fff1f0;padding:2px 10px;font-size:12px;font-weight:600;border-radius:4px;cursor:pointer;margin-right:8px;display:inline-flex;align-items:center;gap:4px">🗑 批量删除 ('+msel.size+')</button><a data-bar="clearsel">取消选择（Esc）</a></div>';
+  el.innerHTML=h;
+}
+$('#tlBar').addEventListener('click',e=>{
+  const k=e.target.dataset.bar;if(!k)return;
+  if(k==='clearsel'){msel.clear();renderTimeline();renderCards()}
+  else if(k==='batchdel'){
+    const toDel=inList().filter(x=>msel.has(x.id));
+    deleteSteps(toDel);
+  }
+  else if(k==='locate'){const o=oorList();selectStep(o[0].id,true);renderCards()}
+  else if(k==='next'){const pd=sorted().filter(x=>x.pending&&!oor(x));const i=pd.findIndex(x=>x.id===sel);selectStep(pd[(i+1)%pd.length].id,true)}
+  else if(k==='del'){
+    const o=oorList();
+    openModal('<h3>删除超出范围的步骤？</h3><p>将删除步骤 '+numList(o)+'（帧 '+Math.min(...o.map(x=>x.s))+'–'+Math.max(...o.map(x=>x.e))+'），这些步骤不在视频范围内。删除后可点“撤销”恢复。</p><p style="text-align:right"><button class="mini-btn" onclick="closeModal()">取消</button> <button class="mini-btn on" id="oorDel">确认删除</button></p>');
+    $('#oorDel').onclick=()=>{pushUndo();const ids=new Set(o.map(x=>x.id));steps=steps.filter(x=>!ids.has(x.id));if(!steps.find(x=>x.id===sel))sel=steps.length?steps[0].id:null;closeModal();renderAll();toast('已删除 '+o.length+' 个超范围步骤','撤销',doUndo)};
+  }
+  else if(k==='realloc'){
+    const o=oorList(),v=inList(),a=v.length?Math.max(...v.map(x=>x.e))+1:0,rem=TOTAL-a,K=o.length;
+    if(rem<K*MIN_STEP){toast('最后一个有效步骤之后只剩 '+Math.max(rem,0)+' 帧，放不下 '+K+' 个步骤（每步至少 '+MIN_STEP+' 帧），请选“删除这些步骤”');return}
+    pushUndo();const L=Math.floor(rem/K);
+    o.forEach((x,i)=>{x.s=a+i*L;x.e=i<K-1?a+(i+1)*L-1:TOTAL-1;x.pending=true});
+    renderAll();seek(a);toast('已把 '+K+' 个步骤重新分配到第 '+a+'–'+(TOTAL-1)+' 帧，均为“待确认”','撤销',doUndo);
+  }
+});
+
+/* 演示场景（仅原型） */
+const DEF_STEPS=()=>[
+  {id:1,hand:'L',skill:'Grasp(抓取)',obj:'乐事薯片(原味/红罐)',from:'货架上层',to:'操作台面',s:0,e:450,nl:'用左手从货架上层抓取乐事薯片(原味/红罐)并移至操作台面'},
+  {id:2,hand:'R',skill:'Place(放置)',obj:'乐事薯片(原味/红罐)',from:'操作台面',to:'购物车',s:451,e:900,nl:'用右手将乐事薯片平稳放置到购物车内'},
+  {id:3,hand:'R',skill:'Reset(复位)',obj:'乐事薯片(原味/红罐)',from:'购物车',to:'操作台面',s:901,e:1350,nl:'右手机械臂从购物车复位返回操作台面待命'}
+];
+function loadScene(arr){steps=arr;nextId=arr.reduce((m,x)=>Math.max(m,x.id),0)+1;sel=arr.length?arr[0].id:null;undo=[];setView(0,TOTAL);seek(0);renderAll()}
+$('#scBlank').onclick=()=>{loadScene([]);toast('已切换为：空白数据（还没有任何步骤），请点右侧“套用模板…”')};
+$('#scReset').onclick=()=>{loadScene(DEF_STEPS());toast('已恢复默认数据')};
+$('#scOor').onclick=()=>{
+  const R=[[0,300],[301,600],[601,900],[901,1015],[1016,1151],[1152,1258],[1259,1352],[2101,2400],[2401,2700],[2701,3000]];
+  const SQ=[['L','Grasp(抓取)'],['R','Grasp(抓取)'],['L','Place(放置)'],['R','Place(放置)'],['L','Reset(复位)'],['R','Reset(复位)'],['L','Grasp(抓取)'],['R','Grasp(抓取)'],['L','Place(放置)'],['R','Place(放置)']];
+  loadScene(R.map((r,i)=>({id:i+1,hand:SQ[i][0],skill:SQ[i][1],obj:i%2?'可乐':'安慕希',from:'台面上方',to:'桌面',s:r[0],e:r[1]})));
+  toast('已载入：10 个步骤，其中步骤 8–10 超出视频（共 '+TOTAL+' 帧）。切到“现状版本”对比。');
+};
+
+/* 质量 / 规范 / 效率 / 任务流转 */
+setInterval(()=>{
+  const s=Math.floor((Date.now()-taskStart)/1000);
+  const tt=$('#telemTxt');
+  if(tt)tt.textContent='⏱ 本条 '+pad(Math.floor(s/60))+':'+pad(s%60);
+},1000);
+const _tm=$('#telem');
+if(_tm)_tm.onclick=()=>{
+  const s=Math.floor((Date.now()-taskStart)/1000);
+  openModal('<h3>本条操作统计</h3><table><tr><td>已用时</td><td>'+pad(Math.floor(s/60))+':'+pad(s%60)+'</td></tr><tr><td>拖拽调整次数</td><td>'+stats.drag+'</td></tr><tr><td>手输/下拉修改次数</td><td>'+stats.input+'</td></tr><tr><td>撤销次数</td><td>'+stats.undo+'</td></tr><tr><td>播放/暂停次数</td><td>'+stats.play+'</td></tr></table><p style="color:#6b7280">用于找出最耗时的环节（示意数据）。</p><p style="text-align:right"><button class="mini-btn" onclick="closeModal()">关闭</button></p>');
+};
+function nextTask(d){
+  qIdx=clamp(qIdx+d,1,20);taskStart=Date.now();stats={drag:0,input:0,undo:0,play:0};
+  $('#qInfo').textContent='队列 '+qIdx+' / 20';$('#preTxt').textContent='下一条 '+Math.min(20,qIdx+1)+'/20 已预加载 ✓';
+  const dt=new Date();savedAt=pad(dt.getHours())+':'+pad(dt.getMinutes());saveState='saved';updStatus();
+}
+$('#btnNextT').onclick=()=>{const g=gaps();nextTask(1);toast('已保存并进入第 '+qIdx+' 条（原型：内容未切换）'+(g.length?'；注意上一条还有 '+g.length+' 段未标注':''))};
+$('#btnPrevT').onclick=()=>{nextTask(-1);toast('已回到第 '+qIdx+' 条（原型：内容未切换）')};
+$('#btnNextUn').onclick=()=>toast('已跳到下一条未标注的任务（原型）');
+
+/* 多视角 / 点选对象 / 布局 */
+function setCam(c){
+  document.querySelectorAll('#camTabs button').forEach(b=>b.classList.toggle('on',b.dataset.c===c));
+  const vp=$('#videoPlayer'),svg=$('#mockSvg');
+  if(c==='real'){
+    if(vp)vp.style.display='block';
+    if(svg)svg.style.display='none';
+    $('#camLbl').textContent='Ego 真机示范 (8925c733f9d6...)';
+    $('#pip').classList.remove('show');
+  }else if(c==='ego_cam1'){
+    if(vp)vp.style.display='none';
+    if(svg)svg.style.display='block';
+    $('#camLbl').textContent='3D 模拟视角';
+    if(svg)svg.style.filter='';
+    $('#pip').classList.remove('show');
+  }else if(c==='wrist_L'){
+    if(vp)vp.style.display='none';
+    if(svg)svg.style.display='block';
+    $('#camLbl').textContent='左腕视角 (示意)';
+    if(svg)svg.style.filter='hue-rotate(35deg) saturate(1.2)';
+    $('#pip').classList.remove('show');
+  }else if(c==='wrist_R'){
+    if(vp)vp.style.display='none';
+    if(svg)svg.style.display='block';
+    $('#camLbl').textContent='右腕视角 (示意)';
+    if(svg)svg.style.filter='hue-rotate(-35deg) saturate(1.2)';
+    $('#pip').classList.remove('show');
+  }else if(c==='grid'){
+    if(vp)vp.style.display='block';
+    $('#camLbl').textContent='Ego 真机示范 + 双腕画中画';
+    $('#pip').classList.add('show');
+  }
+}
+$('#camTabs').onclick=e=>{const c=e.target.dataset.c;if(c)setCam(c)};
+$('#video').addEventListener('click',e=>{
+  const h=e.target.closest('.hot');if(!h||mode!=='opt')return;
+  const st=selStep();if(!st){toast('请先选择一个步骤');return}
+  if(st.locked){toast('步骤已锁定');return}
+  pushUndo();st.obj=h.dataset.o;renderAll();toast('操作对象已设为「'+h.dataset.o+'」（来自画面点选）');
+});
+function savePref(){try{localStorage.setItem('wbLayout',JSON.stringify({big:document.body.classList.contains('big-video'),fold:document.body.classList.contains('focus-video')}))}catch(err){}}
+function syncLayoutBtns(){
+  const c=document.body.classList;
+  const b=$('#btnBig'),f=$('#btnFold');
+  if(b)b.textContent=c.contains('big-video')?'⤡ 还原视频':'⤢ 放大视频';
+  if(f)f.textContent=c.contains('focus-video')?'▤ 展开面板':'▣ 折叠面板';
+}
+const _bb=$('#btnBig');if(_bb)_bb.onclick=()=>{document.body.classList.toggle('big-video');savePref();syncLayoutBtns();renderAll()};
+const _bf=$('#btnFold');if(_bf)_bf.onclick=()=>{document.body.classList.toggle('focus-video');savePref();syncLayoutBtns();renderAll()};
+try{const p=JSON.parse(localStorage.getItem('wbLayout')||'{}');if(p.big)document.body.classList.add('big-video');if(p.fold)document.body.classList.add('focus-video')}catch(err){}
+syncLayoutBtns();
+
+// 初始化视频元数据与播放同步
+const vp=$('#videoPlayer');
+if(vp){
+  vp.addEventListener('loadedmetadata',()=>{
+    if(vp.duration && vp.duration>0){
+      TOTAL=Math.round(vp.duration*FPS);
+      $('#frameTot').textContent='/ '+TOTAL;
+      $('#durTot').textContent='/ '+fmt(TOTAL);
+      const m=$('#totalFrameMeta');
+      if(m)m.textContent=TOTAL+' ('+fmt(TOTAL)+')';
+      vw=Math.min(TOTAL,1800);
+      renderAll();
+    }
+  });
+  vp.addEventListener('play',()=>{if(!playing)setPlay(true)});
+  vp.addEventListener('pause',()=>{if(playing)setPlay(false)});
+  vp.addEventListener('ended',()=>{setPlay(false)});
+}
+buildDrawer('all');buildSpeed();setMode('opt');setAnnoStyle('structured');
+</script>
+</body>
+</html>

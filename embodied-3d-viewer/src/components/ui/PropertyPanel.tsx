@@ -1,6 +1,6 @@
 import React from 'react';
 import { SelectableObject } from '../../types';
-import { Layers, Target, Eye, Info, Zap, BatteryCharging, Gauge, CheckCircle2 } from 'lucide-react';
+import { Layers, Target, Eye, Info, Zap, BatteryCharging, Gauge, CheckCircle2, ShieldCheck, ExternalLink, Box } from 'lucide-react';
 
 interface PropertyPanelProps {
   selectedObject: SelectableObject | null;
@@ -185,6 +185,134 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
               )}
             </div>
           </div>
+
+          {/* NVIDIA SimReady & OpenUSD Physical Attributes */}
+          {selectedObject.simReady && (
+            <div>
+              <div style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#10b981',
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                <ShieldCheck size={14} color="#10b981" />
+                <span>NVIDIA SimReady 官方物理规格 (OpenUSD)</span>
+              </div>
+
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 78, 59, 0.16) 100%)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                borderRadius: '8px',
+                padding: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                fontSize: '11px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#8da4c4', fontSize: '10px' }}>USD Asset 句柄:</span>
+                  <span style={{
+                    fontSize: '9px',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: 'rgba(16, 185, 129, 0.25)',
+                    color: '#6ee7b7',
+                    fontWeight: 700
+                  }}>
+                    {selectedObject.simReady.usdFormat}
+                  </span>
+                </div>
+
+                <div style={{
+                  fontFamily: 'monospace',
+                  fontSize: '10px',
+                  background: 'rgba(0, 0, 0, 0.45)',
+                  padding: '5px 8px',
+                  borderRadius: '4px',
+                  color: '#a7f3d0',
+                  wordBreak: 'break-all'
+                }}>
+                  {selectedObject.simReady.usdAssetId}
+                </div>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '6px',
+                  marginTop: '4px'
+                }}>
+                  <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '6px 8px', borderRadius: '4px' }}>
+                    <div style={{ color: '#8da4c4', fontSize: '9px' }}>刚体碰撞凸包</div>
+                    <div style={{ color: '#fff', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>
+                      {selectedObject.simReady.collisionType}
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '6px 8px', borderRadius: '4px' }}>
+                    <div style={{ color: '#8da4c4', fontSize: '9px' }}>仿真标准质量</div>
+                    <div style={{ color: '#fff', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>
+                      {selectedObject.simReady.massKg} kg
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '6px 8px', borderRadius: '4px' }}>
+                    <div style={{ color: '#8da4c4', fontSize: '9px' }}>静/动摩擦力</div>
+                    <div style={{ color: '#fff', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>
+                      {selectedObject.simReady.friction.static} / {selectedObject.simReady.friction.dynamic}
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '6px 8px', borderRadius: '4px' }}>
+                    <div style={{ color: '#8da4c4', fontSize: '9px' }}>恢复弹性系数</div>
+                    <div style={{ color: '#fff', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>
+                      e = {selectedObject.simReady.restitution}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedObject.simReady.sourceImageMatchScore && (
+                  <div style={{
+                    marginTop: '4px',
+                    padding: '6px 8px',
+                    borderRadius: '4px',
+                    background: 'rgba(0, 242, 254, 0.08)',
+                    border: '1px solid rgba(0, 242, 254, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span style={{ color: '#8da4c4', fontSize: '10px' }}>实拍图像匹配置信度</span>
+                    <span style={{ color: '#00f2fe', fontWeight: 700, fontSize: '11px' }}>
+                      {(selectedObject.simReady.sourceImageMatchScore * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '2px' }}>
+                  <a
+                    href={selectedObject.simReady.hfHubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      color: '#34d399',
+                      fontSize: '10px',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <span>Hugging Face Hub 3D 预览</span>
+                    <ExternalLink size={11} />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Embodied Telemetry (if available) */}
           {selectedObject.telemetry && (

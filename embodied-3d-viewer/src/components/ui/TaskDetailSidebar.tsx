@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BiGymTask, ExecutionMode, SimStateUpdate, SelectableObject } from '../../types';
 import {
   Target,
@@ -15,7 +15,8 @@ import {
   Info,
   Cpu,
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 
 interface TaskDetailSidebarProps {
@@ -27,6 +28,7 @@ interface TaskDetailSidebarProps {
   onReconnectSim: () => void;
   selectedObject: SelectableObject | null;
   onDeselectObject: () => void;
+  onOpenUSDViewer?: (assetId: string) => void;
 }
 
 export const TaskDetailSidebar: React.FC<TaskDetailSidebarProps> = ({
@@ -37,9 +39,17 @@ export const TaskDetailSidebar: React.FC<TaskDetailSidebarProps> = ({
   simState,
   onReconnectSim,
   selectedObject,
-  onDeselectObject
+  onDeselectObject,
+  onOpenUSDViewer
 }) => {
   const [activeTab, setActiveTab] = useState<'task' | 'object'>('task');
+
+  // Automatically switch to object tab when an object is selected (e.g. after SimReady injection)
+  useEffect(() => {
+    if (selectedObject) {
+      setActiveTab('object');
+    }
+  }, [selectedObject]);
 
   // Determine current active step (0 to 3)
   const currentStepIndex = Math.min(
@@ -530,6 +540,116 @@ export const TaskDetailSidebar: React.FC<TaskDetailSidebarProps> = ({
                     <div style={{ color: '#10b981' }}>动力学状态: {selectedObject.telemetry.jointState}</div>
                   )}
                 </div>
+
+                {/* NVIDIA SimReady Card in Sidebar */}
+                {selectedObject.simReady && (
+                  <div style={{
+                    marginTop: '12px',
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 78, 59, 0.22) 100%)',
+                    border: '1px solid rgba(16, 185, 129, 0.45)',
+                    borderRadius: '8px',
+                    padding: '10px 12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <ShieldCheck size={14} color="#10b981" />
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
+                          SimReady 物理规格 (OpenUSD)
+                        </span>
+                      </div>
+                      <span style={{
+                        fontSize: '9px',
+                        background: 'rgba(16, 185, 129, 0.25)',
+                        color: '#6ee7b7',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        fontWeight: 600
+                      }}>
+                        {selectedObject.simReady.usdFormat}
+                      </span>
+                    </div>
+
+                    <div style={{
+                      fontFamily: 'monospace',
+                      fontSize: '10px',
+                      background: 'rgba(0, 0, 0, 0.45)',
+                      padding: '4px 6px',
+                      borderRadius: '4px',
+                      color: '#a7f3d0',
+                      wordBreak: 'break-all'
+                    }}>
+                      {selectedObject.simReady.usdAssetId}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '10px' }}>
+                      <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '5px 7px', borderRadius: '4px' }}>
+                        <div style={{ color: '#8da4c4' }}>碰撞几何</div>
+                        <div style={{ color: '#fff', fontWeight: 600, marginTop: '2px' }}>{selectedObject.simReady.collisionType}</div>
+                      </div>
+                      <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '5px 7px', borderRadius: '4px' }}>
+                        <div style={{ color: '#8da4c4' }}>仿真质量</div>
+                        <div style={{ color: '#fff', fontWeight: 600, marginTop: '2px' }}>{selectedObject.simReady.massKg} kg</div>
+                      </div>
+                      <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '5px 7px', borderRadius: '4px' }}>
+                        <div style={{ color: '#8da4c4' }}>静/动摩擦力</div>
+                        <div style={{ color: '#fff', fontWeight: 600, marginTop: '2px' }}>
+                          {selectedObject.simReady.friction.static} / {selectedObject.simReady.friction.dynamic}
+                        </div>
+                      </div>
+                      <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '5px 7px', borderRadius: '4px' }}>
+                        <div style={{ color: '#8da4c4' }}>恢复弹性</div>
+                        <div style={{ color: '#fff', fontWeight: 600, marginTop: '2px' }}>e = {selectedObject.simReady.restitution}</div>
+                      </div>
+                    </div>
+
+                    {selectedObject.simReady.sourceImageMatchScore && (
+                      <div style={{
+                        padding: '4px 6px',
+                        borderRadius: '4px',
+                        background: 'rgba(0, 242, 254, 0.08)',
+                        border: '1px solid rgba(0, 242, 254, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '10px'
+                      }}>
+                        <span style={{ color: '#8da4c4' }}>实拍以图匹配度</span>
+                        <span style={{ color: '#00f2fe', fontWeight: 700 }}>
+                          {(selectedObject.simReady.sourceImageMatchScore * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2px' }}>
+                      <button
+                        onClick={() => {
+                          if (onOpenUSDViewer) {
+                            onOpenUSDViewer(selectedObject.simReady!.usdAssetId);
+                          } else {
+                            window.open(selectedObject.simReady!.hfHubUrl, '_blank');
+                          }
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          color: '#34d399',
+                          background: 'transparent',
+                          border: 'none',
+                          fontSize: '10px',
+                          cursor: 'pointer',
+                          padding: '2px 4px'
+                        }}
+                      >
+                        <span>HF Hub OpenUSD 3D 检视器</span>
+                        <ExternalLink size={10} />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '30px 10px', color: '#64748b', fontSize: '12px' }}>

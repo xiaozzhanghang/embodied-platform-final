@@ -186,6 +186,7 @@ const FryingPan: React.FC<{ position?: [number, number, number] }> = ({
 
 export const ManipulableObjects: React.FC<ManipulableObjectsProps> = ({
   objects,
+  selectedObjectId,
   onSelectObject,
   action,
   actionProgress
@@ -629,9 +630,12 @@ export const ManipulableObjects: React.FC<ManipulableObjectsProps> = ({
         }
 
         // ─────────────────────────────────────────────────────────────────
-        // 3. Corrugated Kraft Cardboard Box (Pick Box Benchmark)
+        // 3. Corrugated Kraft Cardboard Box (NVIDIA SimReady Central OpenUSD Asset)
         // ─────────────────────────────────────────────────────────────────
         if (obj.id === 'pick_box') {
+          const isSelected = selectedObjectId === 'pick_box';
+          const dims = obj.dimensions;
+
           return (
             <group
               key={obj.id}
@@ -651,35 +655,160 @@ export const ManipulableObjects: React.FC<ManipulableObjectsProps> = ({
             >
               {/* Main Corrugated Kraft Cardboard Box Body */}
               <mesh castShadow receiveShadow>
-                <boxGeometry args={obj.dimensions} />
+                <boxGeometry args={dims} />
                 <meshStandardMaterial
-                  color="#b8864e"
-                  roughness={0.88}
-                  metalness={0.02}
+                  color="#ba8c59"
+                  roughness={0.82}
+                  metalness={0.03}
                 />
               </mesh>
 
               {/* Deep Kraft Paper Sealing Tape (Center seam on top flaps) */}
-              <mesh position={[0, obj.dimensions[1] / 2 + 0.001, 0]}>
-                <planeGeometry args={[obj.dimensions[0] + 0.002, 0.04]} />
-                <meshStandardMaterial color="#7c4e28" roughness={0.5} />
+              <mesh position={[0, dims[1] / 2 + 0.001, 0]}>
+                <planeGeometry args={[dims[0] + 0.002, 0.042]} />
+                <meshStandardMaterial color="#804d20" roughness={0.45} />
               </mesh>
               {/* Sealing Tape Front Fold */}
-              <mesh position={[0, obj.dimensions[1] / 2 - 0.012, obj.dimensions[2] / 2 + 0.001]}>
-                <planeGeometry args={[0.04, 0.025]} />
-                <meshStandardMaterial color="#7c4e28" roughness={0.5} />
+              <mesh position={[0, dims[1] / 2 - 0.016, dims[2] / 2 + 0.001]}>
+                <planeGeometry args={[0.042, 0.032]} />
+                <meshStandardMaterial color="#804d20" roughness={0.45} />
               </mesh>
               {/* Sealing Tape Rear Fold */}
-              <mesh position={[0, obj.dimensions[1] / 2 - 0.012, -obj.dimensions[2] / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
-                <planeGeometry args={[0.04, 0.025]} />
-                <meshStandardMaterial color="#7c4e28" roughness={0.5} />
+              <mesh position={[0, dims[1] / 2 - 0.016, -dims[2] / 2 - 0.001]} rotation={[0, Math.PI, 0]}>
+                <planeGeometry args={[0.042, 0.032]} />
+                <meshStandardMaterial color="#804d20" roughness={0.45} />
               </mesh>
 
-              {/* Center Crease Groove between Flaps */}
-              <mesh position={[0, obj.dimensions[1] / 2 + 0.0015, 0]} rotation={[0, 0, Math.PI / 2]}>
-                <planeGeometry args={[0.002, obj.dimensions[2]]} />
-                <meshBasicMaterial color="#5c3818" />
-              </mesh>
+              {/* White Logistics Waybill Shipping Label with Barcode */}
+              <group position={[0.02, 0.01, dims[2] / 2 + 0.0012]}>
+                {/* White Label Base */}
+                <mesh>
+                  <planeGeometry args={[0.08, 0.055]} />
+                  <meshBasicMaterial color="#ffffff" />
+                </mesh>
+                {/* Header Black Tracking Strip */}
+                <mesh position={[0, 0.02, 0.0001]}>
+                  <planeGeometry args={[0.074, 0.006]} />
+                  <meshBasicMaterial color="#111827" />
+                </mesh>
+                {/* Barcode Simulated Lines */}
+                <mesh position={[0, 0.007, 0.0001]}>
+                  <planeGeometry args={[0.068, 0.012]} />
+                  <meshBasicMaterial color="#1f2937" />
+                </mesh>
+                {/* Text Lines */}
+                <mesh position={[-0.012, -0.01, 0.0001]}>
+                  <planeGeometry args={[0.04, 0.003]} />
+                  <meshBasicMaterial color="#374151" />
+                </mesh>
+                <mesh position={[-0.008, -0.017, 0.0001]}>
+                  <planeGeometry args={[0.048, 0.003]} />
+                  <meshBasicMaterial color="#4b5563" />
+                </mesh>
+              </group>
+
+              {/* International Fragile Glass & This Side Up Arrows */}
+              <group position={[-0.048, 0.015, dims[2] / 2 + 0.0012]}>
+                <mesh>
+                  <planeGeometry args={[0.024, 0.032]} />
+                  <meshBasicMaterial color="#dc2626" />
+                </mesh>
+                <mesh position={[0, 0, 0.0001]}>
+                  <planeGeometry args={[0.02, 0.028]} />
+                  <meshBasicMaterial color="#fee2e2" />
+                </mesh>
+                {/* Upward Arrows Indicator */}
+                <mesh position={[0, 0.005, 0.0002]}>
+                  <planeGeometry args={[0.01, 0.01]} />
+                  <meshBasicMaterial color="#dc2626" />
+                </mesh>
+              </group>
+
+              {/* NVIDIA SimReady Foundation Certified Green Stamp (Right Face) */}
+              <group position={[dims[0] / 2 + 0.0012, 0.01, 0]} rotation={[0, Math.PI / 2, 0]}>
+                <mesh>
+                  <planeGeometry args={[0.07, 0.045]} />
+                  <meshBasicMaterial color="#064e3b" />
+                </mesh>
+                <mesh position={[0, 0, 0.0001]}>
+                  <planeGeometry args={[0.064, 0.039]} />
+                  <meshBasicMaterial color="#022c22" />
+                </mesh>
+                {/* "SIMREADY" Title Bar */}
+                <mesh position={[0, 0.009, 0.0002]}>
+                  <planeGeometry args={[0.055, 0.007]} />
+                  <meshBasicMaterial color="#10b981" />
+                </mesh>
+                <mesh position={[0, -0.005, 0.0002]}>
+                  <planeGeometry args={[0.048, 0.01]} />
+                  <meshBasicMaterial color="#34d399" />
+                </mesh>
+              </group>
+
+              {/* SimReady Physics Convex Hull Collision Geometry (Green Wireframe & Translucent Hull) */}
+              <group>
+                <mesh>
+                  <boxGeometry args={[dims[0] + 0.004, dims[1] + 0.004, dims[2] + 0.004]} />
+                  <meshStandardMaterial
+                    color="#10b981"
+                    transparent
+                    opacity={isSelected ? 0.35 : 0.18}
+                    roughness={0.2}
+                    depthWrite={false}
+                  />
+                </mesh>
+                <mesh>
+                  <boxGeometry args={[dims[0] + 0.004, dims[1] + 0.004, dims[2] + 0.004]} />
+                  <meshBasicMaterial
+                    color="#34d399"
+                    wireframe
+                    transparent
+                    opacity={isSelected ? 0.8 : 0.4}
+                  />
+                </mesh>
+              </group>
+
+              {/* Center of Mass (CoM) Indicator Sphere & Axes */}
+              <group position={[0, 0.01, 0]}>
+                <mesh>
+                  <sphereGeometry args={[0.008, 12, 12]} />
+                  <meshBasicMaterial color="#eab308" />
+                </mesh>
+                <mesh rotation={[0, 0, Math.PI / 2]}>
+                  <cylinderGeometry args={[0.001, 0.001, 0.04, 6]} />
+                  <meshBasicMaterial color="#ef4444" />
+                </mesh>
+                <mesh>
+                  <cylinderGeometry args={[0.001, 0.001, 0.04, 6]} />
+                  <meshBasicMaterial color="#10b981" />
+                </mesh>
+                <mesh rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.001, 0.001, 0.04, 6]} />
+                  <meshBasicMaterial color="#3b82f6" />
+                </mesh>
+              </group>
+
+              {/* In-Scene Floating SimReady Badge */}
+              {isSelected && (
+                <group position={[0, dims[1] / 2 + 0.065, 0]}>
+                  <mesh>
+                    <planeGeometry args={[0.22, 0.035]} />
+                    <meshBasicMaterial color="#064e3b" transparent opacity={0.85} />
+                  </mesh>
+                  <mesh position={[0, 0, 0.001]}>
+                    <planeGeometry args={[0.21, 0.029]} />
+                    <meshBasicMaterial color="#0b1329" />
+                  </mesh>
+                  <mesh position={[-0.08, 0, 0.002]}>
+                    <circleGeometry args={[0.008, 16]} />
+                    <meshBasicMaterial color="#10b981" />
+                  </mesh>
+                  <mesh position={[0.01, 0, 0.002]}>
+                    <planeGeometry args={[0.14, 0.008]} />
+                    <meshBasicMaterial color="#6ee7b7" />
+                  </mesh>
+                </group>
+              )}
             </group>
           );
         }
